@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,29 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bohmian trajectories in hydrogen orbitals</title>
 <style>
-:root{--bg:#fbfbfa;--fg:#1c1c1e;--mut:#6b6b70;--line:#d9d9dc;--panel:#f0f0ee;--acc:#534ab7;--ov:83,74,183;--grid:rgba(110,110,115,.55)}
+:root{color-scheme:light dark;--bg:#fbfbfa;--fg:#1c1c1e;--mut:#6b6b70;--line:#d9d9dc;--panel:#f0f0ee;--acc:#534ab7;--ov:83,74,183;--grid:rgba(110,110,115,.55);--target-size:24px}
 @media (prefers-color-scheme:dark){:root{--bg:#161618;--fg:#ececee;--mut:#9a9aa2;--line:#35353a;--panel:#212125;--acc:#a79df0;--ov:110,100,210;--grid:rgba(170,170,180,.55)}}
+@media (pointer:coarse){:root{--target-size:44px}}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:760px;margin:0 auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));padding-top:calc(16px + env(safe-area-inset-top,0px))}
-h1{font-size:19px;font-weight:600;margin:0 0 2px}
-.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow-wrap:anywhere}
+main{max-width:760px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+h1{font-size:19px;font-weight:600;margin:0 0 2px;text-wrap:balance}
+h2{font-size:15px;font-weight:600;margin:0;text-wrap:balance}
+.sub{color:var(--mut);font-size:13px;margin:0 0 12px;text-wrap:pretty}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.row>:not(button,input,select,textarea,a,label){min-inline-size:0}
 .sel{display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px}
 .sel span,.lab{font-size:13px;color:var(--mut)}
-select,button{font:inherit;font-size:16px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+select,button{font:inherit;font-size:max(1rem,1em);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-block-size:max(36px,var(--target-size));min-inline-size:var(--target-size)}
 button{cursor:pointer}
 button:disabled,select:disabled,input:disabled{opacity:.5;cursor:default}
 select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-canvas{width:100%;height:min(58vh,500px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg)}
-#info{font-size:13px;color:var(--mut);margin:8px 0 2px;min-height:3em}
+canvas{width:100%;height:min(54vh,480px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg)}
+#info{font-size:13px;color:var(--mut);margin:8px 0 6px;min-height:2.8em}
 #info b{color:var(--fg);font-weight:600}
-input[type=range]{flex:1;min-width:120px;accent-color:var(--acc)}
-.chk{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mut)}
-.val{min-width:34px;text-align:right;font-size:13px;color:var(--mut)}
+input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accent-color:var(--acc)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--mut);min-block-size:var(--target-size);cursor:pointer}
+.chk input{accent-color:var(--acc);inline-size:18px;block-size:18px;margin:0}
+.val{min-width:42px;text-align:right;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
 .lab{min-width:64px}
-#go{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
-.note{font-size:12px;color:var(--mut);margin:4px 0 0}
+#go,#add{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
+.note{font-size:12px;color:var(--mut);margin:6px 0 0;text-wrap:pretty}
+
+/* Superposition builder */
+#sup{container:sup / inline-size;margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.sup-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+#comp-list{display:flex;flex-direction:column;gap:8px}
+.comp{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:8px}
+.comp-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.comp-tag{font-size:12px;font-weight:600;color:var(--acc);min-width:24px}
+.comp-q{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--mut)}
+.comp-q select{padding:4px 7px;min-block-size:max(34px,var(--target-size))}
+.rm{margin-inline-start:auto;padding:4px 10px;font-size:14px;min-block-size:max(34px,var(--target-size))}
+.comp-sliders{display:grid;grid-template-columns:1fr;gap:6px 14px}
+@container sup (inline-size > 520px){.comp-sliders{grid-template-columns:1fr 1fr}}
+.sfield{display:flex;align-items:center;gap:8px;min-inline-size:0}
+.sfield label{font-size:13px;color:var(--mut);min-width:40px}
+.sfield input[type=range]{min-width:72px}
+.sfield .val{min-width:72px}
+.sfield .val.phv{min-width:40px}
 </style>
 </head>
 <body>
@@ -36,37 +57,42 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--acc)}
 <h1>Bohmian trajectories in hydrogen orbitals</h1>
 <p class="sub">Electrons start at positions sampled from |ψ|² and follow the guidance equation.</p>
 
-<div class="row">
-<label class="sel"><span>n</span><select id="n"></select></label>
-<label class="sel"><span>l</span><select id="l"></select></label>
-<label class="sel"><span>m</span><select id="m"></select></label>
-</div>
-
 <canvas id="c" aria-label="Animated Bohmian electron trajectories"></canvas>
 <div id="info"></div>
 
+<section id="sup" aria-labelledby="sup-title">
+<div class="sup-head">
+<h2 id="sup-title">Superposition components</h2>
+<button type="button" id="add">+ Add state</button>
+</div>
+<div id="comp-list"></div>
+</section>
+
 <div class="row">
 <label class="sel" style="flex:3"><span>Photon transition (electric dipole: Δl = ±1, Δm = 0, ±1)</span><select id="ph"></select></label>
-<button id="go">Send photon</button>
+<button type="button" id="go">Send photon</button>
+</div>
+<p class="note" id="ph-note" hidden>Photon transitions apply to a single eigenstate. Remove extra components to enable transitions.</p>
+
+<div class="row">
+<label class="lab" for="bf">Field B<sub>z</sub></label><input type="range" id="bf" min="-3" max="3" step="any" value="0"><span class="val" id="bv" style="min-width:64px">0 T</span>
 </div>
 <div class="row">
-<span class="lab">Field B<sub>z</sub></span><input type="range" id="bf" min="-3" max="3" step="any" value="0"><span class="val" id="bv" style="min-width:64px">0 T</span>
+<button type="button" id="pp" aria-label="Pause or play">Pause</button>
+<button type="button" id="rst" title="Reset simulation time to 0 and resample electrons">Restart t=0</button>
+<label class="lab" for="spd" style="min-width:44px">Speed</label><input type="range" id="spd" min="0.1" max="3" step="0.1" value="0.8">
 </div>
 <div class="row">
-<button id="pp" aria-label="Pause or play">Pause</button>
-<span class="lab">Speed</span><input type="range" id="spd" min="0.1" max="3" step="0.1" value="0.8">
+<label class="lab" for="tilt">Tilt</label><input type="range" id="tilt" min="0" max="90" step="1" value="35"><span class="val" id="tv">35°</span>
 </div>
 <div class="row">
-<span class="lab">Tilt</span><input type="range" id="tilt" min="0" max="90" step="1" value="35"><span class="val" id="tv">35°</span>
+<label class="lab" for="cnt">Electrons</label><input type="range" id="cnt" min="50" max="600" step="10" value="220"><span class="val" id="cv">220</span>
 </div>
 <div class="row">
-<span class="lab">Electrons</span><input type="range" id="cnt" min="50" max="600" step="10" value="220"><span class="val" id="cv">220</span>
+<label class="chk"><input type="checkbox" id="tr" checked><span>Trails</span></label>
+<label class="chk"><input type="checkbox" id="ov" checked><span>Density overlay</span></label>
 </div>
-<div class="row">
-<label class="chk"><input type="checkbox" id="tr" checked> Trails</label>
-<label class="chk"><input type="checkbox" id="ov" checked> Density overlay</label>
-</div>
-<p class="note">The field slider is scaled to the orbital: at 1, the Larmor rotation equals the circulation of an m = 1 electron at 0.3 of the cloud radius. The readout shows the real field. During a transition the cloud is moved from the old density to the new one by an interpolated flow (each electron keeps its place in the cumulative radial and polar distributions), and the circulation blends from m to m′. It lasts a few seconds here instead of the real ~10⁻⁸ s, and it is not a solution of the guidance equation. The density overlay is hidden until it ends. The field acts through the weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected).</p>
+<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and each component evolves in time as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup> with relative phase set at t = 0. In a multi-state superposition, electrons follow the full 3D Bohmian guidance velocity Im(∇ψ/ψ) + A via adaptive RK4 integration, and time scaling is capped when energy splittings ΔE are large so interference beats remain watchable. The field acts through weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected). During a single-state photon transition, the cloud moves by an interpolated flow rather than the guidance equation.</p>
 </main>
 
 <script>
@@ -86,56 +112,364 @@ if(l===m)return pmm;
 let p1=x*(2*m+1)*pmm;if(l===m+1)return p1;
 let pl=0;for(let ll=m+2;ll<=l;ll++){pl=(x*(2*ll-1)*p1-(ll+m-1)*pmm)/(ll-m);pmm=p1;p1=pl;}
 return pl;}
+function Qla(l,a,u){
+let q0=1;for(let i=1,f=1;i<=a;i++,f+=2)q0*=f;
+if(l===a)return[q0,0];
+let q1=u*(2*a+1)*q0,dq0=0,dq1=(2*a+1)*q0;
+if(l===a+1)return[q1,dq1];
+for(let ll=a+2;ll<=l;ll++){
+const c1=2*ll-1,c2=ll+a-1,inv=1/(ll-a);
+const q2=(u*c1*q1-c2*q0)*inv,dq2=(c1*q1+u*c1*dq1-c2*dq0)*inv;
+q0=q1;q1=q2;dq0=dq1;dq1=dq2;}
+return[q1,dq1];}
 
-let n=1,l=0,m=0,Bau=0,tr=null;
 const NR=4000,NT=2000,NC=1000;
-let dr,rcdf,R2,maxR2,tcdf,P2,maxP2,E;
+const basisCache=new Map();
 
-function setup(){
-const rmax=2*n*n+8*n+10;dr=rmax/NR;
-R2=new Float64Array(NR+1);rcdf=new Float64Array(NR);maxR2=0;
-const rad=r=>{const x=2*r/n;return Math.pow(x,l)*Math.exp(-x/2)*laguerre(n-l-1,2*l+1,x);};
+function getBasis(n,l,m){
+const k=n+'|'+l+'|'+m;
+if(basisCache.has(k))return basisCache.get(k);
+const a=Math.abs(m),sigma=m>0?1:(m<0?-1:0),d=l-a,klag=n-l-1,alpha=2*l+1;
+let rDen=2*n;for(let j=n-l;j<=n+l;j++)rDen*=j;
+const Nnl=Math.sqrt(Math.pow(2/n,3)/rDen);
+let aDen=1;for(let j=l-a+1;j<=l+a;j++)aDen*=j;
+const sgn=(m>0&&(m&1))?-1:1;
+const Alm=sgn*Math.sqrt((2*l+1)/(4*Math.PI*aDen));
+const normC=Nnl*Alm*Math.pow(2/n,l);
+
+const rmax=2*n*n+8*n+10,dr=rmax/NR;
+const R2=new Float64Array(NR+1),rcdf=new Float64Array(NR);
+let maxR2=0,acc=0;
+const rad=r=>{const x=2*r/n;return Nnl*Math.pow(x,l)*Math.exp(-x/2)*laguerre(klag,alpha,x);};
 for(let i=0;i<=NR;i++){const R=rad(i*dr);R2[i]=R*R;if(R2[i]>maxR2)maxR2=R2[i];}
-let acc=0;
 for(let i=0;i<NR;i++){const rm=(i+.5)*dr,R=rad(rm);acc+=rm*rm*R*R;rcdf[i]=acc;}
 for(let i=0;i<NR;i++)rcdf[i]/=acc;
-const am=Math.abs(m);
-tcdf=new Float64Array(NT);acc=0;
-for(let i=0;i<NT;i++){const th=(i+.5)*Math.PI/NT,p=Plm(l,am,Math.cos(th));acc+=Math.sin(th)*p*p;tcdf[i]=acc;}
+
+const tcdf=new Float64Array(NT);acc=0;
+for(let i=0;i<NT;i++){const th=(i+.5)*Math.PI/NT,p=Alm*Plm(l,a,Math.cos(th));acc+=Math.sin(th)*p*p;tcdf[i]=acc;}
 for(let i=0;i<NT;i++)tcdf[i]/=acc;
-P2=new Float64Array(NC+1);maxP2=0;
-for(let i=0;i<=NC;i++){const p=Plm(l,am,i/NC);P2[i]=p*p;if(P2[i]>maxP2)maxP2=P2[i];}
-E=invc(rcdf,0.995)*dr*1.08;
-}
+
+const P2=new Float64Array(NC+1);let maxP2=0;
+for(let i=0;i<=NC;i++){const p=Alm*Plm(l,a,i/NC);P2[i]=p*p;if(P2[i]>maxP2)maxP2=P2[i];}
+const E995=invc(rcdf,0.995)*dr*1.08;
+const b={key:k,n,l,m,a,sigma,d,klag,alpha,normC,dr,rmax,R2,rcdf,maxR2,tcdf,P2,maxP2,maxPsi2:maxR2*maxP2,E995};
+basisCache.set(k,b);
+return b;}
+
+function evalBasisPsi(b,x,y,z){
+let r=Math.hypot(x,y,z);if(r<1e-10)r=1e-10;
+const u=z/r,xi=2*r/b.n,er=Math.exp(-r/b.n);
+const L=laguerre(b.klag,b.alpha,xi);
+const rd=b.d===0?1:Math.pow(r,b.d);
+const G=b.normC*rd*er*L;
+const [Q]=Qla(b.l,b.a,u);
+let wRe=1,wIm=0;
+if(b.a>0){const sy=b.sigma*y;for(let i=0;i<b.a;i++){const nr=wRe*x-wIm*sy,ni=wRe*sy+wIm*x;wRe=nr;wIm=ni;}}
+const s=G*Q;
+return[s*wRe,s*wIm];}
+
+function evalBasisGrad(b,x,y,z,out,off){
+let r=Math.hypot(x,y,z);if(r<1e-10)r=1e-10;
+const invR=1/r,u=z*invR,xi=2*r/b.n,er=Math.exp(-r/b.n);
+const L=laguerre(b.klag,b.alpha,xi);
+const dL=b.klag>0?-laguerre(b.klag-1,b.alpha+1,xi):0;
+const rd=b.d===0?1:Math.pow(r,b.d);
+const rdm1=b.d===0?0:(b.d===1?1:Math.pow(r,b.d-1));
+const G=b.normC*rd*er*L;
+const Gp=b.normC*er*((b.d*rdm1-rd/b.n)*L+(2*rd/b.n)*dL);
+const GoverR=Gp*invR;
+const [Q,dQ]=Qla(b.l,b.a,u);
+
+let wm1Re=1,wm1Im=0,wRe=1,wIm=0;
+if(b.a>0){
+const sy=b.sigma*y;
+for(let i=1;i<b.a;i++){const nr=wm1Re*x-wm1Im*sy,ni=wm1Re*sy+wm1Im*x;wm1Re=nr;wm1Im=ni;}
+wRe=wm1Re*x-wm1Im*sy;wIm=wm1Re*sy+wm1Im*x;}
+
+const Ar=GoverR*Q,Ba=G*dQ*invR;
+const gxS=Ar*x-Ba*u*(x*invR);
+const gyS=Ar*y-Ba*u*(y*invR);
+const gzS=Ar*z+Ba*(1-u*u);
+const GQ=G*Q;
+
+out[off]=GQ*wRe;
+out[off+1]=GQ*wIm;
+out[off+2]=gxS*wRe+b.a*GQ*wm1Re;
+out[off+3]=gxS*wIm+b.a*GQ*wm1Im;
+out[off+4]=gyS*wRe-b.a*b.sigma*GQ*wm1Im;
+out[off+5]=gyS*wIm+b.a*b.sigma*GQ*wm1Re;
+out[off+6]=gzS*wRe;
+out[off+7]=gzS*wIm;}
+
 function invc(cdf,u){let lo=0,hi=cdf.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(cdf[mid]<u)lo=mid+1;else hi=mid;}
 const prev=lo>0?cdf[lo-1]:0,span=cdf[lo]-prev;return lo+(span>0?(u-prev)/span:0);}
-const tscale=()=>(0.5*E)*(0.5*E),bscale=()=>(0.3*E)*(0.3*E);
+
+/* ---------- superposition state ---------- */
+let components=[{id:1,n:1,l:0,m:0,amp:1,phaseDeg:0}];
+let nextId=2;
+let eff=[],effStatus='ok',stateSig='',radSig='',omegaMax=0,E=6,refDens=1,Bau=0,tSim=0,tr=null;
+const tscaleBase=()=>(0.5*E)*(0.5*E),bscale=()=>(0.3*E)*(0.3*E);
+const tscale=()=>{const base=tscaleBase();return(eff.length>=2&&omegaMax>0)?Math.min(base,8/omegaMax):base;};
 const colr=rho=>'hsl('+(15+Math.min(rho/(0.8*E),1)*250)+',70%,56%)';
 
-/* ---------- particles ---------- */
+function computeEffective(){
+let sumSq=0;
+for(const c of components)sumSq+=c.amp*c.amp;
+if(sumSq<=1e-16){
+eff=[];effStatus='zero_amp';stateSig='';radSig='';omegaMax=0;E=6;refDens=1;
+return;}
+const invNorm=1/Math.sqrt(sumSq);
+const map=new Map();
+for(const c of components){
+if(c.amp<=0)continue;
+const k=c.n+'|'+c.l+'|'+c.m,ph=c.phaseDeg*Math.PI/180,mag=c.amp*invNorm;
+const re=mag*Math.cos(ph),im=mag*Math.sin(ph);
+if(!map.has(k))map.set(k,{n:c.n,l:c.l,m:c.m,re,im});
+else{const g=map.get(k);g.re+=re;g.im+=im;}}
+const raw=[];let effNormSq=0;
+for(const g of map.values()){
+const m2=g.re*g.re+g.im*g.im;
+if(m2>1e-14){raw.push(g);effNormSq+=m2;}}
+if(!raw.length||effNormSq<=1e-14){
+eff=[];effStatus='destructive_zero';stateSig='';radSig='';omegaMax=0;E=6;refDens=1;
+return;}
+const s=1/Math.sqrt(effNormSq);
+eff=raw.map(g=>{
+const re=g.re*s,im=g.im*s,mag=Math.hypot(re,im),prob=mag*mag,phaseRad=Math.atan2(im,re);
+const b=getBasis(g.n,g.l,g.m);
+return{n:g.n,l:g.l,m:g.m,re,im,mag,prob,phaseRad,b,E_au:0};});
+effStatus='ok';
+stateSig=eff.map(k=>k.b.key).sort().join(';');
+updateEnergies();
+const nextRadSig=eff.map(k=>k.b.key+':'+k.prob.toFixed(6)).sort().join(';');
+if(nextRadSig===radSig)return;
+radSig=nextRadSig;
+if(eff.length===1){
+E=eff[0].b.E995;
+refDens=eff[0].b.maxPsi2;
+}else{
+let maxE=0,harmSum=0;
+for(const k of eff){
+if(k.b.E995>maxE)maxE=k.b.E995;
+harmSum+=k.prob/Math.max(k.b.maxPsi2,1e-30);}
+refDens=1/Math.max(harmSum,1e-30);
+// Compute 0.995 quantile of the diagonal radial mixture
+const mixDr=maxE/NR;
+const mixCdf=new Float64Array(NR);
+let acc=0;
+for(let i=0;i<NR;i++){
+const rm=(i+.5)*mixDr;
+let pR=0;
+for(const k of eff){
+const bi=k.b,idx=rm/bi.dr;
+if(idx<NR){const i0=Math.floor(idx),f=idx-i0,r2=bi.R2[i0]+f*(bi.R2[Math.min(NR,i0+1)]-bi.R2[i0]);pR+=k.prob*rm*rm*r2;}}
+acc+=pR;mixCdf[i]=acc;}
+if(acc>0){for(let i=0;i<NR;i++)mixCdf[i]/=acc;E=invc(mixCdf,0.995)*mixDr*1.08;}
+else E=maxE;
+}}
+
+function updateEnergies(){
+if(!eff.length){omegaMax=0;return;}
+let eMin=Infinity,eMax=-Infinity;
+for(const k of eff){
+k.E_au=-0.5/(k.n*k.n)+k.m*Bau/2;
+if(k.E_au<eMin)eMin=k.E_au;
+if(k.E_au>eMax)eMax=k.E_au;}
+omegaMax=eMax-eMin;}
+
+/* ---------- particles & sampling ---------- */
 let P=[];
-function samp(){
-for(;;){
-const r=invc(rcdf,Math.random())*dr;
-const th=invc(tcdf,Math.random())*Math.PI/NT;
+function sampSingle(b){
+for(let tries=0;tries<500;tries++){
+const r=invc(b.rcdf,Math.random())*b.dr;
+const th=invc(b.tcdf,Math.random())*Math.PI/NT;
 const rho=r*Math.sin(th);
-if(r>E||(m!==0&&rho<0.03*E))continue;
-return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:m/(rho*rho),col:colr(rho)};}
-}
-function reseed(){P=[];const N=+$('cnt').value;for(let i=0;i<N;i++)P.push(samp());}
+if(r>E||(b.m!==0&&rho<0.03*E))continue;
+return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:b.m/(rho*rho),col:colr(rho)};}
+return{rho:0.5*E,z:0,ph:Math.random()*TAU,w:b.m/(0.25*E*E),col:colr(0.5*E)};}
+
+function evalAlphas(t,out){
+for(let i=0;i<eff.length;i++){
+const k=eff[i],ang=k.phaseRad-k.E_au*t;
+out[i*2]=k.mag*Math.cos(ang);
+out[i*2+1]=k.mag*Math.sin(ang);}}
+
+function sampSuper(alphas){
+let sumMag=0;
+const cum=[];
+for(const k of eff){sumMag+=k.mag;cum.push(sumMag);}
+const M=sumMag*sumMag;
+for(let tries=0;tries<400;tries++){
+const u=Math.random()*sumMag;
+let ci=0;while(ci<cum.length-1&&cum[ci]<u)ci++;
+const b=eff[ci].b;
+const r=invc(b.rcdf,Math.random())*b.dr;
+if(r>E)continue;
+const th=invc(b.tcdf,Math.random())*Math.PI/NT;
+const ph=Math.random()*TAU;
+const rho=r*Math.sin(th),x=rho*Math.cos(ph),y=rho*Math.sin(ph),z=r*Math.cos(th);
+let pRe=0,pIm=0,g=0;
+for(let k=0;k<eff.length;k++){
+const ek=eff[k],aRe=alphas[k*2],aIm=alphas[k*2+1];
+const [br,bi]=evalBasisPsi(ek.b,x,y,z);
+pRe+=aRe*br-aIm*bi;pIm+=aRe*bi+aIm*br;
+g+=(ek.mag/sumMag)*(br*br+bi*bi);}
+const psi2=pRe*pRe+pIm*pIm;
+if(g>0&&Math.random()*M*g<=psi2){
+return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}}
+// Fallback near cloud center if acceptance is unexpectedly low
+const b0=eff[0].b,r=invc(b0.rcdf,Math.random())*b0.dr,th=invc(b0.tcdf,Math.random())*Math.PI/NT,ph=Math.random()*TAU;
+const rho=r*Math.sin(th),x=rho*Math.cos(ph),y=rho*Math.sin(ph),z=r*Math.cos(th);
+return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}
+
+function reseed(){
+P=[];
+if(!eff.length)return;
+const N=+$('cnt').value;
+if(eff.length===1){
+const b=eff[0].b;
+for(let i=0;i<N;i++)P.push(sampSingle(b));
+}else{
+const alphas=new Float64Array(eff.length*2);
+evalAlphas(tSim,alphas);
+for(let i=0;i<N;i++)P.push(sampSuper(alphas));}}
+
+/* ---------- 3D Bohmian RK4 dynamics ---------- */
+let gradBuf=new Float64Array(8);
+function evalVel(x,y,z,alphas,vOut){
+if(gradBuf.length<eff.length*8)gradBuf=new Float64Array(eff.length*8);
+let psiRe=0,psiIm=0,dxRe=0,dxIm=0,dyRe=0,dyIm=0,dzRe=0,dzIm=0;
+for(let k=0;k<eff.length;k++){
+const off=k*8;
+evalBasisGrad(eff[k].b,x,y,z,gradBuf,off);
+const aRe=alphas[k*2],aIm=alphas[k*2+1];
+const pRe=gradBuf[off],pIm=gradBuf[off+1];
+const gxRe=gradBuf[off+2],gxIm=gradBuf[off+3];
+const gyRe=gradBuf[off+4],gyIm=gradBuf[off+5];
+const gzRe=gradBuf[off+6],gzIm=gradBuf[off+7];
+psiRe+=aRe*pRe-aIm*pIm;psiIm+=aRe*pIm+aIm*pRe;
+dxRe+=aRe*gxRe-aIm*gxIm;dxIm+=aRe*gxIm+aIm*gxRe;
+dyRe+=aRe*gyRe-aIm*gyIm;dyIm+=aRe*gyIm+aIm*gyRe;
+dzRe+=aRe*gzRe-aIm*gzIm;dzIm+=aRe*gzIm+aIm*gzRe;}
+const om=0.5*Bau,ax=-om*y,ay=om*x;
+const prob=psiRe*psiRe+psiIm*psiIm;
+if(prob<1e-26){vOut[0]=ax;vOut[1]=ay;vOut[2]=0;return;}
+const invP=1/prob;
+vOut[0]=(psiRe*dxIm-psiIm*dxRe)*invP+ax;
+vOut[1]=(psiRe*dyIm-psiIm*dyRe)*invP+ay;
+vOut[2]=(psiRe*dzIm-psiIm*dzRe)*invP;}
+
+const k1v=new Float64Array(3),k2v=new Float64Array(3),k3v=new Float64Array(3),k4v=new Float64Array(3);
+let al0=new Float64Array(16),alM=new Float64Array(16),al1=new Float64Array(16);
+let subAl0=new Float64Array(16),subAlM=new Float64Array(16),subAl1=new Float64Array(16);
+
+function rk4Step(q,h,a0,aM,a1){
+evalVel(q.x,q.y,q.z,a0,k1v);
+const hh=0.5*h;
+evalVel(q.x+hh*k1v[0],q.y+hh*k1v[1],q.z+hh*k1v[2],aM,k2v);
+evalVel(q.x+hh*k2v[0],q.y+hh*k2v[1],q.z+hh*k2v[2],aM,k3v);
+evalVel(q.x+h*k3v[0],q.y+h*k3v[1],q.z+h*k3v[2],a1,k4v);
+let dx=(h/6)*(k1v[0]+2*k2v[0]+2*k3v[0]+k4v[0]);
+let dy=(h/6)*(k1v[1]+2*k2v[1]+2*k3v[1]+k4v[1]);
+let dz=(h/6)*(k1v[2]+2*k2v[2]+2*k3v[2]+k4v[2]);
+const disp=Math.hypot(dx,dy,dz),maxStep=0.15*E;
+if(!Number.isFinite(disp))return;
+if(disp>maxStep){const sc=maxStep/disp;dx*=sc;dy*=sc;dz*=sc;}
+q.x+=dx;q.y+=dy;q.z+=dz;}
+
+function stepSuperposition(dtSim,span){
+const needed=eff.length*2;
+if(al0.length<needed){
+al0=new Float64Array(needed);alM=new Float64Array(needed);al1=new Float64Array(needed);
+subAl0=new Float64Array(needed);subAlM=new Float64Array(needed);subAl1=new Float64Array(needed);}
+const nSub=omegaMax>0?Math.max(1,Math.min(24,Math.ceil(omegaMax*dtSim/0.1))):1;
+const h=dtSim/nSub;
+for(let s=0;s<nSub;s++){
+const t0=tSim+s*h,tm=t0+0.5*h,t1=t0+h;
+evalAlphas(t0,al0);evalAlphas(tm,alM);evalAlphas(t1,al1);
+for(const q of P){
+evalVel(q.x,q.y,q.z,al0,k1v);
+const vMag=Math.hypot(k1v[0],k1v[1],k1v[2]);
+const r=Math.hypot(q.x,q.y,q.z);
+const safeDisp=0.06*Math.max(r,0.15*E);
+if(vMag*h<=safeDisp){
+const hh=0.5*h;
+evalVel(q.x+hh*k1v[0],q.y+hh*k1v[1],q.z+hh*k1v[2],alM,k2v);
+evalVel(q.x+hh*k2v[0],q.y+hh*k2v[1],q.z+hh*k2v[2],alM,k3v);
+evalVel(q.x+h*k3v[0],q.y+h*k3v[1],q.z+h*k3v[2],al1,k4v);
+let dx=(h/6)*(k1v[0]+2*k2v[0]+2*k3v[0]+k4v[0]);
+let dy=(h/6)*(k1v[1]+2*k2v[1]+2*k3v[1]+k4v[1]);
+let dz=(h/6)*(k1v[2]+2*k2v[2]+2*k3v[2]+k4v[2]);
+const disp=Math.hypot(dx,dy,dz);
+if(Number.isFinite(disp)){
+if(disp>0.15*E){const sc=(0.15*E)/disp;dx*=sc;dy*=sc;dz*=sc;}
+q.x+=dx;q.y+=dy;q.z+=dz;}
+}else{
+const mSub=Math.min(12,Math.ceil(vMag*h/safeDisp)),hs=h/mSub;
+for(let j=0;j<mSub;j++){
+const ts0=t0+j*hs;
+evalAlphas(ts0,subAl0);evalAlphas(ts0+0.5*hs,subAlM);evalAlphas(ts0+hs,subAl1);
+rk4Step(q,hs,subAl0,subAlM,subAl1);}}}}
+tSim+=dtSim;
+const minStep=Math.max(span/22,1e-6);
+for(const q of P){
+q.col=colr(Math.hypot(q.x,q.y));
+const hh=q.hist;
+if(!hh.length||(tSim-hh[hh.length-1][3])>=minStep){
+hh.push([q.x,q.y,q.z,tSim]);
+if(hh.length>22)hh.shift();}}}
 
 /* ---------- UI ---------- */
 const bf=$('bf');
 function fmtB(B){const T=B*AUT;return Math.abs(T)<1000?T.toFixed(Math.abs(T)<10?2:0)+' T':(T/1000).toFixed(1)+' kT';}
+function fmtEv(ev){return Math.abs(ev)<0.1?(ev*1000).toFixed(2)+' meV':ev.toFixed(4)+' eV';}
 function rescaleB(){const s=Bau*bscale()/2,mx=Math.max(3,Math.ceil(Math.abs(s)));bf.min=-mx;bf.max=mx;bf.value=s;$('bv').textContent=fmtB(Bau);}
+function fill(sel,from,to,val,fmt){sel.innerHTML='';for(let i=from;i<=to;i++){const o=document.createElement('option');o.value=i;o.textContent=fmt?fmt(i):i;sel.appendChild(o);}sel.value=val;}
+
 function info(){
-const Ez=(-0.5/(n*n)+m*Bau/2)*HA;
-let s='<b>'+n+LET[l]+'</b>, m = '+m+' · E = '+Ez.toFixed(4)+' eV. ';
-if(Bau===0)s+=m===0?'The wavefunction is real, so the guidance velocity is zero and the electrons sit still.':'L<sub>z</sub> = '+m+'ħ for every electron; ω = '+m+'ħ/(mₑρ²), so electrons near the axis circle faster.';
-else s+='The field adds a Larmor rotation of B/2 to every electron and shifts this level by '+(m*Bau/2*HA*1000).toFixed(2)+' meV (m·μ<sub>B</sub>B).';
+if(effStatus==='zero_amp'){
+$('info').innerHTML='Total amplitude is zero — raise at least one component’s amplitude above 0.';
+return;}
+if(effStatus==='destructive_zero'){
+$('info').innerHTML='The components cancel destructively everywhere (<b>ψ = 0</b>). Adjust a phase, amplitude, or quantum number.';
+return;}
+if(eff.length===1){
+const k=eff[0],Ez=(-0.5/(k.n*k.n)+k.m*Bau/2)*HA;
+let s='<b>'+k.n+LET[k.l]+'</b>, m = '+k.m+' · E = '+Ez.toFixed(4)+' eV. ';
+if(Bau===0)s+=k.m===0?'The wavefunction is real, so the guidance velocity is zero and the electrons sit still.':'L<sub>z</sub> = '+k.m+'ħ for every electron; ω = '+k.m+'ħ/(mₑρ²), so electrons near the axis circle faster.';
+else s+='The field adds a Larmor rotation of B/2 to every electron and shifts this level by '+(k.m*Bau/2*HA*1000).toFixed(2)+' meV (m·μ<sub>B</sub>B).';
+$('info').innerHTML=s;
+return;}
+let Eavg=0;
+const terms=eff.map((k,idx)=>{
+Eavg+=k.prob*k.E_au;
+const deg=((Math.round(k.phaseRad*180/Math.PI)%360)+360)%360;
+const phaseTxt=(deg===0||deg===180)?'':' e<sup>i·'+deg+'°</sup>';
+let pref='';
+if(idx===0)pref=(deg===180?'-':'')+k.mag.toFixed(2)+phaseTxt+' ';
+else if(deg===180)pref=' − '+k.mag.toFixed(2)+' ';
+else pref=' + '+k.mag.toFixed(2)+phaseTxt+' ';
+return pref+'|'+k.n+LET[k.l]+', '+k.m+'⟩';});
+let s='<b>ψ = '+terms.join('')+'</b> · ⟨E⟩ = '+(Eavg*HA).toFixed(4)+' eV. ';
+if(omegaMax>1e-12){
+s+='Coherent interference beats at ΔE<sub>max</sub> = '+fmtEv(omegaMax*HA)+', driving time-varying |ψ|² and 3D Bohmian trajectories.';
+}else{
+const ph0=eff[0].phaseRad;
+const allReal=Bau===0&&eff.every(k=>k.m===0&&Math.abs(Math.sin(k.phaseRad-ph0))<1e-6);
+s+=allReal?'Degenerate real superposition: |ψ|² is stationary and the guidance velocity is zero.':'Degenerate superposition: |ψ|² is stationary, while phase gradients drive steady Bohmian flows.';}
 $('info').innerHTML=s;}
+
 function buildPhoton(){
 const sel=$('ph'),old=sel.value;sel.innerHTML='';
+const canTr=components.length===1&&eff.length===1;
+$('ph-note').hidden=components.length<=1;
+if(!canTr){
+const o=document.createElement('option');
+o.value='';o.textContent=components.length>1?'Single-state mode only (1 component required)':'Raise amplitude above 0';
+sel.appendChild(o);
+sel.disabled=true;$('go').disabled=true;
+return;}
+const {n,l,m}=eff[0];
 for(let n2=1;n2<=7;n2++)for(const l2 of [l-1,l+1]){
 if(n2===n||l2<0||l2>n2-1)continue;
 for(let dm=-1;dm<=1;dm++){const m2=m+dm;if(Math.abs(m2)>l2)continue;
@@ -144,33 +478,169 @@ o.value=n2+'|'+l2+'|'+m2;
 o.textContent=n2+LET[l2]+' m='+m2+' · '+(d>0?'absorb ':'emit ')+Math.abs(d).toFixed(Math.abs(d)<.1?4:2)+' eV';
 sel.appendChild(o);}}
 if([...sel.options].some(o=>o.value===old))sel.value=old;
-$('go').disabled=!sel.options.length;}
-function fill(sel,from,to,val){sel.innerHTML='';for(let i=from;i<=to;i++){const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o);}sel.value=val;}
-function refresh(keep){setup();if(!keep)reseed();key='';rescaleB();buildPhoton();info();}
-fill($('n'),1,7,1);fill($('l'),0,0,0);fill($('m'),0,0,0);
-$('n').onchange=()=>{n=+$('n').value;fill($('l'),0,n-1,Math.min(l,n-1));l=+$('l').value;fill($('m'),-l,l,Math.max(-l,Math.min(l,m)));m=+$('m').value;refresh();};
-$('l').onchange=()=>{l=+$('l').value;fill($('m'),-l,l,Math.max(-l,Math.min(l,m)));m=+$('m').value;refresh();};
-$('m').onchange=()=>{m=+$('m').value;refresh();};
-bf.oninput=()=>{Bau=+bf.value*2/bscale();$('bv').textContent=fmtB(Bau);buildPhoton();info();};
+sel.disabled=!!tr||!sel.options.length;
+$('go').disabled=!!tr||!sel.options.length;}
+
+const compList=$('comp-list');
+const rowRefs=new Map();
+
+function updateAmpReadouts(){
+let sumSq=0;
+for(const c of components)sumSq+=c.amp*c.amp;
+const norm=sumSq>0?1/Math.sqrt(sumSq):0;
+components.forEach((c,idx)=>{
+const ref=rowRefs.get(c.id);
+if(!ref)return;
+const mag=c.amp*norm,pct=Math.round(mag*mag*100);
+ref.tag.textContent='#'+(idx+1);
+ref.ampVal.textContent=mag.toFixed(2)+' ('+pct+'%)';
+ref.phVal.textContent=c.phaseDeg+'°';
+ref.rm.disabled=!!tr||components.length<=1;
+ref.rm.setAttribute('aria-label','Remove component #'+(idx+1)+' ('+c.n+LET[c.l]+', m='+c.m+')');});
+$('add').disabled=!!tr||components.length>=12;}
+
+function makeComponentRow(comp){
+const row=document.createElement('div');row.className='comp';row.dataset.id=comp.id;
+const top=document.createElement('div');top.className='comp-top';
+const tag=document.createElement('span');tag.className='comp-tag';
+const makeSel=(lbl,idSuffix,from,to,val,fmt)=>{
+const wrap=document.createElement('label');wrap.className='comp-q';wrap.htmlFor=idSuffix+'-'+comp.id;
+const sp=document.createElement('span');sp.textContent=lbl;
+const s=document.createElement('select');s.id=idSuffix+'-'+comp.id;
+fill(s,from,to,val,fmt);
+wrap.append(sp,s);
+return[wrap,s];};
+const [nw,ns]=makeSel('n','n',1,7,comp.n);
+const [lw,ls]=makeSel('l','l',0,comp.n-1,comp.l,v=>v+' ('+LET[v]+')');
+const [mw,ms]=makeSel('m','m',-comp.l,comp.l,comp.m);
+const rm=document.createElement('button');rm.type='button';rm.className='rm';rm.textContent='Remove';
+top.append(tag,nw,lw,mw,rm);
+
+const sliders=document.createElement('div');sliders.className='comp-sliders';
+const ampBox=document.createElement('div');ampBox.className='sfield';
+const ampLab=document.createElement('label');ampLab.htmlFor='amp-'+comp.id;ampLab.textContent='Amp';
+const ampIn=document.createElement('input');ampIn.type='range';ampIn.id='amp-'+comp.id;ampIn.min='0';ampIn.max='1';ampIn.step='0.01';ampIn.value=String(comp.amp);
+const ampVal=document.createElement('span');ampVal.className='val';
+ampBox.append(ampLab,ampIn,ampVal);
+
+const phBox=document.createElement('div');phBox.className='sfield';
+const phLab=document.createElement('label');phLab.htmlFor='ph-'+comp.id;phLab.textContent='Phase';
+const phIn=document.createElement('input');phIn.type='range';phIn.id='ph-'+comp.id;phIn.min='0';phIn.max='360';phIn.step='1';phIn.value=String(comp.phaseDeg);
+const phVal=document.createElement('span');phVal.className='val phv';
+phBox.append(phLab,phIn,phVal);
+sliders.append(ampBox,phBox);
+
+row.append(top,sliders);
+rowRefs.set(comp.id,{row,tag,ns,ls,ms,rm,ampIn,ampVal,phIn,phVal});
+
+ns.onchange=()=>{
+comp.n=+ns.value;
+comp.l=Math.min(comp.l,comp.n-1);
+fill(ls,0,comp.n-1,comp.l,v=>v+' ('+LET[v]+')');
+comp.m=Math.max(-comp.l,Math.min(comp.l,comp.m));
+fill(ms,-comp.l,comp.l,comp.m);
+updateAmpReadouts();
+refresh(false,true);};
+ls.onchange=()=>{
+comp.l=+ls.value;
+comp.m=Math.max(-comp.l,Math.min(comp.l,comp.m));
+fill(ms,-comp.l,comp.l,comp.m);
+updateAmpReadouts();
+refresh(false,true);};
+ms.onchange=()=>{
+comp.m=+ms.value;
+updateAmpReadouts();
+refresh(false,true);};
+ampIn.oninput=()=>{
+comp.amp=+ampIn.value;
+updateAmpReadouts();
+refresh(false,true);};
+phIn.oninput=()=>{
+comp.phaseDeg=+phIn.value;
+updateAmpReadouts();
+refresh(false,true);};
+rm.onclick=()=>{
+if(components.length<=1||tr)return;
+const idx=components.findIndex(x=>x.id===comp.id);
+if(idx<0)return;
+components.splice(idx,1);
+row.remove();
+rowRefs.delete(comp.id);
+updateAmpReadouts();
+refresh(false,true);
+const nextComp=components[Math.min(idx,components.length-1)];
+const nextRef=nextComp&&rowRefs.get(nextComp.id);
+if(nextRef&&!nextRef.rm.disabled)nextRef.rm.focus();else $('add').focus();};
+
+return row;}
+
+function pickNextState(){
+const prefs=[[2,1,0],[2,0,0],[2,1,1],[2,1,-1],[3,2,0],[3,1,0],[3,2,1],[1,0,0]];
+const has=(n,l,m)=>components.some(c=>c.n===n&&c.l===l&&c.m===m);
+for(const [n,l,m] of prefs)if(!has(n,l,m))return[n,l,m];
+for(let n=1;n<=7;n++)for(let l=0;l<n;l++)for(let m=-l;m<=l;m++)if(!has(n,l,m))return[n,l,m];
+return[2,1,0];}
+
+$('add').onclick=()=>{
+if(tr||components.length>=12)return;
+const [n,l,m]=pickNextState();
+const comp={id:nextId++,n,l,m,amp:1,phaseDeg:0};
+components.push(comp);
+compList.appendChild(makeComponentRow(comp));
+updateAmpReadouts();
+refresh(false,true);};
+
+function refresh(keep,resetT){
+if(resetT)tSim=0;
+computeEffective();
+if(!keep)reseed();
+key='';
+overlayDirty=true;
+rescaleB();
+buildPhoton();
+info();}
+
+// Initial row
+compList.appendChild(makeComponentRow(components[0]));
+updateAmpReadouts();
+
+bf.oninput=()=>{
+Bau=+bf.value*2/bscale();
+$('bv').textContent=fmtB(Bau);
+updateEnergies();
+buildPhoton();
+info();};
 $('tilt').oninput=e=>{$('tv').textContent=e.target.value+'°';};
 $('cnt').oninput=e=>{$('cv').textContent=e.target.value;reseed();};
 let run=true;
 $('pp').onclick=()=>{run=!run;$('pp').textContent=run?'Pause':'Play';};
-const LOCK=['go','ph','n','l','m','bf','cnt'];
+$('rst').onclick=()=>{if(tr)return;tSim=0;reseed();overlayDirty=true;};
 
-/* ---------- photon transition ---------- */
-const sm=x=>x*x*(3-2*x),cl=(x,a)=>Math.max(-a,Math.min(a,x));
+function setLocked(locked){
+$('go').disabled=locked||components.length>1||eff.length!==1||!$('ph').options.length;
+$('ph').disabled=locked||components.length>1||eff.length!==1||!$('ph').options.length;
+$('add').disabled=locked||components.length>=12;
+$('rst').disabled=locked;
+$('bf').disabled=locked;
+$('cnt').disabled=locked;
+for(const r of rowRefs.values()){
+r.ns.disabled=locked;r.ls.disabled=locked;r.ms.disabled=locked;
+r.ampIn.disabled=locked;r.phIn.disabled=locked;
+r.rm.disabled=locked||components.length<=1;}}
+
+/* ---------- photon transition (single eigenstate) ---------- */
+const sm=x=>x*x*(3-2*x);
 function cdfBin(cdf,x){
 if(x<=0)return 0;if(x>=cdf.length)return 1;
 const k=Math.floor(x),f=x-k,prev=k>0?cdf[k-1]:0;
 return prev+f*(cdf[k]-prev);}
-$('go').onclick=()=>{if(!tr)startTransition(...$('ph').value.split('|').map(Number));};
+$('go').onclick=()=>{if(!tr&&components.length===1&&eff.length===1&&$('ph').value)startTransition(...$('ph').value.split('|').map(Number));};
 function startTransition(n2,l2,m2){
-const ri=rcdf,ti=tcdf,dri=dr,Ei=E,mi=m,s=[n,l,m];
-n=n2;l=l2;m=m2;setup();
-const rf=rcdf,tf=tcdf,drf=dr,Ef=E;
-[n,l,m]=s;setup();
-const D=0.5/(n*n)-0.5/(n2*n2)+(m2-mi)*Bau/2;
+const c0=components[0];
+const b0=getBasis(c0.n,c0.l,c0.m),b1=getBasis(n2,l2,m2);
+const ri=b0.rcdf,ti=b0.tcdf,dri=b0.dr,Ei=b0.E995,mi=c0.m;
+const rf=b1.rcdf,tf=b1.tcdf,drf=b1.dr,Ef=b1.E995;
+const D=0.5/(c0.n*c0.n)-0.5/(n2*n2)+(m2-mi)*Bau/2;
 for(const q of P){
 q.r0=Math.hypot(q.rho,q.z);q.th0=Math.atan2(q.rho,q.z);
 q.r1=Math.min(invc(rf,cdfBin(ri,q.r0/dri))*drf,Ef);
@@ -180,10 +650,9 @@ if(Math.sin(th1)<ms){const tm=Math.asin(ms);th1=th1<Math.PI/2?tm:Math.PI-tm;}}
 q.th1=th1;
 q.r=q.r0;q.th=q.th0;q.hist=[];}
 tr={tgt:[n2,l2,m2],tau:0,mi,mf:m2,E0:Ei,Ef};
-LOCK.forEach(i=>$(i).disabled=true);
+setLocked(true);
 const ev=Math.abs(D*HA);
-$('info').innerHTML='Photon of <b>'+ev.toFixed(ev<.1?4:2)+' eV</b> '+(D>0?'absorbed':'emitted')+': <b>'+n+LET[l]+' → '+n2+LET[l2]+'</b>, m '+mi+' → '+m2+'. The cloud is carried into the new orbital by an interpolated flow.';
-}
+$('info').innerHTML='Photon of <b>'+ev.toFixed(ev<.1?4:2)+' eV</b> '+(D>0?'absorbed':'emitted')+': <b>'+c0.n+LET[c0.l]+' → '+n2+LET[l2]+'</b>, m '+mi+' → '+m2+'. The cloud is carried into the new orbital by an interpolated flow.';}
 function stepTransition(dt,spd){
 tr.tau+=dt*spd/5;
 const lam=sm(Math.min(tr.tau,1)),Ev=tr.E0+(tr.Ef-tr.E0)*lam,dts=dt*spd*(0.25*Ev*Ev),om=Bau/2,mm=(1-lam)*tr.mi+lam*tr.mf;
@@ -193,63 +662,121 @@ const rho=Math.max(q.r*Math.sin(q.th),0.01);
 q.ph=(q.ph+(mm/(rho*rho)+om)*dts)%TAU;}
 if(tr.tau>=1)finish();}
 function finish(){
-[n,l,m]=tr.tgt;
-fill($('n'),1,7,n);fill($('l'),0,n-1,l);fill($('m'),-l,l,m);
-setup();
-for(const q of P){q.rho=q.r*Math.sin(q.th);q.z=q.r*Math.cos(q.th);q.w=m/(q.rho*q.rho);q.col=colr(q.rho);delete q.hist;}
-tr=null;LOCK.forEach(i=>$(i).disabled=false);
-refresh(true);}
+const c0=components[0],[n2,l2,m2]=tr.tgt;
+c0.n=n2;c0.l=l2;c0.m=m2;
+const ref=rowRefs.get(c0.id);
+if(ref){
+fill(ref.ns,1,7,n2);
+fill(ref.ls,0,n2-1,l2,v=>v+' ('+LET[v]+')');
+fill(ref.ms,-l2,l2,m2);}
+computeEffective();
+for(const q of P){q.rho=q.r*Math.sin(q.th);q.z=q.r*Math.cos(q.th);q.w=m2/(q.rho*q.rho);q.col=colr(q.rho);delete q.hist;}
+tr=null;
+setLocked(false);
+updateAmpReadouts();
+refresh(true,true);}
 
 /* ---------- density overlay: view-aligned slice through the nucleus ---------- */
-const off=document.createElement('canvas');let offW=0,offH=0;const CELL=3;
-function build(p,S,cx,cy){
-const k=W+'x'+H+':'+p+':'+n+':'+l+':'+m+':'+E;if(k===key)return;key=k;
-const w=Math.ceil(W/CELL),h=Math.ceil(H/CELL);offW=w;offH=h;off.width=w;off.height=h;
-const o=off.getContext('2d'),im=o.createImageData(w,h),cp=Math.cos(p);
-const rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
+const off=document.createElement('canvas'),offCtx=off.getContext('2d');
+let offW=0,offH=0,offIm=null,overlayDirty=true;const CELL=3;
+let sliceBasis=[];
+
+function buildSliceBasis(p,S,cx,cy){
+const w=Math.ceil(W/CELL),h=Math.ceil(H/CELL);
+if(w!==offW||h!==offH){offW=w;offH=h;off.width=w;off.height=h;offIm=offCtx.createImageData(w,h);}
+const cp=Math.cos(p),sp=Math.sin(p),len=w*h;
+sliceBasis=eff.map(()=>({re:new Float32Array(len),im:new Float32Array(len)}));
+for(let j=0;j<h;j++){
+const V=(cy-(j+.5)*CELL)/S,y=V*sp,z=V*cp;
+for(let i=0;i<w;i++){
+const X=((i+.5)*CELL-cx)/S,idx=j*w+i;
+for(let k=0;k<eff.length;k++){
+const [pr,pi]=evalBasisPsi(eff[k].b,X,y,z);
+sliceBasis[k].re[idx]=pr;
+sliceBasis[k].im[idx]=pi;}}}}
+
+let ovAlphas=new Float64Array(16);
+function renderOverlay(p,S,cx,cy){
+if(!eff.length)return false;
+if(eff.length===1){
+const b=eff[0].b,k=W+'x'+H+':'+p+':'+b.key+':'+E;
+if(k===key&&!overlayDirty)return true;
+key=k;overlayDirty=false;
+const w=Math.ceil(W/CELL),h=Math.ceil(H/CELL);
+if(w!==offW||h!==offH){offW=w;offH=h;off.width=w;off.height=h;offIm=offCtx.createImageData(w,h);}
+const cp=Math.cos(p),rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
+const data=offIm.data;
 for(let j=0;j<h;j++)for(let i=0;i<w;i++){
 const X=((i+.5)*CELL-cx)/S,V=(cy-(j+.5)*CELL)/S;
-const r=Math.hypot(X,V),ir=Math.round(r/dr);
-const dR=ir<=NR?R2[ir]/maxR2:0;
+const r=Math.hypot(X,V),ir=Math.round(r/b.dr);
+const dR=ir<=NR?b.R2[ir]/b.maxR2:0;
 const c=r>1e-9?Math.abs(V*cp)/r:0;
-const dP=P2[Math.min(NC,Math.round(c*NC))]/maxP2;
+const dP=b.P2[Math.min(NC,Math.round(c*NC))]/b.maxP2;
 const al=Math.min(.55,.03/Math.max(dR*dP,1e-6));
-const q=(j*w+i)*4;im.data[q]=rgb[0];im.data[q+1]=rgb[1];im.data[q+2]=rgb[2];im.data[q+3]=Math.round(al*255);}
-o.putImageData(im,0,0);}
+const q=(j*w+i)*4;data[q]=rgb[0];data[q+1]=rgb[1];data[q+2]=rgb[2];data[q+3]=Math.round(al*255);}
+offCtx.putImageData(offIm,0,0);
+return true;}
+
+const k=W+'x'+H+':'+p+':'+stateSig+':'+E;
+if(k!==key){key=k;buildSliceBasis(p,S,cx,cy);overlayDirty=true;}
+if(!overlayDirty&&!(omegaMax>1e-12&&run))return true;
+overlayDirty=false;
+if(ovAlphas.length<eff.length*2)ovAlphas=new Float64Array(eff.length*2);
+evalAlphas(tSim,ovAlphas);
+const rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
+const data=offIm.data,len=offW*offH,K=eff.length,invRef=1/Math.max(refDens,1e-30);
+for(let idx=0;idx<len;idx++){
+let re=0,im=0;
+for(let m=0;m<K;m++){
+const aRe=ovAlphas[m*2],aIm=ovAlphas[m*2+1],sb=sliceBasis[m];
+const pr=sb.re[idx],pi=sb.im[idx];
+re+=aRe*pr-aIm*pi;im+=aRe*pi+aIm*pr;}
+const d=(re*re+im*im)*invRef;
+const al=Math.min(.55,.03/Math.max(d,1e-6));
+const q=idx*4;data[q]=rgb[0];data[q+1]=rgb[1];data[q+2]=rgb[2];data[q+3]=Math.round(al*255);}
+offCtx.putImageData(offIm,0,0);
+return true;}
 
 /* ---------- animation ---------- */
 let last=performance.now();
 function frame(now){
 const dt=Math.min((now-last)/1000,.05);last=now;
-const spd=+$('spd').value,ts=tscale(),Om=Bau/2;
+const spd=+$('spd').value,ts=tscale(),Om=Bau/2,span=spd*ts*0.7,dts=dt*spd*ts;
 if(run){
 if(tr){
 stepTransition(dt,spd);
-}
-}
+}else if(eff.length>=2){
+stepSuperposition(dts,span);
+}}
 const Ev=tr?tr.E0+(tr.Ef-tr.E0)*sm(Math.min(tr.tau,1)):E;
 const p=$('tilt').value*Math.PI/180,cp=Math.cos(p),sp=Math.sin(p);
 const S=Math.min(W,H*1.15)/(2*Ev),cx=W/2,cy=H/2;
 ctx.clearRect(0,0,W,H);
-if($('ov').checked&&!tr){build(p,S,cx,cy);ctx.drawImage(off,0,0,offW*CELL,offH*CELL);}
+if($('ov').checked&&!tr&&renderOverlay(p,S,cx,cy))ctx.drawImage(off,0,0,offW*CELL,offH*CELL);
 const pr=(x,y,z)=>[cx+x*S,cy-(y*sp+z*cp)*S,y*cp-z*sp];
 const grid=getComputedStyle(document.documentElement).getPropertyValue('--grid');
 ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
 const a=pr(0,0,-Ev),b=pr(0,0,Ev);
 ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);
 ctx.fillStyle=grid;ctx.font='12px system-ui,sans-serif';ctx.fillText('z',b[0]+6,b[1]+4);
-const showTr=$('tr').checked&&(tr||m!==0||Bau!==0),span=spd*ts*0.7,dts=dt*spd*ts;
+
+const singleMode=!tr&&eff.length===1;
+const showTr=$('tr').checked&&(tr||eff.length>=2||(singleMode&&(eff[0].m!==0||Bau!==0)));
+if(tr){
 for(const q of P){
 ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
-let c;
-if(tr){
 const rho=q.r*Math.sin(q.th),X=rho*Math.cos(q.ph),Y=rho*Math.sin(q.ph),Z=q.r*Math.cos(q.th);
-c=pr(X,Y,Z);q.col=colr(rho);ctx.strokeStyle=q.col;ctx.fillStyle=q.col;
+const c=pr(X,Y,Z);q.col=colr(rho);ctx.strokeStyle=q.col;ctx.fillStyle=q.col;
 if(run){q.hist.push([X,Y,Z]);if(q.hist.length>14)q.hist.shift();}
 if(showTr){let prev=null;const hh=q.hist;
 for(let k=hh.length-1,j=0;k>=0;k--,j++){const d=pr(hh[k][0],hh[k][1],hh[k][2]);
 if(prev){ctx.globalAlpha=.55*(1-j/14);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}prev=d;}}
-}else{
+const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
+ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
+ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}
+}else if(singleMode){
+for(const q of P){
+ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
 const wt=q.w+Om;
 if(run)q.ph=(q.ph+wt*dts)%TAU;
 if(showTr){
@@ -259,18 +786,31 @@ for(let k=0;k<=N;k++){
 const ph=q.ph-dir*arc*(k/N),d=pr(q.rho*Math.cos(ph),q.rho*Math.sin(ph),q.z);
 if(prev){ctx.globalAlpha=.55*(1-k/N);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}
 prev=d;}}
-c=pr(q.rho*Math.cos(q.ph),q.rho*Math.sin(q.ph),q.z);
-}
+const c=pr(q.rho*Math.cos(q.ph),q.rho*Math.sin(q.ph),q.z);
 const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
-ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();
-}
+ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}
+}else if(eff.length>=2){
+for(const q of P){
+ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
+if(showTr){
+const hh=q.hist,len=hh.length;
+let prev=pr(q.x,q.y,q.z);
+for(let k=len-1,j=0;k>=0;k--,j++){
+const d=pr(hh[k][0],hh[k][1],hh[k][2]);
+ctx.globalAlpha=.55*(1-(j+1)/(len+1));ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
+prev=d;}}
+const c=pr(q.x,q.y,q.z);
+const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
+ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
+ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}}
 ctx.globalAlpha=1;
 const o=pr(0,0,0);ctx.fillStyle=grid;ctx.beginPath();ctx.arc(o[0],o[1],3,0,TAU);ctx.fill();
 requestAnimationFrame(frame);}
 
 window.addEventListener('resize',resize);
-resize();refresh();
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{key='';overlayDirty=true;});
+resize();refresh(false,true);
 requestAnimationFrame(frame);
 </script>
 </body>
