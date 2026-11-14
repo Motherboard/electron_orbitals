@@ -623,17 +623,23 @@ const exR=normPol[0].re,exI=sgnIm*normPol[0].im;
 const eyR=normPol[1].re,eyI=sgnIm*normPol[1].im;
 const ezR=normPol[2].re,ezI=sgnIm*normPol[2].im;
 const bRe=new Float64Array(M),bIm=new Float64Array(M);
-// Determine initial shell(s) vs partner shell
-const partnerIs2=eff.some(k=>k.n===trSpec.n1&&k.l===trSpec.l1);
+// Determine initial shell(s) vs partner shell (respect Zeeman sublevel selection when Bau != 0)
+const hasZeeman=trSpec.m2!==null&&trSpec.m2!==undefined;
+const dmVal=trSpec.dm!==undefined?trSpec.dm:(hasZeeman&&trSpec.m1!==null&&trSpec.m1!==undefined?trSpec.m2-trSpec.m1:null);
+const partnerIs2=eff.some(k=>k.n===trSpec.n1&&k.l===trSpec.l1&&(trSpec.m1===null||trSpec.m1===undefined||k.m===trSpec.m1));
+const dmPartner=dmVal!==null?(partnerIs2?dmVal:-dmVal):null;
+const pmFallback=hasZeeman?(partnerIs2?trSpec.m2:trSpec.m1):null;
 const pn=partnerIs2?trSpec.n2:trSpec.n1,pl=partnerIs2?trSpec.l2:trSpec.l1;
 let bNorm2=0;
 for(let i=0;i<M;i++){
 if(states[i].n!==pn||states[i].l!==pl)continue;
+if(dmPartner===null&&pmFallback!==null&&states[i].m!==pmFallback)continue;
 let sr=0,si=0;
 for(let j=0;j<M;j++){
 const cjR=c0[j*2],cjI=c0[j*2+1];
 if(cjR===0&&cjI===0)continue;
 if(states[j].n===pn&&states[j].l===pl)continue;
+if(dmPartner!==null&&(states[i].m-states[j].m)!==dmPartner)continue;
 const idx=i*M+j;
 // (ex*Dx + ey*Dy + ez*Dz)
 const vr=exR*DxRe[idx]-exI*DxIm[idx]+eyR*DyRe[idx]-eyI*DyIm[idx]+ezR*DzRe[idx]-ezI*DzIm[idx];
@@ -655,6 +661,8 @@ if(hasInitOnly&&!initShells.has(states[j].n+'|'+states[j].l))continue;
 let sr=0,si=0;
 for(let i=0;i<M;i++){
 if(states[i].n!==pn||states[i].l!==pl)continue;
+if(dmPartner===null&&pmFallback!==null&&states[i].m!==pmFallback)continue;
+if(dmPartner!==null&&(states[i].m-states[j].m)!==dmPartner)continue;
 const idx=i*M+j;
 const vr=exR*DxRe[idx]-exI*DxIm[idx]+eyR*DyRe[idx]-eyI*DyIm[idx]+ezR*DzRe[idx]-ezI*DzIm[idx];
 const vi=exR*DxIm[idx]+exI*DxRe[idx]+eyR*DyIm[idx]+eyI*DyRe[idx]+ezR*DzIm[idx]+ezI*DzRe[idx];
@@ -728,9 +736,9 @@ for(const s of cfgSys.states){
 if(s.n<nMin)nMin=s.n;if(s.n>nMax)nMax=s.n;
 if(s.l>lMaxB)lMaxB=s.l;if(s.b.rmax>maxRmax)maxRmax=s.b.rmax;}
 const Lmax=Math.min(5,Math.max(2,lMaxB+1));
-const rMax=Math.max(46,maxRmax+14);
+const rMax=Math.max(46,maxRmax+18);
 const dr0=nMin===1?0.22:(nMin===2?0.30:0.42);
-const dr=Math.max(dr0,rMax/360);
+const dr=Math.max(dr0,rMax/380);
 const Nr=Math.ceil(rMax/dr);
 
 const fact=n=>{let r=1;for(let i=2;i<=n;i++)r*=i;return r;};
@@ -812,7 +820,7 @@ k3R:new Float64Array(Mch),k3I:new Float64Array(Mch),
 k4R:new Float64Array(Mch),k4I:new Float64Array(Mch),
 gbuf:new Float64Array(8)};
 
-return{Lmax,Nr,dr,rCap,capRate,radCh,chans,chMap,Mch,edges,URe,UIm,chAct,projStates,scratch};}
+return{Lmax,Nr,dr,rCap,rMax:Nr*dr,capRate,radCh,chans,chMap,Mch,edges,URe,UIm,chAct,projStates,scratch};}
 
 function stepGridChannelCN(g,l,dt,uR,uI){
 const{Nr,radCh,scratch}=g,{mL,mD,mU,hL,hD,hU}=radCh[l];
@@ -838,7 +846,8 @@ uR[j]=cnDR[j]-(cnCR[j]*uR[j+1]-cnCI[j]*uI[j+1]);
 uI[j]=cnDI[j]-(cnCR[j]*uI[j+1]+cnCI[j]*uR[j+1]);}}
 
 function stepGridDipole(g,dt,ex,ey,ez){
-if(ex===0&&ey===0&&ez===0)return;
+const amp=Math.hypot(ex,ey,ez);
+if(amp===0)return;
 const{Nr,dr,Mch,edges,URe,UIm,scratch}=g,nE=edges.length;
 const{eVR,eVI,tmpR,tmpI,k1R,k1I,k2R,k2I,k3R,k3I,k4R,k4I}=scratch;
 for(let e=0;e<nE;e++){const ed=edges[e];eVR[e]=ex*ed.xRe+ey*ed.yRe+ez*ed.zRe;eVI[e]=ex*ed.xIm+ey*ed.yIm+ez*ed.zIm;}
@@ -849,17 +858,20 @@ const vr=eVR[e],vi=eVI[e],ed=edges[e],k=ed.j,i=ed.i,xR=sR[k],xI=sI[k];
 dR[i]+=rS*(vr*xI+vi*xR);dI[i]-=rS*(vr*xR-vi*xI);}};
 for(let j=0;j<Nr;j++){
 const r=(j+1)*dr;
+const nS=Math.max(1,Math.min(32,Math.ceil(Math.abs(dt)*r*amp/0.35)));
+const hD=dt/nS;
+for(let s=0;s<nS;s++){
 for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j];tmpI[i]=UIm[i][j];}
 ap(r,tmpR,tmpI,k1R,k1I);
-for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*dt*k1R[i];tmpI[i]=UIm[i][j]+0.5*dt*k1I[i];}
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*hD*k1R[i];tmpI[i]=UIm[i][j]+0.5*hD*k1I[i];}
 ap(r,tmpR,tmpI,k2R,k2I);
-for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*dt*k2R[i];tmpI[i]=UIm[i][j]+0.5*dt*k2I[i];}
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*hD*k2R[i];tmpI[i]=UIm[i][j]+0.5*hD*k2I[i];}
 ap(r,tmpR,tmpI,k3R,k3I);
-for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+dt*k3R[i];tmpI[i]=UIm[i][j]+dt*k3I[i];}
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+hD*k3R[i];tmpI[i]=UIm[i][j]+hD*k3I[i];}
 ap(r,tmpR,tmpI,k4R,k4I);
 for(let i=0;i<Mch;i++){
-URe[i][j]+=(dt/6)*(k1R[i]+2*k2R[i]+2*k3R[i]+k4R[i]);
-UIm[i][j]+=(dt/6)*(k1I[i]+2*k2I[i]+2*k3I[i]+k4I[i]);}}}
+URe[i][j]+=(hD/6)*(k1R[i]+2*k2R[i]+2*k3R[i]+k4R[i]);
+UIm[i][j]+=(hD/6)*(k1I[i]+2*k2I[i]+2*k3I[i]+k4I[i]);}}}}
 
 function advanceGridHalf(g,pObj,dtH,tField){
 const{Mch,Nr,chans,URe,UIm,chAct,capRate}=g;
@@ -925,22 +937,55 @@ evalGridPsiGrad(g,x,y,z,gb);
 const pR=gb[0],pI=gb[1],prob=pR*pR+pI*pI,om=0.5*Bau,ax=-om*y,ay=om*x;
 if(prob<1e-26){vOut[0]=ax;vOut[1]=ay;vOut[2]=0;return;}
 const invP=1/prob;
-vOut[0]=(pR*gb[3]-pI*gb[2])*invP+ax;
-vOut[1]=(pR*gb[5]-pI*gb[4])*invP+ay;
-vOut[2]=(pR*gb[7]-pI*gb[6])*invP;}
+let vx=(pR*gb[3]-pI*gb[2])*invP+ax;
+let vy=(pR*gb[5]-pI*gb[4])*invP+ay;
+let vz=(pR*gb[7]-pI*gb[6])*invP;
+const r=Math.hypot(x,y,z);
+// Attenuate outward radial drift inside the CAP absorber so ionized tail packets never punch outside the grid
+if(r>g.rCap){
+const vr=(x*vx+y*vy+z*vz)/r;
+if(vr>0){
+const rStop=g.rCap+0.6*(g.rMax-g.rCap);
+const damp=1-Math.max(0,1-(r-g.rCap)/Math.max(rStop-g.rCap,1e-6));
+vx-=damp*vr*(x/r);vy-=damp*vr*(y/r);vz-=damp*vr*(z/r);}}
+vOut[0]=vx;vOut[1]=vy;vOut[2]=vz;}
 
 function advanceGridParticlesRK4(g,pObj,t0,h){
-const half=0.5*h,maxStep=0.18*E;
+const half=0.5*h,maxStep=0.14*E;
+const subRK4=(q,hs)=>{
+evalGridVel(g,q.x,q.y,q.z,k1v);
+const x0=q.x,y0=q.y,z0=q.z,k1x=k1v[0],k1y=k1v[1],k1z=k1v[2];
+evalGridVel(g,x0+0.5*hs*k1x,y0+0.5*hs*k1y,z0+0.5*hs*k1z,k2v);
+evalGridVel(g,x0+0.5*hs*k2v[0],y0+0.5*hs*k2v[1],z0+0.5*hs*k2v[2],k3v);
+evalGridVel(g,x0+hs*k3v[0],y0+hs*k3v[1],z0+hs*k3v[2],k4v);
+let dx=(hs/6)*(k1x+2*k2v[0]+2*k3v[0]+k4v[0]);
+let dy=(hs/6)*(k1y+2*k2v[1]+2*k3v[1]+k4v[1]);
+let dz=(hs/6)*(k1z+2*k2v[2]+2*k3v[2]+k4v[2]);
+const disp=Math.hypot(dx,dy,dz);
+if(!Number.isFinite(disp))return;
+if(disp>maxStep){const sc=maxStep/disp;dx*=sc;dy*=sc;dz*=sc;}
+q.x=x0+dx;q.y=y0+dy;q.z=z0+dz;};
 for(const q of P){
 evalGridVel(g,q.x,q.y,q.z,k1v);
-q._x0=q.x;q._y0=q.y;q._z0=q.z;q._k1x=k1v[0];q._k1y=k1v[1];q._k1z=k1v[2];}
+const vMag=Math.hypot(k1v[0],k1v[1],k1v[2]),r=Math.hypot(q.x,q.y,q.z);
+const safeDisp=0.06*Math.max(r,0.15*E);
+q._sub=vMag*h>safeDisp?Math.min(6,Math.ceil(vMag*half/safeDisp)):0;
+if(q._sub>0){
+const hs=half/q._sub;
+for(let j=0;j<q._sub;j++)subRK4(q,hs);
+}else{q._x0=q.x;q._y0=q.y;q._z0=q.z;q._k1x=k1v[0];q._k1y=k1v[1];q._k1z=k1v[2];}}
 advanceGridHalf(g,pObj,half,t0+0.25*h);
 for(const q of P){
+if(q._sub>0)continue;
 evalGridVel(g,q._x0+half*q._k1x,q._y0+half*q._k1y,q._z0+half*q._k1z,k2v);
 evalGridVel(g,q._x0+half*k2v[0],q._y0+half*k2v[1],q._z0+half*k2v[2],k3v);
 q._k2x=k2v[0];q._k2y=k2v[1];q._k2z=k2v[2];q._k3x=k3v[0];q._k3y=k3v[1];q._k3z=k3v[2];}
 advanceGridHalf(g,pObj,half,t0+0.75*h);
 for(const q of P){
+if(q._sub>0){
+const hs=half/q._sub;
+for(let j=0;j<q._sub;j++)subRK4(q,hs);
+continue;}
 evalGridVel(g,q._x0+h*q._k3x,q._y0+h*q._k3y,q._z0+h*q._k3z,k4v);
 let dx=(h/6)*(q._k1x+2*q._k2x+2*q._k3x+k4v[0]);
 let dy=(h/6)*(q._k1y+2*q._k2y+2*q._k3y+k4v[1]);
@@ -986,19 +1031,27 @@ const np=getNormPol();
 const det=+$('pdet').value;
 const pow=+$('ppow').value;
 const isPhoton=interactionMode==='photon';
-const cyc=isPhoton?PHOTON_CYC:+$('pdur').value;
+let cyc=isPhoton?PHOTON_CYC:+$('pdur').value;
 if(!trSpec||!eff.length)return{ok:false,trSpec:null,np,cyc,det,pow,isPhoton};
 const sys=buildCoupledSystem(trSpec);
 const {muRabi,muShell}=computeBrightDipole(sys,trSpec,np);
 const ww=weisskopfWigner(trSpec);
 const omega0=trSpec.omega0;
+const nUpper=Math.max(trSpec.n1,trSpec.n2);
+// Scale pulse duration above the upper-shell over-the-barrier field E_OBI = 1/(16 n^4) for n >= 3
+const Eobi=1/(16*Math.pow(nUpper,4));
+if(isPhoton&&nUpper>=3&&muRabi>1e-7){
+const T0=cyc*TAU/omega0,g0=PHOTON_KTAU/T0,eff0=(2/g0)*(1-Math.exp(-0.5*PHOTON_KTAU));
+const E0Init=Math.PI/(muRabi*eff0);
+if(E0Init>Eobi)cyc=Math.min(52,Math.max(cyc,Math.ceil(cyc*E0Init/Eobi)));}
+const muRef=muRabi>1e-7?muRabi:muShell;
 const T=cyc*TAU/omega0;
-const Tref=10*TAU/omega0;
+const TrefCyc=nUpper<=2?10:Math.min(80,Math.max(Math.round(10*Math.pow(nUpper/2,2.5)),muRef>1e-7?Math.ceil(omega0/(muRef*1.15*Eobi)):28));
+const Tref=TrefCyc*TAU/omega0;
 const gammaSim=isPhoton?(PHOTON_KTAU/T):0;
 const bw=isPhoton?(0.5*gammaSim):(TAU/T);
 const omegaL=Math.max(0.05*omega0,omega0+det*bw);
 const detAu=omegaL-omega0;
-const muRef=muRabi>1e-7?muRabi:muShell;
 const E_pi_ref=muRef>1e-12?TAU/(muRef*Tref):0;
 let E0=0,theta=0,thetaTarget=0;
 if(isPhoton){
@@ -1074,8 +1127,9 @@ updatePulseInfo();}
 function stepPulse(dtFrame,spd,span){
 const dtSim=Math.min(dtFrame*spd*tscale(),pulse.T-pulse.t);
 if(dtSim<=0){finishPulse(false);return;}
-const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,pulse.E0*5,1e-4);
-const nSub=Math.max(1,Math.min(48,Math.ceil(Math.max(dtSim/0.16,maxFreq*dtSim/0.1))));
+const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,pulse.E0*pulse.grid.rMax,1e-4);
+const dtTarget=Math.min(0.35,Math.max(0.16,1.15*pulse.grid.dr));
+const nSub=Math.max(1,Math.min(64,Math.ceil(Math.max(dtSim/dtTarget,maxFreq*dtSim/0.1))));
 const h=dtSim/nSub;
 for(let s=0;s<nSub;s++)advanceGridParticlesRK4(pulse.grid,pulse,pulse.t+s*h,h);
 
@@ -1121,15 +1175,22 @@ tSim=0;
 $('stop').hidden=true;
 rebuildComponentList();
 computeEffective();
-// Keep evolved electron coordinates and carry pulse trails smoothly into free evolution (no resampling)
+// Keep bound evolved electron coordinates and trails; re-home only ionized continuum outliers (r > 1.25 * E)
+const escR=1.25*E;
 if(eff.length===1){
-const m0=eff[0].m;
-for(const q of P){
+const m0=eff[0].m,b0=eff[0].b;
+for(let idx=0;idx<P.length;idx++){
+const q=P[idx],r=Math.hypot(q.x,q.y,q.z);
+if(!Number.isFinite(r)||r>escR){P[idx]=sampSingle(b0);continue;}
 const rho=Math.max(Math.hypot(q.x,q.y),1e-4);
 q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);q.col=colr(rho);
 if(q.hist){for(const h of q.hist)h[3]-=doneT;}}
 }else{
-for(const q of P){
+const escAl=P.some(q=>{const r=Math.hypot(q.x,q.y,q.z);return!Number.isFinite(r)||r>escR;})?new Float64Array(eff.length*2):null;
+if(escAl)evalAlphas(0,escAl);
+for(let idx=0;idx<P.length;idx++){
+const q=P[idx],r=Math.hypot(q.x,q.y,q.z);
+if(!Number.isFinite(r)||r>escR){P[idx]=sampSuper(escAl);continue;}
 q.col=colr(Math.hypot(q.x,q.y));
 if(q.hist&&q.hist.length){for(const h of q.hist)h[3]-=doneT;}else{q.hist=[[q.x,q.y,q.z,0]];}}}
 setLocked(false);

@@ -304,6 +304,40 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.deepEqual(afterWave.top, { n: 2, l: 1, m: -1, amp: 1 });
     assert.ok(afterWave.medianR >= 3.8, `Expected evolved electrons to maintain |2p> radius after flip, got medianR=${afterWave.medianR}`);
 
+    // 4b. Single-photon 2p,+1 -> 3d,+2 cross-shell transition completes cleanly without radial blowout
+    await evalJS(`(() => {
+      document.querySelector('input[name="imode"][value="photon"]').checked = true;
+      document.querySelector('input[name="imode"][value="photon"]').dispatchEvent(new Event('change'));
+      while (document.querySelectorAll('.rm').length > 1) document.querySelectorAll('.rm')[1].click();
+      const sels = document.querySelectorAll('.comp select');
+      sels[0].value = '2'; sels[0].dispatchEvent(new Event('change'));
+      sels[1].value = '1'; sels[1].dispatchEvent(new Event('change'));
+      sels[2].value = '1'; sels[2].dispatchEvent(new Event('change'));
+      document.querySelector('.chip[data-pol="sp"]').click();
+      document.getElementById('tr-sel').value = '2|1|3|2';
+      document.getElementById('tr-sel').dispatchEvent(new Event('change'));
+      document.getElementById('spd').value = '4';
+      document.getElementById('spd').dispatchEvent(new Event('input'));
+      document.getElementById('fire').click();
+    })()`);
+    await waitUntil(`pulse === null`, 45000);
+    const after3d = await evalJS(`(() => {
+      const rs = P.map((q) => Math.hypot(q.x ?? q.rho, q.y ?? 0, q.z));
+      const bad = rs.filter((r) => !Number.isFinite(r)).length;
+      const sorted = [...components].sort((a, b) => b.amp - a.amp);
+      const sRs = rs.filter(Number.isFinite).sort((a, b) => a - b);
+      return {
+        top: sorted[0] ? { n: sorted[0].n, l: sorted[0].l, m: sorted[0].m, amp: sorted[0].amp } : null,
+        bad,
+        medianR: sRs[Math.floor(sRs.length / 2)],
+        maxR: sRs[sRs.length - 1]
+      };
+    })()`);
+    assert.equal(after3d.bad, 0);
+    assert.deepEqual(after3d.top, { n: 3, l: 2, m: 2, amp: 1 });
+    assert.ok(after3d.medianR >= 8.0 && after3d.medianR <= 13.5, `Expected |3d,+2> medianR near 10.3, got ${after3d.medianR}`);
+    assert.ok(after3d.maxR < 33, `Expected zero escaped electrons after 2p->3d (bound E995=25.4), got maxR=${after3d.maxR}`);
+
     // 5. Mobile 320px dark-mode layout overflow check
     await cdp.call('Emulation.setDeviceMetricsOverride', {
       width: 320,

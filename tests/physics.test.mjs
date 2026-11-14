@@ -90,7 +90,7 @@ function createCoreContext() {
       radialDipole, angularDipole, dipoleElement,
       getTransitionList, buildCoupledSystem, computeBrightDipole,
       fieldVecAt, stepTdseC, weisskopfWigner,
-      buildGridSystem, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad
+      buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad
     };
   `;
   vm.runInNewContext(coreSrc + '\n' + exportsTail, sandbox);
@@ -530,4 +530,89 @@ test('Weisskopf-Wigner spontaneous emission rates and e^{+Gamma t/2} single-phot
   const iTarget = sys.states.findIndex((s) => s.n === 2 && s.l === 1 && s.m === 1);
   const pDet2p1 = cF[iTarget * 2] ** 2 + cF[iTarget * 2 + 1] ** 2;
   assert.ok(pDet2p1 < 0.4, `Expected off-resonant absorption < 0.4, got ${pDet2p1}`);
+});
+
+test('2p->3d higher-shell calibration, Zeeman dipole selection, and strong-field RK4 stability', () => {
+  const polX = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }]);
+  const polZ = makePol([{ amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 1, phaseDeg: 0 }]);
+  const polSp = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }]);
+  const polSm = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 270 }, { amp: 0, phaseDeg: 0 }]);
+
+  // 1. Zeeman split selection: Bau != 0 trSpec restricts bright dipole to matching dm sublevel
+  api.setBau(0.02);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const trDmMinus = api.getTransitionList().find((t) => t.key === '2|1|3|2|-1');
+  assert.ok(trDmMinus);
+  const zSys = api.buildCoupledSystem(trDmMinus);
+  assert.equal(api.computeBrightDipole(zSys, trDmMinus, polZ).muRabi, 0);
+  assert.equal(api.computeBrightDipole(zSys, trDmMinus, polSp).muRabi, 0);
+  assert.ok(api.computeBrightDipole(zSys, trDmMinus, polSm).muRabi > 0.5);
+  api.setBau(0);
+
+  // 2. stepGridDipole explicit RK4 automatically substeps under large dt * rMax * |E|
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const tr2p3d = api.getTransitionList().find((t) => t.key === '2|1|3|2');
+  assert.ok(tr2p3d);
+  const sys23 = api.buildCoupledSystem(tr2p3d);
+  const gStab = api.buildGridSystem(tr2p3d, sys23);
+  api.stepGridDipole(gStab, 0.8, 0.08, 0, 0);
+  const cStab = new Float64Array(gStab.projStates.length * 2);
+  const infoStab = api.projectGridStates(gStab, cStab);
+  assert.ok(Number.isFinite(infoStab.totalNorm) && Math.abs(infoStab.totalNorm - 1) < 1e-4, `Expected unitary norm under strong stepGridDipole, got ${infoStab.totalNorm}`);
+
+  // 3. 2p,+1 -> 3d,+2 Single photon scaled to <= E_OBI(3) stays >96% bound with ~3d median r
+  const { muRabi } = api.computeBrightDipole(sys23, tr2p3d, polSp);
+  const cyc = 41;
+  const T = (cyc * 2 * Math.PI) / tr2p3d.omega0;
+  const gamma = 5 / T;
+  const effDur = (2 / gamma) * (1 - Math.exp(-2.5));
+  const E0 = Math.PI / (muRabi * effDur);
+  const Eobi3 = 1 / (16 * Math.pow(3, 4));
+  assert.ok(E0 <= Eobi3 * 1.05, `Expected 41-cyc single-photon E0 (${E0}) near/below E_OBI(3) (${Eobi3})`);
+
+  const g = api.buildGridSystem(tr2p3d, sys23);
+  api.setE(sys23.states.reduce((m, s) => Math.max(m, s.b.E995), 0));
+  const b0 = api.getBasis(2, 1, 1);
+  const P = [];
+  for (let i = 0; i < 120; i++) {
+    const q = api.sampSingle(b0);
+    P.push({ x: q.rho * Math.cos(q.ph), y: q.rho * Math.sin(q.ph), z: q.z });
+  }
+  api.setP(P);
+  const pObj = { omegaL: tr2p3d.omega0, T, gamma, E0, pol: polSp };
+  const nSteps = Math.ceil(T / 0.34);
+  const h = T / nSteps;
+  for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(g, pObj, s * h, h);
+
+  const cG = new Float64Array(g.projStates.length * 2);
+  const info = api.projectGridStates(g, cG);
+  const idx3d2 = g.projStates.findIndex((ps) => ps.n === 3 && ps.l === 2 && ps.m === 2);
+  const p3d2 = cG[idx3d2 * 2] ** 2 + cG[idx3d2 * 2 + 1] ** 2;
+  assert.ok(info.boundNorm > 0.96, `Expected 2p->3d boundNorm > 0.96, got ${info.boundNorm}`);
+  assert.ok(info.totalNorm > 0.98, `Expected 2p->3d totalNorm > 0.98, got ${info.totalNorm}`);
+  assert.ok(p3d2 > 0.92, `Expected |3d,+2> population > 0.92, got ${p3d2}`);
+
+  const rs = P.map((q) => Math.hypot(q.x, q.y, q.z)).sort((a, b) => a - b);
+  assert.ok(rs.every(Number.isFinite));
+  assert.ok(rs[rs.length - 1] < g.rMax, `Expected CAP radial damping to keep electrons inside rMax (${g.rMax}), got ${rs[rs.length - 1]}`);
+  const medianR = rs[Math.floor(rs.length / 2)];
+  assert.ok(medianR >= 8.0 && medianR <= 13.5, `Expected 3d medianR near 10.3, got ${medianR}`);
+
+  // 4. Default Coherent EM wave (2p,0 -> 3d, x pol, 16 cyc, pow=1) with shell-scaled Tref=34 stays >96% bound
+  api.setComps([{ id: 1, n: 2, l: 1, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trEm = api.getTransitionList().find((t) => t.key === '2|1|3|2');
+  const sysEm = api.buildCoupledSystem(trEm);
+  const muEm = api.computeBrightDipole(sysEm, trEm, polX).muRabi;
+  const TrefEm = (34 * 2 * Math.PI) / trEm.omega0;
+  const TEm = (16 * 2 * Math.PI) / trEm.omega0;
+  const E0Em = (2 * Math.PI) / (muEm * TrefEm);
+  const gEm = api.buildGridSystem(trEm, sysEm);
+  api.setP([]);
+  const pEm = { omegaL: trEm.omega0, T: TEm, gamma: 0, E0: E0Em, pol: polX };
+  const nEm = Math.ceil(TEm / 0.34);
+  const hEm = TEm / nEm;
+  for (let s = 0; s < nEm; s++) api.advanceGridParticlesRK4(gEm, pEm, s * hEm, hEm);
+  const cEm = new Float64Array(gEm.projStates.length * 2);
+  const infoEm = api.projectGridStates(gEm, cEm);
+  assert.ok(infoEm.boundNorm > 0.96, `Expected EM 2p,0->3d pow=1 boundNorm > 0.96, got ${infoEm.boundNorm}`);
 });
