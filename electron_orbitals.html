@@ -31,6 +31,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 .val{min-width:42px;text-align:right;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
 .lab{min-width:64px}
 #fire,#add{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
+[hidden]{display:none!important}
 .note{font-size:12px;color:var(--mut);margin:6px 0 0;text-wrap:pretty}
 .sr-only{position:absolute;clip-path:inset(50%);overflow:hidden;width:1px;height:1px;margin:-1px;padding:0;border:0;white-space:nowrap}
 
@@ -66,6 +67,9 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 .em-params{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding:9px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
 .em-params .sfield label{min-width:56px}
 .em-params .sfield input[type=range]{min-width:56px}
+.ww-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;min-inline-size:0;font-size:13px;color:var(--mut)}
+.ww-lab{min-width:56px}
+.ww-row .val.wide{max-width:100%;text-align:right;flex:1 1 auto}
 .em-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 </style>
 </head>
@@ -120,7 +124,8 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <div id="pol-list"></div>
 
 <div class="em-params">
-<div class="sfield"><label for="pdur">Duration</label><input type="range" id="pdur" min="4" max="50" step="1" value="16"><span class="val wide" id="pdur-v">16 cyc</span></div>
+<div class="ww-row" id="pww-row"><span class="ww-lab">Wavepacket</span><span class="val wide" id="pww-v"></span></div>
+<div class="sfield" id="pdur-row" hidden><label for="pdur">Duration</label><input type="range" id="pdur" min="4" max="50" step="1" value="16"><span class="val wide" id="pdur-v">16 cyc</span></div>
 <div class="sfield"><label for="pdet">Detuning</label><input type="range" id="pdet" min="-2.5" max="2.5" step="0.05" value="0"><span class="val wide" id="pdet-v">0 (resonant)</span></div>
 <div class="sfield" id="ppow-row" hidden><label for="ppow">Power</label><input type="range" id="ppow" min="0.05" max="16" step="0.05" value="1"><span class="val wide" id="ppow-v"></span></div>
 </div>
@@ -145,7 +150,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <label class="chk"><input type="checkbox" id="tr" checked><span>Trails</span></label>
 <label class="chk"><input type="checkbox" id="ov" checked><span>Density overlay</span></label>
 </div>
-<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. During a single-photon wavepacket or coherent EM pulse, the time-dependent Schrödinger equation i ∂ψ/∂t = [H₀ + <b>r</b>·<b>E</b>(t)]ψ is solved on a continuous radial grid expanded in spherical harmonics (including excited &amp; continuum states) alongside the exact 3D Bohmian guidance velocity Im(∇ψ/ψ) + <b>A</b> in ultra-slow motion, continuing afterward directly from the evolved electron positions. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected).</p>
+<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. For a 100% single-photon transition, the free-space wavepacket matches time-reversed spontaneous emission (4π dipole mode with envelope e<sup>+Γt/2</sup> cutting off abruptly at completion, Γ = ω₀³|d|²/3πε₀ℏc³, physical N ≈ ω₀/2πΓ ~ 10⁶–10⁸ cycles shown time-compressed so individual cycles remain visible). Coherent EM pulses use a sin²(πt/T) envelope. During transitions, the TDSE i ∂ψ/∂t = [H₀ + <b>r</b>·<b>E</b>(t)]ψ is solved on a continuous radial grid expanded in spherical harmonics alongside exact 3D Bohmian trajectories Im(∇ψ/ψ) + <b>A</b>, continuing afterward from evolved positions. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms.</p>
 </main>
 
 <script>
@@ -154,7 +159,7 @@ const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 let W=0,H=0,key='';
 function resize(){const d=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);key='';}
-const LET='spdfghi',HA=27.2114,AUT=2.3505e5,TAU=2*Math.PI,AU_FS=0.02418884,AU_WCM2=3.509445e16;
+const LET='spdfghi',HA=27.2114,AUT=2.3505e5,TAU=2*Math.PI,AU_S=2.4188843265857e-17,AU_FS=AU_S*1e15,AU_WCM2=3.509445e16,ALPHA_FS=1/137.035999084,PHOTON_KTAU=5,PHOTON_CYC=24;
 
 /* ---------- physics (atomic units: hbar = m_e = e = a0 = 1) ---------- */
 function laguerre(k,a,x){let p0=1;if(k===0)return p0;let p1=1+a-x;for(let j=1;j<k;j++){const p2=((2*j+1+a-x)*p1-(j+a)*p0)/(j+1);p0=p1;p1=p2;}return p1;}
@@ -663,7 +668,8 @@ return{muRabi,muShell:rad/Math.sqrt(3)};}
 
 function fieldVecAt(pObj,t){
 if(t<=0||t>=pObj.T)return[0,0,0,0];
-const s=Math.sin(Math.PI*t/pObj.T),env=pObj.E0*s*s;
+// Single-photon time-reversed spontaneous emission rises as e^{+(gamma/2)(t-T)} and cuts off abruptly at t=T; coherent EM pulse uses sin^2(pi*t/T).
+const env=pObj.gamma>0?(pObj.E0*Math.exp(0.5*pObj.gamma*(t-pObj.T))):(pObj.E0*Math.sin(Math.PI*t/pObj.T)**2);
 const wt=pObj.omegaL*t;
 const np=pObj.pol;
 const ex=env*np[0].mag*Math.cos(wt-np[0].ph);
@@ -957,30 +963,55 @@ for(let j=0;j<Nr;j++){const u=ur[j]*dr;oR+=u*uR[j];oI+=u*uI[j];}
 cOut[i*2]=oR;cOut[i*2+1]=oI;boundNorm+=oR*oR+oI*oI;}
 return{boundNorm,totalNorm};}
 
+/** Compute Weisskopf-Wigner spontaneous emission decay rate Gamma (Einstein A), natural lifetime tau=1/Gamma, and characteristic optical cycle count N=omega0/(2*pi*Gamma). */
+function weisskopfWigner(trSpec){
+const e1=-0.5/(trSpec.n1*trSpec.n1),e2=-0.5/(trSpec.n2*trSpec.n2);
+const upper2=e2>=e1;
+const nU=upper2?trSpec.n2:trSpec.n1,lU=upper2?trSpec.l2:trSpec.l1;
+const nL=upper2?trSpec.n1:trSpec.n2,lL=upper2?trSpec.l1:trSpec.l2;
+const omega0=Math.abs(e2-e1);
+const rad=radialDipole(nL,lL,nU,lU);
+const d2=(Math.max(lU,lL)/(2*lU+1))*rad*rad;
+const gammaAu=(4/3)*ALPHA_FS*ALPHA_FS*ALPHA_FS*omega0*omega0*omega0*d2;
+const gammaSi=gammaAu/AU_S;
+const tauS=gammaSi>0?1/gammaSi:Infinity;
+const cycNat=gammaAu>0?omega0/(TAU*gammaAu):Infinity;
+return{omega0,d2,gammaAu,gammaSi,tauS,cycNat};}
+
 function getPulseConfig(){
 const trs=getTransitionList();
 const selVal=$('tr-sel').value;
 const trSpec=trs.find(t=>t.key===selVal)||trs[0]||null;
 const np=getNormPol();
-const cyc=+$('pdur').value;
 const det=+$('pdet').value;
 const pow=+$('ppow').value;
-if(!trSpec||!eff.length)return{ok:false,trSpec:null,np,cyc,det,pow};
+const isPhoton=interactionMode==='photon';
+const cyc=isPhoton?PHOTON_CYC:+$('pdur').value;
+if(!trSpec||!eff.length)return{ok:false,trSpec:null,np,cyc,det,pow,isPhoton};
 const sys=buildCoupledSystem(trSpec);
 const {muRabi,muShell}=computeBrightDipole(sys,trSpec,np);
+const ww=weisskopfWigner(trSpec);
 const omega0=trSpec.omega0;
 const T=cyc*TAU/omega0;
 const Tref=10*TAU/omega0;
-const bw=TAU/T;
+const gammaSim=isPhoton?(PHOTON_KTAU/T):0;
+const bw=isPhoton?(0.5*gammaSim):(TAU/T);
 const omegaL=Math.max(0.05*omega0,omega0+det*bw);
 const detAu=omegaL-omega0;
 const muRef=muRabi>1e-7?muRabi:muShell;
 const E_pi_ref=muRef>1e-12?TAU/(muRef*Tref):0;
-const thetaTarget=interactionMode==='photon'?Math.PI:Math.PI*Math.sqrt(pow)*(T/Tref);
-const E0=interactionMode==='photon'?(muRabi>1e-7?TAU/(muRabi*T):0):E_pi_ref*Math.sqrt(pow);
-const theta=0.5*muRabi*E0*T;
+let E0=0,theta=0,thetaTarget=0;
+if(isPhoton){
+const effDur=(2/gammaSim)*(1-Math.exp(-0.5*PHOTON_KTAU));
+E0=muRabi>1e-7?Math.PI/(muRabi*effDur):0;
+theta=muRabi*E0*effDur;
+thetaTarget=Math.PI;
+}else{
+E0=E_pi_ref*Math.sqrt(pow);
+theta=0.5*muRabi*E0*T;
+thetaTarget=Math.PI*Math.sqrt(pow)*(T/Tref);}
 const intensityWcm2=E0*E0*AU_WCM2;
-return{ok:true,trSpec,sys,np,cyc,det,pow,omega0,omegaL,detAu,T,Tfs:T*AU_FS,muRabi,muRef,E0,theta,thetaTarget,intensityWcm2};}
+return{ok:true,trSpec,sys,np,isPhoton,ww,cyc,det,pow,omega0,omegaL,detAu,bw,gammaSim,T,Tfs:T*AU_FS,muRabi,muRef,E0,theta,thetaTarget,intensityWcm2};}
 
 function startPulse(){
 if(pulse||effStatus!=='ok')return;
@@ -1019,6 +1050,8 @@ bases,
 pol:cfg.np,
 omega0:cfg.omega0,
 omegaL:cfg.omegaL,
+gamma:cfg.gammaSim,
+ww:cfg.ww,
 maxRelE:cfg.sys.maxRelE,
 T:cfg.T,
 Tfs:cfg.Tfs,
@@ -1117,6 +1150,11 @@ if(w>=1e9)return(w/1e9).toFixed(2)+' GW/cm²';
 if(w>=1e6)return(w/1e6).toFixed(2)+' MW/cm²';
 return w.toExponential(1)+' W/cm²';}
 function fmtDur(fs){return fs>=1000?(fs/1000).toFixed(2)+' ps':fs.toFixed(1)+' fs';}
+function fmtSup(n){const d='⁰¹²³⁴⁵⁶⁷⁸⁹',s=String(Math.abs(n));let r=n<0?'⁻':'';for(let i=0;i<s.length;i++)r+=d[+s[i]];return r;}
+function fmtGamma(g){if(!Number.isFinite(g)||g<=0)return'0 s⁻¹';const e=Math.floor(Math.log10(g)),m=g/Math.pow(10,e);return m.toFixed(2)+'×10'+fmtSup(e)+' s⁻¹';}
+function fmtTau(s){if(!Number.isFinite(s))return'∞';if(s<1e-6)return(s*1e9).toFixed(2)+' ns';if(s<1e-3)return(s*1e6).toFixed(2)+' µs';return s.toExponential(2)+' s';}
+function fmtCycNat(n){if(!Number.isFinite(n))return'∞';if(n>=1e6)return(n/1e6).toFixed(2)+'M cyc';if(n>=1e3)return(n/1e3).toFixed(1)+'k cyc';return Math.round(n)+' cyc';}
+function fmtLw(hz){if(hz>=1e9)return(hz/1e9).toFixed(2)+' GHz';if(hz>=1e6)return(hz/1e6).toFixed(2)+' MHz';return(hz/1e3).toFixed(1)+' kHz';}
 function rescaleB(){const s=Bau*bscale()/2,mx=Math.max(3,Math.ceil(Math.abs(s)));bf.min=-mx;bf.max=mx;bf.value=s;$('bv').textContent=fmtB(Bau);}
 function fill(sel,from,to,val,fmt){sel.innerHTML='';for(let i=from;i<=to;i++){const o=document.createElement('option');o.value=i;o.textContent=fmt?fmt(i):i;sel.appendChild(o);}sel.value=val;}
 
@@ -1130,8 +1168,9 @@ if(p>=0.005){const s=pulse.proj[i];pops.push({p,lbl:'|'+s.n+LET[s.l]+', '+s.m+'�
 pops.sort((a,b)=>b.p-a.p);
 const cont=Math.max(0,1-pulse.boundNorm);
 if(cont>=0.025)pops.push({p:cont,lbl:'continuum / higher n: '+Math.round(cont*100)+'%'});
-const modeName=pulse.mode==='photon'?'Single-photon wavepacket':'Coherent EM pulse';
-$('info').innerHTML='<b>'+modeName+'</b> ('+pulse.trSpec.n1+LET[pulse.trSpec.l1]+' ↔ '+pulse.trSpec.n2+LET[pulse.trSpec.l2]+', Θ = '+(pulse.theta/Math.PI).toFixed(2)+'π) · <b>'+cycDone.toFixed(1)+' / '+pulse.cyc+' cyc</b> · '+pops.slice(0,5).map(x=>x.lbl).join(' · ');}
+const modeName=pulse.mode==='photon'?'Single-photon e<sup>+Γt/2</sup> wavepacket':'Coherent EM pulse';
+const natInfo=pulse.mode==='photon'&&pulse.ww?(', Γ = '+fmtGamma(pulse.ww.gammaSi)+', N = '+fmtCycNat(pulse.ww.cycNat)):'';
+$('info').innerHTML='<b>'+modeName+'</b> ('+pulse.trSpec.n1+LET[pulse.trSpec.l1]+' ↔ '+pulse.trSpec.n2+LET[pulse.trSpec.l2]+natInfo+', Θ = '+(pulse.theta/Math.PI).toFixed(2)+'π) · <b>'+cycDone.toFixed(1)+' / '+pulse.cyc+' cyc</b> · '+pops.slice(0,5).map(x=>x.lbl).join(' · ');}
 
 function info(){
 if(pulse){updatePulseInfo();return;}
@@ -1361,6 +1400,8 @@ $('pol-sum').textContent=parts.length?('ε = '+parts.join(' + ').replace(/\+ −
 function updateEmUI(){
 updatePolReadouts();
 const isWave=interactionMode==='wave';
+$('pww-row').hidden=isWave;
+$('pdur-row').hidden=!isWave;
 $('ppow-row').hidden=!isWave;
 $('fire').textContent=isWave?'Fire EM pulse':'Send photon';
 $('tr-lab').textContent=isWave?'Central frequency (transition energy)':'Photon energy (electric dipole transition)';
@@ -1368,6 +1409,7 @@ const cfg=getPulseConfig();
 const blocked=!!pulse||!cfg.ok||(interactionMode==='photon'&&cfg.muRabi<=1e-7);
 $('fire').disabled=blocked;
 if(!cfg.ok){
+$('pww-v').textContent='—';
 $('pdur-v').textContent=$('pdur').value+' cyc';
 $('pdet-v').textContent='—';
 $('ppow-v').textContent='—';
@@ -1377,13 +1419,17 @@ $('pdur-v').textContent=cfg.cyc+' cyc ('+fmtDur(cfg.Tfs)+')';
 $('pdet-v').textContent=Math.abs(cfg.det)<1e-6?'0 (resonant)':((cfg.detAu>=0?'+':'')+fmtEv(cfg.detAu*HA));
 if(isWave){
 $('ppow-v').textContent=fmtInt(cfg.intensityWcm2)+' · Θ='+(cfg.theta/Math.PI).toFixed(2)+'π';
+}else{
+const ww=cfg.ww;
+$('pww-v').textContent='Γ = '+fmtGamma(ww.gammaSi)+' ('+fmtLw(ww.gammaSi/TAU)+') · τ = '+fmtTau(ww.tauS)+' · N = '+fmtCycNat(ww.cycNat);
 }
 if(cfg.muRabi<=1e-7){
 $('em-note').textContent='Zero dipole coupling between the active state and '+cfg.trSpec.n2+LET[cfg.trSpec.l2]+' for this polarization (selection rule mismatch). Adjust x/y/z polarization or initial state.';
 }else if(isWave){
 $('em-note').textContent='Coherent sin²-envelope pulse at ω = '+(cfg.omegaL*HA).toFixed(4)+' eV · Rabi pulse area Θ = '+(cfg.theta/Math.PI).toFixed(2)+'π (π transfers population; 2π flips phase/m across dark & bright states).';
 }else{
-$('em-note').textContent='Single-photon wavepacket calibrated to Θ = 1.00π along the dipole-coupled target state at ω = '+(cfg.omegaL*HA).toFixed(4)+' eV.';}}
+const ww=cfg.ww;
+$('em-note').textContent='100% absorption time-reversed replica of spontaneous emission (4π dipole mode): envelope e^(+Γt/2) cutting off abruptly at completion (Θ = 1.00π, ω = '+(cfg.omegaL*HA).toFixed(4)+' eV). Physical τ = 1/Γ = '+fmtTau(ww.tauS)+' spans N = ω₀/2πΓ ≈ '+fmtCycNat(ww.cycNat)+'; envelope rendered compressed in e^(+Γ_sim·t/2) over '+cfg.cyc+' cyc ('+PHOTON_KTAU+'/Γ_sim).';}}
 
 $('fire').onclick=()=>startPulse();
 $('stop').onclick=()=>finishPulse(true);
@@ -1587,7 +1633,8 @@ ctx.fillRect(bx,by,barW,6);
 ctx.fillStyle=acc;
 ctx.fillRect(bx,by,barW*frac,6);
 ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--mut');
-ctx.fillText('pulse '+Math.round(frac*100)+'%',bx,by-6);
+const lbl=pulse.gamma>0?'photon ':'pulse ';
+ctx.fillText(lbl+Math.round(frac*100)+'%',bx,by-6);
 ctx.restore();}
 
 function drawParticleTrail(hh,x,y,z,pr){

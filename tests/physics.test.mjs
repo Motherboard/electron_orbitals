@@ -89,7 +89,7 @@ function createCoreContext() {
       sampSingle,
       radialDipole, angularDipole, dipoleElement,
       getTransitionList, buildCoupledSystem, computeBrightDipole,
-      fieldVecAt, stepTdseC,
+      fieldVecAt, stepTdseC, weisskopfWigner,
       buildGridSystem, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad
     };
   `;
@@ -454,4 +454,80 @@ test('radial-grid TDSE evolves cross-shell Bohmian electrons to true target radi
   );
   assert.ok(r2p3d.probs.get('3|2|2') > 0.92);
   assert.ok(r2p3d.medianR >= 8.0, `Expected 3d medianR >= 8.0, got ${r2p3d.medianR}`);
+});
+
+test('Weisskopf-Wigner spontaneous emission rates and e^{+Gamma t/2} single-photon wavepacket', () => {
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const tr1s2p = api.getTransitionList().find((t) => t.n1 === 1 && t.l1 === 0 && t.n2 === 2 && t.l2 === 1);
+  const ww12 = api.weisskopfWigner(tr1s2p);
+  assert.ok(Math.abs(ww12.gammaSi - 6.268e8) < 1e6, `Expected Ly-a Gamma ~6.27e8, got ${ww12.gammaSi}`);
+  assert.ok(Math.abs(ww12.tauS - 1.595e-9) < 2e-11);
+  assert.ok(Math.abs(ww12.cycNat - 3.936e6) < 2e4);
+
+  api.setComps([{ id: 1, n: 2, l: 1, m: 0, amp: 1, phaseDeg: 0 }]);
+  const tr2p3d = api.getTransitionList().find((t) => t.n2 === 3 && t.l2 === 2);
+  const ww23d = api.weisskopfWigner(tr2p3d);
+  assert.ok(Math.abs(ww23d.gammaSi - 6.469e7) < 2e5);
+  assert.ok(ww23d.cycNat > 7.0e6 && ww23d.cycNat < 7.15e6);
+
+  const tr2p3s = api.getTransitionList().find((t) => t.n2 === 3 && t.l2 === 0);
+  const ww23s = api.weisskopfWigner(tr2p3s);
+  assert.ok(Math.abs(ww23s.gammaSi - 6.317e6) < 5e4);
+  assert.ok(ww23s.cycNat > 7.1e7 && ww23s.cycNat < 7.35e7);
+
+  // Exponential wavepacket envelope e^{+gamma(t-T)/2} with abrupt cutoff at t=T
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const pol = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }]);
+  const sys = api.buildCoupledSystem(tr1s2p);
+  const { muRabi } = api.computeBrightDipole(sys, tr1s2p, pol);
+  const cyc = 24;
+  const kTau = 5;
+  const T = (cyc * 2 * Math.PI) / tr1s2p.omega0;
+  const gamma = kTau / T;
+  const effDur = (2 / gamma) * (1 - Math.exp(-0.5 * kTau));
+  const E0 = Math.PI / (muRabi * effDur);
+  const pObj = { T, E0, gamma, omegaL: tr1s2p.omega0, pol };
+
+  assert.deepEqual([...api.fieldVecAt(pObj, 0)], [0, 0, 0, 0]);
+  const e2 = api.fieldVecAt(pObj, 0.2 * T)[3];
+  const e6 = api.fieldVecAt(pObj, 0.6 * T)[3];
+  const e99 = api.fieldVecAt(pObj, 0.99 * T)[3];
+  assert.ok(Math.abs(e6 / e2 - Math.exp(0.5 * gamma * 0.4 * T)) < 1e-12);
+  assert.ok(e99 > 0.9 * E0);
+  assert.deepEqual([...api.fieldVecAt(pObj, T)], [0, 0, 0, 0]);
+  assert.deepEqual([...api.fieldVecAt(pObj, 1.05 * T)], [0, 0, 0, 0]);
+
+  // Verify full radial-grid TDSE + Bohmian distribution under the exponential single photon
+  const g = api.buildGridSystem(tr1s2p, sys);
+  api.setE(sys.states.reduce((m, s) => Math.max(m, s.b.E995), 0));
+  const b0 = api.getBasis(1, 0, 0);
+  const P = [];
+  for (let i = 0; i < 160; i++) {
+    const q = api.sampSingle(b0);
+    P.push({ x: q.rho * Math.cos(q.ph), y: q.rho * Math.sin(q.ph), z: q.z });
+  }
+  api.setP(P);
+  const nSteps = Math.ceil(T / 0.16);
+  const h = T / nSteps;
+  for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(g, pObj, s * h, h);
+  const cG = new Float64Array(g.projStates.length * 2);
+  api.projectGridStates(g, cG);
+  const idx2p1 = g.projStates.findIndex((ps) => ps.n === 2 && ps.l === 1 && ps.m === 1);
+  assert.ok(cG[idx2p1 * 2] ** 2 + cG[idx2p1 * 2 + 1] ** 2 > 0.92);
+  const medianR = P.map((q) => Math.hypot(q.x, q.y, q.z)).sort((a, b) => a - b)[Math.floor(P.length / 2)];
+  assert.ok(medianR >= 3.9 && medianR <= 5.5, `Expected 2p medianR near 4.5, got ${medianR}`);
+
+  // Lorentzian detuning reduces absorption well below resonance
+  const pDet = { T, E0, gamma, omegaL: tr1s2p.omega0 + 1.5 * gamma, pol };
+  let cF = sys.c0.slice();
+  const cNext = new Float64Array(cF.length);
+  const nFast = cyc * 160;
+  for (let s = 0; s < nFast; s++) {
+    api.stepTdseC(sys, pDet, (s * T) / nFast, T / nFast, cF, cNext);
+    cF.set(cNext);
+  }
+  const iTarget = sys.states.findIndex((s) => s.n === 2 && s.l === 1 && s.m === 1);
+  const pDet2p1 = cF[iTarget * 2] ** 2 + cF[iTarget * 2 + 1] ** 2;
+  assert.ok(pDet2p1 < 0.4, `Expected off-resonant absorption < 0.4, got ${pDet2p1}`);
 });

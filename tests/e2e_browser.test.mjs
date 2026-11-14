@@ -202,18 +202,24 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     })()`);
     await new Promise((r) => setTimeout(r, 150));
 
-    // 3. Single-photon sigma+ absorption: |1s, 0> -> |2p, m = +1> (16 cyc default)
-    // Verify cross-shell radial expansion without resampling and smooth trail handoff
-    const medianBefore = await evalJS(`(() => {
-      const rs = P.map((q) => Math.hypot(q.rho, q.z)).sort((a, b) => a - b);
-      return rs[Math.floor(rs.length / 2)];
-    })()`);
-    assert.ok(medianBefore < 2.2, `Expected initial 1s median radius < 2.2, got ${medianBefore}`);
+    // 3. Single-photon sigma+ absorption: |1s, 0> -> |2p, m = +1> (time-reversed e^{+Gamma t/2} wavepacket)
+    // Verify Weisskopf-Wigner wavepacket readout, exponential envelope, cross-shell radial expansion without resampling, and smooth trail handoff
+    const prePhotonUI = await evalJS(`({
+      wwHidden: document.getElementById('pww-row').hidden,
+      durHidden: document.getElementById('pdur-row').hidden,
+      wwText: document.getElementById('pww-v').textContent,
+      medianBefore: (() => {
+        const rs = P.map((q) => Math.hypot(q.rho, q.z)).sort((a, b) => a - b);
+        return rs[Math.floor(rs.length / 2)];
+      })()
+    })`);
+    assert.equal(prePhotonUI.wwHidden, false, 'Wavepacket Weisskopf-Wigner readout should be visible in Single photon mode');
+    assert.equal(prePhotonUI.durHidden, true, 'Arbitrary Duration slider should be hidden in Single photon mode');
+    assert.match(prePhotonUI.wwText, /Γ = 6\.27×10⁸ s⁻¹.*1\.60 ns.*3\.94M cyc/);
+    assert.ok(prePhotonUI.medianBefore < 2.2, `Expected initial 1s median radius < 2.2, got ${prePhotonUI.medianBefore}`);
 
     await evalJS(`(() => {
       document.querySelector('.chip[data-pol="sp"]').click();
-      const pdur = document.getElementById('pdur');
-      pdur.value = '16'; pdur.dispatchEvent(new Event('input'));
       const spd = document.getElementById('spd');
       spd.value = '3'; spd.dispatchEvent(new Event('input'));
       document.getElementById('fire').click();
@@ -222,16 +228,23 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     await waitUntil(`pulse !== null && pulse.t > 0.2 * pulse.T`, 5000);
     const midPhoton = await evalJS(`({
       active: pulse !== null,
+      gammaPos: pulse ? pulse.gamma > 0 : false,
+      envRatio: pulse ? fieldVecAt(pulse, 0.8 * pulse.T)[3] / fieldVecAt(pulse, 0.4 * pulse.T)[3] : 0,
+      cutoffZero: pulse ? fieldVecAt(pulse, pulse.T)[3] === 0 : false,
+      expectedRatio: pulse ? Math.exp(0.5 * pulse.gamma * 0.4 * pulse.T) : 0,
       stopHidden: document.getElementById('stop').hidden,
       addDisabled: document.getElementById('add').disabled,
       info: document.getElementById('info').textContent
     })`);
     assert.equal(midPhoton.active, true);
+    assert.equal(midPhoton.gammaPos, true);
+    assert.ok(Math.abs(midPhoton.envRatio - midPhoton.expectedRatio) < 1e-9);
+    assert.equal(midPhoton.cutoffZero, true);
     assert.equal(midPhoton.stopHidden, false);
     assert.equal(midPhoton.addDisabled, true);
-    assert.match(midPhoton.info, /Single-photon wavepacket/);
+    assert.match(midPhoton.info, /Single-photon e\+Γt\/2 wavepacket/);
 
-    await waitUntil(`pulse === null`, 12000);
+    await waitUntil(`pulse === null`, 15000);
     const afterPhoton = await evalJS(`(() => {
       const rs = P.map((q) => Math.hypot(q.rho, q.z)).sort((a, b) => a - b);
       return {
@@ -263,9 +276,13 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     })()`);
 
     const preWave = await evalJS(`({
+      wwHidden: document.getElementById('pww-row').hidden,
+      durHidden: document.getElementById('pdur-row').hidden,
       powHidden: document.getElementById('ppow-row').hidden,
       ppowV: document.getElementById('ppow-v').textContent
     })`);
+    assert.equal(preWave.wwHidden, true);
+    assert.equal(preWave.durHidden, false);
     assert.equal(preWave.powHidden, false);
     assert.match(preWave.ppowV, /Θ=2\.00π/);
 
