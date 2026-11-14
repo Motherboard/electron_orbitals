@@ -30,13 +30,14 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 .chk input{accent-color:var(--acc);inline-size:18px;block-size:18px;margin:0}
 .val{min-width:42px;text-align:right;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
 .lab{min-width:64px}
-#go,#add{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
+#fire,#add{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
 .note{font-size:12px;color:var(--mut);margin:6px 0 0;text-wrap:pretty}
+.sr-only{position:absolute;clip-path:inset(50%);overflow:hidden;width:1px;height:1px;margin:-1px;padding:0;border:0;white-space:nowrap}
 
-/* Superposition builder */
-#sup{container:sup / inline-size;margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+/* Panels */
+#sup,#em{container:sup / inline-size;margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 .sup-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-#comp-list{display:flex;flex-direction:column;gap:8px}
+#comp-list,#pol-list{display:flex;flex-direction:column;gap:8px}
 .comp{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:8px}
 .comp-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .comp-tag{font-size:12px;font-weight:600;color:var(--acc);min-width:24px}
@@ -50,6 +51,22 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 .sfield input[type=range]{min-width:72px}
 .sfield .val{min-width:72px}
 .sfield .val.phv{min-width:40px}
+.sfield .val.wide{min-width:0;flex:0 1 auto;max-width:48%;white-space:normal;line-height:1.25}
+
+/* Light-atom controls */
+.mode-fs{border:0;padding:0;margin:0 0 8px;display:flex;gap:14px;flex-wrap:wrap}
+.rad{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--fg);min-block-size:var(--target-size);cursor:pointer}
+.rad input{accent-color:var(--acc);inline-size:17px;block-size:17px;margin:0}
+.pol-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:10px 0 6px}
+.lab-h{font-size:13px;color:var(--mut);font-weight:600}
+.pol-sum{font-weight:400;margin-inline-start:6px}
+.pol-pre{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:3px 9px;font-size:13px;background:var(--bg);min-block-size:max(30px,var(--target-size))}
+.pol-row{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;gap:6px}
+.em-params{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding:9px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.em-params .sfield label{min-width:56px}
+.em-params .sfield input[type=range]{min-width:56px}
+.em-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -68,11 +85,47 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <div id="comp-list"></div>
 </section>
 
-<div class="row">
-<label class="sel" style="flex:3"><span>Photon transition (electric dipole: Δl = ±1, Δm = 0, ±1)</span><select id="ph"></select></label>
-<button type="button" id="go">Send photon</button>
+<section id="em" aria-labelledby="em-title">
+<div class="sup-head">
+<h2 id="em-title">Light–atom interaction</h2>
+<div class="em-actions">
+<button type="button" id="stop" hidden>Stop pulse</button>
+<button type="button" id="fire">Send photon</button>
 </div>
-<p class="note" id="ph-note" hidden>Photon transitions apply to a single eigenstate. Remove extra components to enable transitions.</p>
+</div>
+
+<fieldset class="mode-fs">
+<legend class="sr-only">Light interaction mode</legend>
+<label class="rad"><input type="radio" name="imode" value="photon" checked><span>Single photon</span></label>
+<label class="rad"><input type="radio" name="imode" value="wave"><span>Coherent EM wave</span></label>
+</fieldset>
+
+<div class="row" style="margin-top:4px">
+<label class="sel" style="flex:3">
+<span id="tr-lab">Photon energy (electric dipole: Δl = ±1)</span>
+<select id="tr-sel"></select>
+</label>
+</div>
+
+<div class="pol-head">
+<span class="lab-h">Polarization<span id="pol-sum" class="pol-sum"></span></span>
+<div class="pol-pre">
+<button type="button" class="chip" data-pol="x" title="Linear x polarization">x</button>
+<button type="button" class="chip" data-pol="y" title="Linear y polarization">y</button>
+<button type="button" class="chip" data-pol="z" title="Linear z polarization">z</button>
+<button type="button" class="chip" data-pol="sp" title="Right-hand circular σ⁺ (x + iy)">σ⁺</button>
+<button type="button" class="chip" data-pol="sm" title="Left-hand circular σ⁻ (x − iy)">σ⁻</button>
+</div>
+</div>
+<div id="pol-list"></div>
+
+<div class="em-params">
+<div class="sfield"><label for="pdur">Duration</label><input type="range" id="pdur" min="2" max="40" step="1" value="10"><span class="val wide" id="pdur-v">10 cyc</span></div>
+<div class="sfield"><label for="pdet">Detuning</label><input type="range" id="pdet" min="-2.5" max="2.5" step="0.05" value="0"><span class="val wide" id="pdet-v">0 (resonant)</span></div>
+<div class="sfield" id="ppow-row" hidden><label for="ppow">Power</label><input type="range" id="ppow" min="0.05" max="16" step="0.05" value="1"><span class="val wide" id="ppow-v"></span></div>
+</div>
+<p class="note" id="em-note"></p>
+</section>
 
 <div class="row">
 <label class="lab" for="bf">Field B<sub>z</sub></label><input type="range" id="bf" min="-3" max="3" step="any" value="0"><span class="val" id="bv" style="min-width:64px">0 T</span>
@@ -92,7 +145,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <label class="chk"><input type="checkbox" id="tr" checked><span>Trails</span></label>
 <label class="chk"><input type="checkbox" id="ov" checked><span>Density overlay</span></label>
 </div>
-<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and each component evolves in time as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup> with relative phase set at t = 0. In a multi-state superposition, electrons follow the full 3D Bohmian guidance velocity Im(∇ψ/ψ) + A via adaptive RK4 integration, and time scaling is capped when energy splittings ΔE are large so interference beats remain watchable. The field acts through weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected). During a single-state photon transition, the cloud moves by an interpolated flow rather than the guidance equation.</p>
+<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. During a single-photon wavepacket or coherent EM pulse, the coupled multi-level Schrödinger equation i d<b>c</b>/dt = [H₀ + <b>r</b>·<b>E</b>(t)]<b>c</b> is solved alongside the exact 3D Bohmian guidance velocity Im(∇ψ/ψ) + <b>A</b> in ultra-slow motion so you can watch orbitals transform continuously across m sublevels and shells. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected).</p>
 </main>
 
 <script>
@@ -101,7 +154,7 @@ const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 let W=0,H=0,key='';
 function resize(){const d=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);key='';}
-const LET='spdfghi',HA=27.2114,AUT=2.3505e5,TAU=2*Math.PI;
+const LET='spdfghi',HA=27.2114,AUT=2.3505e5,TAU=2*Math.PI,AU_FS=0.02418884,AU_WCM2=3.509445e16;
 
 /* ---------- physics (atomic units: hbar = m_e = e = a0 = 1) ---------- */
 function laguerre(k,a,x){let p0=1;if(k===0)return p0;let p1=1+a-x;for(let j=1;j<k;j++){const p2=((2*j+1+a-x)*p1-(j+a)*p0)/(j+1);p0=p1;p1=p2;}return p1;}
@@ -152,9 +205,49 @@ for(let i=0;i<NT;i++)tcdf[i]/=acc;
 const P2=new Float64Array(NC+1);let maxP2=0;
 for(let i=0;i<=NC;i++){const p=Alm*Plm(l,a,i/NC);P2[i]=p*p;if(P2[i]>maxP2)maxP2=P2[i];}
 const E995=invc(rcdf,0.995)*dr*1.08;
-const b={key:k,n,l,m,a,sigma,d,klag,alpha,normC,dr,rmax,R2,rcdf,maxR2,tcdf,P2,maxP2,maxPsi2:maxR2*maxP2,E995};
+const b={key:k,n,l,m,a,sigma,d,klag,alpha,Nnl,normC,rad,dr,rmax,R2,rcdf,maxR2,tcdf,P2,maxP2,maxPsi2:maxR2*maxP2,E995};
 basisCache.set(k,b);
 return b;}
+
+/* ---------- exact hydrogen dipole matrix elements ---------- */
+const radDipCache=new Map();
+function radialDipole(n1,l1,n2,l2){
+if(Math.abs(l1-l2)!==1)return 0;
+const a=n1<n2||(n1===n2&&l1<=l2)?[n1,l1,n2,l2]:[n2,l2,n1,l1];
+const key=a.join('|');
+if(radDipCache.has(key))return radDipCache.get(key);
+const b1=getBasis(n1,l1,0),b2=getBasis(n2,l2,0);
+const rmax=Math.max(b1.rmax,b2.rmax)+12,N=800,h=rmax/N;
+let sum=0;
+for(let i=1;i<N;i++){
+const r=i*h,w=(i&1)?4:2;
+sum+=w*r*r*r*b1.rad(r)*b2.rad(r);}
+const val=(sum*h)/3;
+radDipCache.set(key,val);
+return val;}
+
+function angularDipole(l1,m1,l2,m2){
+const dl=l1-l2;
+if(dl!==1&&dl!==-1)return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0};
+if(dl===-1){
+const rev=angularDipole(l2,m2,l1,m1);
+return{xRe:rev.xRe,xIm:-rev.xIm,yRe:rev.yRe,yIm:-rev.yIm,zRe:rev.zRe,zIm:-rev.zIm};}
+const l=l2,m=m2,den=(2*l+1)*(2*l+3);
+if(m1===m){
+return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:Math.sqrt(((l+1)*(l+1)-m*m)/den),zIm:0};}
+if(m1===m+1){
+const p=-Math.sqrt((l+m+1)*(l+m+2)/den);
+return{xRe:0.5*p,xIm:0,yRe:0,yIm:-0.5*p,zRe:0,zIm:0};}
+if(m1===m-1){
+const p=Math.sqrt((l-m+1)*(l-m+2)/den);
+return{xRe:0.5*p,xIm:0,yRe:0,yIm:0.5*p,zRe:0,zIm:0};}
+return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0};}
+
+function dipoleElement(b1,b2){
+const rad=radialDipole(b1.n,b1.l,b2.n,b2.l);
+if(rad===0)return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0};
+const ang=angularDipole(b1.l,b1.m,b2.l,b2.m);
+return{xRe:rad*ang.xRe,xIm:rad*ang.xIm,yRe:rad*ang.yRe,yIm:rad*ang.yIm,zRe:rad*ang.zRe,zIm:rad*ang.zIm};}
 
 function evalBasisPsi(b,x,y,z){
 let r=Math.hypot(x,y,z);if(r<1e-10)r=1e-10;
@@ -207,10 +300,21 @@ const prev=lo>0?cdf[lo-1]:0,span=cdf[lo]-prev;return lo+(span>0?(u-prev)/span:0)
 /* ---------- superposition state ---------- */
 let components=[{id:1,n:1,l:0,m:0,amp:1,phaseDeg:0}];
 let nextId=2;
-let eff=[],effStatus='ok',stateSig='',radSig='',omegaMax=0,E=6,refDens=1,Bau=0,tSim=0,tr=null;
+let eff=[],effStatus='ok',stateSig='',radSig='',omegaMax=0,E=6,refDens=1,Bau=0,tSim=0;
+let pulse=null; // Active physical TDSE pulse simulation
 const tscaleBase=()=>(0.5*E)*(0.5*E),bscale=()=>(0.3*E)*(0.3*E);
-const tscale=()=>{const base=tscaleBase();return(eff.length>=2&&omegaMax>0)?Math.min(base,8/omegaMax):base;};
+const tscale=()=>{
+if(pulse){
+const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,1e-4);
+return Math.min(tscaleBase(),8/maxFreq);}
+const base=tscaleBase();
+return(eff.length>=2&&omegaMax>0)?Math.min(base,8/omegaMax):base;};
 const colr=rho=>'hsl('+(15+Math.min(rho/(0.8*E),1)*250)+',70%,56%)';
+
+function computeRefDens(items){
+let harmSum=0;
+for(const k of items)harmSum+=k.prob/Math.max(k.b.maxPsi2,1e-30);
+return 1/Math.max(harmSum,1e-30);}
 
 function computeEffective(){
 let sumSq=0;
@@ -248,12 +352,9 @@ if(eff.length===1){
 E=eff[0].b.E995;
 refDens=eff[0].b.maxPsi2;
 }else{
-let maxE=0,harmSum=0;
-for(const k of eff){
-if(k.b.E995>maxE)maxE=k.b.E995;
-harmSum+=k.prob/Math.max(k.b.maxPsi2,1e-30);}
-refDens=1/Math.max(harmSum,1e-30);
-// Compute 0.995 quantile of the diagonal radial mixture
+let maxE=0;
+for(const k of eff)if(k.b.E995>maxE)maxE=k.b.E995;
+refDens=computeRefDens(eff);
 const mixDr=maxE/NR;
 const mixCdf=new Float64Array(NR);
 let acc=0;
@@ -317,7 +418,6 @@ g+=(ek.mag/sumMag)*(br*br+bi*bi);}
 const psi2=pRe*pRe+pIm*pIm;
 if(g>0&&Math.random()*M*g<=psi2){
 return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}}
-// Fallback near cloud center if acceptance is unexpectedly low
 const b0=eff[0].b,r=invc(b0.rcdf,Math.random())*b0.dr,th=invc(b0.tcdf,Math.random())*Math.PI/NT,ph=Math.random()*TAU;
 const rho=r*Math.sin(th),x=rho*Math.cos(ph),y=rho*Math.sin(ph),z=r*Math.cos(th);
 return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}
@@ -336,12 +436,13 @@ for(let i=0;i<N;i++)P.push(sampSuper(alphas));}}
 
 /* ---------- 3D Bohmian RK4 dynamics ---------- */
 let gradBuf=new Float64Array(8);
-function evalVel(x,y,z,alphas,vOut){
-if(gradBuf.length<eff.length*8)gradBuf=new Float64Array(eff.length*8);
+function evalVel(bases,x,y,z,alphas,vOut){
+const K=bases.length;
+if(gradBuf.length<K*8)gradBuf=new Float64Array(K*8);
 let psiRe=0,psiIm=0,dxRe=0,dxIm=0,dyRe=0,dyIm=0,dzRe=0,dzIm=0;
-for(let k=0;k<eff.length;k++){
+for(let k=0;k<K;k++){
 const off=k*8;
-evalBasisGrad(eff[k].b,x,y,z,gradBuf,off);
+evalBasisGrad(bases[k],x,y,z,gradBuf,off);
 const aRe=alphas[k*2],aIm=alphas[k*2+1];
 const pRe=gradBuf[off],pIm=gradBuf[off+1];
 const gxRe=gradBuf[off+2],gxIm=gradBuf[off+3];
@@ -360,15 +461,15 @@ vOut[1]=(psiRe*dyIm-psiIm*dyRe)*invP+ay;
 vOut[2]=(psiRe*dzIm-psiIm*dzRe)*invP;}
 
 const k1v=new Float64Array(3),k2v=new Float64Array(3),k3v=new Float64Array(3),k4v=new Float64Array(3);
-let al0=new Float64Array(16),alM=new Float64Array(16),al1=new Float64Array(16);
-let subAl0=new Float64Array(16),subAlM=new Float64Array(16),subAl1=new Float64Array(16);
+let al0=new Float64Array(32),alM=new Float64Array(32),al1=new Float64Array(32);
+let subAl0=new Float64Array(32),subAlM=new Float64Array(32),subAl1=new Float64Array(32);
 
-function rk4Step(q,h,a0,aM,a1){
-evalVel(q.x,q.y,q.z,a0,k1v);
+function rk4Particle(bases,q,h,a0,aM,a1){
+evalVel(bases,q.x,q.y,q.z,a0,k1v);
 const hh=0.5*h;
-evalVel(q.x+hh*k1v[0],q.y+hh*k1v[1],q.z+hh*k1v[2],aM,k2v);
-evalVel(q.x+hh*k2v[0],q.y+hh*k2v[1],q.z+hh*k2v[2],aM,k3v);
-evalVel(q.x+h*k3v[0],q.y+h*k3v[1],q.z+h*k3v[2],a1,k4v);
+evalVel(bases,q.x+hh*k1v[0],q.y+hh*k1v[1],q.z+hh*k1v[2],aM,k2v);
+evalVel(bases,q.x+hh*k2v[0],q.y+hh*k2v[1],q.z+hh*k2v[2],aM,k3v);
+evalVel(bases,q.x+h*k3v[0],q.y+h*k3v[1],q.z+h*k3v[2],a1,k4v);
 let dx=(h/6)*(k1v[0]+2*k2v[0]+2*k3v[0]+k4v[0]);
 let dy=(h/6)*(k1v[1]+2*k2v[1]+2*k3v[1]+k4v[1]);
 let dz=(h/6)*(k1v[2]+2*k2v[2]+2*k3v[2]+k4v[2]);
@@ -377,26 +478,17 @@ if(!Number.isFinite(disp))return;
 if(disp>maxStep){const sc=maxStep/disp;dx*=sc;dy*=sc;dz*=sc;}
 q.x+=dx;q.y+=dy;q.z+=dz;}
 
-function stepSuperposition(dtSim,span){
-const needed=eff.length*2;
-if(al0.length<needed){
-al0=new Float64Array(needed);alM=new Float64Array(needed);al1=new Float64Array(needed);
-subAl0=new Float64Array(needed);subAlM=new Float64Array(needed);subAl1=new Float64Array(needed);}
-const nSub=omegaMax>0?Math.max(1,Math.min(24,Math.ceil(omegaMax*dtSim/0.1))):1;
-const h=dtSim/nSub;
-for(let s=0;s<nSub;s++){
-const t0=tSim+s*h,tm=t0+0.5*h,t1=t0+h;
-evalAlphas(t0,al0);evalAlphas(tm,alM);evalAlphas(t1,al1);
+function advanceParticlesRK4(bases,t0,h,a0,aM,a1,subAlphaFn){
 for(const q of P){
-evalVel(q.x,q.y,q.z,al0,k1v);
+evalVel(bases,q.x,q.y,q.z,a0,k1v);
 const vMag=Math.hypot(k1v[0],k1v[1],k1v[2]);
 const r=Math.hypot(q.x,q.y,q.z);
 const safeDisp=0.06*Math.max(r,0.15*E);
 if(vMag*h<=safeDisp){
 const hh=0.5*h;
-evalVel(q.x+hh*k1v[0],q.y+hh*k1v[1],q.z+hh*k1v[2],alM,k2v);
-evalVel(q.x+hh*k2v[0],q.y+hh*k2v[1],q.z+hh*k2v[2],alM,k3v);
-evalVel(q.x+h*k3v[0],q.y+h*k3v[1],q.z+h*k3v[2],al1,k4v);
+evalVel(bases,q.x+hh*k1v[0],q.y+hh*k1v[1],q.z+hh*k1v[2],aM,k2v);
+evalVel(bases,q.x+hh*k2v[0],q.y+hh*k2v[1],q.z+hh*k2v[2],aM,k3v);
+evalVel(bases,q.x+h*k3v[0],q.y+h*k3v[1],q.z+h*k3v[2],a1,k4v);
 let dx=(h/6)*(k1v[0]+2*k2v[0]+2*k3v[0]+k4v[0]);
 let dy=(h/6)*(k1v[1]+2*k2v[1]+2*k3v[1]+k4v[1]);
 let dz=(h/6)*(k1v[2]+2*k2v[2]+2*k3v[2]+k4v[2]);
@@ -408,8 +500,21 @@ q.x+=dx;q.y+=dy;q.z+=dz;}
 const mSub=Math.min(12,Math.ceil(vMag*h/safeDisp)),hs=h/mSub;
 for(let j=0;j<mSub;j++){
 const ts0=t0+j*hs;
-evalAlphas(ts0,subAl0);evalAlphas(ts0+0.5*hs,subAlM);evalAlphas(ts0+hs,subAl1);
-rk4Step(q,hs,subAl0,subAlM,subAl1);}}}}
+subAlphaFn(ts0,subAl0,ts0+0.5*hs,subAlM,ts0+hs,subAl1,j/mSub,(j+0.5)/mSub,(j+1)/mSub);
+rk4Particle(bases,q,hs,subAl0,subAlM,subAl1);}}}}
+
+function stepSuperposition(dtSim,span){
+const bases=eff.map(k=>k.b),needed=bases.length*2;
+if(al0.length<needed){
+al0=new Float64Array(needed);alM=new Float64Array(needed);al1=new Float64Array(needed);
+subAl0=new Float64Array(needed);subAlM=new Float64Array(needed);subAl1=new Float64Array(needed);}
+const nSub=omegaMax>0?Math.max(1,Math.min(24,Math.ceil(omegaMax*dtSim/0.1))):1;
+const h=dtSim/nSub;
+const subAlphaFn=(ts0,s0,tsM,sM,ts1,s1)=>{evalAlphas(ts0,s0);evalAlphas(tsM,sM);evalAlphas(ts1,s1);};
+for(let s=0;s<nSub;s++){
+const t0=tSim+s*h,tm=t0+0.5*h,t1=t0+h;
+evalAlphas(t0,al0);evalAlphas(tm,alM);evalAlphas(t1,al1);
+advanceParticlesRK4(bases,t0,h,al0,alM,al1,subAlphaFn);}
 tSim+=dtSim;
 const minStep=Math.max(span/22,1e-6);
 for(const q of P){
@@ -419,14 +524,356 @@ if(!hh.length||(tSim-hh[hh.length-1][3])>=minStep){
 hh.push([q.x,q.y,q.z,tSim]);
 if(hh.length>22)hh.shift();}}}
 
+/* ---------- Coupled TDSE pulse simulation ---------- */
+let interactionMode='photon'; // 'photon' | 'wave'
+const pol=[
+{axis:'x',amp:1,phaseDeg:0},
+{axis:'y',amp:0,phaseDeg:0},
+{axis:'z',amp:0,phaseDeg:0}
+];
+
+function getNormPol(){
+const s2=pol[0].amp*pol[0].amp+pol[1].amp*pol[1].amp+pol[2].amp*pol[2].amp;
+const inv=s2>1e-16?1/Math.sqrt(s2):0;
+return pol.map((p,i)=>{
+const mag=inv>0?p.amp*inv:(i===0?1:0);
+const ph=p.phaseDeg*Math.PI/180;
+return{axis:p.axis,mag,prob:mag*mag,ph,re:mag*Math.cos(ph),im:mag*Math.sin(ph)};});}
+
+function getTransitionList(){
+const list=[],seen=new Set();
+if(!eff.length)return list;
+const ordered=[...eff].sort((a,b)=>b.prob-a.prob);
+if(Math.abs(Bau)<1e-12){
+const shells=[],shSeen=new Set();
+for(const k of ordered){const sk=k.n+'|'+k.l;if(!shSeen.has(sk)){shSeen.add(sk);shells.push([k.n,k.l]);}}
+for(const [n1,l1] of shells){
+for(let n2=1;n2<=7;n2++)for(const l2 of [l1-1,l1+1]){
+if(n2===n1||l2<0||l2>=n2)continue;
+const dE=-0.5/(n2*n2)-(-0.5/(n1*n1));
+const omega0=Math.abs(dE);
+const key=n1+'|'+l1+'|'+n2+'|'+l2;
+if(seen.has(key))continue;
+seen.add(key);
+list.push({key,n1,l1,n2,l2,m1:null,m2:null,dE,omega0,dir:dE>0?'absorb':'emit'});}}
+}else{
+for(const k of ordered){
+const E1=-0.5/(k.n*k.n)+k.m*Bau/2;
+for(let n2=1;n2<=7;n2++)for(const l2 of [k.l-1,k.l+1]){
+if(n2===k.n||l2<0||l2>=n2)continue;
+for(let dm=-1;dm<=1;dm++){
+const m2=k.m+dm;if(Math.abs(m2)>l2)continue;
+const E2=-0.5/(n2*n2)+m2*Bau/2,dE=E2-E1,omega0=Math.abs(dE);
+if(omega0<1e-12)continue;
+const key=k.n+'|'+k.l+'|'+n2+'|'+l2+'|'+dm;
+if(seen.has(key))continue;
+seen.add(key);
+list.push({key,n1:k.n,l1:k.l,n2,l2,m1:k.m,m2,dm,dE,omega0,dir:dE>0?'absorb':'emit'});}}}}
+return list;}
+
+function buildCoupledSystem(trSpec){
+const shellMap=new Map();
+const addShell=(n,l)=>{const sk=n+'|'+l;if(!shellMap.has(sk))shellMap.set(sk,[n,l]);};
+for(const k of eff)addShell(k.n,k.l);
+addShell(trSpec.n1,trSpec.l1);
+addShell(trSpec.n2,trSpec.l2);
+const shells=[...shellMap.values()].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+const states=[];
+for(const [n,l] of shells){
+for(let m=-l;m<=l;m++){
+const b=getBasis(n,l,m);
+const E_au=-0.5/(n*n)+m*Bau/2;
+states.push({n,l,m,b,E_au,relE:0});}}
+const M=states.length;
+let Eref=0;
+for(const s of states)Eref+=s.E_au/M;
+let maxRelE=0;
+for(const s of states){s.relE=s.E_au-Eref;if(Math.abs(s.relE)>maxRelE)maxRelE=Math.abs(s.relE);}
+const DxRe=new Float64Array(M*M),DxIm=new Float64Array(M*M);
+const DyRe=new Float64Array(M*M),DyIm=new Float64Array(M*M);
+const DzRe=new Float64Array(M*M),DzIm=new Float64Array(M*M);
+for(let i=0;i<M;i++)for(let j=i;j<M;j++){
+const el=dipoleElement(states[i].b,states[j].b);
+const idx1=i*M+j,idx2=j*M+i;
+DxRe[idx1]=el.xRe;DxIm[idx1]=el.xIm;DxRe[idx2]=el.xRe;DxIm[idx2]=-el.xIm;
+DyRe[idx1]=el.yRe;DyIm[idx1]=el.yIm;DyRe[idx2]=el.yRe;DyIm[idx2]=-el.yIm;
+DzRe[idx1]=el.zRe;DzIm[idx1]=el.zIm;DzRe[idx2]=el.zRe;DzIm[idx2]=-el.zIm;}
+// Initial state vector at instantaneous tSim
+const c0=new Float64Array(M*2);
+for(const k of eff){
+const idx=states.findIndex(s=>s.n===k.n&&s.l===k.l&&s.m===k.m);
+if(idx>=0){
+const ang=k.phaseRad-k.E_au*tSim;
+c0[idx*2]=k.mag*Math.cos(ang);
+c0[idx*2+1]=k.mag*Math.sin(ang);}}
+return{states,M,Eref,maxRelE,DxRe,DxIm,DyRe,DyIm,DzRe,DzIm,c0};}
+
+function computeBrightDipole(sys,trSpec,normPol){
+const {states,M,DxRe,DxIm,DyRe,DyIm,DzRe,DzIm,c0}=sys;
+const isTarget=s=>(s.n===trSpec.n2&&s.l===trSpec.l2)||(s.n===trSpec.n1&&s.l===trSpec.l1&&eff.every(k=>!(k.n===trSpec.n1&&k.l===trSpec.l1)));
+// Compute resonant operator V = P_partner (eps^{(*)} . r) P_initial acting on c0
+// For absorption (dE > 0): eps . r ; for emission (dE < 0): eps* . r
+const sgnIm=trSpec.dE>=0?1:-1;
+const exR=normPol[0].re,exI=sgnIm*normPol[0].im;
+const eyR=normPol[1].re,eyI=sgnIm*normPol[1].im;
+const ezR=normPol[2].re,ezI=sgnIm*normPol[2].im;
+const bRe=new Float64Array(M),bIm=new Float64Array(M);
+// Determine initial shell(s) vs partner shell
+const partnerIs2=eff.some(k=>k.n===trSpec.n1&&k.l===trSpec.l1);
+const pn=partnerIs2?trSpec.n2:trSpec.n1,pl=partnerIs2?trSpec.l2:trSpec.l1;
+let bNorm2=0;
+for(let i=0;i<M;i++){
+if(states[i].n!==pn||states[i].l!==pl)continue;
+let sr=0,si=0;
+for(let j=0;j<M;j++){
+const cjR=c0[j*2],cjI=c0[j*2+1];
+if(cjR===0&&cjI===0)continue;
+if(states[j].n===pn&&states[j].l===pl)continue;
+const idx=i*M+j;
+// (ex*Dx + ey*Dy + ez*Dz)
+const vr=exR*DxRe[idx]-exI*DxIm[idx]+eyR*DyRe[idx]-eyI*DyIm[idx]+ezR*DzRe[idx]-ezI*DzIm[idx];
+const vi=exR*DxIm[idx]+exI*DxRe[idx]+eyR*DyIm[idx]+eyI*DyRe[idx]+ezR*DzIm[idx]+ezI*DzRe[idx];
+sr+=vr*cjR-vi*cjI;si+=vr*cjI+vi*cjR;}
+bRe[i]=sr;bIm[i]=si;bNorm2+=sr*sr+si*si;}
+if(bNorm2<=1e-18){
+const rad=Math.abs(radialDipole(trSpec.n1,trSpec.l1,trSpec.n2,trSpec.l2));
+return{muRabi:0,muShell:rad/Math.sqrt(3)};}
+const invB=1/Math.sqrt(bNorm2);
+for(let i=0;i<M;i++){bRe[i]*=invB;bIm[i]*=invB;}
+// Now compute || V^dagger |b> || on the initial manifold
+let vNorm2=0;
+for(let j=0;j<M;j++){
+if(states[j].n===pn&&states[j].l===pl)continue;
+let sr=0,si=0;
+for(let i=0;i<M;i++){
+if(states[i].n!==pn||states[i].l!==pl)continue;
+const idx=i*M+j;
+const vr=exR*DxRe[idx]-exI*DxIm[idx]+eyR*DyRe[idx]-eyI*DyIm[idx]+ezR*DzRe[idx]-ezI*DzIm[idx];
+const vi=exR*DxIm[idx]+exI*DxRe[idx]+eyR*DyIm[idx]+eyI*DyRe[idx]+ezR*DzIm[idx]+ezI*DzRe[idx];
+// V^\dagger_{j,i} = conj(V_{i,j})
+sr+=vr*bRe[i]+vi*bIm[i];
+si+=vr*bIm[i]-vi*bRe[i];}
+vNorm2+=sr*sr+si*si;}
+const muRabi=Math.sqrt(vNorm2);
+const rad=Math.abs(radialDipole(trSpec.n1,trSpec.l1,trSpec.n2,trSpec.l2));
+return{muRabi,muShell:rad/Math.sqrt(3)};}
+
+function fieldVecAt(pObj,t){
+if(t<=0||t>=pObj.T)return[0,0,0,0];
+const s=Math.sin(Math.PI*t/pObj.T),env=pObj.E0*s*s;
+const wt=pObj.omegaL*t;
+const np=pObj.pol;
+const ex=env*np[0].mag*Math.cos(wt-np[0].ph);
+const ey=env*np[1].mag*Math.cos(wt-np[1].ph);
+const ez=env*np[2].mag*Math.cos(wt-np[2].ph);
+return[ex,ey,ez,env];}
+
+function tdseRHS(sys,pObj,t,c,dcOut){
+const {states,M,DxRe,DxIm,DyRe,DyIm,DzRe,DzIm}=sys;
+const [ex,ey,ez]=fieldVecAt(pObj,t);
+for(let i=0;i<M;i++){
+let hr=states[i].relE*c[i*2],hi=states[i].relE*c[i*2+1];
+if(ex!==0||ey!==0||ez!==0){
+for(let j=0;j<M;j++){
+const idx=i*M+j;
+const vr=ex*DxRe[idx]+ey*DyRe[idx]+ez*DzRe[idx];
+const vi=ex*DxIm[idx]+ey*DyIm[idx]+ez*DzIm[idx];
+if(vr===0&&vi===0)continue;
+const cjR=c[j*2],cjI=c[j*2+1];
+hr+=vr*cjR-vi*cjI;hi+=vr*cjI+vi*cjR;}}
+// i dc/dt = H c => dc/dt = -i H c = (hi, -hr)
+dcOut[i*2]=hi;dcOut[i*2+1]=-hr;}}
+
+let tdK1=new Float64Array(64),tdK2=new Float64Array(64),tdK3=new Float64Array(64),tdK4=new Float64Array(64),tdTmp=new Float64Array(64);
+function stepTdseC(sys,pObj,t0,h,cIn,cOut){
+const len=sys.M*2;
+if(tdK1.length<len){tdK1=new Float64Array(len);tdK2=new Float64Array(len);tdK3=new Float64Array(len);tdK4=new Float64Array(len);tdTmp=new Float64Array(len);}
+tdseRHS(sys,pObj,t0,cIn,tdK1);
+for(let i=0;i<len;i++)tdTmp[i]=cIn[i]+0.5*h*tdK1[i];
+tdseRHS(sys,pObj,t0+0.5*h,tdTmp,tdK2);
+for(let i=0;i<len;i++)tdTmp[i]=cIn[i]+0.5*h*tdK2[i];
+tdseRHS(sys,pObj,t0+0.5*h,tdTmp,tdK3);
+for(let i=0;i<len;i++)tdTmp[i]=cIn[i]+h*tdK3[i];
+tdseRHS(sys,pObj,t0+h,tdTmp,tdK4);
+let norm2=0;
+for(let i=0;i<len;i++){
+const v=cIn[i]+(h/6)*(tdK1[i]+2*tdK2[i]+2*tdK3[i]+tdK4[i]);
+cOut[i]=v;norm2+=v*v;}
+if(norm2>0&&Math.abs(norm2-1)>1e-12){const inv=1/Math.sqrt(norm2);for(let i=0;i<len;i++)cOut[i]*=inv;}}
+
+function getPulseConfig(){
+const trs=getTransitionList();
+const selVal=$('tr-sel').value;
+const trSpec=trs.find(t=>t.key===selVal)||trs[0]||null;
+const np=getNormPol();
+const cyc=+$('pdur').value;
+const det=+$('pdet').value;
+const pow=+$('ppow').value;
+if(!trSpec||!eff.length)return{ok:false,trSpec:null,np,cyc,det,pow};
+const sys=buildCoupledSystem(trSpec);
+const {muRabi,muShell}=computeBrightDipole(sys,trSpec,np);
+const omega0=trSpec.omega0;
+const T=cyc*TAU/omega0;
+const Tref=10*TAU/omega0;
+const bw=TAU/T;
+const omegaL=Math.max(0.05*omega0,omega0+det*bw);
+const detAu=omegaL-omega0;
+const muRef=muRabi>1e-7?muRabi:muShell;
+const E_pi_ref=muRef>1e-12?TAU/(muRef*Tref):0;
+const thetaTarget=interactionMode==='photon'?Math.PI:Math.PI*Math.sqrt(pow)*(T/Tref);
+const E0=interactionMode==='photon'?(muRabi>1e-7?TAU/(muRabi*T):0):E_pi_ref*Math.sqrt(pow);
+const theta=0.5*muRabi*E0*T;
+const intensityWcm2=E0*E0*AU_WCM2;
+return{ok:true,trSpec,sys,np,cyc,det,pow,omega0,omegaL,detAu,T,Tfs:T*AU_FS,muRabi,muRef,E0,theta,thetaTarget,intensityWcm2};}
+
+function startPulse(){
+if(pulse||effStatus!=='ok')return;
+const cfg=getPulseConfig();
+if(!cfg.ok)return;
+if(interactionMode==='photon'&&cfg.muRabi<=1e-7)return;
+// Convert single-state cylindrical particles seamlessly into 3D particles
+if(eff.length===1){
+for(const q of P){
+const x=q.rho*Math.cos(q.ph),y=q.rho*Math.sin(q.ph);
+q.x=x;q.y=y;q.col=colr(q.rho);q.hist=[[x,y,q.z,0]];}
+}else{
+for(const q of P)q.hist=[[q.x,q.y,q.z,0]];}
+// Choose fixed physical scale E containing both initial and target states
+let maxE=E;
+for(const s of cfg.sys.states)if(s.b.E995>maxE)maxE=s.b.E995;
+E=maxE;
+// Compute reference density across the coupled manifold
+const bases=cfg.sys.states.map(s=>s.b);
+let maxPsi2Max=0;
+for(const b of bases)if(b.maxPsi2>maxPsi2Max)maxPsi2Max=b.maxPsi2;
+// Blend harmonic scale between occupied and target shells for crisp density overlay
+const initN=eff.reduce((a,k)=>a+k.prob*k.b.maxPsi2,0);
+const tgtB=getBasis(cfg.trSpec.n2,cfg.trSpec.l2,0);
+refDens=2/(1/Math.max(initN,1e-30)+1/Math.max(tgtB.maxPsi2,1e-30));
+
+const len=cfg.sys.M*2;
+pulse={
+mode:interactionMode,
+trSpec:cfg.trSpec,
+sys:cfg.sys,
+bases,
+pol:cfg.np,
+omega0:cfg.omega0,
+omegaL:cfg.omegaL,
+maxRelE:cfg.sys.maxRelE,
+T:cfg.T,
+Tfs:cfg.Tfs,
+cyc:cfg.cyc,
+E0:cfg.E0,
+theta:cfg.theta,
+intensityWcm2:cfg.intensityWcm2,
+t:0,
+c:new Float64Array(cfg.sys.c0),
+cMid:new Float64Array(len),
+cEnd:new Float64Array(len),
+lastHistT:0
+};
+key='';overlayDirty=true;
+setLocked(true);
+$('stop').hidden=false;
+rescaleB();
+updatePulseInfo();}
+
+function stepPulse(dtFrame,spd,span){
+const dtSim=Math.min(dtFrame*spd*tscale(),pulse.T-pulse.t);
+if(dtSim<=0){finishPulse(false);return;}
+const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,pulse.E0*5,1e-4);
+const nSub=Math.max(1,Math.min(32,Math.ceil(maxFreq*dtSim/0.08)));
+const h=dtSim/nSub;
+for(let s=0;s<nSub;s++){
+const t0=pulse.t+s*h;
+stepTdseC(pulse.sys,pulse,t0,0.5*h,pulse.c,pulse.cMid);
+stepTdseC(pulse.sys,pulse,t0+0.5*h,0.5*h,pulse.cMid,pulse.cEnd);
+const localSubFn=(ts0,s0,tsM,sM,ts1,s1,f0)=>{
+if(f0===0)s0.set(pulse.c);else stepTdseC(pulse.sys,pulse,t0,f0*h,pulse.c,s0);
+stepTdseC(pulse.sys,pulse,ts0,tsM-ts0,s0,sM);
+stepTdseC(pulse.sys,pulse,tsM,ts1-tsM,sM,s1);};
+advanceParticlesRK4(pulse.bases,t0,h,pulse.c,pulse.cMid,pulse.cEnd,localSubFn);
+pulse.c.set(pulse.cEnd);}
+
+pulse.t+=dtSim;
+const minStep=Math.max(span/22,1e-6);
+const rec=(pulse.t-pulse.lastHistT)>=minStep;
+if(rec)pulse.lastHistT=pulse.t;
+for(const q of P){
+q.col=colr(Math.hypot(q.x,q.y));
+if(rec){q.hist.push([q.x,q.y,q.z,pulse.t]);if(q.hist.length>22)q.hist.shift();}}
+overlayDirty=true;
+updatePulseInfo();
+if(pulse.t>=pulse.T-1e-9)finishPulse(false);}
+
+function finishPulse(aborted){
+if(!pulse)return;
+const {states,M}=pulse.sys;
+const c=pulse.c;
+const nextComps=[];
+for(let i=0;i<M;i++){
+const re=c[i*2],im=c[i*2+1],mag=Math.hypot(re,im);
+if(mag>0.035){
+let deg=Math.round(Math.atan2(im,re)*180/Math.PI);
+deg=((deg%360)+360)%360;
+const s=states[i];
+nextComps.push({id:nextId++,n:s.n,l:s.l,m:s.m,amp:+mag.toFixed(4),phaseDeg:deg});}}
+if(!nextComps.length){
+let best=0,bestM=-1;
+for(let i=0;i<M;i++){const mg=Math.hypot(c[i*2],c[i*2+1]);if(mg>bestM){bestM=mg;best=i;}}
+const s=states[best];
+nextComps.push({id:nextId++,n:s.n,l:s.l,m:s.m,amp:1,phaseDeg:0});}
+let maxA=0;for(const nc of nextComps)if(nc.amp>maxA)maxA=nc.amp;
+if(maxA>0)for(const nc of nextComps)nc.amp=Math.round((nc.amp/maxA)*100)/100;
+
+components=nextComps;
+pulse=null;
+tSim=0;
+$('stop').hidden=true;
+rebuildComponentList();
+computeEffective();
+if(eff.length===1){
+const m0=eff[0].m;
+for(const q of P){
+const rho=Math.max(Math.hypot(q.x,q.y),1e-4);
+q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);q.col=colr(rho);delete q.hist;}
+}else{
+for(const q of P){q.col=colr(Math.hypot(q.x,q.y));q.hist=[[q.x,q.y,q.z,0]];}}
+setLocked(false);
+key='';overlayDirty=true;
+rescaleB();
+buildTransitions();
+updateEmUI();
+info();}
+
 /* ---------- UI ---------- */
 const bf=$('bf');
 function fmtB(B){const T=B*AUT;return Math.abs(T)<1000?T.toFixed(Math.abs(T)<10?2:0)+' T':(T/1000).toFixed(1)+' kT';}
 function fmtEv(ev){return Math.abs(ev)<0.1?(ev*1000).toFixed(2)+' meV':ev.toFixed(4)+' eV';}
+function fmtInt(w){
+if(w>=1e15)return(w/1e15).toFixed(2)+' PW/cm²';
+if(w>=1e12)return(w/1e12).toFixed(2)+' TW/cm²';
+if(w>=1e9)return(w/1e9).toFixed(2)+' GW/cm²';
+if(w>=1e6)return(w/1e6).toFixed(2)+' MW/cm²';
+return w.toExponential(1)+' W/cm²';}
+function fmtDur(fs){return fs>=1000?(fs/1000).toFixed(2)+' ps':fs.toFixed(1)+' fs';}
 function rescaleB(){const s=Bau*bscale()/2,mx=Math.max(3,Math.ceil(Math.abs(s)));bf.min=-mx;bf.max=mx;bf.value=s;$('bv').textContent=fmtB(Bau);}
 function fill(sel,from,to,val,fmt){sel.innerHTML='';for(let i=from;i<=to;i++){const o=document.createElement('option');o.value=i;o.textContent=fmt?fmt(i):i;sel.appendChild(o);}sel.value=val;}
 
+function updatePulseInfo(){
+if(!pulse)return;
+const cycDone=(pulse.t/pulse.T)*pulse.cyc;
+const pops=[];
+for(let i=0;i<pulse.sys.M;i++){
+const p=pulse.c[i*2]*pulse.c[i*2]+pulse.c[i*2+1]*pulse.c[i*2+1];
+if(p>=0.005){const s=pulse.sys.states[i];pops.push({p,lbl:'|'+s.n+LET[s.l]+', '+s.m+'⟩: '+Math.round(p*100)+'%'});}}
+pops.sort((a,b)=>b.p-a.p);
+const modeName=pulse.mode==='photon'?'Single-photon wavepacket':'Coherent EM pulse';
+$('info').innerHTML='<b>'+modeName+'</b> ('+pulse.trSpec.n1+LET[pulse.trSpec.l1]+' ↔ '+pulse.trSpec.n2+LET[pulse.trSpec.l2]+', Θ = '+(pulse.theta/Math.PI).toFixed(2)+'π) · <b>'+cycDone.toFixed(1)+' / '+pulse.cyc+' cyc</b> · '+pops.slice(0,5).map(x=>x.lbl).join(' · ');}
+
 function info(){
+if(pulse){updatePulseInfo();return;}
 if(effStatus==='zero_amp'){
 $('info').innerHTML='Total amplitude is zero — raise at least one component’s amplitude above 0.';
 return;}
@@ -459,28 +906,7 @@ const allReal=Bau===0&&eff.every(k=>k.m===0&&Math.abs(Math.sin(k.phaseRad-ph0))<
 s+=allReal?'Degenerate real superposition: |ψ|² is stationary and the guidance velocity is zero.':'Degenerate superposition: |ψ|² is stationary, while phase gradients drive steady Bohmian flows.';}
 $('info').innerHTML=s;}
 
-function buildPhoton(){
-const sel=$('ph'),old=sel.value;sel.innerHTML='';
-const canTr=components.length===1&&eff.length===1;
-$('ph-note').hidden=components.length<=1;
-if(!canTr){
-const o=document.createElement('option');
-o.value='';o.textContent=components.length>1?'Single-state mode only (1 component required)':'Raise amplitude above 0';
-sel.appendChild(o);
-sel.disabled=true;$('go').disabled=true;
-return;}
-const {n,l,m}=eff[0];
-for(let n2=1;n2<=7;n2++)for(const l2 of [l-1,l+1]){
-if(n2===n||l2<0||l2>n2-1)continue;
-for(let dm=-1;dm<=1;dm++){const m2=m+dm;if(Math.abs(m2)>l2)continue;
-const d=(0.5/(n*n)-0.5/(n2*n2)+dm*Bau/2)*HA,o=document.createElement('option');
-o.value=n2+'|'+l2+'|'+m2;
-o.textContent=n2+LET[l2]+' m='+m2+' · '+(d>0?'absorb ':'emit ')+Math.abs(d).toFixed(Math.abs(d)<.1?4:2)+' eV';
-sel.appendChild(o);}}
-if([...sel.options].some(o=>o.value===old))sel.value=old;
-sel.disabled=!!tr||!sel.options.length;
-$('go').disabled=!!tr||!sel.options.length;}
-
+/* ---------- Component list UI ---------- */
 const compList=$('comp-list');
 const rowRefs=new Map();
 
@@ -495,9 +921,9 @@ const mag=c.amp*norm,pct=Math.round(mag*mag*100);
 ref.tag.textContent='#'+(idx+1);
 ref.ampVal.textContent=mag.toFixed(2)+' ('+pct+'%)';
 ref.phVal.textContent=c.phaseDeg+'°';
-ref.rm.disabled=!!tr||components.length<=1;
+ref.rm.disabled=!!pulse||components.length<=1;
 ref.rm.setAttribute('aria-label','Remove component #'+(idx+1)+' ('+c.n+LET[c.l]+', m='+c.m+')');});
-$('add').disabled=!!tr||components.length>=12;}
+$('add').disabled=!!pulse||components.length>=12;}
 
 function makeComponentRow(comp){
 const row=document.createElement('div');row.className='comp';row.dataset.id=comp.id;
@@ -560,7 +986,7 @@ comp.phaseDeg=+phIn.value;
 updateAmpReadouts();
 refresh(false,true);};
 rm.onclick=()=>{
-if(components.length<=1||tr)return;
+if(components.length<=1||pulse)return;
 const idx=components.findIndex(x=>x.id===comp.id);
 if(idx<0)return;
 components.splice(idx,1);
@@ -574,6 +1000,12 @@ if(nextRef&&!nextRef.rm.disabled)nextRef.rm.focus();else $('add').focus();};
 
 return row;}
 
+function rebuildComponentList(){
+compList.innerHTML='';
+rowRefs.clear();
+for(const c of components)compList.appendChild(makeComponentRow(c));
+updateAmpReadouts();}
+
 function pickNextState(){
 const prefs=[[2,1,0],[2,0,0],[2,1,1],[2,1,-1],[3,2,0],[3,1,0],[3,2,1],[1,0,0]];
 const has=(n,l,m)=>components.some(c=>c.n===n&&c.l===l&&c.m===m);
@@ -582,13 +1014,118 @@ for(let n=1;n<=7;n++)for(let l=0;l<n;l++)for(let m=-l;m<=l;m++)if(!has(n,l,m))re
 return[2,1,0];}
 
 $('add').onclick=()=>{
-if(tr||components.length>=12)return;
+if(pulse||components.length>=12)return;
 const [n,l,m]=pickNextState();
 const comp={id:nextId++,n,l,m,amp:1,phaseDeg:0};
 components.push(comp);
 compList.appendChild(makeComponentRow(comp));
 updateAmpReadouts();
 refresh(false,true);};
+
+/* ---------- Light-atom UI ---------- */
+const polList=$('pol-list'),polRefs=[];
+for(const p of pol){
+const row=document.createElement('div');row.className='pol-row';
+const sliders=document.createElement('div');sliders.className='comp-sliders';
+const ampBox=document.createElement('div');ampBox.className='sfield';
+const ampLab=document.createElement('label');ampLab.htmlFor='pol-a-'+p.axis;ampLab.textContent=p.axis+' amp';
+const ampIn=document.createElement('input');ampIn.type='range';ampIn.id='pol-a-'+p.axis;ampIn.min='0';ampIn.max='1';ampIn.step='0.01';ampIn.value=String(p.amp);
+const ampVal=document.createElement('span');ampVal.className='val';
+ampBox.append(ampLab,ampIn,ampVal);
+
+const phBox=document.createElement('div');phBox.className='sfield';
+const phLab=document.createElement('label');phLab.htmlFor='pol-p-'+p.axis;phLab.textContent=p.axis+' phase';
+const phIn=document.createElement('input');phIn.type='range';phIn.id='pol-p-'+p.axis;phIn.min='0';phIn.max='360';phIn.step='1';phIn.value=String(p.phaseDeg);
+const phVal=document.createElement('span');phVal.className='val phv';
+phBox.append(phLab,phIn,phVal);
+sliders.append(ampBox,phBox);
+row.append(sliders);
+polList.appendChild(row);
+polRefs.push({p,ampIn,ampVal,phIn,phVal});
+ampIn.oninput=()=>{p.amp=+ampIn.value;updateEmUI();};
+phIn.oninput=()=>{p.phaseDeg=+phIn.value;updateEmUI();};}
+
+document.querySelectorAll('.chip[data-pol]').forEach(btn=>{
+btn.onclick=()=>{
+if(pulse)return;
+const preset=btn.dataset.pol;
+const vals={
+x:[[1,0],[0,0],[0,0]],
+y:[[0,0],[1,0],[0,0]],
+z:[[0,0],[0,0],[1,0]],
+sp:[[1,0],[1,90],[0,0]],
+sm:[[1,0],[1,270],[0,0]]
+}[preset];
+if(!vals)return;
+vals.forEach(([a,ph],i)=>{
+pol[i].amp=a;pol[i].phaseDeg=ph;
+polRefs[i].ampIn.value=String(a);
+polRefs[i].phIn.value=String(ph);});
+updateEmUI();};});
+
+document.querySelectorAll('input[name="imode"]').forEach(r=>{
+r.onchange=()=>{
+if(r.checked){interactionMode=r.value;updateEmUI();}};});
+
+$('tr-sel').onchange=()=>updateEmUI();
+$('pdur').oninput=()=>updateEmUI();
+$('pdet').oninput=()=>updateEmUI();
+$('ppow').oninput=()=>updateEmUI();
+
+function buildTransitions(){
+const sel=$('tr-sel'),old=sel.value;sel.innerHTML='';
+const list=getTransitionList();
+for(const t of list){
+const o=document.createElement('option');
+o.value=t.key;
+const ev=t.omega0*HA;
+const dmTag=t.m1!==null?' (Δm='+(t.dm>0?'+':'')+t.dm+')':'';
+o.textContent=t.n1+LET[t.l1]+' → '+t.n2+LET[t.l2]+dmTag+' · '+(t.dir==='absorb'?'absorb ':'emit ')+ev.toFixed(ev<.1?4:2)+' eV';
+sel.appendChild(o);}
+if([...sel.options].some(o=>o.value===old))sel.value=old;}
+
+function updatePolReadouts(){
+const np=getNormPol();
+polRefs.forEach((r,i)=>{
+const c=np[i],pct=Math.round(c.prob*100);
+r.ampVal.textContent=c.mag.toFixed(2)+' ('+pct+'%)';
+r.phVal.textContent=r.p.phaseDeg+'°';});
+const parts=[];
+for(const c of np){
+if(c.mag<0.005)continue;
+const deg=((Math.round(c.ph*180/Math.PI)%360)+360)%360;
+parts.push((deg===180?'−':'')+c.mag.toFixed(2)+(deg===0||deg===180?'':'e^{i·'+deg+'°}')+c.axis+'̂');}
+$('pol-sum').textContent=parts.length?('ε = '+parts.join(' + ').replace(/\+ −/g,'− ')):'';}
+
+function updateEmUI(){
+updatePolReadouts();
+const isWave=interactionMode==='wave';
+$('ppow-row').hidden=!isWave;
+$('fire').textContent=isWave?'Fire EM pulse':'Send photon';
+$('tr-lab').textContent=isWave?'Central frequency (transition energy)':'Photon energy (electric dipole transition)';
+const cfg=getPulseConfig();
+const blocked=!!pulse||!cfg.ok||(interactionMode==='photon'&&cfg.muRabi<=1e-7);
+$('fire').disabled=blocked;
+if(!cfg.ok){
+$('pdur-v').textContent=$('pdur').value+' cyc';
+$('pdet-v').textContent='—';
+$('ppow-v').textContent='—';
+$('em-note').textContent='Raise at least one orbital amplitude above 0 to enable transitions.';
+return;}
+$('pdur-v').textContent=cfg.cyc+' cyc ('+fmtDur(cfg.Tfs)+')';
+$('pdet-v').textContent=Math.abs(cfg.det)<1e-6?'0 (resonant)':((cfg.detAu>=0?'+':'')+fmtEv(cfg.detAu*HA));
+if(isWave){
+$('ppow-v').textContent=fmtInt(cfg.intensityWcm2)+' · Θ='+(cfg.theta/Math.PI).toFixed(2)+'π';
+}
+if(cfg.muRabi<=1e-7){
+$('em-note').textContent='Zero dipole coupling between the active state and '+cfg.trSpec.n2+LET[cfg.trSpec.l2]+' for this polarization (selection rule mismatch). Adjust x/y/z polarization or initial state.';
+}else if(isWave){
+$('em-note').textContent='Coherent sin²-envelope pulse at ω = '+(cfg.omegaL*HA).toFixed(4)+' eV · Rabi pulse area Θ = '+(cfg.theta/Math.PI).toFixed(2)+'π (π transfers population; 2π flips phase/m across dark & bright states).';
+}else{
+$('em-note').textContent='Single-photon wavepacket calibrated to Θ = 1.00π along the dipole-coupled target state at ω = '+(cfg.omegaL*HA).toFixed(4)+' eV.';}}
+
+$('fire').onclick=()=>startPulse();
+$('stop').onclick=()=>finishPulse(true);
 
 function refresh(keep,resetT){
 if(resetT)tSim=0;
@@ -597,117 +1134,96 @@ if(!keep)reseed();
 key='';
 overlayDirty=true;
 rescaleB();
-buildPhoton();
+buildTransitions();
+updateEmUI();
 info();}
 
-// Initial row
-compList.appendChild(makeComponentRow(components[0]));
-updateAmpReadouts();
+// Initialize UI
+rebuildComponentList();
 
 bf.oninput=()=>{
 Bau=+bf.value*2/bscale();
 $('bv').textContent=fmtB(Bau);
 updateEnergies();
-buildPhoton();
+buildTransitions();
+updateEmUI();
 info();};
 $('tilt').oninput=e=>{$('tv').textContent=e.target.value+'°';};
 $('cnt').oninput=e=>{$('cv').textContent=e.target.value;reseed();};
 let run=true;
 $('pp').onclick=()=>{run=!run;$('pp').textContent=run?'Pause':'Play';};
-$('rst').onclick=()=>{if(tr)return;tSim=0;reseed();overlayDirty=true;};
+$('rst').onclick=()=>{if(pulse)return;tSim=0;reseed();overlayDirty=true;};
 
 function setLocked(locked){
-$('go').disabled=locked||components.length>1||eff.length!==1||!$('ph').options.length;
-$('ph').disabled=locked||components.length>1||eff.length!==1||!$('ph').options.length;
 $('add').disabled=locked||components.length>=12;
 $('rst').disabled=locked;
 $('bf').disabled=locked;
 $('cnt').disabled=locked;
+$('tr-sel').disabled=locked;
+$('pdur').disabled=locked;
+$('pdet').disabled=locked;
+$('ppow').disabled=locked;
+document.querySelectorAll('input[name="imode"]').forEach(r=>r.disabled=locked);
+document.querySelectorAll('.chip[data-pol]').forEach(b=>b.disabled=locked);
+for(const r of polRefs){r.ampIn.disabled=locked;r.phIn.disabled=locked;}
 for(const r of rowRefs.values()){
 r.ns.disabled=locked;r.ls.disabled=locked;r.ms.disabled=locked;
 r.ampIn.disabled=locked;r.phIn.disabled=locked;
-r.rm.disabled=locked||components.length<=1;}}
-
-/* ---------- photon transition (single eigenstate) ---------- */
-const sm=x=>x*x*(3-2*x);
-function cdfBin(cdf,x){
-if(x<=0)return 0;if(x>=cdf.length)return 1;
-const k=Math.floor(x),f=x-k,prev=k>0?cdf[k-1]:0;
-return prev+f*(cdf[k]-prev);}
-$('go').onclick=()=>{if(!tr&&components.length===1&&eff.length===1&&$('ph').value)startTransition(...$('ph').value.split('|').map(Number));};
-function startTransition(n2,l2,m2){
-const c0=components[0];
-const b0=getBasis(c0.n,c0.l,c0.m),b1=getBasis(n2,l2,m2);
-const ri=b0.rcdf,ti=b0.tcdf,dri=b0.dr,Ei=b0.E995,mi=c0.m;
-const rf=b1.rcdf,tf=b1.tcdf,drf=b1.dr,Ef=b1.E995;
-const D=0.5/(c0.n*c0.n)-0.5/(n2*n2)+(m2-mi)*Bau/2;
-for(const q of P){
-q.r0=Math.hypot(q.rho,q.z);q.th0=Math.atan2(q.rho,q.z);
-q.r1=Math.min(invc(rf,cdfBin(ri,q.r0/dri))*drf,Ef);
-let th1=invc(tf,cdfBin(ti,q.th0*NT/Math.PI))*Math.PI/NT;
-if(m2!==0&&q.r1>1e-6){const ms=Math.min(.99,.03*Ef/q.r1);
-if(Math.sin(th1)<ms){const tm=Math.asin(ms);th1=th1<Math.PI/2?tm:Math.PI-tm;}}
-q.th1=th1;
-q.r=q.r0;q.th=q.th0;q.hist=[];}
-tr={tgt:[n2,l2,m2],tau:0,mi,mf:m2,E0:Ei,Ef};
-setLocked(true);
-const ev=Math.abs(D*HA);
-$('info').innerHTML='Photon of <b>'+ev.toFixed(ev<.1?4:2)+' eV</b> '+(D>0?'absorbed':'emitted')+': <b>'+c0.n+LET[c0.l]+' → '+n2+LET[l2]+'</b>, m '+mi+' → '+m2+'. The cloud is carried into the new orbital by an interpolated flow.';}
-function stepTransition(dt,spd){
-tr.tau+=dt*spd/5;
-const lam=sm(Math.min(tr.tau,1)),Ev=tr.E0+(tr.Ef-tr.E0)*lam,dts=dt*spd*(0.25*Ev*Ev),om=Bau/2,mm=(1-lam)*tr.mi+lam*tr.mf;
-for(const q of P){
-q.r=q.r0+lam*(q.r1-q.r0);q.th=q.th0+lam*(q.th1-q.th0);
-const rho=Math.max(q.r*Math.sin(q.th),0.01);
-q.ph=(q.ph+(mm/(rho*rho)+om)*dts)%TAU;}
-if(tr.tau>=1)finish();}
-function finish(){
-const c0=components[0],[n2,l2,m2]=tr.tgt;
-c0.n=n2;c0.l=l2;c0.m=m2;
-const ref=rowRefs.get(c0.id);
-if(ref){
-fill(ref.ns,1,7,n2);
-fill(ref.ls,0,n2-1,l2,v=>v+' ('+LET[v]+')');
-fill(ref.ms,-l2,l2,m2);}
-computeEffective();
-for(const q of P){q.rho=q.r*Math.sin(q.th);q.z=q.r*Math.cos(q.th);q.w=m2/(q.rho*q.rho);q.col=colr(q.rho);delete q.hist;}
-tr=null;
-setLocked(false);
-updateAmpReadouts();
-refresh(true,true);}
+r.rm.disabled=locked||components.length<=1;}
+if(locked)$('fire').disabled=true;}
 
 /* ---------- density overlay: view-aligned slice through the nucleus ---------- */
 const off=document.createElement('canvas'),offCtx=off.getContext('2d');
-let offW=0,offH=0,offIm=null,overlayDirty=true;const CELL=3;
+let offW=0,offH=0,offIm=null,overlayDirty=true,cellSz=3;
 let sliceBasis=[];
 
-function buildSliceBasis(p,S,cx,cy){
-const w=Math.ceil(W/CELL),h=Math.ceil(H/CELL);
+function buildSliceBasis(bases,p,S,cx,cy){
+cellSz=bases.length>8?4:3;
+const w=Math.ceil(W/cellSz),h=Math.ceil(H/cellSz);
 if(w!==offW||h!==offH){offW=w;offH=h;off.width=w;off.height=h;offIm=offCtx.createImageData(w,h);}
 const cp=Math.cos(p),sp=Math.sin(p),len=w*h;
-sliceBasis=eff.map(()=>({re:new Float32Array(len),im:new Float32Array(len)}));
+sliceBasis=bases.map(()=>({re:new Float32Array(len),im:new Float32Array(len)}));
 for(let j=0;j<h;j++){
-const V=(cy-(j+.5)*CELL)/S,y=V*sp,z=V*cp;
+const V=(cy-(j+.5)*cellSz)/S,y=V*sp,z=V*cp;
 for(let i=0;i<w;i++){
-const X=((i+.5)*CELL-cx)/S,idx=j*w+i;
-for(let k=0;k<eff.length;k++){
-const [pr,pi]=evalBasisPsi(eff[k].b,X,y,z);
+const X=((i+.5)*cellSz-cx)/S,idx=j*w+i;
+for(let k=0;k<bases.length;k++){
+const [pr,pi]=evalBasisPsi(bases[k],X,y,z);
 sliceBasis[k].re[idx]=pr;
 sliceBasis[k].im[idx]=pi;}}}}
 
-let ovAlphas=new Float64Array(16);
+let ovAlphas=new Float64Array(32);
 function renderOverlay(p,S,cx,cy){
+if(pulse){
+const bases=pulse.bases,k=W+'x'+H+':'+p+':PULSE:'+pulse.sys.M+':'+E;
+if(k!==key){key=k;buildSliceBasis(bases,p,S,cx,cy);overlayDirty=true;}
+if(!overlayDirty&&!run)return true;
+overlayDirty=false;
+const rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
+const data=offIm.data,len=offW*offH,K=bases.length,c=pulse.c,invRef=1/Math.max(refDens,1e-30);
+for(let idx=0;idx<len;idx++){
+let re=0,im=0;
+for(let m=0;m<K;m++){
+const aRe=c[m*2],aIm=c[m*2+1],sb=sliceBasis[m];
+const pr=sb.re[idx],pi=sb.im[idx];
+re+=aRe*pr-aIm*pi;im+=aRe*pi+aIm*pr;}
+const d=(re*re+im*im)*invRef;
+const al=Math.min(.55,.03/Math.max(d,1e-6));
+const q=idx*4;data[q]=rgb[0];data[q+1]=rgb[1];data[q+2]=rgb[2];data[q+3]=Math.round(al*255);}
+offCtx.putImageData(offIm,0,0);
+return true;}
+
 if(!eff.length)return false;
 if(eff.length===1){
 const b=eff[0].b,k=W+'x'+H+':'+p+':'+b.key+':'+E;
 if(k===key&&!overlayDirty)return true;
-key=k;overlayDirty=false;
-const w=Math.ceil(W/CELL),h=Math.ceil(H/CELL);
+key=k;overlayDirty=false;cellSz=3;
+const w=Math.ceil(W/cellSz),h=Math.ceil(H/cellSz);
 if(w!==offW||h!==offH){offW=w;offH=h;off.width=w;off.height=h;offIm=offCtx.createImageData(w,h);}
 const cp=Math.cos(p),rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
 const data=offIm.data;
 for(let j=0;j<h;j++)for(let i=0;i<w;i++){
-const X=((i+.5)*CELL-cx)/S,V=(cy-(j+.5)*CELL)/S;
+const X=((i+.5)*cellSz-cx)/S,V=(cy-(j+.5)*cellSz)/S;
 const r=Math.hypot(X,V),ir=Math.round(r/b.dr);
 const dR=ir<=NR?b.R2[ir]/b.maxR2:0;
 const c=r>1e-9?Math.abs(V*cp)/r:0;
@@ -718,7 +1234,7 @@ offCtx.putImageData(offIm,0,0);
 return true;}
 
 const k=W+'x'+H+':'+p+':'+stateSig+':'+E;
-if(k!==key){key=k;buildSliceBasis(p,S,cx,cy);overlayDirty=true;}
+if(k!==key){key=k;buildSliceBasis(eff.map(x=>x.b),p,S,cx,cy);overlayDirty=true;}
 if(!overlayDirty&&!(omegaMax>1e-12&&run))return true;
 overlayDirty=false;
 if(ovAlphas.length<eff.length*2)ovAlphas=new Float64Array(eff.length*2);
@@ -739,42 +1255,59 @@ return true;}
 
 /* ---------- animation ---------- */
 let last=performance.now();
+function drawFieldGizmo(pr,cp,sp){
+if(!pulse)return;
+const [ex,ey,ez]=fieldVecAt(pulse,pulse.t);
+const Escale=pulse.E0>0?1/pulse.E0:0;
+const nx=ex*Escale,ny=ey*Escale,nz=ez*Escale;
+const ox=38,oy=H-38,R=24;
+ctx.save();
+ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--line');
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--panel');
+ctx.globalAlpha=0.88;
+ctx.beginPath();ctx.arc(ox,oy,R+4,0,TAU);ctx.fill();ctx.stroke();
+ctx.globalAlpha=1;
+const dx=nx*R,dy=-(ny*sp+nz*cp)*R;
+const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc');
+ctx.strokeStyle=acc;ctx.fillStyle=acc;ctx.lineWidth=2;
+ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+dx,oy+dy);ctx.stroke();
+ctx.beginPath();ctx.arc(ox+dx,oy+dy,3,0,TAU);ctx.fill();
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--mut');
+ctx.font='11px system-ui,sans-serif';
+ctx.fillText('E(t)',ox-10,oy-R-8);
+// Pulse progress bar
+const barW=76,bx=ox+R+14,by=oy-3,frac=Math.min(1,pulse.t/pulse.T);
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--line');
+ctx.fillRect(bx,by,barW,6);
+ctx.fillStyle=acc;
+ctx.fillRect(bx,by,barW*frac,6);
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--mut');
+ctx.fillText('pulse '+Math.round(frac*100)+'%',bx,by-6);
+ctx.restore();}
+
 function frame(now){
 const dt=Math.min((now-last)/1000,.05);last=now;
 const spd=+$('spd').value,ts=tscale(),Om=Bau/2,span=spd*ts*0.7,dts=dt*spd*ts;
 if(run){
-if(tr){
-stepTransition(dt,spd);
+if(pulse){
+stepPulse(dt,spd,span);
 }else if(eff.length>=2){
 stepSuperposition(dts,span);
 }}
-const Ev=tr?tr.E0+(tr.Ef-tr.E0)*sm(Math.min(tr.tau,1)):E;
 const p=$('tilt').value*Math.PI/180,cp=Math.cos(p),sp=Math.sin(p);
-const S=Math.min(W,H*1.15)/(2*Ev),cx=W/2,cy=H/2;
+const S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
 ctx.clearRect(0,0,W,H);
-if($('ov').checked&&!tr&&renderOverlay(p,S,cx,cy))ctx.drawImage(off,0,0,offW*CELL,offH*CELL);
+if($('ov').checked&&renderOverlay(p,S,cx,cy))ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
 const pr=(x,y,z)=>[cx+x*S,cy-(y*sp+z*cp)*S,y*cp-z*sp];
 const grid=getComputedStyle(document.documentElement).getPropertyValue('--grid');
 ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
-const a=pr(0,0,-Ev),b=pr(0,0,Ev);
+const a=pr(0,0,-E),b=pr(0,0,E);
 ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);
 ctx.fillStyle=grid;ctx.font='12px system-ui,sans-serif';ctx.fillText('z',b[0]+6,b[1]+4);
 
-const singleMode=!tr&&eff.length===1;
-const showTr=$('tr').checked&&(tr||eff.length>=2||(singleMode&&(eff[0].m!==0||Bau!==0)));
-if(tr){
-for(const q of P){
-ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
-const rho=q.r*Math.sin(q.th),X=rho*Math.cos(q.ph),Y=rho*Math.sin(q.ph),Z=q.r*Math.cos(q.th);
-const c=pr(X,Y,Z);q.col=colr(rho);ctx.strokeStyle=q.col;ctx.fillStyle=q.col;
-if(run){q.hist.push([X,Y,Z]);if(q.hist.length>14)q.hist.shift();}
-if(showTr){let prev=null;const hh=q.hist;
-for(let k=hh.length-1,j=0;k>=0;k--,j++){const d=pr(hh[k][0],hh[k][1],hh[k][2]);
-if(prev){ctx.globalAlpha=.55*(1-j/14);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}prev=d;}}
-const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
-ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
-ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}
-}else if(singleMode){
+const singleMode=!pulse&&eff.length===1;
+const showTr=$('tr').checked&&(!!pulse||eff.length>=2||(singleMode&&(eff[0].m!==0||Bau!==0)));
+if(singleMode){
 for(const q of P){
 ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
 const wt=q.w+Om;
@@ -787,10 +1320,10 @@ const ph=q.ph-dir*arc*(k/N),d=pr(q.rho*Math.cos(ph),q.rho*Math.sin(ph),q.z);
 if(prev){ctx.globalAlpha=.55*(1-k/N);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}
 prev=d;}}
 const c=pr(q.rho*Math.cos(q.ph),q.rho*Math.sin(q.ph),q.z);
-const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
+const dn=Math.max(0,Math.min(1,(c[2]/E+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
 ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}
-}else if(eff.length>=2){
+}else if(pulse||eff.length>=2){
 for(const q of P){
 ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
 if(showTr){
@@ -801,11 +1334,12 @@ const d=pr(hh[k][0],hh[k][1],hh[k][2]);
 ctx.globalAlpha=.55*(1-(j+1)/(len+1));ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
 prev=d;}}
 const c=pr(q.x,q.y,q.z);
-const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
+const dn=Math.max(0,Math.min(1,(c[2]/E+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
 ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}}
 ctx.globalAlpha=1;
 const o=pr(0,0,0);ctx.fillStyle=grid;ctx.beginPath();ctx.arc(o[0],o[1],3,0,TAU);ctx.fill();
+drawFieldGizmo(pr,cp,sp);
 requestAnimationFrame(frame);}
 
 window.addEventListener('resize',resize);
