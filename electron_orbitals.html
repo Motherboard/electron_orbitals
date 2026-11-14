@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bohmian trajectories in hydrogen orbitals</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1c1c1e;--mut:#6b6b70;--line:#d9d9dc;--panel:#f0f0ee;--acc:#534ab7;--ov:83,74,183;--grid:rgba(110,110,115,.55)}
+@media (prefers-color-scheme:dark){:root{--bg:#161618;--fg:#ececee;--mut:#9a9aa2;--line:#35353a;--panel:#212125;--acc:#a79df0;--ov:110,100,210;--grid:rgba(170,170,180,.55)}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));padding-top:calc(16px + env(safe-area-inset-top,0px))}
+h1{font-size:19px;font-weight:600;margin:0 0 2px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.sel{display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px}
+.sel span,.lab{font-size:13px;color:var(--mut)}
+select,button{font:inherit;font-size:16px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+button{cursor:pointer}
+button:disabled,select:disabled,input:disabled{opacity:.5;cursor:default}
+select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+canvas{width:100%;height:min(58vh,500px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg)}
+#info{font-size:13px;color:var(--mut);margin:8px 0 2px;min-height:3em}
+#info b{color:var(--fg);font-weight:600}
+input[type=range]{flex:1;min-width:120px;accent-color:var(--acc)}
+.chk{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mut)}
+.val{min-width:34px;text-align:right;font-size:13px;color:var(--mut)}
+.lab{min-width:64px}
+#go{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
+.note{font-size:12px;color:var(--mut);margin:4px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Bohmian trajectories in hydrogen orbitals</h1>
+<p class="sub">Electrons start at positions sampled from |ψ|² and follow the guidance equation.</p>
+
+<div class="row">
+<label class="sel"><span>n</span><select id="n"></select></label>
+<label class="sel"><span>l</span><select id="l"></select></label>
+<label class="sel"><span>m</span><select id="m"></select></label>
+</div>
+
+<canvas id="c" aria-label="Animated Bohmian electron trajectories"></canvas>
+<div id="info"></div>
+
+<div class="row">
+<label class="sel" style="flex:3"><span>Photon transition (electric dipole: Δl = ±1, Δm = 0, ±1)</span><select id="ph"></select></label>
+<button id="go">Send photon</button>
+</div>
+<div class="row">
+<span class="lab">Field B<sub>z</sub></span><input type="range" id="bf" min="-3" max="3" step="any" value="0"><span class="val" id="bv" style="min-width:64px">0 T</span>
+</div>
+<div class="row">
+<button id="pp" aria-label="Pause or play">Pause</button>
+<span class="lab">Speed</span><input type="range" id="spd" min="0.1" max="3" step="0.1" value="0.8">
+</div>
+<div class="row">
+<span class="lab">Tilt</span><input type="range" id="tilt" min="0" max="90" step="1" value="35"><span class="val" id="tv">35°</span>
+</div>
+<div class="row">
+<span class="lab">Electrons</span><input type="range" id="cnt" min="50" max="600" step="10" value="220"><span class="val" id="cv">220</span>
+</div>
+<div class="row">
+<label class="chk"><input type="checkbox" id="tr" checked> Trails</label>
+<label class="chk"><input type="checkbox" id="ov" checked> Density overlay</label>
+</div>
+<p class="note">The field slider is scaled to the orbital: at 1, the Larmor rotation equals the circulation of an m = 1 electron at 0.3 of the cloud radius. The readout shows the real field. During a transition the cloud is moved from the old density to the new one by an interpolated flow (each electron keeps its place in the cumulative radial and polar distributions), and the circulation blends from m to m′. It lasts a few seconds here instead of the real ~10⁻⁸ s, and it is not a solution of the guidance equation. The density overlay is hidden until it ends. The field acts through the weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected).</p>
+</main>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,key='';
+function resize(){const d=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);key='';}
+const LET='spdfghi',HA=27.2114,AUT=2.3505e5,TAU=2*Math.PI;
+
+/* ---------- physics (atomic units: hbar = m_e = e = a0 = 1) ---------- */
+function laguerre(k,a,x){let p0=1;if(k===0)return p0;let p1=1+a-x;for(let j=1;j<k;j++){const p2=((2*j+1+a-x)*p1-(j+a)*p0)/(j+1);p0=p1;p1=p2;}return p1;}
+function Plm(l,m,x){
+let pmm=1;
+if(m>0){const s=Math.sqrt(Math.max(0,(1-x)*(1+x)));let f=1;for(let i=1;i<=m;i++){pmm*=f*s;f+=2;}}
+if(l===m)return pmm;
+let p1=x*(2*m+1)*pmm;if(l===m+1)return p1;
+let pl=0;for(let ll=m+2;ll<=l;ll++){pl=(x*(2*ll-1)*p1-(ll+m-1)*pmm)/(ll-m);pmm=p1;p1=pl;}
+return pl;}
+
+let n=1,l=0,m=0,Bau=0,tr=null;
+const NR=4000,NT=2000,NC=1000;
+let dr,rcdf,R2,maxR2,tcdf,P2,maxP2,E;
+
+function setup(){
+const rmax=2*n*n+8*n+10;dr=rmax/NR;
+R2=new Float64Array(NR+1);rcdf=new Float64Array(NR);maxR2=0;
+const rad=r=>{const x=2*r/n;return Math.pow(x,l)*Math.exp(-x/2)*laguerre(n-l-1,2*l+1,x);};
+for(let i=0;i<=NR;i++){const R=rad(i*dr);R2[i]=R*R;if(R2[i]>maxR2)maxR2=R2[i];}
+let acc=0;
+for(let i=0;i<NR;i++){const rm=(i+.5)*dr,R=rad(rm);acc+=rm*rm*R*R;rcdf[i]=acc;}
+for(let i=0;i<NR;i++)rcdf[i]/=acc;
+const am=Math.abs(m);
+tcdf=new Float64Array(NT);acc=0;
+for(let i=0;i<NT;i++){const th=(i+.5)*Math.PI/NT,p=Plm(l,am,Math.cos(th));acc+=Math.sin(th)*p*p;tcdf[i]=acc;}
+for(let i=0;i<NT;i++)tcdf[i]/=acc;
+P2=new Float64Array(NC+1);maxP2=0;
+for(let i=0;i<=NC;i++){const p=Plm(l,am,i/NC);P2[i]=p*p;if(P2[i]>maxP2)maxP2=P2[i];}
+E=invc(rcdf,0.995)*dr*1.08;
+}
+function invc(cdf,u){let lo=0,hi=cdf.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(cdf[mid]<u)lo=mid+1;else hi=mid;}
+const prev=lo>0?cdf[lo-1]:0,span=cdf[lo]-prev;return lo+(span>0?(u-prev)/span:0);}
+const tscale=()=>(0.5*E)*(0.5*E),bscale=()=>(0.3*E)*(0.3*E);
+const colr=rho=>'hsl('+(15+Math.min(rho/(0.8*E),1)*250)+',70%,56%)';
+
+/* ---------- particles ---------- */
+let P=[];
+function samp(){
+for(;;){
+const r=invc(rcdf,Math.random())*dr;
+const th=invc(tcdf,Math.random())*Math.PI/NT;
+const rho=r*Math.sin(th);
+if(r>E||(m!==0&&rho<0.03*E))continue;
+return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:m/(rho*rho),col:colr(rho)};}
+}
+function reseed(){P=[];const N=+$('cnt').value;for(let i=0;i<N;i++)P.push(samp());}
+
+/* ---------- UI ---------- */
+const bf=$('bf');
+function fmtB(B){const T=B*AUT;return Math.abs(T)<1000?T.toFixed(Math.abs(T)<10?2:0)+' T':(T/1000).toFixed(1)+' kT';}
+function rescaleB(){const s=Bau*bscale()/2,mx=Math.max(3,Math.ceil(Math.abs(s)));bf.min=-mx;bf.max=mx;bf.value=s;$('bv').textContent=fmtB(Bau);}
+function info(){
+const Ez=(-0.5/(n*n)+m*Bau/2)*HA;
+let s='<b>'+n+LET[l]+'</b>, m = '+m+' · E = '+Ez.toFixed(4)+' eV. ';
+if(Bau===0)s+=m===0?'The wavefunction is real, so the guidance velocity is zero and the electrons sit still.':'L<sub>z</sub> = '+m+'ħ for every electron; ω = '+m+'ħ/(mₑρ²), so electrons near the axis circle faster.';
+else s+='The field adds a Larmor rotation of B/2 to every electron and shifts this level by '+(m*Bau/2*HA*1000).toFixed(2)+' meV (m·μ<sub>B</sub>B).';
+$('info').innerHTML=s;}
+function buildPhoton(){
+const sel=$('ph'),old=sel.value;sel.innerHTML='';
+for(let n2=1;n2<=7;n2++)for(const l2 of [l-1,l+1]){
+if(n2===n||l2<0||l2>n2-1)continue;
+for(let dm=-1;dm<=1;dm++){const m2=m+dm;if(Math.abs(m2)>l2)continue;
+const d=(0.5/(n*n)-0.5/(n2*n2)+dm*Bau/2)*HA,o=document.createElement('option');
+o.value=n2+'|'+l2+'|'+m2;
+o.textContent=n2+LET[l2]+' m='+m2+' · '+(d>0?'absorb ':'emit ')+Math.abs(d).toFixed(Math.abs(d)<.1?4:2)+' eV';
+sel.appendChild(o);}}
+if([...sel.options].some(o=>o.value===old))sel.value=old;
+$('go').disabled=!sel.options.length;}
+function fill(sel,from,to,val){sel.innerHTML='';for(let i=from;i<=to;i++){const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o);}sel.value=val;}
+function refresh(keep){setup();if(!keep)reseed();key='';rescaleB();buildPhoton();info();}
+fill($('n'),1,7,1);fill($('l'),0,0,0);fill($('m'),0,0,0);
+$('n').onchange=()=>{n=+$('n').value;fill($('l'),0,n-1,Math.min(l,n-1));l=+$('l').value;fill($('m'),-l,l,Math.max(-l,Math.min(l,m)));m=+$('m').value;refresh();};
+$('l').onchange=()=>{l=+$('l').value;fill($('m'),-l,l,Math.max(-l,Math.min(l,m)));m=+$('m').value;refresh();};
+$('m').onchange=()=>{m=+$('m').value;refresh();};
+bf.oninput=()=>{Bau=+bf.value*2/bscale();$('bv').textContent=fmtB(Bau);buildPhoton();info();};
+$('tilt').oninput=e=>{$('tv').textContent=e.target.value+'°';};
+$('cnt').oninput=e=>{$('cv').textContent=e.target.value;reseed();};
+let run=true;
+$('pp').onclick=()=>{run=!run;$('pp').textContent=run?'Pause':'Play';};
+const LOCK=['go','ph','n','l','m','bf','cnt'];
+
+/* ---------- photon transition ---------- */
+const sm=x=>x*x*(3-2*x),cl=(x,a)=>Math.max(-a,Math.min(a,x));
+function cdfBin(cdf,x){
+if(x<=0)return 0;if(x>=cdf.length)return 1;
+const k=Math.floor(x),f=x-k,prev=k>0?cdf[k-1]:0;
+return prev+f*(cdf[k]-prev);}
+$('go').onclick=()=>{if(!tr)startTransition(...$('ph').value.split('|').map(Number));};
+function startTransition(n2,l2,m2){
+const ri=rcdf,ti=tcdf,dri=dr,Ei=E,mi=m,s=[n,l,m];
+n=n2;l=l2;m=m2;setup();
+const rf=rcdf,tf=tcdf,drf=dr,Ef=E;
+[n,l,m]=s;setup();
+const D=0.5/(n*n)-0.5/(n2*n2)+(m2-mi)*Bau/2;
+for(const q of P){
+q.r0=Math.hypot(q.rho,q.z);q.th0=Math.atan2(q.rho,q.z);
+q.r1=Math.min(invc(rf,cdfBin(ri,q.r0/dri))*drf,Ef);
+let th1=invc(tf,cdfBin(ti,q.th0*NT/Math.PI))*Math.PI/NT;
+if(m2!==0&&q.r1>1e-6){const ms=Math.min(.99,.03*Ef/q.r1);
+if(Math.sin(th1)<ms){const tm=Math.asin(ms);th1=th1<Math.PI/2?tm:Math.PI-tm;}}
+q.th1=th1;
+q.r=q.r0;q.th=q.th0;q.hist=[];}
+tr={tgt:[n2,l2,m2],tau:0,mi,mf:m2,E0:Ei,Ef};
+LOCK.forEach(i=>$(i).disabled=true);
+const ev=Math.abs(D*HA);
+$('info').innerHTML='Photon of <b>'+ev.toFixed(ev<.1?4:2)+' eV</b> '+(D>0?'absorbed':'emitted')+': <b>'+n+LET[l]+' → '+n2+LET[l2]+'</b>, m '+mi+' → '+m2+'. The cloud is carried into the new orbital by an interpolated flow.';
+}
+function stepTransition(dt,spd){
+tr.tau+=dt*spd/5;
+const lam=sm(Math.min(tr.tau,1)),Ev=tr.E0+(tr.Ef-tr.E0)*lam,dts=dt*spd*(0.25*Ev*Ev),om=Bau/2,mm=(1-lam)*tr.mi+lam*tr.mf;
+for(const q of P){
+q.r=q.r0+lam*(q.r1-q.r0);q.th=q.th0+lam*(q.th1-q.th0);
+const rho=Math.max(q.r*Math.sin(q.th),0.01);
+q.ph=(q.ph+(mm/(rho*rho)+om)*dts)%TAU;}
+if(tr.tau>=1)finish();}
+function finish(){
+[n,l,m]=tr.tgt;
+fill($('n'),1,7,n);fill($('l'),0,n-1,l);fill($('m'),-l,l,m);
+setup();
+for(const q of P){q.rho=q.r*Math.sin(q.th);q.z=q.r*Math.cos(q.th);q.w=m/(q.rho*q.rho);q.col=colr(q.rho);delete q.hist;}
+tr=null;LOCK.forEach(i=>$(i).disabled=false);
+refresh(true);}
+
+/* ---------- density overlay: view-aligned slice through the nucleus ---------- */
+const off=document.createElement('canvas');let offW=0,offH=0;const CELL=3;
+function build(p,S,cx,cy){
+const k=W+'x'+H+':'+p+':'+n+':'+l+':'+m+':'+E;if(k===key)return;key=k;
+const w=Math.ceil(W/CELL),h=Math.ceil(H/CELL);offW=w;offH=h;off.width=w;off.height=h;
+const o=off.getContext('2d'),im=o.createImageData(w,h),cp=Math.cos(p);
+const rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
+for(let j=0;j<h;j++)for(let i=0;i<w;i++){
+const X=((i+.5)*CELL-cx)/S,V=(cy-(j+.5)*CELL)/S;
+const r=Math.hypot(X,V),ir=Math.round(r/dr);
+const dR=ir<=NR?R2[ir]/maxR2:0;
+const c=r>1e-9?Math.abs(V*cp)/r:0;
+const dP=P2[Math.min(NC,Math.round(c*NC))]/maxP2;
+const al=Math.min(.55,.03/Math.max(dR*dP,1e-6));
+const q=(j*w+i)*4;im.data[q]=rgb[0];im.data[q+1]=rgb[1];im.data[q+2]=rgb[2];im.data[q+3]=Math.round(al*255);}
+o.putImageData(im,0,0);}
+
+/* ---------- animation ---------- */
+let last=performance.now();
+function frame(now){
+const dt=Math.min((now-last)/1000,.05);last=now;
+const spd=+$('spd').value,ts=tscale(),Om=Bau/2;
+if(run){
+if(tr){
+stepTransition(dt,spd);
+}
+}
+const Ev=tr?tr.E0+(tr.Ef-tr.E0)*sm(Math.min(tr.tau,1)):E;
+const p=$('tilt').value*Math.PI/180,cp=Math.cos(p),sp=Math.sin(p);
+const S=Math.min(W,H*1.15)/(2*Ev),cx=W/2,cy=H/2;
+ctx.clearRect(0,0,W,H);
+if($('ov').checked&&!tr){build(p,S,cx,cy);ctx.drawImage(off,0,0,offW*CELL,offH*CELL);}
+const pr=(x,y,z)=>[cx+x*S,cy-(y*sp+z*cp)*S,y*cp-z*sp];
+const grid=getComputedStyle(document.documentElement).getPropertyValue('--grid');
+ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
+const a=pr(0,0,-Ev),b=pr(0,0,Ev);
+ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);
+ctx.fillStyle=grid;ctx.font='12px system-ui,sans-serif';ctx.fillText('z',b[0]+6,b[1]+4);
+const showTr=$('tr').checked&&(tr||m!==0||Bau!==0),span=spd*ts*0.7,dts=dt*spd*ts;
+for(const q of P){
+ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
+let c;
+if(tr){
+const rho=q.r*Math.sin(q.th),X=rho*Math.cos(q.ph),Y=rho*Math.sin(q.ph),Z=q.r*Math.cos(q.th);
+c=pr(X,Y,Z);q.col=colr(rho);ctx.strokeStyle=q.col;ctx.fillStyle=q.col;
+if(run){q.hist.push([X,Y,Z]);if(q.hist.length>14)q.hist.shift();}
+if(showTr){let prev=null;const hh=q.hist;
+for(let k=hh.length-1,j=0;k>=0;k--,j++){const d=pr(hh[k][0],hh[k][1],hh[k][2]);
+if(prev){ctx.globalAlpha=.55*(1-j/14);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}prev=d;}}
+}else{
+const wt=q.w+Om;
+if(run)q.ph=(q.ph+wt*dts)%TAU;
+if(showTr){
+const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
+let prev=null;
+for(let k=0;k<=N;k++){
+const ph=q.ph-dir*arc*(k/N),d=pr(q.rho*Math.cos(ph),q.rho*Math.sin(ph),q.z);
+if(prev){ctx.globalAlpha=.55*(1-k/N);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}
+prev=d;}}
+c=pr(q.rho*Math.cos(q.ph),q.rho*Math.sin(q.ph),q.z);
+}
+const dn=Math.max(0,Math.min(1,(c[2]/Ev+1)/2));
+ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
+ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();
+}
+ctx.globalAlpha=1;
+const o=pr(0,0,0);ctx.fillStyle=grid;ctx.beginPath();ctx.arc(o[0],o[1],3,0,TAU);ctx.fill();
+requestAnimationFrame(frame);}
+
+window.addEventListener('resize',resize);
+resize();refresh();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
