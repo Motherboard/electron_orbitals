@@ -120,7 +120,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <div id="pol-list"></div>
 
 <div class="em-params">
-<div class="sfield"><label for="pdur">Duration</label><input type="range" id="pdur" min="2" max="40" step="1" value="10"><span class="val wide" id="pdur-v">10 cyc</span></div>
+<div class="sfield"><label for="pdur">Duration</label><input type="range" id="pdur" min="4" max="50" step="1" value="16"><span class="val wide" id="pdur-v">16 cyc</span></div>
 <div class="sfield"><label for="pdet">Detuning</label><input type="range" id="pdet" min="-2.5" max="2.5" step="0.05" value="0"><span class="val wide" id="pdet-v">0 (resonant)</span></div>
 <div class="sfield" id="ppow-row" hidden><label for="ppow">Power</label><input type="range" id="ppow" min="0.05" max="16" step="0.05" value="1"><span class="val wide" id="ppow-v"></span></div>
 </div>
@@ -145,7 +145,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <label class="chk"><input type="checkbox" id="tr" checked><span>Trails</span></label>
 <label class="chk"><input type="checkbox" id="ov" checked><span>Density overlay</span></label>
 </div>
-<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. During a single-photon wavepacket or coherent EM pulse, the coupled multi-level Schrödinger equation i d<b>c</b>/dt = [H₀ + <b>r</b>·<b>E</b>(t)]<b>c</b> is solved alongside the exact 3D Bohmian guidance velocity Im(∇ψ/ψ) + <b>A</b> in ultra-slow motion so you can watch orbitals transform continuously across m sublevels and shells. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected).</p>
+<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. During a single-photon wavepacket or coherent EM pulse, the time-dependent Schrödinger equation i ∂ψ/∂t = [H₀ + <b>r</b>·<b>E</b>(t)]ψ is solved on a continuous radial grid expanded in spherical harmonics (including excited &amp; continuum states) alongside the exact 3D Bohmian guidance velocity Im(∇ψ/ψ) + <b>A</b> in ultra-slow motion, continuing afterward directly from the evolved electron positions. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms (the B² diamagnetic term is neglected).</p>
 </main>
 
 <script>
@@ -640,10 +640,13 @@ const rad=Math.abs(radialDipole(trSpec.n1,trSpec.l1,trSpec.n2,trSpec.l2));
 return{muRabi:0,muShell:rad/Math.sqrt(3)};}
 const invB=1/Math.sqrt(bNorm2);
 for(let i=0;i<M;i++){bRe[i]*=invB;bIm[i]*=invB;}
-// Now compute || V^dagger |b> || on the initial manifold
+// Now compute || V^dagger |b> || strictly on the initial active manifold (excluding partner shell)
+const initShells=new Set(eff.map(k=>k.n+'|'+k.l));
+const hasInitOnly=eff.some(k=>!(k.n===pn&&k.l===pl));
 let vNorm2=0;
 for(let j=0;j<M;j++){
 if(states[j].n===pn&&states[j].l===pl)continue;
+if(hasInitOnly&&!initShells.has(states[j].n+'|'+states[j].l))continue;
 let sr=0,si=0;
 for(let i=0;i<M;i++){
 if(states[i].n!==pn||states[i].l!==pl)continue;
@@ -701,6 +704,259 @@ const v=cIn[i]+(h/6)*(tdK1[i]+2*tdK2[i]+2*tdK3[i]+tdK4[i]);
 cOut[i]=v;norm2+=v*v;}
 if(norm2>0&&Math.abs(norm2-1)>1e-12){const inv=1/Math.sqrt(norm2);for(let i=0;i<len;i++)cOut[i]*=inv;}}
 
+/* ---------- Full radial-grid spherical-harmonic TDSE solver ---------- */
+function solveNumerovCorner(l,dr){
+if(l>=2)return{d00:-2,m00:10/12};
+const nA=l+1,nB=l+2,bA=getBasis(nA,l,0),bB=getBasis(nB,l,0);
+const uA=r=>r*bA.rad(r),EA=-0.5/(nA*nA),uB=r=>r*bB.rad(r),EB=-0.5/(nB*nB);
+const f=(u,E0,r)=>2*(0.5*l*(l+1)/(r*r)-1/r-E0)*u(r);
+const r1=dr,r2=2*dr,inv=1/(dr*dr);
+const A11=uA(r1)*inv,A12=-f(uA,EA,r1),B1=(2*uA(r1)-uA(r2))*inv+(10/12)*f(uA,EA,r1)+(1/12)*f(uA,EA,r2);
+const A21=uB(r1)*inv,A22=-f(uB,EB,r1),B2=(2*uB(r1)-uB(r2))*inv+(10/12)*f(uB,EB,r1)+(1/12)*f(uB,EB,r2);
+const det=A11*A22-A12*A21;
+return{d00:-2+(B1*A22-B2*A12)/det,m00:10/12+(A11*B2-A21*B1)/det};}
+
+function buildGridSystem(trSpec,cfgSys){
+let nMin=Infinity,nMax=0,lMaxB=0,maxRmax=0;
+for(const s of cfgSys.states){
+if(s.n<nMin)nMin=s.n;if(s.n>nMax)nMax=s.n;
+if(s.l>lMaxB)lMaxB=s.l;if(s.b.rmax>maxRmax)maxRmax=s.b.rmax;}
+const Lmax=Math.min(5,Math.max(2,lMaxB+1));
+const rMax=Math.max(46,maxRmax+14);
+const dr0=nMin===1?0.22:(nMin===2?0.30:0.42);
+const dr=Math.max(dr0,rMax/360);
+const Nr=Math.ceil(rMax/dr);
+
+const fact=n=>{let r=1;for(let i=2;i<=n;i++)r*=i;return r;};
+const radCh=[],invDr2=1/(dr*dr);
+for(let l=0;l<=Lmax;l++){
+const{d00,m00}=solveNumerovCorner(l,dr);
+const mL=new Float64Array(Nr),mD=new Float64Array(Nr),mU=new Float64Array(Nr);
+const hL=new Float64Array(Nr),hD=new Float64Array(Nr),hU=new Float64Array(Nr),V=new Float64Array(Nr);
+for(let j=0;j<Nr;j++){
+const r=(j+1)*dr;
+V[j]=0.5*l*(l+1)/(r*r)-1/r;
+mL[j]=j>0?1/12:0;mD[j]=j===0?m00:10/12;mU[j]=j<Nr-1?1/12:0;}
+for(let j=0;j<Nr;j++){
+hL[j]=j>0?(-0.5*invDr2+mL[j]*V[j-1]):0;
+hD[j]=-0.5*(j===0?d00:-2)*invDr2+mD[j]*V[j];
+hU[j]=j<Nr-1?(-0.5*invDr2+mU[j]*V[j+1]):0;}
+radCh.push({mL,mD,mU,hL,hD,hU});}
+
+// Smooth complex absorbing mask in outer 14% of the box to suppress wall reflections on strong pulses
+const rCap=0.86*Nr*dr,capRate=new Float64Array(Nr);
+for(let j=0;j<Nr;j++){
+const r=(j+1)*dr;
+if(r>rCap){const w=(r-rCap)/(Nr*dr-rCap);capRate[j]=0.45*w*w;}}
+
+const chans=[],chMap=new Map();
+for(let l=0;l<=Lmax;l++){
+for(let m=-l;m<=l;m++){
+chMap.set(l+'|'+m,chans.length);
+const a=Math.abs(m),sigma=m>0?1:(m<0?-1:0);
+const cs=(m>0&&(a&1))?-1:1;
+const norm=cs*Math.sqrt(((2*l+1)/(4*Math.PI))*fact(l-a)/fact(l+a));
+chans.push({l,m,a,sigma,norm});}}
+const Mch=chans.length;
+const edges=[];
+for(let i=0;i<Mch;i++)for(let j=0;j<Mch;j++){
+const d=angularDipole(chans[i].l,chans[i].m,chans[j].l,chans[j].m);
+if(d.xRe||d.xIm||d.yRe||d.yIm||d.zRe||d.zIm)edges.push({i,j,xRe:d.xRe,xIm:d.xIm,yRe:d.yRe,yIm:d.yIm,zRe:d.zRe,zIm:d.zIm});}
+
+const URe=Array.from({length:Mch},()=>new Float64Array(Nr));
+const UIm=Array.from({length:Mch},()=>new Float64Array(Nr));
+const chAct=new Uint8Array(Mch);
+for(const k of eff){
+const idx=chMap.get(k.l+'|'+k.m);
+if(idx===undefined)continue;
+chAct[idx]=1;
+const ang=k.phaseRad-k.E_au*tSim,ca=k.mag*Math.cos(ang),sa=k.mag*Math.sin(ang);
+for(let j=0;j<Nr;j++){
+const r=(j+1)*dr,u=k.b.rad(r)*r;
+URe[idx][j]+=ca*u;UIm[idx][j]+=sa*u;}}
+
+// Build bound eigenstate projection table (tracked shells up to nMax+2 plus all sys.states)
+const projStates=[],projSeen=new Set();
+const uRadCache=new Map();
+const getURad=(n,l)=>{
+const rk=n+'|'+l;
+if(uRadCache.has(rk))return uRadCache.get(rk);
+const b=getBasis(n,l,0),arr=new Float64Array(Nr);
+for(let j=0;j<Nr;j++){const r=(j+1)*dr;arr[j]=b.rad(r)*r;}
+uRadCache.set(rk,arr);return arr;};
+const addProj=(n,l,m)=>{
+if(l>Lmax)return;
+const sk=n+'|'+l+'|'+m;if(projSeen.has(sk))return;projSeen.add(sk);
+const cIdx=chMap.get(l+'|'+m);
+if(cIdx===undefined)return;
+projStates.push({n,l,m,cIdx,b:getBasis(n,l,m),uRad:getURad(n,l)});};
+for(const s of cfgSys.states)addProj(s.n,s.l,s.m);
+const nProjMax=Math.min(5,nMax+2);
+for(let n=1;n<=nProjMax;n++)for(let l=0;l<=Math.min(n-1,Lmax);l++)for(let m=-l;m<=l;m++)addProj(n,l,m);
+
+const scratch={
+cnRhsR:new Float64Array(Nr),cnRhsI:new Float64Array(Nr),
+cnCR:new Float64Array(Nr),cnCI:new Float64Array(Nr),
+cnDR:new Float64Array(Nr),cnDI:new Float64Array(Nr),
+eVR:new Float64Array(edges.length),eVI:new Float64Array(edges.length),
+tmpR:new Float64Array(Mch),tmpI:new Float64Array(Mch),
+k1R:new Float64Array(Mch),k1I:new Float64Array(Mch),
+k2R:new Float64Array(Mch),k2I:new Float64Array(Mch),
+k3R:new Float64Array(Mch),k3I:new Float64Array(Mch),
+k4R:new Float64Array(Mch),k4I:new Float64Array(Mch),
+gbuf:new Float64Array(8)};
+
+return{Lmax,Nr,dr,rCap,capRate,radCh,chans,chMap,Mch,edges,URe,UIm,chAct,projStates,scratch};}
+
+function stepGridChannelCN(g,l,dt,uR,uI){
+const{Nr,radCh,scratch}=g,{mL,mD,mU,hL,hD,hU}=radCh[l];
+const{cnRhsR,cnRhsI,cnCR,cnCI,cnDR,cnDI}=scratch,a=0.5*dt;
+for(let j=0;j<Nr;j++){
+let rR=mD[j]*uR[j]+a*hD[j]*uI[j],rI=mD[j]*uI[j]-a*hD[j]*uR[j];
+if(j>0){rR+=mL[j]*uR[j-1]+a*hL[j]*uI[j-1];rI+=mL[j]*uI[j-1]-a*hL[j]*uR[j-1];}
+if(j<Nr-1){rR+=mU[j]*uR[j+1]+a*hU[j]*uI[j+1];rI+=mU[j]*uI[j+1]-a*hU[j]*uR[j+1];}
+cnRhsR[j]=rR;cnRhsI[j]=rI;}
+{
+const D0R=mD[0],D0I=a*hD[0],den=D0R*D0R+D0I*D0I,iR=D0R/den,iI=-D0I/den;
+cnCR[0]=mU[0]*iR-a*hU[0]*iI;cnCI[0]=mU[0]*iI+a*hU[0]*iR;
+cnDR[0]=cnRhsR[0]*iR-cnRhsI[0]*iI;cnDI[0]=cnRhsR[0]*iI+cnRhsI[0]*iR;}
+for(let j=1;j<Nr;j++){
+const LR=mL[j],LI=a*hL[j],DR=mD[j]-(LR*cnCR[j-1]-LI*cnCI[j-1]),DI=a*hD[j]-(LR*cnCI[j-1]+LI*cnCR[j-1]);
+const den=DR*DR+DI*DI,iR=DR/den,iI=-DI/den;
+if(j<Nr-1){const UR=mU[j],UI=a*hU[j];cnCR[j]=UR*iR-UI*iI;cnCI[j]=UR*iI+UI*iR;}
+const tR=cnRhsR[j]-(LR*cnDR[j-1]-LI*cnDI[j-1]),tI=cnRhsI[j]-(LR*cnDI[j-1]+LI*cnDR[j-1]);
+cnDR[j]=tR*iR-tI*iI;cnDI[j]=tR*iI+tI*iR;}
+uR[Nr-1]=cnDR[Nr-1];uI[Nr-1]=cnDI[Nr-1];
+for(let j=Nr-2;j>=0;j--){
+uR[j]=cnDR[j]-(cnCR[j]*uR[j+1]-cnCI[j]*uI[j+1]);
+uI[j]=cnDI[j]-(cnCR[j]*uI[j+1]+cnCI[j]*uR[j+1]);}}
+
+function stepGridDipole(g,dt,ex,ey,ez){
+if(ex===0&&ey===0&&ez===0)return;
+const{Nr,dr,Mch,edges,URe,UIm,scratch}=g,nE=edges.length;
+const{eVR,eVI,tmpR,tmpI,k1R,k1I,k2R,k2I,k3R,k3I,k4R,k4I}=scratch;
+for(let e=0;e<nE;e++){const ed=edges[e];eVR[e]=ex*ed.xRe+ey*ed.yRe+ez*ed.zRe;eVI[e]=ex*ed.xIm+ey*ed.yIm+ez*ed.zIm;}
+const ap=(rS,sR,sI,dR,dI)=>{
+dR.fill(0);dI.fill(0);
+for(let e=0;e<nE;e++){
+const vr=eVR[e],vi=eVI[e],ed=edges[e],k=ed.j,i=ed.i,xR=sR[k],xI=sI[k];
+dR[i]+=rS*(vr*xI+vi*xR);dI[i]-=rS*(vr*xR-vi*xI);}};
+for(let j=0;j<Nr;j++){
+const r=(j+1)*dr;
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j];tmpI[i]=UIm[i][j];}
+ap(r,tmpR,tmpI,k1R,k1I);
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*dt*k1R[i];tmpI[i]=UIm[i][j]+0.5*dt*k1I[i];}
+ap(r,tmpR,tmpI,k2R,k2I);
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*dt*k2R[i];tmpI[i]=UIm[i][j]+0.5*dt*k2I[i];}
+ap(r,tmpR,tmpI,k3R,k3I);
+for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+dt*k3R[i];tmpI[i]=UIm[i][j]+dt*k3I[i];}
+ap(r,tmpR,tmpI,k4R,k4I);
+for(let i=0;i<Mch;i++){
+URe[i][j]+=(dt/6)*(k1R[i]+2*k2R[i]+2*k3R[i]+k4R[i]);
+UIm[i][j]+=(dt/6)*(k1I[i]+2*k2I[i]+2*k3I[i]+k4I[i]);}}}
+
+function advanceGridHalf(g,pObj,dtH,tField){
+const{Mch,Nr,chans,URe,UIm,chAct,capRate}=g;
+const[ex,ey,ez]=fieldVecAt(pObj,tField);
+const hasField=ex!==0||ey!==0||ez!==0;
+for(let c=0;c<Mch;c++)if(chAct[c])stepGridChannelCN(g,chans[c].l,0.5*dtH,URe[c],UIm[c]);
+if(hasField)stepGridDipole(g,dtH,ex,ey,ez);
+for(let c=0;c<Mch;c++){
+const uR=URe[c],uI=UIm[c];
+if(!chAct[c]&&!hasField)continue;
+let active=false;
+for(let j=0;j<Nr;j++)if(Math.abs(uR[j])+Math.abs(uI[j])>1e-11){active=true;break;}
+chAct[c]=active?1:0;
+if(!active)continue;
+stepGridChannelCN(g,chans[c].l,0.5*dtH,uR,uI);
+const m=chans[c].m;
+if(Bau!==0&&m!==0){
+const ang=-0.5*m*Bau*dtH,cs=Math.cos(ang),sn=Math.sin(ang);
+for(let j=0;j<Nr;j++){const r=uR[j],i=uI[j];uR[j]=cs*r-sn*i;uI[j]=sn*r+cs*i;}}
+for(let j=0;j<Nr;j++){
+const cr=capRate[j];
+if(cr>0){const att=Math.exp(-cr*dtH);uR[j]*=att;uI[j]*=att;}}}}
+
+function evalGridPsiGrad(g,x,y,z,out){
+const{Nr,dr,Mch,chans,URe,UIm,chAct}=g;
+let r=Math.hypot(x,y,z);if(r<1e-8)r=1e-8;
+const invR=1/r,u=z*invR,s=r/dr-1,j1=Math.floor(s),t=s-j1,t2=t*t,t3=t2*t;
+const w0=-0.5*t+t2-0.5*t3,w1=1-2.5*t2+1.5*t3,w2=0.5*t+2*t2-1.5*t3,w3=-0.5*t2+0.5*t3;
+const dw0=(-0.5+2*t-1.5*t2)/dr,dw1=(-5*t+4.5*t2)/dr,dw2=(0.5+4*t-4.5*t2)/dr,dw3=(-t+1.5*t2)/dr;
+const j0=j1-1,j2=j1+1,j3=j1+2,uxR=x*invR,uyR=y*invR;
+let psiR=0,psiI=0,gxR=0,gxI=0,gyR=0,gyI=0,gzR=0,gzI=0;
+for(let c=0;c<Mch;c++){
+if(!chAct[c])continue;
+const ch=chans[c],{l,a,sigma,norm}=ch,uRA=URe[c],uIA=UIm[c],par=(l&1)?1:-1;
+const gU=(arr,idx)=>(idx>=0&&idx<Nr)?arr[idx]:(idx===-2?par*arr[0]:0);
+const r0=gU(uRA,j0),r1=gU(uRA,j1),r2=gU(uRA,j2),r3=gU(uRA,j3);
+const i0=gU(uIA,j0),i1=gU(uIA,j1),i2=gU(uIA,j2),i3=gU(uIA,j3);
+const uRv=w0*r0+w1*r1+w2*r2+w3*r3,uIv=w0*i0+w1*i1+w2*i2+w3*i3;
+const duR=dw0*r0+dw1*r1+dw2*r2+dw3*r3,duI=dw0*i0+dw1*i1+dw2*i2+dw3*i3;
+const rPow=a===0?invR:Math.pow(invR,a+1),fac=norm*rPow;
+const GR=fac*uRv,GI=fac*uIv,GpR=fac*(duR-(a+1)*uRv*invR),GpI=fac*(duI-(a+1)*uIv*invR);
+const[Q,dQ]=Qla(l,a,u);
+let wm1R=1,wm1I=0,wR=1,wI=0;
+if(a>0){
+const sy=sigma*y;
+for(let k=1;k<a;k++){const nr=wm1R*x-wm1I*sy,ni=wm1R*sy+wm1I*x;wm1R=nr;wm1I=ni;}
+wR=wm1R*x-wm1I*sy;wI=wm1R*sy+wm1I*x;}
+const GQ_R=GR*Q,GQ_I=GI*Q;
+psiR+=GQ_R*wR-GQ_I*wI;psiI+=GQ_R*wI+GQ_I*wR;
+const ArR=GpR*invR*Q,ArI=GpI*invR*Q,BaR=GR*dQ*invR,BaI=GI*dQ*invR;
+const gxSR=ArR*x-BaR*u*uxR,gxSI=ArI*x-BaI*u*uxR;
+const gySR=ArR*y-BaR*u*uyR,gySI=ArI*y-BaI*u*uyR;
+const gzSR=ArR*z+BaR*(1-u*u),gzSI=ArI*z+BaI*(1-u*u);
+gxR+=(gxSR*wR-gxSI*wI)+a*(GQ_R*wm1R-GQ_I*wm1I);gxI+=(gxSR*wI+gxSI*wR)+a*(GQ_R*wm1I+GQ_I*wm1R);
+const tR=GQ_R*wm1R-GQ_I*wm1I,tI=GQ_R*wm1I+GQ_I*wm1R;
+gyR+=(gySR*wR-gySI*wI)-a*sigma*tI;gyI+=(gySR*wI+gySI*wR)+a*sigma*tR;
+gzR+=gzSR*wR-gzSI*wI;gzI+=gzSR*wI+gzSI*wR;}
+out[0]=psiR;out[1]=psiI;out[2]=gxR;out[3]=gxI;out[4]=gyR;out[5]=gyI;out[6]=gzR;out[7]=gzI;}
+
+function evalGridVel(g,x,y,z,vOut){
+const gb=g.scratch.gbuf;
+evalGridPsiGrad(g,x,y,z,gb);
+const pR=gb[0],pI=gb[1],prob=pR*pR+pI*pI,om=0.5*Bau,ax=-om*y,ay=om*x;
+if(prob<1e-26){vOut[0]=ax;vOut[1]=ay;vOut[2]=0;return;}
+const invP=1/prob;
+vOut[0]=(pR*gb[3]-pI*gb[2])*invP+ax;
+vOut[1]=(pR*gb[5]-pI*gb[4])*invP+ay;
+vOut[2]=(pR*gb[7]-pI*gb[6])*invP;}
+
+function advanceGridParticlesRK4(g,pObj,t0,h){
+const half=0.5*h,maxStep=0.18*E;
+for(const q of P){
+evalGridVel(g,q.x,q.y,q.z,k1v);
+q._x0=q.x;q._y0=q.y;q._z0=q.z;q._k1x=k1v[0];q._k1y=k1v[1];q._k1z=k1v[2];}
+advanceGridHalf(g,pObj,half,t0+0.25*h);
+for(const q of P){
+evalGridVel(g,q._x0+half*q._k1x,q._y0+half*q._k1y,q._z0+half*q._k1z,k2v);
+evalGridVel(g,q._x0+half*k2v[0],q._y0+half*k2v[1],q._z0+half*k2v[2],k3v);
+q._k2x=k2v[0];q._k2y=k2v[1];q._k2z=k2v[2];q._k3x=k3v[0];q._k3y=k3v[1];q._k3z=k3v[2];}
+advanceGridHalf(g,pObj,half,t0+0.75*h);
+for(const q of P){
+evalGridVel(g,q._x0+h*q._k3x,q._y0+h*q._k3y,q._z0+h*q._k3z,k4v);
+let dx=(h/6)*(q._k1x+2*q._k2x+2*q._k3x+k4v[0]);
+let dy=(h/6)*(q._k1y+2*q._k2y+2*q._k3y+k4v[1]);
+let dz=(h/6)*(q._k1z+2*q._k2z+2*q._k3z+k4v[2]);
+const disp=Math.hypot(dx,dy,dz);
+if(!Number.isFinite(disp))continue;
+if(disp>maxStep){const sc=maxStep/disp;dx*=sc;dy*=sc;dz*=sc;}
+q.x=q._x0+dx;q.y=q._y0+dy;q.z=q._z0+dz;}}
+
+function projectGridStates(g,cOut){
+const{Nr,dr,Mch,URe,UIm,projStates}=g;
+let boundNorm=0,totalNorm=0;
+for(let c=0;c<Mch;c++){
+const uR=URe[c],uI=UIm[c];
+for(let j=0;j<Nr;j++)totalNorm+=(uR[j]*uR[j]+uI[j]*uI[j])*dr;}
+for(let i=0;i<projStates.length;i++){
+const ps=projStates[i],uR=URe[ps.cIdx],uI=UIm[ps.cIdx],ur=ps.uRad;
+let oR=0,oI=0;
+for(let j=0;j<Nr;j++){const u=ur[j]*dr;oR+=u*uR[j];oI+=u*uI[j];}
+cOut[i*2]=oR;cOut[i*2+1]=oI;boundNorm+=oR*oR+oI*oI;}
+return{boundNorm,totalNorm};}
+
 function getPulseConfig(){
 const trs=getTransitionList();
 const selVal=$('tr-sel').value;
@@ -731,31 +987,34 @@ if(pulse||effStatus!=='ok')return;
 const cfg=getPulseConfig();
 if(!cfg.ok)return;
 if(interactionMode==='photon'&&cfg.muRabi<=1e-7)return;
-// Convert single-state cylindrical particles seamlessly into 3D particles
+// Convert single-state cylindrical particles seamlessly into 3D particles while keeping any trails
 if(eff.length===1){
 for(const q of P){
 const x=q.rho*Math.cos(q.ph),y=q.rho*Math.sin(q.ph);
-q.x=x;q.y=y;q.col=colr(q.rho);q.hist=[[x,y,q.z,0]];}
+q.x=x;q.y=y;q.col=colr(q.rho);
+if(q.hist){for(const h of q.hist)h[3]-=tSim;}else{q.hist=[[x,y,q.z,0]];}}
 }else{
-for(const q of P)q.hist=[[q.x,q.y,q.z,0]];}
+for(const q of P){
+if(q.hist&&q.hist.length){for(const h of q.hist)h[3]-=tSim;}else{q.hist=[[q.x,q.y,q.z,0]];}}}
 // Choose fixed physical scale E containing both initial and target states
 let maxE=E;
 for(const s of cfg.sys.states)if(s.b.E995>maxE)maxE=s.b.E995;
 E=maxE;
-// Compute reference density across the coupled manifold
-const bases=cfg.sys.states.map(s=>s.b);
-let maxPsi2Max=0;
-for(const b of bases)if(b.maxPsi2>maxPsi2Max)maxPsi2Max=b.maxPsi2;
-// Blend harmonic scale between occupied and target shells for crisp density overlay
+// Blend harmonic density scale between occupied and target shells for crisp density overlay
 const initN=eff.reduce((a,k)=>a+k.prob*k.b.maxPsi2,0);
 const tgtB=getBasis(cfg.trSpec.n2,cfg.trSpec.l2,0);
 refDens=2/(1/Math.max(initN,1e-30)+1/Math.max(tgtB.maxPsi2,1e-30));
 
-const len=cfg.sys.M*2;
+const grid=buildGridSystem(cfg.trSpec,cfg.sys);
+const bases=grid.projStates.map(s=>s.b);
+const c=new Float64Array(grid.projStates.length*2);
+const projInfo=projectGridStates(grid,c);
 pulse={
 mode:interactionMode,
 trSpec:cfg.trSpec,
 sys:cfg.sys,
+grid,
+proj:grid.projStates,
 bases,
 pol:cfg.np,
 omega0:cfg.omega0,
@@ -768,9 +1027,9 @@ E0:cfg.E0,
 theta:cfg.theta,
 intensityWcm2:cfg.intensityWcm2,
 t:0,
-c:new Float64Array(cfg.sys.c0),
-cMid:new Float64Array(len),
-cEnd:new Float64Array(len),
+c,
+boundNorm:projInfo.boundNorm,
+totalNorm:projInfo.totalNorm,
 lastHistT:0
 };
 key='';overlayDirty=true;
@@ -783,20 +1042,14 @@ function stepPulse(dtFrame,spd,span){
 const dtSim=Math.min(dtFrame*spd*tscale(),pulse.T-pulse.t);
 if(dtSim<=0){finishPulse(false);return;}
 const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,pulse.E0*5,1e-4);
-const nSub=Math.max(1,Math.min(32,Math.ceil(maxFreq*dtSim/0.08)));
+const nSub=Math.max(1,Math.min(48,Math.ceil(Math.max(dtSim/0.16,maxFreq*dtSim/0.1))));
 const h=dtSim/nSub;
-for(let s=0;s<nSub;s++){
-const t0=pulse.t+s*h;
-stepTdseC(pulse.sys,pulse,t0,0.5*h,pulse.c,pulse.cMid);
-stepTdseC(pulse.sys,pulse,t0+0.5*h,0.5*h,pulse.cMid,pulse.cEnd);
-const localSubFn=(ts0,s0,tsM,sM,ts1,s1,f0)=>{
-if(f0===0)s0.set(pulse.c);else stepTdseC(pulse.sys,pulse,t0,f0*h,pulse.c,s0);
-stepTdseC(pulse.sys,pulse,ts0,tsM-ts0,s0,sM);
-stepTdseC(pulse.sys,pulse,tsM,ts1-tsM,sM,s1);};
-advanceParticlesRK4(pulse.bases,t0,h,pulse.c,pulse.cMid,pulse.cEnd,localSubFn);
-pulse.c.set(pulse.cEnd);}
+for(let s=0;s<nSub;s++)advanceGridParticlesRK4(pulse.grid,pulse,pulse.t+s*h,h);
 
 pulse.t+=dtSim;
+const projInfo=projectGridStates(pulse.grid,pulse.c);
+pulse.boundNorm=projInfo.boundNorm;
+pulse.totalNorm=projInfo.totalNorm;
 const minStep=Math.max(span/22,1e-6);
 const rec=(pulse.t-pulse.lastHistT)>=minStep;
 if(rec)pulse.lastHistT=pulse.t;
@@ -809,12 +1062,12 @@ if(pulse.t>=pulse.T-1e-9)finishPulse(false);}
 
 function finishPulse(aborted){
 if(!pulse)return;
-const {states,M}=pulse.sys;
-const c=pulse.c;
+projectGridStates(pulse.grid,pulse.c);
+const states=pulse.proj,M=states.length,c=pulse.c,doneT=pulse.t;
 const nextComps=[];
 for(let i=0;i<M;i++){
 const re=c[i*2],im=c[i*2+1],mag=Math.hypot(re,im);
-if(mag>0.035){
+if(mag>0.14){
 let deg=Math.round(Math.atan2(im,re)*180/Math.PI);
 deg=((deg%360)+360)%360;
 const s=states[i];
@@ -823,7 +1076,9 @@ if(!nextComps.length){
 let best=0,bestM=-1;
 for(let i=0;i<M;i++){const mg=Math.hypot(c[i*2],c[i*2+1]);if(mg>bestM){bestM=mg;best=i;}}
 const s=states[best];
-nextComps.push({id:nextId++,n:s.n,l:s.l,m:s.m,amp:1,phaseDeg:0});}
+let deg=Math.round(Math.atan2(c[best*2+1],c[best*2])*180/Math.PI);
+deg=((deg%360)+360)%360;
+nextComps.push({id:nextId++,n:s.n,l:s.l,m:s.m,amp:1,phaseDeg:deg});}
 let maxA=0;for(const nc of nextComps)if(nc.amp>maxA)maxA=nc.amp;
 if(maxA>0)for(const nc of nextComps)nc.amp=Math.round((nc.amp/maxA)*100)/100;
 
@@ -833,13 +1088,17 @@ tSim=0;
 $('stop').hidden=true;
 rebuildComponentList();
 computeEffective();
+// Keep evolved electron coordinates and carry pulse trails smoothly into free evolution (no resampling)
 if(eff.length===1){
 const m0=eff[0].m;
 for(const q of P){
 const rho=Math.max(Math.hypot(q.x,q.y),1e-4);
-q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);q.col=colr(rho);delete q.hist;}
+q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);q.col=colr(rho);
+if(q.hist){for(const h of q.hist)h[3]-=doneT;}}
 }else{
-for(const q of P){q.col=colr(Math.hypot(q.x,q.y));q.hist=[[q.x,q.y,q.z,0]];}}
+for(const q of P){
+q.col=colr(Math.hypot(q.x,q.y));
+if(q.hist&&q.hist.length){for(const h of q.hist)h[3]-=doneT;}else{q.hist=[[q.x,q.y,q.z,0]];}}}
 setLocked(false);
 key='';overlayDirty=true;
 rescaleB();
@@ -865,10 +1124,12 @@ function updatePulseInfo(){
 if(!pulse)return;
 const cycDone=(pulse.t/pulse.T)*pulse.cyc;
 const pops=[];
-for(let i=0;i<pulse.sys.M;i++){
+for(let i=0;i<pulse.proj.length;i++){
 const p=pulse.c[i*2]*pulse.c[i*2]+pulse.c[i*2+1]*pulse.c[i*2+1];
-if(p>=0.005){const s=pulse.sys.states[i];pops.push({p,lbl:'|'+s.n+LET[s.l]+', '+s.m+'⟩: '+Math.round(p*100)+'%'});}}
+if(p>=0.005){const s=pulse.proj[i];pops.push({p,lbl:'|'+s.n+LET[s.l]+', '+s.m+'⟩: '+Math.round(p*100)+'%'});}}
 pops.sort((a,b)=>b.p-a.p);
+const cont=Math.max(0,1-pulse.boundNorm);
+if(cont>=0.025)pops.push({p:cont,lbl:'continuum / higher n: '+Math.round(cont*100)+'%'});
 const modeName=pulse.mode==='photon'?'Single-photon wavepacket':'Coherent EM pulse';
 $('info').innerHTML='<b>'+modeName+'</b> ('+pulse.trSpec.n1+LET[pulse.trSpec.l1]+' ↔ '+pulse.trSpec.n2+LET[pulse.trSpec.l2]+', Θ = '+(pulse.theta/Math.PI).toFixed(2)+'π) · <b>'+cycDone.toFixed(1)+' / '+pulse.cyc+' cyc</b> · '+pops.slice(0,5).map(x=>x.lbl).join(' · ');}
 
@@ -1193,20 +1454,64 @@ sliceBasis[k].re[idx]=pr;
 sliceBasis[k].im[idx]=pi;}}}}
 
 let ovAlphas=new Float64Array(32);
+let sliceGrid=null;
+
+function buildSliceGrid(g,p,S,cx,cy){
+cellSz=4;
+const w=Math.ceil(W/cellSz),h=Math.ceil(H/cellSz);
+if(w!==offW||h!==offH){offW=w;offH=h;off.width=w;off.height=h;offIm=offCtx.createImageData(w,h);}
+const cp=Math.cos(p),sp=Math.sin(p),len=w*h,{Nr,dr,Mch,chans}=g;
+const j1Arr=new Int16Array(len);
+const w0Arr=new Float32Array(len),w1Arr=new Float32Array(len),w2Arr=new Float32Array(len),w3Arr=new Float32Array(len);
+const FRe=Array.from({length:Mch},()=>new Float32Array(len));
+const FIm=Array.from({length:Mch},()=>new Float32Array(len));
+for(let j=0;j<h;j++){
+const V=(cy-(j+.5)*cellSz)/S,y=V*sp,z=V*cp;
+for(let i=0;i<w;i++){
+const X=((i+.5)*cellSz-cx)/S,idx=j*w+i;
+let r=Math.hypot(X,V);if(r<1e-8)r=1e-8;
+const invR=1/r,u=z*invR,s=r/dr-1,j1=Math.floor(s),t=s-j1,t2=t*t,t3=t2*t;
+j1Arr[idx]=j1;
+w0Arr[idx]=-0.5*t+t2-0.5*t3;
+w1Arr[idx]=1-2.5*t2+1.5*t3;
+w2Arr[idx]=0.5*t+2*t2-1.5*t3;
+w3Arr[idx]=-0.5*t2+0.5*t3;
+for(let c=0;c<Mch;c++){
+const ch=chans[c],a=ch.a,sigma=ch.sigma;
+const fac=ch.norm*(a===0?invR:Math.pow(invR,a+1))*Qla(ch.l,a,u)[0];
+let wR=1,wI=0;
+if(a>0){const sy=sigma*y;for(let k=0;k<a;k++){const nr=wR*X-wI*sy,ni=wR*sy+wI*X;wR=nr;wI=ni;}}
+FRe[c][idx]=fac*wR;FIm[c][idx]=fac*wI;}}}
+sliceGrid={w,h,Nr,Mch,j1Arr,w0Arr,w1Arr,w2Arr,w3Arr,FRe,FIm};}
+
 function renderOverlay(p,S,cx,cy){
 if(pulse){
-const bases=pulse.bases,k=W+'x'+H+':'+p+':PULSE:'+pulse.sys.M+':'+E;
-if(k!==key){key=k;buildSliceBasis(bases,p,S,cx,cy);overlayDirty=true;}
+const g=pulse.grid,k=W+'x'+H+':'+p+':GRID:'+g.Lmax+':'+g.Nr+':'+E;
+if(k!==key){key=k;buildSliceGrid(g,p,S,cx,cy);overlayDirty=true;}
 if(!overlayDirty&&!run)return true;
 overlayDirty=false;
 const rgb=getComputedStyle(document.documentElement).getPropertyValue('--ov').split(',').map(Number);
-const data=offIm.data,len=offW*offH,K=bases.length,c=pulse.c,invRef=1/Math.max(refDens,1e-30);
+const data=offIm.data,len=offW*offH,invRef=1/Math.max(refDens,1e-30);
+const{Nr,Mch,j1Arr,w0Arr,w1Arr,w2Arr,w3Arr,FRe,FIm}=sliceGrid,{URe,UIm,chAct,chans}=g;
+const active=[];
+for(let c=0;c<Mch;c++)if(chAct[c])active.push(c);
 for(let idx=0;idx<len;idx++){
+const j1=j1Arr[idx],j0=j1-1,j2=j1+1,j3=j1+2;
+const w0=w0Arr[idx],w1=w1Arr[idx],w2=w2Arr[idx],w3=w3Arr[idx];
 let re=0,im=0;
-for(let m=0;m<K;m++){
-const aRe=c[m*2],aIm=c[m*2+1],sb=sliceBasis[m];
-const pr=sb.re[idx],pi=sb.im[idx];
-re+=aRe*pr-aIm*pi;im+=aRe*pi+aIm*pr;}
+for(let ai=0;ai<active.length;ai++){
+const c=active[ai],uR=URe[c],uI=UIm[c],par=(chans[c].l&1)?1:-1;
+const r0=(j0>=0&&j0<Nr)?uR[j0]:(j0===-2?par*uR[0]:0);
+const r1=(j1>=0&&j1<Nr)?uR[j1]:(j1===-2?par*uR[0]:0);
+const r2=(j2>=0&&j2<Nr)?uR[j2]:(j2===-2?par*uR[0]:0);
+const r3=(j3>=0&&j3<Nr)?uR[j3]:(j3===-2?par*uR[0]:0);
+const i0=(j0>=0&&j0<Nr)?uI[j0]:(j0===-2?par*uI[0]:0);
+const i1=(j1>=0&&j1<Nr)?uI[j1]:(j1===-2?par*uI[0]:0);
+const i2=(j2>=0&&j2<Nr)?uI[j2]:(j2===-2?par*uI[0]:0);
+const i3=(j3>=0&&j3<Nr)?uI[j3]:(j3===-2?par*uI[0]:0);
+const uvR=w0*r0+w1*r1+w2*r2+w3*r3,uvI=w0*i0+w1*i1+w2*i2+w3*i3;
+const fR=FRe[c][idx],fI=FIm[c][idx];
+re+=uvR*fR-uvI*fI;im+=uvR*fI+uvI*fR;}
 const d=(re*re+im*im)*invRef;
 const al=Math.min(.55,.03/Math.max(d,1e-6));
 const q=idx*4;data[q]=rgb[0];data[q+1]=rgb[1];data[q+2]=rgb[2];data[q+3]=Math.round(al*255);}
@@ -1285,6 +1590,14 @@ ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--mut
 ctx.fillText('pulse '+Math.round(frac*100)+'%',bx,by-6);
 ctx.restore();}
 
+function drawParticleTrail(hh,x,y,z,pr){
+const len=hh.length;
+let prev=pr(x,y,z);
+for(let k=len-1,j=0;k>=0;k--,j++){
+const d=pr(hh[k][0],hh[k][1],hh[k][2]);
+ctx.globalAlpha=.55*(1-(j+1)/(len+1));ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
+prev=d;}}
+
 function frame(now){
 const dt=Math.min((now-last)/1000,.05);last=now;
 const spd=+$('spd').value,ts=tscale(),Om=Bau/2,span=spd*ts*0.7,dts=dt*spd*ts;
@@ -1293,7 +1606,8 @@ if(pulse){
 stepPulse(dt,spd,span);
 }else if(eff.length>=2){
 stepSuperposition(dts,span);
-}}
+}else if(eff.length===1){
+tSim+=dts;}}
 const p=$('tilt').value*Math.PI/180,cp=Math.cos(p),sp=Math.sin(p);
 const S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
 ctx.clearRect(0,0,W,H);
@@ -1306,33 +1620,43 @@ ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.set
 ctx.fillStyle=grid;ctx.font='12px system-ui,sans-serif';ctx.fillText('z',b[0]+6,b[1]+4);
 
 const singleMode=!pulse&&eff.length===1;
-const showTr=$('tr').checked&&(!!pulse||eff.length>=2||(singleMode&&(eff[0].m!==0||Bau!==0)));
+const hasHistTrails=singleMode&&P.some(q=>q.hist&&q.hist.length>1);
+const showTr=$('tr').checked&&(!!pulse||eff.length>=2||hasHistTrails||(singleMode&&(eff[0].m!==0||Bau!==0)));
+const minStep=Math.max(span/22,1e-6);
 if(singleMode){
 for(const q of P){
 ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
 const wt=q.w+Om;
 if(run)q.ph=(q.ph+wt*dts)%TAU;
+const px=q.rho*Math.cos(q.ph),py=q.rho*Math.sin(q.ph);
+if(run&&q.hist){
+const hh=q.hist;
+if((tSim-hh[hh.length-1][3])>=minStep){
+if(Math.abs(wt)>1e-9){
+hh.push([px,py,q.z,tSim]);
+if(hh.length>22)hh.shift();
+if(hh[0][3]>=0)delete q.hist;
+}else{
+hh[hh.length-1][3]=tSim;hh.shift();
+if(hh.length<=1)delete q.hist;}}}
 if(showTr){
+if(q.hist&&q.hist.length>1){
+drawParticleTrail(q.hist,px,py,q.z,pr);
+}else if(Math.abs(wt)>1e-9){
 const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
 let prev=null;
 for(let k=0;k<=N;k++){
 const ph=q.ph-dir*arc*(k/N),d=pr(q.rho*Math.cos(ph),q.rho*Math.sin(ph),q.z);
 if(prev){ctx.globalAlpha=.55*(1-k/N);ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}
-prev=d;}}
-const c=pr(q.rho*Math.cos(q.ph),q.rho*Math.sin(q.ph),q.z);
+prev=d;}}}
+const c=pr(px,py,q.z);
 const dn=Math.max(0,Math.min(1,(c[2]/E+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
 ctx.beginPath();ctx.arc(c[0],c[1],2.6-.8*dn,0,TAU);ctx.fill();}
 }else if(pulse||eff.length>=2){
 for(const q of P){
 ctx.strokeStyle=q.col;ctx.lineWidth=1.2;
-if(showTr){
-const hh=q.hist,len=hh.length;
-let prev=pr(q.x,q.y,q.z);
-for(let k=len-1,j=0;k>=0;k--,j++){
-const d=pr(hh[k][0],hh[k][1],hh[k][2]);
-ctx.globalAlpha=.55*(1-(j+1)/(len+1));ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
-prev=d;}}
+if(showTr)drawParticleTrail(q.hist,q.x,q.y,q.z,pr);
 const c=pr(q.x,q.y,q.z);
 const dn=Math.max(0,Math.min(1,(c[2]/E+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;

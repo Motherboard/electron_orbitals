@@ -74,6 +74,8 @@ function createCoreContext() {
     buildTransitions: noop,
     updateEmUI: noop,
     setLocked: noop,
+    rescaleB: noop,
+    rebuildComponentList: noop,
   };
 
   const exportsTail = `
@@ -82,9 +84,13 @@ function createCoreContext() {
       computeEffective, getEff: () => eff, getEffStatus: () => effStatus,
       setComps: (c) => { components = c; computeEffective(); },
       setBau: (b) => { Bau = b; },
+      setE: (v) => { E = v; },
+      setP: (arr) => { P = arr; },
+      sampSingle,
       radialDipole, angularDipole, dipoleElement,
       getTransitionList, buildCoupledSystem, computeBrightDipole,
-      fieldVecAt, stepTdseC
+      fieldVecAt, stepTdseC,
+      buildGridSystem, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad
     };
   `;
   vm.runInNewContext(coreSrc + '\n' + exportsTail, sandbox);
@@ -361,4 +367,91 @@ test('TDSE simulates single-photon absorption, coherent m-flips, and arbitrary s
     2.0
   );
   assert.ok(stateOverlapProb(rTargetFrom2p1, target2p) > 0.995);
+});
+
+test('radial-grid TDSE evolves cross-shell Bohmian electrons to true target radial distributions', () => {
+  function runGridAndMeasure(initComp, trPick, polSpec, thetaPi, cyc, Np = 180) {
+    api.setBau(0);
+    api.setComps([{ id: 1, ...initComp }]);
+    const trSpec = api.getTransitionList().find(trPick);
+    assert.ok(trSpec);
+    const sys = api.buildCoupledSystem(trSpec);
+    const pol = makePol(polSpec);
+    const { muRabi } = api.computeBrightDipole(sys, trSpec, pol);
+    const omegaL = trSpec.omega0;
+    const T = (cyc * 2 * Math.PI) / omegaL;
+    const E0 = (thetaPi * Math.PI) / (muRabi * 0.5 * T);
+    const g = api.buildGridSystem(trSpec, sys);
+
+    let maxE = 0;
+    for (const s of sys.states) maxE = Math.max(maxE, s.b.E995);
+    api.setE(maxE);
+
+    const b0 = api.getBasis(initComp.n, initComp.l, initComp.m);
+    const P = [];
+    for (let i = 0; i < Np; i++) {
+      const q = api.sampSingle(b0);
+      P.push({ x: q.rho * Math.cos(q.ph), y: q.rho * Math.sin(q.ph), z: q.z });
+    }
+    api.setP(P);
+
+    const pObj = { T, E0, omegaL, pol };
+    const nSteps = Math.max(200, Math.ceil(T / 0.16));
+    const h = T / nSteps;
+    for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(g, pObj, s * h, h);
+
+    const c = new Float64Array(g.projStates.length * 2);
+    const { boundNorm } = api.projectGridStates(g, c);
+    const probs = new Map();
+    for (let i = 0; i < g.projStates.length; i++) {
+      const ps = g.projStates[i];
+      probs.set(`${ps.n}|${ps.l}|${ps.m}`, c[2 * i] ** 2 + c[2 * i + 1] ** 2);
+    }
+    const radii = P.map((q) => Math.hypot(q.x, q.y, q.z)).sort((a, b) => a - b);
+    const medianR = radii[Math.floor(Np / 2)];
+    return { g, probs, boundNorm, medianR };
+  }
+
+  // Verify grid spatial wavefunction matches analytic |1s,0> at arbitrary point
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const tr1s2p = api.getTransitionList().find((t) => t.n2 === 2 && t.l2 === 1);
+  const g0 = api.buildGridSystem(tr1s2p, api.buildCoupledSystem(tr1s2p));
+  const gb = new Float64Array(8);
+  api.evalGridPsiGrad(g0, 1.3, -0.7, 0.9, gb);
+  const refPsi = api.evalBasisPsi(api.getBasis(1, 0, 0), 1.3, -0.7, 0.9);
+  assert.ok(Math.hypot(gb[0] - refPsi[0], gb[1] - refPsi[1]) < 1e-5);
+
+  // 1. Cross-shell 1s -> 2p,+1 (16 cyc): median r grows from 1s (~1.3) to |2p,+1> (~4.5)
+  const r1s2p = runGridAndMeasure(
+    { n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 },
+    (t) => t.n2 === 2 && t.l2 === 1,
+    [{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }],
+    1.0,
+    16
+  );
+  assert.ok(r1s2p.probs.get('2|1|1') > 0.94);
+  assert.ok(r1s2p.medianR >= 3.9 && r1s2p.medianR <= 5.3, `Expected 2p medianR near 4.5, got ${r1s2p.medianR}`);
+
+  // 2. Coherent 2pi m-flip 2p,+1 -> 2p,-1 (20 cyc)
+  const r2pFlip = runGridAndMeasure(
+    { n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+    (t) => t.n2 === 1 && t.l2 === 0,
+    [{ amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }],
+    2.0,
+    20
+  );
+  assert.ok(r2pFlip.probs.get('2|1|-1') > 0.88);
+  assert.ok(r2pFlip.medianR >= 3.9 && r2pFlip.medianR <= 5.5, `Expected 2p medianR near 4.5, got ${r2pFlip.medianR}`);
+
+  // 3. Cross-shell 2p,+1 -> 3d,+2 (16 cyc): median r expands from ~4.5 out toward 3d (~10)
+  const r2p3d = runGridAndMeasure(
+    { n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+    (t) => t.n2 === 3 && t.l2 === 2,
+    [{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }],
+    1.0,
+    16
+  );
+  assert.ok(r2p3d.probs.get('3|2|2') > 0.92);
+  assert.ok(r2p3d.medianR >= 8.0, `Expected 3d medianR >= 8.0, got ${r2p3d.medianR}`);
 });

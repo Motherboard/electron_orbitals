@@ -202,17 +202,24 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     })()`);
     await new Promise((r) => setTimeout(r, 150));
 
-    // 3. Single-photon sigma+ absorption: |1s, 0> -> |2p, m = +1>
+    // 3. Single-photon sigma+ absorption: |1s, 0> -> |2p, m = +1> (16 cyc default)
+    // Verify cross-shell radial expansion without resampling and smooth trail handoff
+    const medianBefore = await evalJS(`(() => {
+      const rs = P.map((q) => Math.hypot(q.rho, q.z)).sort((a, b) => a - b);
+      return rs[Math.floor(rs.length / 2)];
+    })()`);
+    assert.ok(medianBefore < 2.2, `Expected initial 1s median radius < 2.2, got ${medianBefore}`);
+
     await evalJS(`(() => {
       document.querySelector('.chip[data-pol="sp"]').click();
       const pdur = document.getElementById('pdur');
-      pdur.value = '4'; pdur.dispatchEvent(new Event('input'));
+      pdur.value = '16'; pdur.dispatchEvent(new Event('input'));
       const spd = document.getElementById('spd');
       spd.value = '3'; spd.dispatchEvent(new Event('input'));
       document.getElementById('fire').click();
     })()`);
 
-    await waitUntil(`pulse !== null && pulse.t > 0.2 * pulse.T`, 4000);
+    await waitUntil(`pulse !== null && pulse.t > 0.2 * pulse.T`, 5000);
     const midPhoton = await evalJS(`({
       active: pulse !== null,
       stopHidden: document.getElementById('stop').hidden,
@@ -224,16 +231,23 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(midPhoton.addDisabled, true);
     assert.match(midPhoton.info, /Single-photon wavepacket/);
 
-    await waitUntil(`pulse === null`, 8000);
-    const afterPhoton = await evalJS(`({
-      comps: components.map((c) => ({ n: c.n, l: c.l, m: c.m, amp: c.amp })),
-      trOptions: [...document.getElementById('tr-sel').options].map((o) => o.value)
-    })`);
+    await waitUntil(`pulse === null`, 12000);
+    const afterPhoton = await evalJS(`(() => {
+      const rs = P.map((q) => Math.hypot(q.rho, q.z)).sort((a, b) => a - b);
+      return {
+        comps: components.map((c) => ({ n: c.n, l: c.l, m: c.m, amp: c.amp })),
+        trOptions: [...document.getElementById('tr-sel').options].map((o) => o.value),
+        medianR: rs[Math.floor(rs.length / 2)],
+        trailsKept: P.some((q) => Array.isArray(q.hist) && q.hist.length > 2)
+      };
+    })()`);
     assert.equal(afterPhoton.comps.length, 1);
     assert.deepEqual(afterPhoton.comps[0], { n: 2, l: 1, m: 1, amp: 1 });
+    assert.ok(afterPhoton.medianR >= 3.8, `Expected evolved electrons to expand near |2p> without resampling, got medianR=${afterPhoton.medianR}`);
+    assert.equal(afterPhoton.trailsKept, true, 'Pulse trails should carry smoothly past finishPulse');
     assert.ok(afterPhoton.trOptions.includes('2|1|1|0'), 'Transition list should update to offer 2p -> 1s');
 
-    // 4. Coherent 2pi x-polarized wave: |2p, m = +1> -> |2p, m = -1> via |1s, 0>
+    // 4. Coherent 2pi x-polarized wave: |2p, m = +1> -> |2p, m = -1> via |1s, 0> (20 cyc at pow=1 => Theta=2.00pi)
     await evalJS(`(() => {
       const waveRadio = document.querySelector('input[name="imode"][value="wave"]');
       waveRadio.checked = true;
@@ -243,9 +257,9 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       sel.value = '2|1|1|0';
       sel.dispatchEvent(new Event('change'));
       const pdur = document.getElementById('pdur');
-      pdur.value = '8'; pdur.dispatchEvent(new Event('input'));
+      pdur.value = '20'; pdur.dispatchEvent(new Event('input'));
       const ppow = document.getElementById('ppow');
-      ppow.value = '6.25'; ppow.dispatchEvent(new Event('input'));
+      ppow.value = '1'; ppow.dispatchEvent(new Event('input'));
     })()`);
 
     const preWave = await evalJS(`({
@@ -256,17 +270,22 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.match(preWave.ppowV, /Θ=2\.00π/);
 
     await evalJS(`document.getElementById('fire').click()`);
-    await waitUntil(`pulse !== null && pulse.t > 0.35 * pulse.T`, 4000);
+    await waitUntil(`pulse !== null && pulse.t > 0.35 * pulse.T`, 5000);
     const midWaveInfo = await evalJS(`document.getElementById('info').textContent`);
     assert.match(midWaveInfo, /Coherent EM pulse/);
     assert.match(midWaveInfo, /\|1s, 0⟩:/);
 
-    await waitUntil(`pulse === null`, 8000);
-    const afterWaveComps = await evalJS(
-      `components.map((c) => ({ n: c.n, l: c.l, m: c.m, amp: c.amp }))`
-    );
-    assert.equal(afterWaveComps.length, 1);
-    assert.deepEqual(afterWaveComps[0], { n: 2, l: 1, m: -1, amp: 1 });
+    await waitUntil(`pulse === null`, 15000);
+    const afterWave = await evalJS(`(() => {
+      const rs = P.map((q) => Math.hypot(q.x ?? q.rho, q.y ?? 0, q.z)).sort((a, b) => a - b);
+      const sorted = [...components].sort((a, b) => b.amp - a.amp);
+      return {
+        top: sorted[0] ? { n: sorted[0].n, l: sorted[0].l, m: sorted[0].m, amp: sorted[0].amp } : null,
+        medianR: rs[Math.floor(rs.length / 2)]
+      };
+    })()`);
+    assert.deepEqual(afterWave.top, { n: 2, l: 1, m: -1, amp: 1 });
+    assert.ok(afterWave.medianR >= 3.8, `Expected evolved electrons to maintain |2p> radius after flip, got medianR=${afterWave.medianR}`);
 
     // 5. Mobile 320px dark-mode layout overflow check
     await cdp.call('Emulation.setDeviceMetricsOverride', {
