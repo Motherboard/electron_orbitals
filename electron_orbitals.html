@@ -150,7 +150,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <label class="chk"><input type="checkbox" id="tr" checked><span>Trails</span></label>
 <label class="chk"><input type="checkbox" id="ov" checked><span>Density overlay</span></label>
 </div>
-<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. For a 100% single-photon transition, the free-space wavepacket matches time-reversed spontaneous emission (4π dipole mode with envelope e<sup>+Γt/2</sup> cutting off abruptly at completion, Γ = ω₀³|d|²/3πε₀ℏc³, physical N ≈ ω₀/2πΓ ~ 10⁶–10⁸ cycles shown time-compressed so individual cycles remain visible). Coherent EM pulses use a sin²(πt/T) envelope. During transitions, the TDSE i ∂ψ/∂t = [H₀ + <b>r</b>·<b>E</b>(t)]ψ is solved on a continuous radial grid expanded in spherical harmonics alongside exact 3D Bohmian trajectories Im(∇ψ/ψ) + <b>A</b>, continuing afterward from evolved positions. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms.</p>
+<p class="note">Amplitudes are normalized so Σ|c<sub>k</sub>|² = 1, and free evolution goes as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup>. For a 100% single-photon transition, the free-space wavepacket matches time-reversed spontaneous emission (4π dipole mode with envelope e<sup>+Γt/2</sup> cutting off abruptly at completion, Γ = ω₀³|d|²/3πε₀ℏc³, physical N ≈ ω₀/2πΓ ~ 10⁶–10⁸ cycles shown time-compressed so individual cycles remain visible). Coherent EM pulses use a sin²(πt/T) envelope. During transitions, the TDSE i ∂ψ/∂t = [H₀ + <b>r</b>·<b>E</b>(t) (or <b>B</b>₁(t)·<b>L</b>/2 for Zeeman M1)]ψ is solved on a continuous radial grid expanded in spherical harmonics alongside exact 3D Bohmian trajectories Im(∇ψ/ψ) + <b>A</b>, continuing afterward from evolved positions. The field B<sub>z</sub> acts through weak-field Zeeman and Larmor terms.</p>
 </main>
 
 <script>
@@ -254,6 +254,17 @@ if(rad===0)return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0};
 const ang=angularDipole(b1.l,b1.m,b2.l,b2.m);
 return{xRe:rad*ang.xRe,xIm:rad*ang.xIm,yRe:rad*ang.yRe,yIm:rad*ang.yIm,zRe:rad*ang.zRe,zIm:rad*ang.zIm};}
 
+function angularMagDipole(l1,m1,l2,m2){
+if(l1!==l2)return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0};
+if(m1===m2)return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0.5*m2,zIm:0};
+if(m1===m2+1){
+const c=Math.sqrt((l2-m2)*(l2+m2+1));
+return{xRe:0.25*c,xIm:0,yRe:0,yIm:-0.25*c,zRe:0,zIm:0};}
+if(m1===m2-1){
+const c=Math.sqrt((l2+m2)*(l2-m2+1));
+return{xRe:0.25*c,xIm:0,yRe:0,yIm:0.25*c,zRe:0,zIm:0};}
+return{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0};}
+
 function evalBasisPsi(b,x,y,z){
 let r=Math.hypot(x,y,z);if(r<1e-10)r=1e-10;
 const u=z/r,xi=2*r/b.n,er=Math.exp(-r/b.n);
@@ -311,7 +322,8 @@ const tscaleBase=()=>(0.5*E)*(0.5*E),bscale=()=>(0.3*E)*(0.3*E);
 const tscale=()=>{
 if(pulse){
 const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,1e-4);
-return Math.min(tscaleBase(),8/maxFreq);}
+const base=pulse.trSpec&&pulse.trSpec.n1===pulse.trSpec.n2?Math.max(tscaleBase(),pulse.T/20):tscaleBase();
+return Math.min(base,8/maxFreq);}
 const base=tscaleBase();
 return(eff.length>=2&&omegaMax>0)?Math.min(base,8/omegaMax):base;};
 const colr=rho=>'hsl('+(15+Math.min(rho/(0.8*E),1)*250)+',70%,56%)';
@@ -560,20 +572,25 @@ const omega0=Math.abs(dE);
 const key=n1+'|'+l1+'|'+n2+'|'+l2;
 if(seen.has(key))continue;
 seen.add(key);
-list.push({key,n1,l1,n2,l2,m1:null,m2:null,dE,omega0,dir:dE>0?'absorb':'emit'});}}
+list.push({key,kind:'E1',n1,l1,n2,l2,m1:null,m2:null,dE,omega0,dir:dE>0?'absorb':'emit'});}}
 }else{
 for(const k of ordered){
 const E1=-0.5/(k.n*k.n)+k.m*Bau/2;
-for(let n2=1;n2<=7;n2++)for(const l2 of [k.l-1,k.l+1]){
-if(n2===k.n||l2<0||l2>=n2)continue;
+for(let n2=1;n2<=7;n2++){
+const lCands=n2===k.n?[k.l-1,k.l,k.l+1]:[k.l-1,k.l+1];
+for(const l2 of lCands){
+if(l2<0||l2>=n2)continue;
+const isM1=n2===k.n&&l2===k.l;
+if(isM1&&k.l===0)continue;
 for(let dm=-1;dm<=1;dm++){
+if(isM1&&dm===0)continue;
 const m2=k.m+dm;if(Math.abs(m2)>l2)continue;
 const E2=-0.5/(n2*n2)+m2*Bau/2,dE=E2-E1,omega0=Math.abs(dE);
 if(omega0<1e-12)continue;
 const key=k.n+'|'+k.l+'|'+n2+'|'+l2+'|'+dm;
 if(seen.has(key))continue;
 seen.add(key);
-list.push({key,n1:k.n,l1:k.l,n2,l2,m1:k.m,m2,dm,dE,omega0,dir:dE>0?'absorb':'emit'});}}}}
+list.push({key,kind:isM1?'M1':'E1',n1:k.n,l1:k.l,n2,l2,m1:k.m,m2,dm,dE,omega0,dir:dE>0?'absorb':'emit'});}}}}}
 return list;}
 
 function buildCoupledSystem(trSpec){
@@ -597,8 +614,10 @@ for(const s of states){s.relE=s.E_au-Eref;if(Math.abs(s.relE)>maxRelE)maxRelE=Ma
 const DxRe=new Float64Array(M*M),DxIm=new Float64Array(M*M);
 const DyRe=new Float64Array(M*M),DyIm=new Float64Array(M*M);
 const DzRe=new Float64Array(M*M),DzIm=new Float64Array(M*M);
+const isM1=trSpec.kind==='M1';
 for(let i=0;i<M;i++)for(let j=i;j<M;j++){
-const el=dipoleElement(states[i].b,states[j].b);
+const s1=states[i],s2=states[j];
+const el=isM1?((s1.n===s2.n&&s1.l===s2.l)?angularMagDipole(s1.l,s1.m,s2.l,s2.m):{xRe:0,xIm:0,yRe:0,yIm:0,zRe:0,zIm:0}):dipoleElement(s1.b,s2.b);
 const idx1=i*M+j,idx2=j*M+i;
 DxRe[idx1]=el.xRe;DxIm[idx1]=el.xIm;DxRe[idx2]=el.xRe;DxIm[idx2]=-el.xIm;
 DyRe[idx1]=el.yRe;DyIm[idx1]=el.yIm;DyRe[idx2]=el.yRe;DyIm[idx2]=-el.yIm;
@@ -611,13 +630,14 @@ if(idx>=0){
 const ang=k.phaseRad-k.E_au*tSim;
 c0[idx*2]=k.mag*Math.cos(ang);
 c0[idx*2+1]=k.mag*Math.sin(ang);}}
-return{states,M,Eref,maxRelE,DxRe,DxIm,DyRe,DyIm,DzRe,DzIm,c0};}
+return{states,M,Eref,maxRelE,DxRe,DxIm,DyRe,DyIm,DzRe,DzIm,c0,kind:isM1?'M1':'E1'};}
 
 function computeBrightDipole(sys,trSpec,normPol){
 const {states,M,DxRe,DxIm,DyRe,DyIm,DzRe,DzIm,c0}=sys;
-const isTarget=s=>(s.n===trSpec.n2&&s.l===trSpec.l2)||(s.n===trSpec.n1&&s.l===trSpec.l1&&eff.every(k=>!(k.n===trSpec.n1&&k.l===trSpec.l1)));
-// Compute resonant operator V = P_partner (eps^{(*)} . r) P_initial acting on c0
-// For absorption (dE > 0): eps . r ; for emission (dE < 0): eps* . r
+const isM1=trSpec.kind==='M1';
+const muShellScale=()=>isM1?(trSpec.l1>0?0.5*Math.sqrt(trSpec.l1*(trSpec.l1+1)/3):0):(Math.abs(radialDipole(trSpec.n1,trSpec.l1,trSpec.n2,trSpec.l2))/Math.sqrt(3));
+// Compute resonant operator V = P_partner (eps^{(*)} . D) P_initial acting on c0
+// For absorption (dE > 0): eps . D ; for emission (dE < 0): eps* . D
 const sgnIm=trSpec.dE>=0?1:-1;
 const exR=normPol[0].re,exI=sgnIm*normPol[0].im;
 const eyR=normPol[1].re,eyI=sgnIm*normPol[1].im;
@@ -638,7 +658,7 @@ let sr=0,si=0;
 for(let j=0;j<M;j++){
 const cjR=c0[j*2],cjI=c0[j*2+1];
 if(cjR===0&&cjI===0)continue;
-if(states[j].n===pn&&states[j].l===pl)continue;
+if(isM1?(states[j].n!==pn||states[j].l!==pl):(states[j].n===pn&&states[j].l===pl))continue;
 if(dmPartner!==null&&(states[i].m-states[j].m)!==dmPartner)continue;
 const idx=i*M+j;
 // (ex*Dx + ey*Dy + ez*Dz)
@@ -646,17 +666,15 @@ const vr=exR*DxRe[idx]-exI*DxIm[idx]+eyR*DyRe[idx]-eyI*DyIm[idx]+ezR*DzRe[idx]-e
 const vi=exR*DxIm[idx]+exI*DxRe[idx]+eyR*DyIm[idx]+eyI*DyRe[idx]+ezR*DzIm[idx]+ezI*DzRe[idx];
 sr+=vr*cjR-vi*cjI;si+=vr*cjI+vi*cjR;}
 bRe[i]=sr;bIm[i]=si;bNorm2+=sr*sr+si*si;}
-if(bNorm2<=1e-18){
-const rad=Math.abs(radialDipole(trSpec.n1,trSpec.l1,trSpec.n2,trSpec.l2));
-return{muRabi:0,muShell:rad/Math.sqrt(3)};}
+if(bNorm2<=1e-18)return{muRabi:0,muShell:muShellScale()};
 const invB=1/Math.sqrt(bNorm2);
 for(let i=0;i<M;i++){bRe[i]*=invB;bIm[i]*=invB;}
-// Now compute || V^dagger |b> || strictly on the initial active manifold (excluding partner shell)
+// Now compute || V^dagger |b> || strictly on the initial active manifold (excluding partner shell/sublevel)
 const initShells=new Set(eff.map(k=>k.n+'|'+k.l));
-const hasInitOnly=eff.some(k=>!(k.n===pn&&k.l===pl));
+const hasInitOnly=!isM1&&eff.some(k=>!(k.n===pn&&k.l===pl));
 let vNorm2=0;
 for(let j=0;j<M;j++){
-if(states[j].n===pn&&states[j].l===pl)continue;
+if(isM1?(states[j].n!==pn||states[j].l!==pl):(states[j].n===pn&&states[j].l===pl))continue;
 if(hasInitOnly&&!initShells.has(states[j].n+'|'+states[j].l))continue;
 let sr=0,si=0;
 for(let i=0;i<M;i++){
@@ -670,9 +688,7 @@ const vi=exR*DxIm[idx]+exI*DxRe[idx]+eyR*DyIm[idx]+eyI*DyRe[idx]+ezR*DzIm[idx]+e
 sr+=vr*bRe[i]+vi*bIm[i];
 si+=vr*bIm[i]-vi*bRe[i];}
 vNorm2+=sr*sr+si*si;}
-const muRabi=Math.sqrt(vNorm2);
-const rad=Math.abs(radialDipole(trSpec.n1,trSpec.l1,trSpec.n2,trSpec.l2));
-return{muRabi,muShell:rad/Math.sqrt(3)};}
+return{muRabi:Math.sqrt(vNorm2),muShell:muShellScale()};}
 
 function fieldVecAt(pObj,t){
 if(t<=0||t>=pObj.T)return[0,0,0,0];
@@ -772,10 +788,12 @@ const cs=(m>0&&(a&1))?-1:1;
 const norm=cs*Math.sqrt(((2*l+1)/(4*Math.PI))*fact(l-a)/fact(l+a));
 chans.push({l,m,a,sigma,norm});}}
 const Mch=chans.length;
-const edges=[];
+const edges=[],edgesM1=[];
 for(let i=0;i<Mch;i++)for(let j=0;j<Mch;j++){
 const d=angularDipole(chans[i].l,chans[i].m,chans[j].l,chans[j].m);
-if(d.xRe||d.xIm||d.yRe||d.yIm||d.zRe||d.zIm)edges.push({i,j,xRe:d.xRe,xIm:d.xIm,yRe:d.yRe,yIm:d.yIm,zRe:d.zRe,zIm:d.zIm});}
+if(d.xRe||d.xIm||d.yRe||d.yIm||d.zRe||d.zIm)edges.push({i,j,xRe:d.xRe,xIm:d.xIm,yRe:d.yRe,yIm:d.yIm,zRe:d.zRe,zIm:d.zIm});
+const dm=angularMagDipole(chans[i].l,chans[i].m,chans[j].l,chans[j].m);
+if(dm.xRe||dm.xIm||dm.yRe||dm.yIm||dm.zRe||dm.zIm)edgesM1.push({i,j,xRe:dm.xRe,xIm:dm.xIm,yRe:dm.yRe,yIm:dm.yIm,zRe:dm.zRe,zIm:dm.zIm});}
 
 const URe=Array.from({length:Mch},()=>new Float64Array(Nr));
 const UIm=Array.from({length:Mch},()=>new Float64Array(Nr));
@@ -812,7 +830,7 @@ const scratch={
 cnRhsR:new Float64Array(Nr),cnRhsI:new Float64Array(Nr),
 cnCR:new Float64Array(Nr),cnCI:new Float64Array(Nr),
 cnDR:new Float64Array(Nr),cnDI:new Float64Array(Nr),
-eVR:new Float64Array(edges.length),eVI:new Float64Array(edges.length),
+eVR:new Float64Array(Math.max(edges.length,edgesM1.length)),eVI:new Float64Array(Math.max(edges.length,edgesM1.length)),
 tmpR:new Float64Array(Mch),tmpI:new Float64Array(Mch),
 k1R:new Float64Array(Mch),k1I:new Float64Array(Mch),
 k2R:new Float64Array(Mch),k2I:new Float64Array(Mch),
@@ -820,7 +838,7 @@ k3R:new Float64Array(Mch),k3I:new Float64Array(Mch),
 k4R:new Float64Array(Mch),k4I:new Float64Array(Mch),
 gbuf:new Float64Array(8)};
 
-return{Lmax,Nr,dr,rCap,rMax:Nr*dr,capRate,radCh,chans,chMap,Mch,edges,URe,UIm,chAct,projStates,scratch};}
+return{Lmax,Nr,dr,rCap,rMax:Nr*dr,capRate,radCh,chans,chMap,Mch,edges,edgesM1,URe,UIm,chAct,projStates,scratch};}
 
 function stepGridChannelCN(g,l,dt,uR,uI){
 const{Nr,radCh,scratch}=g,{mL,mD,mU,hL,hD,hU}=radCh[l];
@@ -845,30 +863,31 @@ for(let j=Nr-2;j>=0;j--){
 uR[j]=cnDR[j]-(cnCR[j]*uR[j+1]-cnCI[j]*uI[j+1]);
 uI[j]=cnDI[j]-(cnCR[j]*uI[j+1]+cnCI[j]*uR[j+1]);}}
 
-function stepGridDipole(g,dt,ex,ey,ez){
+function stepGridDipole(g,dt,ex,ey,ez,isM1){
 const amp=Math.hypot(ex,ey,ez);
 if(amp===0)return;
-const{Nr,dr,Mch,edges,URe,UIm,scratch}=g,nE=edges.length;
+const edgeList=isM1?g.edgesM1:g.edges;
+const{Nr,dr,Mch,URe,UIm,scratch}=g,nE=edgeList.length;
 const{eVR,eVI,tmpR,tmpI,k1R,k1I,k2R,k2I,k3R,k3I,k4R,k4I}=scratch;
-for(let e=0;e<nE;e++){const ed=edges[e];eVR[e]=ex*ed.xRe+ey*ed.yRe+ez*ed.zRe;eVI[e]=ex*ed.xIm+ey*ed.yIm+ez*ed.zIm;}
+for(let e=0;e<nE;e++){const ed=edgeList[e];eVR[e]=ex*ed.xRe+ey*ed.yRe+ez*ed.zRe;eVI[e]=ex*ed.xIm+ey*ed.yIm+ez*ed.zIm;}
 const ap=(rS,sR,sI,dR,dI)=>{
 dR.fill(0);dI.fill(0);
 for(let e=0;e<nE;e++){
-const vr=eVR[e],vi=eVI[e],ed=edges[e],k=ed.j,i=ed.i,xR=sR[k],xI=sI[k];
+const vr=eVR[e],vi=eVI[e],ed=edgeList[e],k=ed.j,i=ed.i,xR=sR[k],xI=sI[k];
 dR[i]+=rS*(vr*xI+vi*xR);dI[i]-=rS*(vr*xR-vi*xI);}};
 for(let j=0;j<Nr;j++){
-const r=(j+1)*dr;
-const nS=Math.max(1,Math.min(32,Math.ceil(Math.abs(dt)*r*amp/0.35)));
+const rS=isM1?1:((j+1)*dr);
+const nS=Math.max(1,Math.min(32,Math.ceil(Math.abs(dt)*rS*amp/0.35)));
 const hD=dt/nS;
 for(let s=0;s<nS;s++){
 for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j];tmpI[i]=UIm[i][j];}
-ap(r,tmpR,tmpI,k1R,k1I);
+ap(rS,tmpR,tmpI,k1R,k1I);
 for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*hD*k1R[i];tmpI[i]=UIm[i][j]+0.5*hD*k1I[i];}
-ap(r,tmpR,tmpI,k2R,k2I);
+ap(rS,tmpR,tmpI,k2R,k2I);
 for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+0.5*hD*k2R[i];tmpI[i]=UIm[i][j]+0.5*hD*k2I[i];}
-ap(r,tmpR,tmpI,k3R,k3I);
+ap(rS,tmpR,tmpI,k3R,k3I);
 for(let i=0;i<Mch;i++){tmpR[i]=URe[i][j]+hD*k3R[i];tmpI[i]=UIm[i][j]+hD*k3I[i];}
-ap(r,tmpR,tmpI,k4R,k4I);
+ap(rS,tmpR,tmpI,k4R,k4I);
 for(let i=0;i<Mch;i++){
 URe[i][j]+=(hD/6)*(k1R[i]+2*k2R[i]+2*k3R[i]+k4R[i]);
 UIm[i][j]+=(hD/6)*(k1I[i]+2*k2I[i]+2*k3I[i]+k4I[i]);}}}}
@@ -878,7 +897,7 @@ const{Mch,Nr,chans,URe,UIm,chAct,capRate}=g;
 const[ex,ey,ez]=fieldVecAt(pObj,tField);
 const hasField=ex!==0||ey!==0||ez!==0;
 for(let c=0;c<Mch;c++)if(chAct[c])stepGridChannelCN(g,chans[c].l,0.5*dtH,URe[c],UIm[c]);
-if(hasField)stepGridDipole(g,dtH,ex,ey,ez);
+if(hasField)stepGridDipole(g,dtH,ex,ey,ez,pObj.kind==='M1');
 for(let c=0;c<Mch;c++){
 const uR=URe[c],uI=UIm[c];
 if(!chAct[c]&&!hasField)continue;
@@ -1010,11 +1029,18 @@ return{boundNorm,totalNorm};}
 
 /** Compute Weisskopf-Wigner spontaneous emission decay rate Gamma (Einstein A), natural lifetime tau=1/Gamma, and characteristic optical cycle count N=omega0/(2*pi*Gamma). */
 function weisskopfWigner(trSpec){
-const e1=-0.5/(trSpec.n1*trSpec.n1),e2=-0.5/(trSpec.n2*trSpec.n2);
+const e1=-0.5/(trSpec.n1*trSpec.n1)+(trSpec.m1!==null&&trSpec.m1!==undefined?trSpec.m1*Bau/2:0);
+const e2=-0.5/(trSpec.n2*trSpec.n2)+(trSpec.m2!==null&&trSpec.m2!==undefined?trSpec.m2*Bau/2:0);
 const upper2=e2>=e1;
-const nU=upper2?trSpec.n2:trSpec.n1,lU=upper2?trSpec.l2:trSpec.l1;
-const nL=upper2?trSpec.n1:trSpec.n2,lL=upper2?trSpec.l1:trSpec.l2;
+const nU=upper2?trSpec.n2:trSpec.n1,lU=upper2?trSpec.l2:trSpec.l1,mU=upper2?trSpec.m2:trSpec.m1;
+const nL=upper2?trSpec.n1:trSpec.n2,lL=upper2?trSpec.l1:trSpec.l2,mL=upper2?trSpec.m1:trSpec.m2;
 const omega0=Math.abs(e2-e1);
+if(trSpec.kind==='M1'){
+const mPair=(mU!==null&&mL!==null)?mU*mL:0;
+const d2=Math.max(0,0.125*(lU*(lU+1)-mPair));
+const gammaAu=(4/3)*Math.pow(ALPHA_FS,5)*omega0*omega0*omega0*d2;
+const gammaSi=gammaAu/AU_S,tauS=gammaSi>0?1/gammaSi:Infinity,cycNat=gammaAu>0?omega0/(TAU*gammaAu):Infinity;
+return{omega0,d2,gammaAu,gammaSi,tauS,cycNat};}
 const rad=radialDipole(nL,lL,nU,lU);
 const d2=(Math.max(lU,lL)/(2*lU+1))*rad*rad;
 const gammaAu=(4/3)*ALPHA_FS*ALPHA_FS*ALPHA_FS*omega0*omega0*omega0*d2;
@@ -1037,16 +1063,17 @@ const sys=buildCoupledSystem(trSpec);
 const {muRabi,muShell}=computeBrightDipole(sys,trSpec,np);
 const ww=weisskopfWigner(trSpec);
 const omega0=trSpec.omega0;
+const isM1=trSpec.kind==='M1';
 const nUpper=Math.max(trSpec.n1,trSpec.n2);
-// Scale pulse duration above the upper-shell over-the-barrier field E_OBI = 1/(16 n^4) for n >= 3
-const Eobi=1/(16*Math.pow(nUpper,4));
-if(isPhoton&&nUpper>=3&&muRabi>1e-7){
+// Scale pulse duration above the upper-shell over-the-barrier field E_OBI = 1/(16 n^4) for E1 when n >= 3
+const Eobi=isM1?Infinity:(1/(16*Math.pow(nUpper,4)));
+if(!isM1&&isPhoton&&nUpper>=3&&muRabi>1e-7){
 const T0=cyc*TAU/omega0,g0=PHOTON_KTAU/T0,eff0=(2/g0)*(1-Math.exp(-0.5*PHOTON_KTAU));
 const E0Init=Math.PI/(muRabi*eff0);
 if(E0Init>Eobi)cyc=Math.min(52,Math.max(cyc,Math.ceil(cyc*E0Init/Eobi)));}
 const muRef=muRabi>1e-7?muRabi:muShell;
 const T=cyc*TAU/omega0;
-const TrefCyc=nUpper<=2?10:Math.min(80,Math.max(Math.round(10*Math.pow(nUpper/2,2.5)),muRef>1e-7?Math.ceil(omega0/(muRef*1.15*Eobi)):28));
+const TrefCyc=(isM1||nUpper<=2)?10:Math.min(80,Math.max(Math.round(10*Math.pow(nUpper/2,2.5)),muRef>1e-7?Math.ceil(omega0/(muRef*1.15*Eobi)):28));
 const Tref=TrefCyc*TAU/omega0;
 const gammaSim=isPhoton?(PHOTON_KTAU/T):0;
 const bw=isPhoton?(0.5*gammaSim):(TAU/T);
@@ -1095,6 +1122,7 @@ const c=new Float64Array(grid.projStates.length*2);
 const projInfo=projectGridStates(grid,c);
 pulse={
 mode:interactionMode,
+kind:cfg.trSpec.kind||'E1',
 trSpec:cfg.trSpec,
 sys:cfg.sys,
 grid,
@@ -1127,8 +1155,9 @@ updatePulseInfo();}
 function stepPulse(dtFrame,spd,span){
 const dtSim=Math.min(dtFrame*spd*tscale(),pulse.T-pulse.t);
 if(dtSim<=0){finishPulse(false);return;}
-const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,pulse.E0*pulse.grid.rMax,1e-4);
-const dtTarget=Math.min(0.35,Math.max(0.16,1.15*pulse.grid.dr));
+const isM1=pulse.kind==='M1';
+const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,isM1?(pulse.E0*(pulse.trSpec.l1+1)):(pulse.E0*pulse.grid.rMax),1e-4);
+const dtTarget=isM1?Math.min(0.8,0.18/Math.max(pulse.omegaL,Math.abs(Bau),0.05)):Math.min(0.35,Math.max(0.16,1.15*pulse.grid.dr));
 const nSub=Math.max(1,Math.min(64,Math.ceil(Math.max(dtSim/dtTarget,maxFreq*dtSim/0.1))));
 const h=dtSim/nSub;
 for(let s=0;s<nSub;s++)advanceGridParticlesRK4(pulse.grid,pulse,pulse.t+s*h,h);
@@ -1229,9 +1258,10 @@ if(p>=0.005){const s=pulse.proj[i];pops.push({p,lbl:'|'+s.n+LET[s.l]+', '+s.m+'�
 pops.sort((a,b)=>b.p-a.p);
 const cont=Math.max(0,1-pulse.boundNorm);
 if(cont>=0.025)pops.push({p:cont,lbl:'continuum / higher n: '+Math.round(cont*100)+'%'});
-const modeName=pulse.mode==='photon'?'Single-photon e<sup>+Γt/2</sup> wavepacket':'Coherent EM pulse';
+const modeName=pulse.mode==='photon'?'Single-photon e<sup>+Γt/2</sup> wavepacket':(pulse.kind==='M1'?'Coherent Zeeman RF (M1) pulse':'Coherent EM pulse');
 const natInfo=pulse.mode==='photon'&&pulse.ww?(', Γ = '+fmtGamma(pulse.ww.gammaSi)+', N = '+fmtCycNat(pulse.ww.cycNat)):'';
-$('info').innerHTML='<b>'+modeName+'</b> ('+pulse.trSpec.n1+LET[pulse.trSpec.l1]+' ↔ '+pulse.trSpec.n2+LET[pulse.trSpec.l2]+natInfo+', Θ = '+(pulse.theta/Math.PI).toFixed(2)+'π) · <b>'+cycDone.toFixed(1)+' / '+pulse.cyc+' cyc</b> · '+pops.slice(0,5).map(x=>x.lbl).join(' · ');}
+const trLbl=pulse.trSpec.kind==='M1'?(pulse.trSpec.n1+LET[pulse.trSpec.l1]+' m='+pulse.trSpec.m1+'↔'+pulse.trSpec.m2+' M1'):(pulse.trSpec.n1+LET[pulse.trSpec.l1]+' ↔ '+pulse.trSpec.n2+LET[pulse.trSpec.l2]);
+$('info').innerHTML='<b>'+modeName+'</b> ('+trLbl+natInfo+', Θ = '+(pulse.theta/Math.PI).toFixed(2)+'π) · <b>'+cycDone.toFixed(1)+' / '+pulse.cyc+' cyc</b> · '+pops.slice(0,5).map(x=>x.lbl).join(' · ');}
 
 function info(){
 if(pulse){updatePulseInfo();return;}
@@ -1440,8 +1470,9 @@ for(const t of list){
 const o=document.createElement('option');
 o.value=t.key;
 const ev=t.omega0*HA;
-const dmTag=t.m1!==null?' (Δm='+(t.dm>0?'+':'')+t.dm+')':'';
-o.textContent=t.n1+LET[t.l1]+' → '+t.n2+LET[t.l2]+dmTag+' · '+(t.dir==='absorb'?'absorb ':'emit ')+ev.toFixed(ev<.1?4:2)+' eV';
+const evStr=ev>=0.1?ev.toFixed(2)+' eV':fmtEv(ev);
+const dmTag=t.m1!==null?(t.kind==='M1'?' (m: '+t.m1+'→'+t.m2+', Zeeman M1)':' (Δm='+(t.dm>0?'+':'')+t.dm+(t.n1===t.n2?', Zeeman E1':'')+')'):'';
+o.textContent=t.n1+LET[t.l1]+' → '+t.n2+LET[t.l2]+dmTag+' · '+(t.dir==='absorb'?'absorb ':'emit ')+evStr;
 sel.appendChild(o);}
 if([...sel.options].some(o=>o.value===old))sel.value=old;}
 
@@ -1465,9 +1496,10 @@ $('pww-row').hidden=isWave;
 $('pdur-row').hidden=!isWave;
 $('ppow-row').hidden=!isWave;
 $('fire').textContent=isWave?'Fire EM pulse':'Send photon';
-$('tr-lab').textContent=isWave?'Central frequency (transition energy)':'Photon energy (electric dipole transition)';
 const cfg=getPulseConfig();
 const blocked=!!pulse||!cfg.ok||(interactionMode==='photon'&&cfg.muRabi<=1e-7);
+const isM1Cfg=cfg.ok&&cfg.trSpec.kind==='M1';
+$('tr-lab').textContent=isWave?'Central frequency (transition energy)':'Photon energy ('+(isM1Cfg?'magnetic M1':'electric E1')+' dipole transition)';
 $('fire').disabled=blocked;
 if(!cfg.ok){
 $('pww-v').textContent='—';
@@ -1484,13 +1516,14 @@ $('ppow-v').textContent=fmtInt(cfg.intensityWcm2)+' · Θ='+(cfg.theta/Math.PI).
 const ww=cfg.ww;
 $('pww-v').textContent='Γ = '+fmtGamma(ww.gammaSi)+' ('+fmtLw(ww.gammaSi/TAU)+') · τ = '+fmtTau(ww.tauS)+' · N = '+fmtCycNat(ww.cycNat);
 }
+const omEvStr=fmtEv(cfg.omegaL*HA);
 if(cfg.muRabi<=1e-7){
-$('em-note').textContent='Zero dipole coupling between the active state and '+cfg.trSpec.n2+LET[cfg.trSpec.l2]+' for this polarization (selection rule mismatch). Adjust x/y/z polarization or initial state.';
+$('em-note').textContent='Zero '+(isM1Cfg?'magnetic ':'')+'dipole coupling between the active state and '+cfg.trSpec.n2+LET[cfg.trSpec.l2]+(isM1Cfg?' (m='+cfg.trSpec.m2+')':'')+' for this polarization (selection rule mismatch). Adjust x/y/z polarization or initial state.';
 }else if(isWave){
-$('em-note').textContent='Coherent sin²-envelope pulse at ω = '+(cfg.omegaL*HA).toFixed(4)+' eV · Rabi pulse area Θ = '+(cfg.theta/Math.PI).toFixed(2)+'π (π transfers population; 2π flips phase/m across dark & bright states).';
+$('em-note').textContent='Coherent sin²-envelope '+(isM1Cfg?'RF magnetic (B₁) ':'')+'pulse at ω = '+omEvStr+' · Rabi pulse area Θ = '+(cfg.theta/Math.PI).toFixed(2)+'π (π transfers population; 2π flips phase/m across dark & bright states).';
 }else{
 const ww=cfg.ww;
-$('em-note').textContent='100% absorption time-reversed replica of spontaneous emission (4π dipole mode): envelope e^(+Γt/2) cutting off abruptly at completion (Θ = 1.00π, ω = '+(cfg.omegaL*HA).toFixed(4)+' eV). Physical τ = 1/Γ = '+fmtTau(ww.tauS)+' spans N = ω₀/2πΓ ≈ '+fmtCycNat(ww.cycNat)+'; envelope rendered compressed in e^(+Γ_sim·t/2) over '+cfg.cyc+' cyc ('+PHOTON_KTAU+'/Γ_sim).';}}
+$('em-note').textContent='100% absorption time-reversed replica of '+(isM1Cfg?'Zeeman M1 ':'')+'spontaneous emission: envelope e^(+Γt/2) cutting off abruptly at completion (Θ = 1.00π, ω = '+omEvStr+'). Physical τ = 1/Γ = '+fmtTau(ww.tauS)+' spans N = ω₀/2πΓ ≈ '+fmtCycNat(ww.cycNat)+'; envelope rendered compressed in e^(+Γ_sim·t/2) over '+cfg.cyc+' cyc ('+PHOTON_KTAU+'/Γ_sim).';}}
 
 $('fire').onclick=()=>startPulse();
 $('stop').onclick=()=>finishPulse(true);

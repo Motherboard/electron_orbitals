@@ -83,11 +83,11 @@ function createCoreContext() {
       getBasis, evalBasisPsi, evalBasisGrad, evalVel,
       computeEffective, getEff: () => eff, getEffStatus: () => effStatus,
       setComps: (c) => { components = c; computeEffective(); },
-      setBau: (b) => { Bau = b; },
+      setBau: (b) => { Bau = b; updateEnergies(); },
       setE: (v) => { E = v; },
       setP: (arr) => { P = arr; },
       sampSingle,
-      radialDipole, angularDipole, dipoleElement,
+      radialDipole, angularDipole, dipoleElement, angularMagDipole,
       getTransitionList, buildCoupledSystem, computeBrightDipole,
       fieldVecAt, stepTdseC, weisskopfWigner,
       buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad
@@ -615,4 +615,98 @@ test('2p->3d higher-shell calibration, Zeeman dipole selection, and strong-field
   const cEm = new Float64Array(gEm.projStates.length * 2);
   const infoEm = api.projectGridStates(gEm, cEm);
   assert.ok(infoEm.boundNorm > 0.96, `Expected EM 2p,0->3d pow=1 boundNorm > 0.96, got ${infoEm.boundNorm}`);
+});
+
+test('magnetic field unlocks intra-shell E1 and M1 Zeeman level transitions', () => {
+  const polX = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }]);
+  const polZ = makePol([{ amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 1, phaseDeg: 0 }]);
+  const polSp = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }]);
+  const polSm = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 270 }, { amp: 0, phaseDeg: 0 }]);
+
+  // 1. At Bau = 0, no intra-shell transitions exist
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  assert.equal(api.getTransitionList().some((t) => t.n1 === t.n2), false);
+
+  // 2. At Bau != 0, 2p,+1 exposes intra-shell E1 (2p->2s) and M1 (2p->2p); 2s,0 exposes intra-shell E1 (2s->2p) only
+  api.setBau(0.1);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const trs2p = api.getTransitionList();
+  const trZeE1 = trs2p.find((t) => t.key === '2|1|2|0|-1');
+  const trZeM1 = trs2p.find((t) => t.key === '2|1|2|1|-1');
+  assert.ok(trZeE1 && trZeE1.kind === 'E1' && trZeE1.dir === 'emit', 'Expected intra-shell E1 2p,+1 -> 2s,0');
+  assert.ok(trZeM1 && trZeM1.kind === 'M1' && trZeM1.dir === 'emit', 'Expected intra-orbital M1 2p,+1 -> 2p,0');
+  assert.ok(Math.abs(trZeE1.omega0 - 0.05) < 1e-12);
+  assert.ok(Math.abs(trZeM1.omega0 - 0.05) < 1e-12);
+
+  api.setComps([{ id: 1, n: 2, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trs2s = api.getTransitionList();
+  assert.ok(trs2s.some((t) => t.key === '2|0|2|1|1' && t.kind === 'E1' && t.dir === 'absorb'));
+  assert.ok(trs2s.some((t) => t.key === '2|0|2|1|-1' && t.kind === 'E1' && t.dir === 'emit'));
+  assert.equal(trs2s.some((t) => t.kind === 'M1'), false, 'l=0 should have no M1 Zeeman transition');
+
+  // 3. Magnetic dipole operator & Larmor chirality under B_z sign reversal
+  const mOp = api.angularMagDipole(1, 0, 1, 1);
+  assert.ok(Math.abs(mOp.xRe - Math.SQRT2 / 4) < 1e-12);
+  assert.ok(Math.abs(mOp.yIm - Math.SQRT2 / 4) < 1e-12);
+  assert.equal(api.angularMagDipole(1, 0, 2, 0).xRe, 0);
+
+  api.setBau(0.1);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const sysM1Pos = api.buildCoupledSystem(trZeM1);
+  assert.ok(Math.abs(api.computeBrightDipole(sysM1Pos, trZeM1, polSp).muRabi - 0.5) < 1e-12);
+  assert.equal(api.computeBrightDipole(sysM1Pos, trZeM1, polSm).muRabi, 0);
+  assert.equal(api.computeBrightDipole(sysM1Pos, trZeM1, polZ).muRabi, 0);
+  assert.ok(Math.abs(api.computeBrightDipole(sysM1Pos, trZeM1, polX).muRabi - Math.SQRT2 / 4) < 1e-12);
+
+  const wwM1 = api.weisskopfWigner(trZeM1);
+  assert.ok(Math.abs(wwM1.omega0 - 0.05) < 1e-12);
+  assert.ok(Math.abs(wwM1.d2 - 0.25) < 1e-12);
+  assert.ok(Number.isFinite(wwM1.gammaSi) && wwM1.gammaSi > 0 && Number.isFinite(wwM1.cycNat));
+
+  api.setBau(-0.1);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const trZeM1Neg = api.getTransitionList().find((t) => t.key === '2|1|2|1|-1');
+  const sysM1Neg = api.buildCoupledSystem(trZeM1Neg);
+  assert.equal(trZeM1Neg.dir, 'absorb');
+  assert.equal(api.computeBrightDipole(sysM1Neg, trZeM1Neg, polSp).muRabi, 0);
+  assert.ok(Math.abs(api.computeBrightDipole(sysM1Neg, trZeM1Neg, polSm).muRabi - 0.5) < 1e-12);
+
+  // 4. Radial-grid TDSE M1 spin-1 full flip 2p,+1 -> 2p,-1 (SU(2) exact)
+  api.setBau(0.1);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const gM1 = api.buildGridSystem(trZeM1, sysM1Pos);
+  api.setP([]);
+  const cyc = 12;
+  const T = (cyc * 2 * Math.PI) / trZeM1.omega0;
+  const muSp = api.computeBrightDipole(sysM1Pos, trZeM1, polSp).muRabi;
+  const E0Flip = (Math.SQRT2 * 2 * Math.PI) / (muSp * T);
+  const pM1 = { kind: 'M1', trSpec: trZeM1, omegaL: trZeM1.omega0, T, gamma: 0, E0: E0Flip, pol: polSp };
+  const nM1 = Math.ceil(T / 0.8);
+  const hM1 = T / nM1;
+  for (let s = 0; s < nM1; s++) api.advanceGridParticlesRK4(gM1, pM1, s * hM1, hM1);
+  const cM1 = new Float64Array(gM1.projStates.length * 2);
+  const infoM1 = api.projectGridStates(gM1, cM1);
+  const idx2pm1 = gM1.projStates.findIndex((ps) => ps.n === 2 && ps.l === 1 && ps.m === -1);
+  const p2pm1 = cM1[idx2pm1 * 2] ** 2 + cM1[idx2pm1 * 2 + 1] ** 2;
+  assert.ok(Math.abs(infoM1.boundNorm - 1) < 1e-4, `Expected unitary M1 norm ~1, got ${infoM1.boundNorm}`);
+  assert.ok(p2pm1 > 0.99, `Expected exact SU(2) 2p,+1 -> 2p,-1 flip > 0.99, got ${p2pm1}`);
+
+  // 5. Intra-shell E1 2p,+1 -> 2s,0 on radial grid stays > 99% bound
+  const sysE1 = api.buildCoupledSystem(trZeE1);
+  const gE1 = api.buildGridSystem(trZeE1, sysE1);
+  const gamE1 = 5 / T;
+  const effE1 = (2 / gamE1) * (1 - Math.exp(-2.5));
+  const muE1 = api.computeBrightDipole(sysE1, trZeE1, polSp).muRabi;
+  const pE1 = { kind: 'E1', trSpec: trZeE1, omegaL: trZeE1.omega0, T, gamma: gamE1, E0: Math.PI / (muE1 * effE1), pol: polSp };
+  const nE1 = Math.ceil(T / 0.34);
+  const hE1 = T / nE1;
+  for (let s = 0; s < nE1; s++) api.advanceGridParticlesRK4(gE1, pE1, s * hE1, hE1);
+  const cE1 = new Float64Array(gE1.projStates.length * 2);
+  const infoE1 = api.projectGridStates(gE1, cE1);
+  const idx2s0 = gE1.projStates.findIndex((ps) => ps.n === 2 && ps.l === 0 && ps.m === 0);
+  const p2s0 = cE1[idx2s0 * 2] ** 2 + cE1[idx2s0 * 2 + 1] ** 2;
+  assert.ok(infoE1.boundNorm > 0.99, `Expected intra-shell E1 boundNorm > 0.99, got ${infoE1.boundNorm}`);
+  assert.ok(p2s0 > 0.25, `Expected significant transfer into |2s,0> (> 0.25), got ${p2s0}`);
+  api.setBau(0);
 });
