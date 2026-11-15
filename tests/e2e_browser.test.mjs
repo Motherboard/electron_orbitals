@@ -398,13 +398,257 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     const mobile = await evalJS(`({
       scrollW: document.documentElement.scrollWidth,
       innerW: window.innerWidth,
-      compOverflow: [...document.querySelectorAll('.comp')].some((el) => el.scrollWidth > el.clientWidth)
+      compOverflow: [...document.querySelectorAll('.comp')].some((el) => el.scrollWidth > el.clientWidth),
+      ovModeDefault: document.getElementById('ov-mode').value,
+      ovModeRight: document.getElementById('ov-mode').getBoundingClientRect().right
     })`);
     assert.ok(
       mobile.scrollW <= mobile.innerW,
       `Expected no horizontal overflow at 320px, got scrollWidth=${mobile.scrollW}`
     );
     assert.equal(mobile.compOverflow, false);
+    assert.equal(mobile.ovModeDefault, 'proj');
+    assert.ok(mobile.ovModeRight <= mobile.innerW, `Expected #ov-mode within 320px viewport, got right=${mobile.ovModeRight}`);
+
+    // 5b. Mobile (<1020px) tutorial drawer: closed by default, opens cleanly, inert main, closes cleanly
+    const mobTutBefore = await evalJS(`({
+      hidden: document.getElementById('tut-panel').hidden,
+      expanded: document.getElementById('tut-toggle').getAttribute('aria-expanded'),
+      inert: !!document.getElementById('main-col').inert,
+    })`);
+    assert.equal(mobTutBefore.hidden, true);
+    assert.equal(mobTutBefore.expanded, 'false');
+    assert.equal(mobTutBefore.inert, false);
+
+    await evalJS(`document.getElementById('tut-toggle').click()`);
+    await new Promise((r) => setTimeout(r, 150));
+    const mobTutOpen = await evalJS(`({
+      hidden: document.getElementById('tut-panel').hidden,
+      backdropHidden: document.getElementById('tut-backdrop').hidden,
+      expanded: document.getElementById('tut-toggle').getAttribute('aria-expanded'),
+      inert: !!document.getElementById('main-col').inert,
+      scrollW: document.documentElement.scrollWidth,
+      innerW: window.innerWidth,
+      demoCount: document.querySelectorAll('#tut-body .tut-demo-btn').length,
+      prog: document.getElementById('tut-prog').textContent,
+    })`);
+    assert.equal(mobTutOpen.hidden, false);
+    assert.equal(mobTutOpen.backdropHidden, false);
+    assert.equal(mobTutOpen.expanded, 'true');
+    assert.equal(mobTutOpen.inert, true);
+    assert.ok(mobTutOpen.demoCount >= 8, `Expected Ch1 demos rendered, got ${mobTutOpen.demoCount}`);
+    assert.equal(mobTutOpen.prog, '1 / 7');
+    assert.ok(mobTutOpen.scrollW <= mobTutOpen.innerW, `Mobile drawer caused overflow: ${mobTutOpen.scrollW} > ${mobTutOpen.innerW}`);
+
+    await evalJS(`document.getElementById('tut-close').click()`);
+    await new Promise((r) => setTimeout(r, 100));
+    const mobTutClosed = await evalJS(`({
+      hidden: document.getElementById('tut-panel').hidden,
+      inert: !!document.getElementById('main-col').inert,
+    })`);
+    assert.equal(mobTutClosed.hidden, true);
+    assert.equal(mobTutClosed.inert, false);
+
+    // 5c. Desktop (>=1020px) side-by-side tutorial sidepanel + click Ch5 SU(2) M1 demo button
+    await cdp.call('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-color-scheme', value: 'light' }],
+    });
+    await cdp.call('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 900,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await new Promise((r) => setTimeout(r, 250));
+    await evalJS(`(() => {
+      if (document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      const sel = document.getElementById('tut-sel');
+      sel.value = '4';
+      sel.dispatchEvent(new Event('change'));
+    })()`);
+    await new Promise((r) => setTimeout(r, 150));
+    const deskState = await evalJS(`({
+      shellOpen: document.getElementById('app-shell').classList.contains('tut-open'),
+      panelHidden: document.getElementById('tut-panel').hidden,
+      mainInert: !!document.getElementById('main-col').inert,
+      canvasW: document.getElementById('c').clientWidth,
+      scrollW: document.documentElement.scrollWidth,
+      innerW: window.innerWidth,
+      ch5Title: document.querySelector('#tut-body h2')?.textContent || '',
+      prog: document.getElementById('tut-prog').textContent,
+    })`);
+    assert.equal(deskState.shellOpen, true);
+    assert.equal(deskState.panelHidden, false);
+    assert.equal(deskState.mainInert, false);
+    assert.ok(deskState.canvasW >= 500, `Expected side-by-side main canvas >=500px, got ${deskState.canvasW}`);
+    assert.ok(deskState.scrollW <= deskState.innerW, `Desktop sidepanel overflow: ${deskState.scrollW} > ${deskState.innerW}`);
+    assert.match(deskState.ch5Title, /^5\./);
+    assert.equal(deskState.prog, '5 / 7');
+
+    // Click Ch5 Demo #5 (M1 flip: 2p,+1 -> 2p,0 -> 2p,-1)
+    await evalJS(`(() => {
+      const btns = [...document.querySelectorAll('#tut-body .tut-demo-btn')];
+      btns[btns.length - 1].click();
+    })()`);
+    const launched = await evalJS(`(() => {
+      const state = {
+        B: Bau,
+        mode: interactionMode,
+        spd: document.getElementById('spd').value,
+        kind: pulse ? pulse.kind : null,
+        stopHidden: document.getElementById('stop').hidden,
+      };
+      // Accelerate headless animation frames after verifying demo applied speed=0.8
+      document.getElementById('spd').value = '3';
+      return state;
+    })()`);
+    assert.ok(Math.abs(launched.B - 0.1) < 1e-6);
+    assert.equal(launched.mode, 'wave');
+    assert.equal(launched.spd, '0.8');
+    assert.equal(launched.kind, 'M1');
+    assert.equal(launched.stopHidden, false);
+
+    await waitUntil(`pulse === null`, 35000);
+    const afterTutM1 = await evalJS(`(() => {
+      const sorted = [...eff].sort((a, b) => b.prob - a.prob);
+      const top = sorted[0] ? { n: sorted[0].n, l: sorted[0].l, m: sorted[0].m, prob: sorted[0].prob } : null;
+      const bfEl = document.getElementById('bf');
+      bfEl.value = '0'; bfEl.dispatchEvent(new Event('input'));
+      document.getElementById('tut-toggle').click();
+      return { top, panelHidden: document.getElementById('tut-panel').hidden };
+    })()`);
+    assert.equal(afterTutM1.top.n, 2);
+    assert.equal(afterTutM1.top.l, 1);
+    assert.equal(afterTutM1.top.m, -1);
+    assert.ok(afterTutM1.top.prob > 0.98, `Expected ~100% transfer into |2p,-1>, got ${afterTutM1.top.prob}`);
+    assert.equal(afterTutM1.panelHidden, true);
+
+    // 5d. Verify overlay mode selector (Column projection vs 2D slice) + direct-glow zeros in browser
+    const ch7SliceCheck = await evalJS(`(() => {
+      document.getElementById('tut-toggle').click();
+      const sel = document.getElementById('tut-sel');
+      sel.value = '6';
+      sel.dispatchEvent(new Event('change'));
+      const cards = [...document.querySelectorAll('#tut-body .tut-demo')];
+      const sliceCard = cards.find((el) => el.textContent.includes('3d,0 slice'));
+      const sliceBtn = sliceCard ? sliceCard.querySelector('.tut-demo-btn') : null;
+      if (!sliceBtn) return { missingBtn: true };
+      sliceBtn.click();
+      return {
+        missingBtn: false,
+        ovModeAfterDemo: document.getElementById('ov-mode').value,
+        topState: eff[0] ? { n: eff[0].n, l: eff[0].l, m: eff[0].m } : null,
+      };
+    })()`);
+    assert.equal(ch7SliceCheck.missingBtn, false);
+    assert.equal(ch7SliceCheck.ovModeAfterDemo, 'slice');
+    assert.deepEqual(ch7SliceCheck.topState, { n: 3, l: 2, m: 0 });
+
+    // Test 2p,0 at Tilt=90°: z=0 slice has 0 alpha everywhere, while column projection glows near center & is 0 in corners
+    await evalJS(`(() => {
+      components = [{ id: nextId++, n: 2, l: 1, m: 0, amp: 1, phaseDeg: 0 }];
+      rebuildComponentList();
+      document.getElementById('tilt').value = '90';
+      document.getElementById('tv').textContent = '90°';
+      document.getElementById('ov-mode').value = 'slice';
+      document.getElementById('ov-mode').dispatchEvent(new Event('change'));
+      refresh(false, true);
+    })()`);
+    await new Promise((r) => setTimeout(r, 100));
+    const sliceAlphaStats = await evalJS(`(() => {
+      const img = offCtx.getImageData(0, 0, offW, offH).data;
+      let maxA = 0;
+      for (let i = 3; i < img.length; i += 4) if (img[i] > maxA) maxA = img[i];
+      return { maxA, offW, offH };
+    })()`);
+    assert.equal(sliceAlphaStats.maxA, 0, '2p,0 top-down z=0 slice should have 0 alpha everywhere');
+
+    await evalJS(`(() => {
+      document.getElementById('ov-mode').value = 'proj';
+      document.getElementById('ov-mode').dispatchEvent(new Event('change'));
+    })()`);
+    await new Promise((r) => setTimeout(r, 100));
+    const projAlphaStats = await evalJS(`(() => {
+      const img = offCtx.getImageData(0, 0, offW, offH).data;
+      let maxA = 0;
+      for (let i = 3; i < img.length; i += 4) if (img[i] > maxA) maxA = img[i];
+      const cornerA = img[3];
+      const ovChk = document.getElementById('ov');
+      ovChk.checked = false; ovChk.dispatchEvent(new Event('change'));
+      const disabledWhenOff = document.getElementById('ov-mode').disabled;
+      ovChk.checked = true; ovChk.dispatchEvent(new Event('change'));
+      const enabledWhenOn = !document.getElementById('ov-mode').disabled;
+      document.getElementById('tut-toggle').click();
+      return { maxA, cornerA, disabledWhenOff, enabledWhenOn };
+    })()`);
+    assert.ok(projAlphaStats.maxA >= 80, `Expected bright column-projected 2p,0 glow (maxA >= 80), got ${projAlphaStats.maxA}`);
+    assert.equal(projAlphaStats.cornerA, 0, 'Vacuum corner should be transparent (alpha=0), not purple veil');
+    assert.equal(projAlphaStats.disabledWhenOff, true);
+    assert.equal(projAlphaStats.enabledWhenOn, true);
+
+    // 5e. Single-photon polarization match readout, Ch6 resolved x -> sigma- branch projection, and orthogonal blocking
+    const ch6PolCheck = await evalJS(`(() => {
+      document.getElementById('tut-toggle').click();
+      const sel = document.getElementById('tut-sel');
+      sel.value = '5';
+      sel.dispatchEvent(new Event('change'));
+      const cards = [...document.querySelectorAll('#tut-body .tut-demo')];
+      const resCard = cards.find((el) => el.textContent.includes('50% σ⁻ branch'));
+      const resBtn = resCard ? resCard.querySelector('.tut-demo-btn') : null;
+      if (!resBtn) return { missingBtn: true };
+      resBtn.click();
+      const snap = {
+        missingBtn: false,
+        matchRowHidden: document.getElementById('pmatch-row').hidden,
+        matchText: document.getElementById('pmatch-v').textContent,
+        emNote: document.getElementById('em-note').textContent,
+        collapsed: pulse ? pulse.collapsed : false,
+        polMatch: pulse ? pulse.polMatch : 0,
+        polYMag: pulse ? pulse.pol[1].mag : 0,
+      };
+      document.getElementById('spd').value = '3';
+      return snap;
+    })()`);
+    assert.equal(ch6PolCheck.missingBtn, false);
+    assert.equal(ch6PolCheck.matchRowHidden, false);
+    assert.match(ch6PolCheck.matchText, /50% \(collapses → σ⁻\)/);
+    assert.match(ch6PolCheck.emNote, /conditioned on absorption/);
+    assert.equal(ch6PolCheck.collapsed, true);
+    assert.ok(Math.abs(ch6PolCheck.polMatch - 0.5) < 1e-6);
+    assert.ok(ch6PolCheck.polYMag > 0.69, `Expected projected field to rotate in x-y as sigma-, got polYMag=${ch6PolCheck.polYMag}`);
+
+    await waitUntil(`pulse === null`, 35000);
+    const blockedAndCleanup = await evalJS(`(() => {
+      const sorted = [...eff].sort((a, b) => b.prob - a.prob);
+      const top = sorted[0] ? { n: sorted[0].n, l: sorted[0].l, m: sorted[0].m, prob: sorted[0].prob } : null;
+      // Now switch back to 1s with B=0.05 and z-pol: should show 0% match and disable Send photon
+      const bfEl = document.getElementById('bf');
+      bfEl.value = String(0.05 * bscale() / 2);
+      const rows = document.querySelectorAll('.comp');
+      const sels = rows[0].querySelectorAll('select');
+      sels[0].value = '1'; sels[0].dispatchEvent(new Event('change'));
+      bfEl.dispatchEvent(new Event('input'));
+      document.querySelector('.chip[data-pol="z"]').click();
+      const blockedZ = {
+        fireDisabled: document.getElementById('fire').disabled,
+        matchText: document.getElementById('pmatch-v').textContent,
+      };
+      const waveRadio = document.querySelector('input[name="imode"][value="wave"]');
+      waveRadio.checked = true; waveRadio.dispatchEvent(new Event('change'));
+      const hiddenInWave = document.getElementById('pmatch-row').hidden;
+      const photonRadio = document.querySelector('input[name="imode"][value="photon"]');
+      photonRadio.checked = true; photonRadio.dispatchEvent(new Event('change'));
+      bfEl.value = '0'; bfEl.dispatchEvent(new Event('input'));
+      document.getElementById('tut-toggle').click();
+      return { top, blockedZ, hiddenInWave };
+    })()`);
+    assert.equal(blockedAndCleanup.top.n, 2);
+    assert.equal(blockedAndCleanup.top.l, 1);
+    assert.equal(blockedAndCleanup.top.m, -1);
+    assert.ok(blockedAndCleanup.top.prob > 0.92, `Expected collapsed sigma- branch to populate |2p,-1> (>0.92), got ${blockedAndCleanup.top.prob}`);
+    assert.equal(blockedAndCleanup.blockedZ.fireDisabled, true);
+    assert.match(blockedAndCleanup.blockedZ.matchText, /^0%/);
+    assert.equal(blockedAndCleanup.hiddenInWave, true);
 
     // 6. Verify zero runtime or console errors across the session
     const errors = cdp.events.filter(

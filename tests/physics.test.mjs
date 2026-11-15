@@ -88,9 +88,10 @@ function createCoreContext() {
       setP: (arr) => { P = arr; },
       sampSingle,
       radialDipole, angularDipole, dipoleElement, angularMagDipole,
-      getTransitionList, buildCoupledSystem, computeBrightDipole,
+      getTransitionList, buildCoupledSystem, computeBrightDipole, resolvePhotonPolarization, getPulseConfig,
       fieldVecAt, stepTdseC, weisskopfWigner,
-      buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad
+      buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
+      ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel
     };
   `;
   vm.runInNewContext(coreSrc + '\n' + exportsTail, sandbox);
@@ -708,5 +709,286 @@ test('magnetic field unlocks intra-shell E1 and M1 Zeeman level transitions', ()
   const p2s0 = cE1[idx2s0 * 2] ** 2 + cE1[idx2s0 * 2 + 1] ** 2;
   assert.ok(infoE1.boundNorm > 0.99, `Expected intra-shell E1 boundNorm > 0.99, got ${infoE1.boundNorm}`);
   assert.ok(p2s0 > 0.25, `Expected significant transfer into |2s,0> (> 0.25), got ${p2s0}`);
+  api.setBau(0);
+});
+
+test('tutorial bundle stays synced with tutorial/*.md and validates every demo and red-detuned Ch5 TDSE', () => {
+  const tutDir = path.resolve(import.meta.dirname, '..', 'tutorial');
+  const mdFiles = fs.readdirSync(tutDir).filter((f) => f.endsWith('.md')).sort();
+  assert.equal(mdFiles.length, 7, 'Expected 7 markdown tutorial chapters');
+
+  const bundleMatch = HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/);
+  assert.ok(bundleMatch, 'Expected embedded #tut-bundle JSON script in electron_orbitals.html');
+  const bundle = JSON.parse(bundleMatch[1]);
+  assert.equal(bundle.length, mdFiles.length);
+
+  const presets = {
+    x: [[1, 0], [0, 0], [0, 0]],
+    y: [[0, 0], [1, 0], [0, 0]],
+    z: [[0, 0], [0, 0], [1, 0]],
+    sp: [[1, 0], [1, 90], [0, 0]],
+    sm: [[1, 0], [1, 270], [0, 0]],
+  };
+
+  let totalDemos = 0;
+  let ch5RedDemo = null;
+  mdFiles.forEach((file, idx) => {
+    const md = fs.readFileSync(path.join(tutDir, file), 'utf8');
+    assert.equal(bundle[idx].file, file);
+    assert.equal(bundle[idx].md, md, `Embedded tut-bundle out of sync with tutorial/${file}`);
+
+    const blocks = [...md.matchAll(/```demo\s*\n([\s\S]*?)\n```/g)];
+    for (const m of blocks) {
+      totalDemos++;
+      const d = JSON.parse(m[1]);
+      for (const reqKey of ['label', 'caption', 'states', 'B', 'tilt', 'speed', 'trails', 'overlay']) {
+        assert.ok(reqKey in d, `Demo "${d.label}" in ${file} missing "${reqKey}"`);
+      }
+      assert.ok(Array.isArray(d.states) && d.states.length >= 1);
+      assert.ok(d.tilt >= 0 && d.tilt <= 90);
+      assert.ok(d.speed >= 0.1 && d.speed <= 3);
+      assert.equal(typeof d.trails, 'boolean');
+      assert.equal(typeof d.overlay, 'boolean');
+
+      if (d.interaction) {
+        const it = d.interaction;
+        if (it.detuning !== undefined) assert.ok(it.detuning >= -2.5 && it.detuning <= 2.5);
+        if (it.duration !== undefined) assert.ok(it.duration >= 4 && it.duration <= 50);
+        if (it.power !== undefined) assert.ok(it.power >= 0.05 && it.power <= 16);
+
+        api.setBau(d.B || 0);
+        api.setComps(d.states.map((s, i) => ({ id: i + 1, ...s })));
+        const tr = api.getTransitionList().find((t) => t.key === it.transition);
+        assert.ok(tr, `Transition "${it.transition}" not selectable for demo "${d.label}" in ${file}`);
+        const sys = api.buildCoupledSystem(tr);
+        const polArr = typeof it.pol === 'string' ? presets[it.pol] : it.pol;
+        assert.ok(Array.isArray(polArr) && polArr.length === 3, `Invalid pol in demo "${d.label}"`);
+        const np = makePol(polArr.map(([amp, phaseDeg]) => ({ amp, phaseDeg })));
+        const { muRabi } = api.computeBrightDipole(sys, tr, np);
+        if (it.fire === false) {
+          assert.ok(muRabi <= 1e-7, `Expected blocked demo "${d.label}" to have zero dipole coupling, got ${muRabi}`);
+        } else {
+          assert.ok(muRabi > 1e-7, `Expected active demo "${d.label}" to have nonzero dipole coupling, got ${muRabi}`);
+        }
+        if (file.startsWith('05-') && it.detuning < 0) ch5RedDemo = { d, tr, sys, np };
+      }
+    }
+  });
+  assert.ok(totalDemos >= 40, `Expected >= 40 tutorial demos, got ${totalDemos}`);
+  assert.ok(ch5RedDemo, 'Expected Ch 5 red-detuned demo to exist');
+
+  // Verify Ch 5 red-detuned demo stays predominantly in |1s,0> with zero 3p leak
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const { tr, sys, np, d } = ch5RedDemo;
+  const omega0 = tr.omega0;
+  const T = (d.interaction.duration * 2 * Math.PI) / omega0;
+  const bw = (2 * Math.PI) / T;
+  const omegaL = omega0 + d.interaction.detuning * bw;
+  const { muRabi } = api.computeBrightDipole(sys, tr, np);
+  const E0 = (2 * Math.PI) / (muRabi * T);
+  const grid = api.buildGridSystem(tr, sys);
+  const pRed = { kind: 'E1', trSpec: tr, omegaL, T, gamma: 0, E0, pol: np };
+  const nSteps = Math.ceil(T / 0.25);
+  const h = T / nSteps;
+  for (let s = 0; s < nSteps; s++) api.stepGridDipole(grid, pRed, s * h, h);
+  const c = new Float64Array(grid.projStates.length * 2);
+  api.projectGridStates(grid, c);
+  const p1s = (() => {
+    const i = grid.projStates.findIndex((s) => s.n === 1 && s.l === 0 && s.m === 0);
+    return c[i * 2] ** 2 + c[i * 2 + 1] ** 2;
+  })();
+  const p3p = (() => {
+    const i = grid.projStates.findIndex((s) => s.n === 3 && s.l === 1 && s.m === 1);
+    return i >= 0 ? c[i * 2] ** 2 + c[i * 2 + 1] ** 2 : 0;
+  })();
+  assert.ok(p1s > 0.85, `Expected Ch5 red-detuned pulse to return >0.85 to |1s,0>, got ${p1s}`);
+  assert.ok(p3p < 0.02, `Expected Ch5 red-detuned pulse to avoid |3p,+1> (<0.02), got ${p3p}`);
+});
+
+test('Direct-density overlay alpha curve, 2D column-projection vs sampled histogram, and superposition projection', () => {
+  // 1. Direct root-compressed alpha curve: 0 at vacuum/nodes, monotonic, bounded <= 0.54, lifts outer shells
+  assert.equal(api.ovAlpha(0, false), 0);
+  assert.equal(api.ovAlpha(0, true), 0);
+  assert.equal(api.ovAlpha(-0.1, true), 0);
+  assert.ok(Math.abs(api.ovAlpha(1, false) - 0.54) < 1e-12);
+  assert.ok(Math.abs(api.ovAlpha(1, true) - 0.54) < 1e-12);
+  assert.ok(Math.abs(api.ovAlpha(2.5, true) - 0.54) < 1e-12);
+  assert.ok(api.ovAlpha(0.015, true) > 0.14, 'Expected 2s outer-shell density (d=0.015) to stay clearly visible in slice');
+  assert.ok(api.ovAlpha(0.01, false) < api.ovAlpha(0.25, false) && api.ovAlpha(0.25, false) < api.ovAlpha(0.9, false));
+
+  const pearson = (a, b) => {
+    let sa = 0, sb = 0;
+    for (let i = 0; i < a.length; i++) { sa += a[i]; sb += b[i]; }
+    const ma = sa / a.length, mb = sb / b.length;
+    let num = 0, da = 0, db = 0;
+    for (let i = 0; i < a.length; i++) {
+      const xa = a[i] - ma, xb = b[i] - mb;
+      num += xa * xb; da += xa * xa; db += xb * xb;
+    }
+    return num / Math.sqrt(da * db);
+  };
+
+  // 2. Column projection ∫|ψ|² dz_cam must match 2D projected histogram of 3D sampled particles
+  const cases = [
+    { n: 2, l: 0, m: 0, tilt: 0 },
+    { n: 2, l: 1, m: 0, tilt: Math.PI / 2 },
+    { n: 3, l: 2, m: 0, tilt: Math.PI / 4 },
+  ];
+  const G = 20, Nsamp = 24000;
+  for (const c of cases) {
+    const b = api.getBasis(c.n, c.l, c.m);
+    const cp = Math.cos(c.tilt), sp = Math.sin(c.tilt), E = b.E995, S = (G / 2) / E;
+    api.setE(E);
+    const { vals } = api.computeProjSingleMap(b, G, G, 1, G / 2, G / 2, S, cp, sp, E, 24);
+    const hist = new Float64Array(G * G);
+    for (let s = 0; s < Nsamp; s++) {
+      const q = api.sampSingle(b);
+      const qx = q.rho * Math.cos(q.ph), qy = q.rho * Math.sin(q.ph), qz = q.z;
+      const sx = G / 2 + qx * S;
+      const sy = G / 2 - (qy * sp + qz * cp) * S;
+      const ix = Math.floor(sx), iy = Math.floor(sy);
+      if (ix >= 0 && ix < G && iy >= 0 && iy < G) hist[iy * G + ix]++;
+    }
+    const r = pearson(vals, hist);
+    assert.ok(r > 0.96, `Expected column projection for (${c.n},${c.l},${c.m}) at tilt=${c.tilt.toFixed(2)} to correlate (>0.96) with sampled dots, got r=${r.toFixed(4)}`);
+  }
+
+  // 3. Contrast 2D slice vs Column projection for 2p,0 viewed top-down (Tilt = 90°, z = 0 slice is nodal)
+  const b2p0 = api.getBasis(2, 1, 0);
+  const pProjTop = api.evalProjSingle(b2p0, 2.0, 0.0, 0, 1, b2p0.E995, 24);
+  const psiSliceTop = api.evalBasisPsi(b2p0, 2.0, 0.0, 0.0);
+  assert.equal(psiSliceTop[0] ** 2 + psiSliceTop[1] ** 2, 0, '2p,0 z=0 slice is an exact nodal plane');
+  assert.ok(pProjTop > 1e-4, `Expected top-down 2p,0 column projection to be strictly positive (${pProjTop})`);
+
+  // 4. Superposition column projection precomputes complex overlaps cleanly and stays bounded by Minkowski pRef
+  const b1s = api.getBasis(1, 0, 0);
+  const mag = 1 / Math.SQRT2;
+  const gw = 19, gh = 19, gE = b2p0.E995, gS = (gw / 2) / gE;
+  const pair = api.computeProjPairData([b1s, b2p0], [mag, mag], gw, gh, 1, gw / 2, gh / 2, gS, 1, 0, gE, 22);
+  const topIdx = 8 * gw + 9, botIdx = 10 * gw + 9; // V ≈ +1.4 a0 (+z) vs -1.4 a0 (-z)
+  const rhoTopPlus = api.evalPairProjPixel(pair, topIdx, new Float64Array([mag, 0, mag, 0]));
+  const rhoBotPlus = api.evalPairProjPixel(pair, botIdx, new Float64Array([mag, 0, mag, 0]));
+  const rhoTopMinus = api.evalPairProjPixel(pair, topIdx, new Float64Array([mag, 0, -mag, 0]));
+  const rhoBotMinus = api.evalPairProjPixel(pair, botIdx, new Float64Array([mag, 0, -mag, 0]));
+  assert.ok(rhoTopPlus > 2 * rhoBotPlus, 'Relative phase 0° should concentrate 1s+2p,0 projection in +z hemisphere');
+  assert.ok(rhoBotMinus > 2 * rhoTopMinus, 'Relative phase 180° should flip 1s+2p,0 projection into -z hemisphere');
+  for (let i = 0; i < pair.len; i++) {
+    const val = api.evalPairProjPixel(pair, i, new Float64Array([mag, 0, mag, 0]));
+    assert.ok(val <= pair.pRef * (1 + 1e-5), `Expected Minkowski bound pRef >= pixel density at ${i}`);
+  }
+});
+
+test('single-photon bandwidth-aware polarization match and projection onto interacting component', () => {
+  const polX = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }]);
+  const polY = makePol([{ amp: 0, phaseDeg: 0 }, { amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }]);
+  const polZ = makePol([{ amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 1, phaseDeg: 0 }]);
+  const polSp = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }]);
+  const polSm = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 270 }, { amp: 0, phaseDeg: 0 }]);
+  const dotAbs = (p1, p2) => {
+    let re = 0, im = 0;
+    for (let i = 0; i < 3; i++) {
+      re += p1[i].re * p2[i].re + p1[i].im * p2[i].im;
+      im += p1[i].re * p2[i].im - p1[i].im * p2[i].re;
+    }
+    return Math.hypot(re, im);
+  };
+
+  // 1. Resolved Zeeman 1s -> 2p (dm = -1) at Bau = 0.03531 (~8.3 kT)
+  api.setBau(0.03531);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trDmMinus = api.getTransitionList().find((t) => t.key === '1|0|2|1|-1');
+  const sysZ = api.buildCoupledSystem(trDmMinus);
+  const T = (24 * 2 * Math.PI) / trDmMinus.omega0;
+  const bw = 2.5 / T;
+
+  const rSm = api.resolvePhotonPolarization(sysZ, trDmMinus, polSm, bw);
+  assert.ok(Math.abs(rSm.match - 1) < 1e-12 && !rSm.collapsed && rSm.muRabi > 0.74);
+
+  const rX = api.resolvePhotonPolarization(sysZ, trDmMinus, polX, bw);
+  assert.ok(Math.abs(rX.match - 0.5) < 1e-10, `Expected 50% match for x on resolved dm=-1, got ${rX.match}`);
+  assert.equal(rX.collapsed, true);
+  assert.ok(dotAbs(rX.pol, polSm) > 0.9999, 'Expected projected polarization to equal sigma-');
+  assert.ok(Math.abs(rX.muRabi - rSm.muRabi) < 1e-12, 'Projected E0 must calibrate to full sigma- dipole (true 1-photon energy)');
+
+  assert.equal(api.resolvePhotonPolarization(sysZ, trDmMinus, polZ, bw).match, 0);
+  assert.equal(api.resolvePhotonPolarization(sysZ, trDmMinus, polSp, bw).match, 0);
+
+  // Full grid TDSE with collapsed polInt = sigma- cleanly excites |2p,-1> (>95%) at exact 1-photon E0
+  const gamma = 5 / T;
+  const effDur = (2 / gamma) * (1 - Math.exp(-2.5));
+  const pCollapsed = { kind: 'E1', trSpec: trDmMinus, omegaL: trDmMinus.omega0, T, gamma, E0: Math.PI / (rX.muRabi * effDur), pol: rX.pol };
+  const gZ = api.buildGridSystem(trDmMinus, sysZ);
+  api.setP([]);
+  const nZ = Math.ceil(T / 0.16);
+  for (let s = 0; s < nZ; s++) api.advanceGridParticlesRK4(gZ, pCollapsed, (s * T) / nZ, T / nZ);
+  const cZ = new Float64Array(gZ.projStates.length * 2);
+  api.projectGridStates(gZ, cZ);
+  const i2pm1 = gZ.projStates.findIndex((s) => s.n === 2 && s.l === 1 && s.m === -1);
+  const i2pp1 = gZ.projStates.findIndex((s) => s.n === 2 && s.l === 1 && s.m === 1);
+  const p2pm1 = cZ[i2pm1 * 2] ** 2 + cZ[i2pm1 * 2 + 1] ** 2;
+  const p2pp1 = cZ[i2pp1 * 2] ** 2 + cZ[i2pp1 * 2 + 1] ** 2;
+  assert.ok(p2pm1 > 0.93, `Expected resolved collapsed branch to excite >93% |2p,-1>, got ${p2pm1}`);
+  assert.ok(p2pp1 < 0.005, `Expected negligible |2p,+1> residual (<0.005), got ${p2pp1}`);
+
+  // 2. Weak unresolved field B = 100 T (Zeeman << bw): x stays x (100% match) and avoids sqrt(2) over-rotation
+  api.setBau(100 / 235050);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trWeak = api.getTransitionList().find((t) => t.key === '1|0|2|1|-1');
+  const sysW = api.buildCoupledSystem(trWeak);
+  const Tw = (24 * 2 * Math.PI) / trWeak.omega0;
+  const bwW = 2.5 / Tw;
+  const rWeakX = api.resolvePhotonPolarization(sysW, trWeak, polX, bwW);
+  assert.ok(rWeakX.match > 0.9999 && !rWeakX.collapsed, 'Expected unresolved weak B to keep linear x uncollapsed');
+  assert.ok(dotAbs(rWeakX.pol, polX) > 0.9999);
+  const gamW = 5 / Tw;
+  const effW = (2 / gamW) * (1 - Math.exp(-2.5));
+  const pWeak = { T: Tw, E0: Math.PI / (rWeakX.muRabi * effW), gamma: gamW, omegaL: trWeak.omega0, pol: rWeakX.pol };
+  let cW = sysW.c0.slice();
+  const cWn = new Float64Array(cW.length);
+  const nW = 24 * 120;
+  for (let s = 0; s < nW; s++) { api.stepTdseC(sysW, pWeak, (s * Tw) / nW, Tw / nW, cW, cWn); cW.set(cWn); }
+  const wM1 = sysW.states.findIndex((s) => s.n === 2 && s.l === 1 && s.m === -1);
+  const wP1 = sysW.states.findIndex((s) => s.n === 2 && s.l === 1 && s.m === 1);
+  const p2px = cW[wM1 * 2] ** 2 + cW[wM1 * 2 + 1] ** 2 + cW[wP1 * 2] ** 2 + cW[wP1 * 2 + 1] ** 2;
+  assert.ok(p2px > 0.98, `Expected weak-field x photon to transfer >98% into 2p_x superposition without over-rotation, got ${p2px}`);
+
+  // 3. Downward chiral emission |2p,+1> -> |1s,0> at B = 0: x matches 50% -> sigma+, sm is blocked
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const trDown = api.getTransitionList().find((t) => t.key === '2|1|1|0');
+  const sysD = api.buildCoupledSystem(trDown);
+  const bwD = 2.5 / ((24 * 2 * Math.PI) / trDown.omega0);
+  const rDownX = api.resolvePhotonPolarization(sysD, trDown, polX, bwD);
+  assert.ok(Math.abs(rDownX.match - 0.5) < 1e-10 && rDownX.collapsed);
+  assert.ok(dotAbs(rDownX.pol, polSp) > 0.9999);
+  assert.equal(api.resolvePhotonPolarization(sysD, trDown, polSm, bwD).match, 0);
+
+  // 4. Degenerate bright/dark superposition |2p_x> -> |1s,0>: sp matches 50% -> x, y is blocked
+  api.setComps([
+    { id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+    { id: 2, n: 2, l: 1, m: -1, amp: 1, phaseDeg: 180 },
+  ]);
+  const sysBx = api.buildCoupledSystem(trDown);
+  const rBxSp = api.resolvePhotonPolarization(sysBx, trDown, polSp, bwD);
+  assert.ok(Math.abs(rBxSp.match - 0.5) < 1e-10 && rBxSp.collapsed);
+  assert.ok(dotAbs(rBxSp.pol, polX) > 0.9999);
+  assert.equal(api.resolvePhotonPolarization(sysBx, trDown, polY, bwD).match, 0);
+
+  // 5. Degenerate 2p,+1 -> 3d preserves full subspace despite asymmetric Clebsch-Gordan weights; M1 resolved x -> 50% sigma+
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const tr3d = api.getTransitionList().find((t) => t.key === '2|1|3|2');
+  const sys3d = api.buildCoupledSystem(tr3d);
+  const r3dSm = api.resolvePhotonPolarization(sys3d, tr3d, polSm, 2.5 / ((41 * 2 * Math.PI) / tr3d.omega0));
+  assert.ok(Math.abs(r3dSm.match - 1) < 1e-12 && !r3dSm.collapsed);
+
+  api.setBau(0.1);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const trM1 = api.getTransitionList().find((t) => t.key === '2|1|2|1|-1');
+  const sysM1 = api.buildCoupledSystem(trM1);
+  const rM1X = api.resolvePhotonPolarization(sysM1, trM1, polX, 2.5 / ((24 * 2 * Math.PI) / trM1.omega0));
+  assert.ok(Math.abs(rM1X.match - 0.5) < 1e-10 && rM1X.collapsed);
+  assert.ok(dotAbs(rM1X.pol, polSp) > 0.9999);
+  assert.ok(Math.abs(rM1X.muRabi - 0.5) < 1e-12);
   api.setBau(0);
 });
