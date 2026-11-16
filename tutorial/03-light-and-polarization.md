@@ -10,7 +10,7 @@ To understand how laser pulses and single photons drive chemical spectroscopy an
 Light is a coupled electromagnetic wave characterized by frequency ν (Hz), angular frequency ω<sub>L</sub> = 2πν, wavelength λ, spectroscopic wavenumber ν̃ = 1/λ (in cm⁻¹ for IR/UV spectroscopy—convert λ to cm first using 1 cm = 10⁷ nm, so ν̃ = 10⁷/λ<sub>nm</sub>), and angular wavenumber *k* = 2π/λ (radians per unit length, distinct from cycles-per-cm ν̃). These obey *c* = λν and photon energy *E*<sub>photon</sub> = *h*ν = *hc*/λ ≈ 1239.84 eV·nm / λ<sub>nm</sub>.
 
 > **Notation & Bookkeeping Alerts:**
-> - **ω<sub>L</sub> means light/laser frequency here:** Subscript **L** stands for *light/laser* (ω<sub>L</sub> = 2πν), distinct from Chapter 2's Larmor precession frequency ω<sub>L</sub> = *B*<sub>*z*</sub>/2.
+> - **ω<sub>L</sub> means light/laser frequency here:** Subscript **L** stands for *light/laser* (ω<sub>L</sub> = 2πν), kept distinct from Chapter 2's Larmor precession frequency **ω<sub>Larmor</sub>** = *B*<sub>*z*</sub>/2.
 > - **Real fields vs. complex wavefunctions:** Unlike the quantum wavefunction Ψ(**r**, *t*), whose imaginary part is physically real and drives probability flow, classical **E** and **B**₁ are purely **real** physical vectors. We write complex exponentials *e*<sup>*i*(**k**·**r** − ω<sub>L</sub>*t*)</sup> only as an algebraic bookkeeping trick to bundle amplitudes and phase delays together, taking the real part `Re[...]` at the end.
 
 Before writing the wave equations, note the three symbols that describe the beam:
@@ -208,12 +208,12 @@ In spectroscopy—such as **circular dichroism (CD)**, where chiral molecules or
 }
 ```
 
-Whereas the first five demos run in **Coherent EM wave** mode, the final demo below previews **Single photon** mode (§3.4) to excite a clean 45°-tilted *p* orbital with **ε** = (−**x̂** + **ẑ**)/√2. Why does that produce 0.5\|2p,+1⟩ − 0.5\|2p,−1⟩ + (1/√2)\|2p,0⟩? Recall from Chapter 1 (§1.2) that under the Condon–Shortley sign convention, −\|2p<sub>*x*</sub>⟩ = (\|2p,+1⟩ − \|2p,−1⟩)/√2 corresponds to spatial lobe −*x*, so adding \|2p,0⟩ (+*z*) aligns the excited orbital along −**x̂** + **ẑ** (transition selection rules are derived in Chapter 4). Notice also that after completion, the UI readout attaches an unobservable common global phase (~264° on \|2p,+1⟩ and \|2p,0⟩, and ~84° on \|2p,−1⟩—preserving the exact 180° relative sign flip).
+Whereas the first five demos run in **Coherent EM wave** mode, the final demo below previews **Single photon** mode (§3.4) to excite a clean 45°-tilted *p* orbital with **ε** = (−**x̂** + **ẑ**)/√2. Why does that produce 0.5\|2p,+1⟩ − 0.5\|2p,−1⟩ + (1/√2)\|2p,0⟩? Recall from Chapter 1 (§1.2) that under the Condon–Shortley sign convention, −\|2p<sub>*x*</sub>⟩ = (\|2p,+1⟩ − \|2p,−1⟩)/√2 corresponds to spatial lobe −*x*, so adding \|2p,0⟩ (+*z*) aligns the excited orbital along −**x̂** + **ẑ** (transition selection rules are derived in Chapter 4). Notice also that after completion, the UI readout attaches an unobservable common 270° (`−i`) global phase from resonant excitation (**270°** on \|2p,+1⟩ and \|2p,0⟩, and **90°** on \|2p,−1⟩—preserving the exact 180° relative sign flip).
 
 ```demo
 {
   "label": "Tilted 3D polarization (−x + z)/√2",
-  "caption": "Previewing Single photon mode: combining x (180°) and z (0°) excites 0.5|2p,+1⟩ − 0.5|2p,-1⟩ + (1/√2)|2p,0⟩ (with a common ~264° global phase).",
+  "caption": "Previewing Single photon mode: combining x (180°) and z (0°) excites 0.5|2p,+1⟩ − 0.5|2p,-1⟩ + (1/√2)|2p,0⟩ (with a common 270° global phase: 270° on m=+1,0 and 90° on m=-1).",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 25,

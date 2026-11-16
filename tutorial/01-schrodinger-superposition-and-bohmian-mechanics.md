@@ -79,7 +79,7 @@ Because the Coulomb potential −1/*r* depends only on *r*, ψ(**r**) separates 
 
 > ψ<sub>*nlm*</sub>(*r*, θ, φ) = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) &nbsp;∝&nbsp; *R*<sub>*nl*</sub>(*r*) *P*<sub>*l*</sub><sup>\|*m*\|</sup>(cos θ) *e*<sup>*im*φ</sup>
 
-Each factor is normalized separately—∫₀<sup>∞</sup> \|*R*<sub>*nl*</sub>(*r*)\|² *r*² *dr* = 1 and ∫ \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² sin θ *d*θ *d*φ = 1—so the full wavefunction obeys ∫ \|ψ\|² *d*³*r* = 1. Three physical boundary conditions force the quantum numbers to take discrete integer values:
+Each factor is normalized separately—∫₀<sup>∞</sup> \|*R*<sub>*nl*</sub>(*r*)\|² *r*² *dr* = 1 and ∫₀<sup>π</sup> sin θ *d*θ ∫₀<sup>2π</sup> *d*φ \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = 1—so the full wavefunction obeys ∫ \|ψ\|² *d*³*r* = 1. Three physical boundary conditions force the quantum numbers to take discrete integer values:
 - **Radial decay & finiteness:** Requiring *R*<sub>*nl*</sub>(*r*) to stay finite at *r* = 0 and decay to zero as *r* → ∞ terminates the radial polynomial series, quantizing the bound energy shells to **all positive integers *n* = 1, 2, 3, …** without upper limit (infinitely many bound shells crowd toward *E* = 0; the UI dropdown spans *n* = 1–7) and restricting orbital angular momentum to **0 ≤ *l* ≤ *n* − 1**, with energies **E<sub>n</sub> = −1/(2n²) Ha = −13.6057/n² eV**.
 - **Polar finiteness:** Requiring *P*<sub>*l*</sub><sup>\|*m*\|</sup>(cos θ) to stay finite at the north and south poles (θ = 0 and θ = π, where cos θ = ±1) forces *l* to be a **non-negative integer** (`0, 1, 2, …`) with \|*m*\| ≤ *l*.
 - **Azimuthal single-valuedness:** Requiring *e*<sup>*im*φ</sup> to return to the same value after a full 2π rotation around the *z*-axis (*e*<sup>*im*(φ+2π)</sup> = *e*<sup>*im*φ</sup>) forces *m* to be an **integer**, yielding *m* = −*l*, …, +*l*.
@@ -228,7 +228,7 @@ For **1s + 2p, 0**, Δ*E* = (−1/8) − (−1/2) = 3/8 Ha ≈ 10.204 eV. The cr
 
 ### Reading the Canvas Visualization
 - **Density overlay:** An indigo glow that is transparent at nodes/vacuum and brightest inside dense lobes (up to α ≈ 0.54). Because brightness uses nonlinear **root compression** so diffuse outer shells stay visible alongside bright cores, **glow is not proportional to \|Ψ\|²**—use it to read *orbital shapes and nodes*, not exact numerical ratios. The mode selector offers:
-  - **`Column projection ∫|ψ|² dz` (default):** Both overlay menu options write `|ψ|²` as shorthand, but during superpositions the canvas plots the instantaneous \|Ψ(**r**, *t*)\|². Projection integrates \|Ψ\|² along the **camera's line-of-sight depth axis *z*<sub>cam</sub>** (labeled `dz` in the menu—*not* the atom's fixed *z*-axis; adjust the **Tilt** slider to watch it shift: at **Tilt = 0°** the camera looks horizontally along *y* and integrates ∫\|Ψ\|² *dy*, while at **Tilt = 90°** it views from +*z* down along the atom's *z*-axis and integrates along *z*) so the shaded cloud matches the 2D density of sampled 3D electron dots. Because it integrates through curved 3D surfaces, it partly fills in spherical/conical nodes (for 2s at *r* = 2 *a*₀, exact projection stays around `16%` of the central peak).
+  - **`Column projection ∫|ψ|² dz_cam` (default):** Both overlay menu options write `|ψ|²` as shorthand, but during superpositions the canvas plots the instantaneous \|Ψ(**r**, *t*)\|². Projection integrates \|Ψ\|² along the **camera's line-of-sight depth axis *z*<sub>cam</sub>** (*not* the atom's fixed *z*-axis; adjust the **Tilt** slider to watch it shift: at **Tilt = 0°** the camera looks horizontally along *y* and integrates ∫\|Ψ\|² *dy*, while at **Tilt = 90°** it views from +*z* down along the atom's *z*-axis and integrates along *z*) so the shaded cloud matches the 2D density of sampled 3D electron dots. Because it integrates through curved 3D surfaces, it partly fills in spherical/conical nodes (for 2s at *r* = 2 *a*₀, exact projection stays around `16%` of the central peak).
   - **`2D slice |ψ|²`:** Evaluates \|Ψ\|² on the mid-plane through the nucleus perpendicular to your viewing angle (**Tilt = 0°** slices *xz*, **Tilt = 90°** slices *xy*) so internal radial and angular nodes appear as crisp dark cuts.
 - **Particle colors:** Dots are colored by cylindrical distance ρ<sub>cyl</sub> = √(*x*² + *y*²) from the *z*-axis—orange-red near the axis, shifting through green/cyan to blue-violet further out.
 
@@ -255,8 +255,13 @@ For **1s + 2p, 0**, Δ*E* = (−1/8) − (−1/2) = 3/8 Ha ≈ 10.204 eV. The cr
 Think of probability like a **conserved fluid** that can compress and expand locally—with local density ρ<sub>prob</sub>(**r**, *t*) = \|Ψ(**r**, *t*)\|² never created or destroyed—flowing with a **probability current density** (or *probability flux*, units: probability per unit area per unit time) **J**(**r**, *t*). Whenever probability shifts from one side of the atom to the other—or circulates steadily inside an orbital—local probability conservation demands that the rate density builds up (∂ρ<sub>prob</sub>/∂*t*) plus the net outward flow per unit volume across a tiny region's walls (the divergence ∇ · **J**) must equal zero:
 
 > ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0
+>
+> **J**(**r**, *t*) = (*ħ* / *m*<sub>e</sub>) Im(Ψ* ∇Ψ) = \|Ψ\|² (∇*S* / *m*<sub>e</sub>) &nbsp;&nbsp; (SI units, writing Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup>)
 
-*(Optional Calculus Derivation — the key takeaways to remember are the continuity equation above, **J** = \|Ψ\|² ∇S/m<sub>e</sub>, and the flow patterns below.)* Let us derive **J** directly from the TDSE! Differentiate ρ<sub>prob</sub> = Ψ* Ψ with respect to time using the product rule:
+<details>
+<summary>Optional calculus derivation: Deriving J and polar flow ∇S/m<sub>e</sub> from the TDSE</summary>
+
+Differentiate ρ<sub>prob</sub> = Ψ* Ψ with respect to time using the product rule:
 
 > ∂ρ<sub>prob</sub>/∂*t* = (∂Ψ*/∂*t*) Ψ + Ψ* (∂Ψ/∂*t*)
 
@@ -270,13 +275,11 @@ Substitute both into ∂ρ<sub>prob</sub>/∂*t*. The potential terms ±(*i*/*ħ
 
 > ∂ρ<sub>prob</sub>/∂*t* = (*iħ*/2*m*<sub>e</sub>) (Ψ* ∇²Ψ − Ψ ∇²Ψ*)
 
-Now check the product rule for divergence: ∇ · (Ψ* ∇Ψ − Ψ ∇Ψ*) = (∇Ψ* · ∇Ψ + Ψ* ∇²Ψ) − (∇Ψ · ∇Ψ* + Ψ ∇²Ψ*) = Ψ* ∇²Ψ − Ψ ∇²Ψ*. Since Ψ ∇Ψ* is the complex conjugate of Ψ* ∇Ψ and *z* − *z*\* = 2*i* Im(*z*) for any complex number *z*, we have Ψ* ∇²Ψ − Ψ ∇²Ψ* = ∇ · [2*i* Im(Ψ* ∇Ψ)]. Multiplying the prefactors gives (*iħ*/2*m*<sub>e</sub>)(2*i*) = −*ħ*/*m*<sub>e</sub>, so ∂ρ<sub>prob</sub>/∂*t* = −∇ · [(*ħ*/*m*<sub>e</sub>) Im(Ψ* ∇Ψ)]; moving the divergence to the left recovers ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0 with:
+Now check the product rule for divergence: ∇ · (Ψ* ∇Ψ − Ψ ∇Ψ*) = (∇Ψ* · ∇Ψ + Ψ* ∇²Ψ) − (∇Ψ · ∇Ψ* + Ψ ∇²Ψ*) = Ψ* ∇²Ψ − Ψ ∇²Ψ*. Since Ψ ∇Ψ* is the complex conjugate of Ψ* ∇Ψ and *z* − *z*\* = 2*i* Im(*z*) for any complex number *z*, we have Ψ* ∇²Ψ − Ψ ∇²Ψ* = ∇ · [2*i* Im(Ψ* ∇Ψ)]. Multiplying the prefactors gives (*iħ*/2*m*<sub>e</sub>)(2*i*) = −*ħ*/*m*<sub>e</sub>, so ∂ρ<sub>prob</sub>/∂*t* = −∇ · [(*ħ*/*m*<sub>e</sub>) Im(Ψ* ∇Ψ)]; moving the divergence to the left recovers ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0 with **J** = (*ħ*/*m*<sub>e</sub>) Im(Ψ* ∇Ψ).
 
-> **J**(**r**, *t*) = (*ħ* / *m*<sub>e</sub>) Im(Ψ* ∇Ψ) &nbsp;&nbsp; (SI units)
+To see what **J** means geometrically wherever Ψ ≠ 0, write Ψ in polar form Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup> using real magnitude \|Ψ\| = √ρ<sub>prob</sub> and real phase function *S*(**r**, *t*). (Scaling the phase angle by *ħ* gives *S* units of action so ∇*S* has units of momentum and ∇*S*/*m*<sub>e</sub> has units of velocity.) By the product rule, ∇Ψ = (∇\|Ψ\| + (*i*/*ħ*)\|Ψ\| ∇*S*) *e*<sup>*iS*/*ħ*</sup>, so Ψ* ∇Ψ = \|Ψ\| ∇\|Ψ\| + (*i*/*ħ*) \|Ψ\|² ∇*S*. Taking the imaginary part eliminates \|Ψ\| ∇\|Ψ\|, leaving **J** = \|Ψ\|² (∇*S* / *m*<sub>e</sub>).
 
-To see what **J** means geometrically wherever Ψ ≠ 0, write Ψ in polar form Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup> using real magnitude \|Ψ\| = √ρ<sub>prob</sub> and real phase function *S*(**r**, *t*). (Scaling the phase angle by *ħ* gives *S* units of action so ∇*S* has units of momentum and ∇*S*/*m*<sub>e</sub> has units of velocity.) By the product rule, ∇Ψ = (∇\|Ψ\| + (*i*/*ħ*)\|Ψ\| ∇*S*) *e*<sup>*iS*/*ħ*</sup>, so Ψ* ∇Ψ = \|Ψ\| ∇\|Ψ\| + (*i*/*ħ*) \|Ψ\|² ∇*S*. Taking the imaginary part eliminates \|Ψ\| ∇\|Ψ\|, leaving:
-
-> **J** = \|Ψ\|² (∇*S* / *m*<sub>e</sub>) &nbsp;&nbsp; (SI units, wherever Ψ ≠ 0)
+</details>
 
 **Spatial phase gradients drive probability current!**
 - If Ψ is a real orbital up to a spatially uniform global phase—Ψ(**r**, *t*) = *e*<sup>*i*α(*t*)</sup> Ψ<sub>real</sub>(**r**, *t*), such as **1s**, **2s**, **2p₀**, **2p<sub>*x*</sub>**, or **2p<sub>*y*</sub>** (with its constant global −*i* factor)—then Ψ* ∇Ψ = Ψ<sub>real</sub> ∇Ψ<sub>real</sub> is purely real everywhere (including across radial and angular nodes where Ψ<sub>real</sub> changes sign), so Im(Ψ* ∇Ψ) = 0 and **J = 0 everywhere**. *(In polar form, S is constant between nodes with πħ jumps right on nodal surfaces where \|Ψ\| = 0, so ∇S = 0 everywhere Ψ ≠ 0.)*
@@ -334,7 +337,10 @@ Classically, a bound electron faces two collapses: −1/*r* pulls it toward *r* 
 >
 > Seeing 1s dots sit completely still on the canvas does **not** mean a real hydrogen 1s electron has zero physical kinetic energy! Bohmian mechanics is a *pilot-wave interpretation* constructed to match standard quantum mechanics' spatial statistics \|Ψ\|², not a classical orbit model. In 1s, the pilot-wave velocity **v** = ∇*S*/*m*<sub>e</sub> = 0 because the phase *S* is spatially uniform, while the electron's genuine **+13.61 eV** average kinetic energy (⟨*T*⟩ = −*E*₁ = +½ Ha by the virial theorem) lives in the **spatial curvature of the wavefunction's amplitude**—manifesting below as the **quantum potential *Q*<sub>quant</sub>** (because **v** = 0 in nodeless 1s, zero kinetic energy comes from pilot-wave motion ½*m*<sub>e</sub>*v*², so ⟨*Q*<sub>quant</sub>⟩ = +13.61 eV equals the full ⟨*T*⟩) and as a broad momentum spread Δ*p* whenever a momentum measurement is performed!
 
-*(Advanced Derivation)* Let us verify that exact equilibrium inside Bohmian mechanics by substituting Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup> directly into *iħ* ∂Ψ/∂*t* = [−(*ħ*²/2*m*<sub>e</sub>)∇² + *V*]Ψ:
+<details>
+<summary>Optional derivation: Quantum potential Q<sub>quant</sub> and exact equilibrium in 1s</summary>
+
+Substitute Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup> directly into *iħ* ∂Ψ/∂*t* = [−(*ħ*²/2*m*<sub>e</sub>)∇² + *V*]Ψ:
 
 - *iħ* ∂Ψ/∂*t* = (*iħ* ∂\|Ψ\|/∂*t* − \|Ψ\| ∂*S*/∂*t*) *e*<sup>*iS*/*ħ*</sup>
 - ∇²(\|Ψ\| *e*<sup>*iS*/*ħ*</sup>) = [∇²\|Ψ\| − (\|Ψ\|/*ħ*²)(∇*S*)² + (*i*/*ħ*)(2 ∇\|Ψ\| · ∇*S* + \|Ψ\| ∇²*S*)] *e*<sup>*iS*/*ħ*</sup>
@@ -357,6 +363,8 @@ Adding the proton's Coulomb attraction *V*(*r*) = −1/*r* gives:
 > *V*(*r*) + *Q*<sub>quant</sub>(*r*) = −1/*r* + (−½ + 1/*r*) = **−½ = *E*₁ (constant everywhere!)** &nbsp;&nbsp; (atomic units)
 
 So ∂*S*/∂*t* + (∇*S*)²/2 + *V* + *Q*<sub>quant</sub> = +½ + 0 − ½ = 0 identically: the quantum force −∇*Q*<sub>quant</sub> **cancels the Coulomb attraction everywhere**, leaving every 1s electron in peaceful pilot-wave equilibrium! *(The same balance V + Q<sub>quant</sub> = E<sub>n</sub>—and the +1/r cancellation of the Coulomb −1/r attraction—holds away from nodes for every stationary eigenstate of Ĥ₀; what makes 1s unique is that it is the **only nodeless** bound eigenstate, so V + Q<sub>quant</sub> = E₁ holds smoothly throughout all space r > 0 without nodal-surface singularities where \|ψ\| has kinks.)*
+
+</details>
 
 ### Key Features You See on Screen
 - **Angular speed in *m* ≠ 0 states:** In atomic units (*ħ* = *m*<sub>e</sub> = 1), tangential speed *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> gives angular speed ω = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² (in SI: ω = *mħ*/(*m*<sub>e</sub> ρ<sub>cyl</sub>²)), keeping *L*<sub>*z*</sub> = ρ<sub>cyl</sub> *v*<sub>φ</sub> = *m* identical for every electron—so inner orange electrons near the *z*-axis orbit much faster than outer blue ones. *(Note: the UI status bar abbreviates cylindrical radius ρ<sub>cyl</sub> as `ρ`.)*
@@ -384,6 +392,6 @@ Combining different energies *and* nonzero *m*—such as **1s + 2p, +1**—produ
 ---
 
 ### Quick Self-Check (Try in the Controls)
-1. Load **2s**, then switch the *Density overlay* selector from `Column projection ∫|ψ|² dz` to **`2D slice |ψ|²`** so the dark spherical node at *r* = 2 *a*₀ cleanly separates the inner core from the outer ring. Why does the center still look brighter than the outer ring in *2D slice |ψ|²*, while most electron dots appear in the outer shell? *(Hint: compare \|ψ\|² with P(r) = r² \|R\|², and recall only ≈ 5.3% of 2s probability lies inside the r = 2 a₀ node!)* Then toggle back to **`Column projection ∫|ψ|² dz`** and see why the node gets filled in.
+1. Load **2s**, then switch the *Density overlay* selector from `Column projection ∫|ψ|² dz_cam` to **`2D slice |ψ|²`** so the dark spherical node at *r* = 2 *a*₀ cleanly separates the inner core from the outer ring. Why does the center still look brighter than the outer ring in *2D slice |ψ|²*, while most electron dots appear in the outer shell? *(Hint: compare \|ψ\|² with P(r) = r² \|R\|², and recall only ≈ 5.3% of 2s probability lies inside the r = 2 a₀ node!)* Then toggle back to **`Column projection ∫|ψ|² dz_cam`** and see why the node gets filled in.
 2. In the **2p<sub>*x*</sub>** demo, why do the electrons stand completely still even though both \|2p, +1⟩ and \|2p, −1⟩ individually whirl? Switch the second component's phase from `180°` to `0°` to create **2p<sub>*y*</sub>**!
 3. In the **sp-type hybrid (`2s − 2p,0`)** demo, change the `2p,0` phase from `180°` to `0°`. Which way does the large lobe point now, and why? *(Hint: check the sign of ψ<sub>2s</sub> outside r = 2 a₀!)*

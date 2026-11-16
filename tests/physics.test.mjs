@@ -86,7 +86,7 @@ function createCoreContext() {
 
   const exportsTail = `
     globalThis.__api = {
-      getBasis, evalBasisPsi, evalBasisGrad, evalVel,
+      getBasis, evalBasisPsi, evalBasesAt, evalBasisGrad, evalVel,
       computeEffective, getEff: () => eff, getEffStatus: () => effStatus,
       setComps: (c) => { components = c; computeEffective(); },
       setBau: (b) => { Bau = b; updateEnergies(); },
@@ -1145,4 +1145,121 @@ test('weak-field RWA single-photon solver, multipole continuity flow, and electr
   assert.ok(cfgZe.theta < 0.1 * Math.PI, `Expected small Theta for 271° leak, got theta/pi=${cfgZe.theta / Math.PI}`);
   api.setMode('photon');
   api.setBau(0);
+});
+
+test('single-photon Fock cap, Zeeman partial WW rate, s-wave cusp, and markdown parser fixes', () => {
+  const polX = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }]);
+  const polSp = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }]);
+
+  const runSinglePhoton = (Bau, initComps, trKey, polObj, nSteps = 200) => {
+    api.setBau(Bau);
+    api.setComps(initComps.map((c, idx) => ({ id: idx + 1, ...c })));
+    const trSpec = api.getTransitionList().find((t) => t.key === trKey);
+    assert.ok(trSpec, `Expected transition ${trKey}`);
+    const sys = api.buildCoupledSystem(trSpec);
+    const T = (api.consts.PHOTON_CYC * 2 * Math.PI) / trSpec.omega0;
+    const gammaSim = api.consts.PHOTON_KTAU / T;
+    const bw = 0.5 * gammaSim;
+    const polRes = api.resolvePhotonPolarization(sys, trSpec, polObj, bw);
+    const effDur = (2 / gammaSim) * (1 - Math.exp(-0.5 * api.consts.PHOTON_KTAU));
+    const E0 = polRes.muRabi > 1e-7 ? Math.PI / (polRes.muRabi * effDur) : 0;
+    const psim = api.buildPhotonSim({ sys, trSpec, polInt: polRes.pol, cActive: polRes.cActive, omegaL: trSpec.omega0, gammaSim, bw, T, E0 });
+    api.setP([]);
+    const h = T / nSteps;
+    for (let s = 0; s < nSteps; s++) api.advancePhotonRK4(psim, s * h, h);
+    const pop = (n, l, m) => {
+      const i = psim.states.findIndex((st) => st.n === n && st.l === l && st.m === m);
+      return i >= 0 ? psim.c1v[i * 2] ** 2 + psim.c1v[i * 2 + 1] ** 2 : 0;
+    };
+    return { psim, polRes, pop };
+  };
+
+  // 1. Single-excitation Fock cap: 2p,+1 -> 3d (x pol, B=0) has zero 2-photon leak into 2p,-1 / 3d,-2
+  const r23x = runSinglePhoton(0, [{ n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '2|1|3|2', polX);
+  assert.equal(r23x.pop(2, 1, -1), 0);
+  assert.equal(r23x.pop(3, 2, -2), 0);
+  assert.ok(r23x.pop(3, 2, 2) + r23x.pop(3, 2, 0) > 0.999);
+
+  // Equidistant Zeeman ladders in Single photon mode exchange only 1 quantum (0% 2-photon cascade into m=-1/+1)
+  const rZeE1 = runSinglePhoton(0.1, [{ n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '2|1|2|0|-1', polSp);
+  assert.ok(rZeE1.pop(2, 0, 0) > 0.9999 && rZeE1.pop(2, 1, -1) === 0);
+
+  const rZeM1 = runSinglePhoton(0.1, [{ n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '2|1|2|1|-1', polSp);
+  assert.ok(rZeM1.pop(2, 1, 0) > 0.9999 && rZeM1.pop(2, 1, -1) === 0);
+
+  const rZeUp = runSinglePhoton(0.1, [{ n: 2, l: 1, m: -1, amp: 1, phaseDeg: 0 }], '2|1|2|0|1', polSp);
+  assert.ok(rZeUp.pop(2, 0, 0) > 0.9999 && rZeUp.pop(2, 1, 1) === 0);
+
+  // Adjacent M1 superposition |2p,+1> + |2p,0> at B=0.1 collapses cleanly to prevent Fock collision
+  api.setBau(0.1);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }, { id: 2, n: 2, l: 1, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trM1Adj = api.getTransitionList().find((t) => t.key === '2|1|2|1|-1');
+  const resM1Adj = api.resolvePhotonPolarization(api.buildCoupledSystem(trM1Adj), trM1Adj, polSp, 2.5 / ((24 * 2 * Math.PI) / trM1Adj.omega0));
+  assert.ok(resM1Adj.elecCollapsed && Math.abs(resM1Adj.elecMatch - 0.5) < 1e-10);
+
+  // Higher-shell 4f,+3 -> 5g,+4 compacts to K=2 states and reaches 100% |5g,+4>
+  const r45 = runSinglePhoton(0, [{ n: 4, l: 3, m: 3, amp: 1, phaseDeg: 0 }], '4|3|5|4', polSp);
+  assert.equal(r45.psim.M, 2);
+  assert.ok(r45.pop(5, 4, 4) > 0.9999);
+
+  // Single-photon muRabi matches active bipartite manifold (no unpopulated-sublevel inflation on 3d,0->2p or 4f,0->3d with x-pol)
+  const r3d2pX = runSinglePhoton(0, [{ n: 3, l: 2, m: 0, amp: 1, phaseDeg: 0 }], '3|2|2|1', polX);
+  assert.ok(Math.abs(r3d2pX.polRes.muRabi - 1.22592616) < 1e-4, `Expected 3d,0->2p x muRabi ~1.2259, got ${r3d2pX.polRes.muRabi}`);
+  assert.ok(r3d2pX.pop(3, 2, 0) < 1e-4, `Expected 100% transfer from 3d,0 -> 2p,+-1, left ${r3d2pX.pop(3, 2, 0)}`);
+  assert.ok(r3d2pX.pop(2, 1, 1) + r3d2pX.pop(2, 1, -1) > 0.9999);
+
+  const r4f3dX = runSinglePhoton(0, [{ n: 4, l: 3, m: 0, amp: 1, phaseDeg: 0 }], '4|3|3|2', polX);
+  assert.ok(r4f3dX.pop(4, 3, 0) < 1e-4, `Expected 100% transfer from 4f,0 -> 3d,+-1, left ${r4f3dX.pop(4, 3, 0)}`);
+  assert.ok(r4f3dX.pop(3, 2, 1) + r4f3dX.pop(3, 2, -1) > 0.9999);
+
+  // 2. Partial B_z != 0 E1 Weisskopf-Wigner line strength (3d,0 -> 2p,0 is 4/15 = 2/3 of m-summed 2/5)
+  api.setBau(0.05);
+  api.setComps([{ id: 1, n: 3, l: 2, m: 0, amp: 1, phaseDeg: 0 }]);
+  const tr32z = api.getTransitionList().find((t) => t.key === '3|2|2|1|0');
+  const wwPart = api.weisskopfWigner(tr32z);
+  const wwTot = api.weisskopfWigner({ kind: 'E1', n1: 3, l1: 2, n2: 2, l2: 1, m1: null, m2: null });
+  assert.ok(Math.abs(wwPart.d2 / wwTot.d2 - 2 / 3) < 1e-12);
+  api.setBau(0);
+
+  // 3. Radial-grid s-wave Kato cusp inside r < dr improves small-r gradient substantially vs odd reflection
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const tr12 = api.getTransitionList().find((t) => t.key === '1|0|2|1');
+  const g1s = api.buildGridSystem(tr12, api.buildCoupledSystem(tr12));
+  const gb = new Float64Array(8);
+  const ab = new Float64Array(8);
+  api.evalGridPsiGrad(g1s, 0.05, 0.02, 0.03, gb);
+  api.evalBasisGrad(api.getBasis(1, 0, 0), 0.05, 0.02, 0.03, ab, 0);
+  const gxRelErr = Math.abs(gb[2] - ab[2]) / Math.abs(ab[2]);
+  assert.ok(gxRelErr < 0.3, `Expected Kato cusp 1s small-r grad error < 0.30, got ${gxRelErr}`);
+
+  // 4. Zero-alloc evalBasesAt matches evalBasisPsi identically
+  const testBases = [api.getBasis(1, 0, 0), api.getBasis(3, 2, -1), api.getBasis(4, 3, 2)];
+  const outRe = new Float64Array(3);
+  const outIm = new Float64Array(3);
+  api.evalBasesAt(testBases, 3, 1.4, -0.8, 0.6, outRe, outIm);
+  testBases.forEach((b, k) => {
+    const [pr, pi] = api.evalBasisPsi(b, 1.4, -0.8, 0.6);
+    assert.ok(Math.hypot(outRe[k] - pr, outIm[k] - pi) < 1e-14);
+  });
+
+  // 5. Tutorial markdown renderer: balanced tags across all 7 chapters, no literal **, no hang on indented/separated lists, \* escape works
+  const tutStart = SCRIPT_SRC.indexOf('function parseTutInline(');
+  const tutEnd = SCRIPT_SRC.indexOf('function initTutorial(');
+  const tutSb = { Math, Number, Array, Object, JSON };
+  vm.runInNewContext(SCRIPT_SRC.slice(tutStart, tutEnd) + '\nglobalThis.__tut={renderTutMarkdown,parseTutInline};', tutSb);
+  const { renderTutMarkdown, parseTutInline } = tutSb.__tut;
+
+  const bundle = JSON.parse(HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/)[1]);
+  for (const ch of bundle) {
+    const demos = [];
+    const rendered = renderTutMarkdown(ch.md, demos);
+    assert.equal(rendered.includes('**'), false, `Unparsed ** marker rendered in ${ch.file}`);
+    for (const tag of ['details', 'summary', 'strong', 'em', 'ul', 'ol', 'li', 'blockquote']) {
+      const opens = (rendered.match(new RegExp(`<${tag}(?:\\s|>)`, 'g')) || []).length;
+      const closes = (rendered.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+      assert.equal(opens, closes, `Unbalanced <${tag}> in ${ch.file}`);
+    }
+  }
+  assert.ok(renderTutMarkdown('  - orphan indented bullet\n\n  - spaced bullet\n', []).includes('<ul>'));
+  assert.equal(parseTutInline('z\\* and *em*'), 'z* and <em>em</em>');
 });

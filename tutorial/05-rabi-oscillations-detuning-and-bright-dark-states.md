@@ -40,7 +40,7 @@ Squaring \|*c*₂(*T*)\|² yields the excited-state population:
 Three milestone pulse areas stand out (the UI reports Θ = π √Power · (Duration / *T*<sub>ref</sub>), with reference *T*<sub>ref</sub> = 10 cycles for *n* ≤ 2 and M1, scaling up to 80 cycles for *n* ≥ 3 to curb ionization—so doubling Θ takes **2× Duration** or **4× Power**):
 - **Θ = π/2** (`Duration = 5 cyc, Power = 1` on `1s → 2p`): *P*₁ = ½, *P*₂ = ½ — creates an exact **50/50 coherent superposition** that keeps beating after the pulse ends!
 - **Θ = π** (`Duration = 10 cyc, Power = 1`): *P*₂ = 1 — **complete population inversion** (or complete stimulated de-excitation).
-- **Θ = 2π** (`Duration = 20 cyc, Power = 1`, or `Duration = 40, Power = 0.25` to avoid continuum loss): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever a dark state stands alongside it.
+- **Θ = 2π** (`Duration = 20 cyc, Power = 1`, or `Duration = 40, Power = 0.25` to curb continuum loss): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever a dark state stands alongside it.
 
 ```demo
 {
@@ -111,7 +111,7 @@ Without any magnetic field, a 2π linear pulse flips the electron's orbital angu
 ```demo
 {
   "label": "2π bright/dark m-flip: 2p,+1 → 2p,-1 via x-pol",
-  "caption": "40-cycle x-polarized pulse at Power = 0.25 (Θ = 2.00π, lower E₀ eliminates ionization): amplitude dips into 1s and emerges 100% in |2p,-1⟩!",
+  "caption": "40-cycle x-polarized pulse at Power = 0.25 (Θ = 2.00π; E₀ ≈ 6.4× E_OBI(2) greatly curbs ionization): amplitude dips into 1s and transfers ~96.7% into |2p,-1⟩ (~1.3% left in |2p,+1⟩, ~2% continuum loss)!",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 80,

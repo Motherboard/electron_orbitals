@@ -17,7 +17,7 @@ Whenever the UI shows energies, durations, magnetic fields, or intensities, it m
 | **Time** (*ħ*/*E*<sub>h</sub>) | **2.41888 × 10⁻¹⁷ s** (24.19 as) | Attosecond electron timescale; optical pulses appear in fs / ps. |
 | **Electric dipole** (*ea*₀) | **2.54175 Debye** (8.478 × 10⁻³⁰ C·m) | Polar-molecule dipole scale; ⟨1s\|*z*\|2p,0⟩ ≈ 0.745 *ea*₀ = 1.89 D. |
 | **Electric field** (*E*<sub>h</sub>/*ea*₀) | **5.14221 × 10¹¹ V/m** (51.42 V/Å) | Inner-atom Coulomb field at 1 *a*₀; *E*<sub>OBI</sub>(1) = 1/16 ≈ 3.21 V/Å. |
-| **Magnetic field** *B* | **2.35052 × 10⁵ T** | Displayed in T or kT; Bohr magneton μ<sub>B</sub> = ½ a.u. = 5.788 × 10⁻⁵ eV/T, Zeeman shift = *m*(*B*<sub>au</sub>/2). |
+| **Magnetic field** *B* | **2.35052 × 10⁵ T** | Displayed in T / kT and a.u.; Bohr magneton μ<sub>B</sub> = ½ a.u. = 5.788 × 10⁻⁵ eV/T, Zeeman shift = *m*(*B*<sub>au</sub>/2). |
 | **Laser intensity** *I* | **3.50945 × 10¹⁶ W/cm²** | *I* = ½ *c* ε₀ *E*₀² = *E*₀² × 3.509 × 10¹⁶ W/cm² (atomic field *E*₀ = 1). |
 | **Fine-structure constant** α | 1 / 137.035999084 | Dimensionless EM coupling; speed of light in a.u. is *c* = 1/α ≈ 137.036. |
 
@@ -38,11 +38,11 @@ Thus:
 ### How the Density Overlay Works: Column Projection vs. 2D Slice
 When **Density overlay** is checked, the canvas shades probability density using a **direct indigo glow** (**α = 0** at nodes and empty vacuum, rising monotonically to **α = 0.54** at peak density so bright orbital lobes stand out cleanly without hiding the colored Bohmian electron dots inside). The mode selector beside **Density overlay** offers two complementary views:
 
-- **Column projection ∫\|ψ\|² *dz* (default):** Integrates \|ψ\|² along your viewing depth axis (*D* = *y* cos *p* − *z* sin *p*) and maps *d* = *p*<sub>2D</sub> / *p*<sub>ref</sub> with square-root compression:
+- **Column projection ∫\|ψ\|² *dz*<sub>cam</sub> (default):** Integrates \|ψ\|² along your viewing depth axis (*D* = *y* cos *p* − *z* sin *p*) and maps *d* = *p*<sub>2D</sub> / *p*<sub>ref</sub> with square-root compression:
 
 > α = min(0.54, 0.54 √*d*)
 
-Because the simulated electron dots are sampled in 3D from \|ψ(*x*, *y*, *z*)\|² and orthogonally projected onto the screen, their 2D spatial density matches ∫\|ψ\|² *dz*<sub>cam</sub> directly. For stationary superpositions, *p*<sub>ref</sub> uses the phase-invariant Minkowski upper bound so interference beats do not flicker brightness; during EM pulses, *p*<sub>ref</sub> tracks the live maximum scaled by remaining bound norm.
+Because the simulated electron dots are sampled in 3D from \|ψ(*x*, *y*, *z*)\|² and orthogonally projected onto the screen, their 2D spatial density matches ∫\|ψ\|² *dz*<sub>cam</sub> directly. For free (unpulsed) superpositions, *p*<sub>ref</sub> uses the phase-invariant Minkowski upper bound so interference beats do not flicker brightness; during EM pulses, *p*<sub>ref</sub> tracks the live maximum scaled by remaining bound norm.
 
 - **2D slice \|ψ\|²:** Evaluates \|ψ\|² on the mid-plane passing through the nucleus perpendicular to your line of sight (*y* cos *p* − *z* sin *p* = 0), using harmonic-mean ρ<sub>ref</sub> for superpositions and stronger root compression so diffuse outer shells (*2s*, *3s*, *3p*) stay clear alongside dense cores:
 
@@ -110,7 +110,7 @@ Like any good scientific model, `electron_orbitals.html` balances mathematical e
 
 - **Exact within the model:**
   - Non-relativistic Schrödinger hydrogen eigenstates ψ<sub>*nlm*</sub> (*n* = 1..7) and exact E1/M1 dipole matrix elements.
-  - **Coherent EM wave:** Full continuous radial-grid TDSE (*L*<sub>max</sub> ≤ 5) during pulses, capturing multi-shell coupling, AC Stark shifts, and continuum ionization. **Single photon:** Weak-field RWA + exact Poisson multipole continuity flow (∇·δ**J** = −σ) over *n* = 1..7 without compression ionization.
+  - **Coherent EM wave:** Full continuous radial-grid TDSE (*L*<sub>max</sub> ≤ 5) during pulses, capturing multi-shell coupling, AC Stark shifts, and continuum ionization. **Single photon:** Single-excitation RWA manifold + exact Poisson multipole continuity flow (∇·δ**J** = −σ) over *n* = 1..7 without compression ionization or 2-photon cascades.
   - Exact 3D Bohmian velocities **v** = Im(∇ψ/ψ) + **A** integrated with adaptive RK4.
   - Exact Weisskopf–Wigner spontaneous rates Γ = *A*₂₁ and natural lifetimes τ.
 
@@ -132,6 +132,6 @@ Like any good scientific model, `electron_orbitals.html` balances mathematical e
 | **2. Magnetic Field, Zeeman & Precession** | Minimal coupling **p** − *q***A**, diamagnetic NMR/Lenz shielding, Zeeman shifts *mB*<sub>*z*</sub>/2, Larmor precession, intra-orbital M1 | Rotating `2p_x`, reversing *m* = +1 current, `B_z = 0.1` Zeeman RF excitation |
 | **3. Light & Polarization** | *c* = λν, dipole limit *ka*₀ ≪ 1, complex **ε**, linear = (σ⁺ + σ⁻)/√2, elliptical helicity, *I* ∝ *E*₀² vs. Ω<sub>R</sub> ∝ √*I* | Circular `σ⁺`/`σ⁻`, elliptical `1 : 0.4i`, tilted 3D `(−x+z)/√2` polarization |
 | **4. Light–Electron Interactions, Einstein & Selection Rules** | Transition dipoles ⟨ψ₂\|**r**\|ψ₁⟩, Lyman/Balmer/Paschen series, Einstein *A*/*B*, partial vs. total lifetimes, Δ*l* = ±1 & Δ*m* = 0, ±1 | Blocked vs. allowed `2p,+1 + σ⁻` (downward vs. `3d,0`), stimulated emission |
-| **5. Rabi Oscillations, Detuning & Bright/Dark States** | RWA, Bloch sphere, pulse area Θ = π√P(T/T<sub>ref</sub>), bright/dark `2p_x`/`2p_y`, red vs. blue detuning, spin-1 SU(2) | `π/2`, `π`, `2π` *m*-flip (`100%` at 40 cyc), `-1.5 bw` red detuning, `B_z` M1 flip |
+| **5. Rabi Oscillations, Detuning & Bright/Dark States** | RWA, Bloch sphere, pulse area Θ = π√P(T/T<sub>ref</sub>), bright/dark `2p_x`/`2p_y`, red vs. blue detuning, spin-1 SU(2) | `π/2`, `π`, `2π` *m*-flip (`~97%` at 40 cyc), `-1.5 bw` red detuning, `B_z` M1 flip |
 | **6. Single-Photon Wavepackets, Entanglement & TDSE** | Time-reversed *e*<sup>+Γ*t*/2</sup> absorption, Lorentzian linewidth, **ε → ε**<sub>int</sub> projection, atom–photon entanglement, mixtures vs. \|0⟩±\|1⟩ erasure, *E*<sub>OBI</sub> = 1/16*n*⁴ & REMPI, Numerov/CN/RK4/CAP solver | Time-reversed `1s → 2p,+1`, Zeeman-resolved 50% `x → σ⁻`, weak-*B* 100% `2p_x`, Lorentzian `−1.5 Γ/2`, strong-field ionization (`Power = 16`) |
 | **7. Atomic Units, Visualization & Scope** | CODATA atomic-unit conversions, `Tilt` projection trig, direct root-compressed α (projection vs. 2D slice), model boundaries | `3d,0` nodal slice, top-down `2p_x`, pure streamline view |

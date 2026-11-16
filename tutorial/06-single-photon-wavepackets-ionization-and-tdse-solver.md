@@ -36,7 +36,7 @@ Just as an exponentially decaying *e*<sup>−Γ*t*/2</sup> wavepacket Fourier-tr
 
 > *P*<sub>exc</sub>(Δω) ≈ 1 / [ 1 + (Δω / (Γ/2))² ] = 1 / (1 + `det`²)
 
-At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), this predicts 1 / (1 + 1.5²) ≈ **30.8%** excitation—closely matching the full TDSE (~31.5% in |2p,+1⟩, ~65.5% remaining in |1s⟩), leaving a glowing beating superposition! *(In warm chemistry gas-phase spectra, thermal velocity spreads also add Gaussian **Doppler broadening** on top of this intrinsic **natural linewidth**.)*
+At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), that weak-drive perturbative Lorentzian predicts 1 / (1 + 1.5²) ≈ **30.8%** excitation; because a full Θ = π pulse saturates strongly on resonance (**power broadening** plus finite *e*<sup>+5/2</sup> truncation on [0, *T*]), exact 2-level RWA evolution in **Single photon** mode yields **`40.6%` in |2p,+1⟩ and `59.4%` in |1s⟩**—still cleanly suppressed compared with 100% at `det = 0`, leaving a glowing beating superposition! *(In warm chemistry gas-phase spectra, thermal velocity spreads also add Gaussian **Doppler broadening** on top of this intrinsic **natural linewidth**.)*
 
 ```demo
 {
@@ -61,7 +61,7 @@ At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), this predicts 1 
 ```demo
 {
   "label": "Red-detuned single photon (Detuning = −1.5 Γ/2)",
-  "caption": "Red-detuning by −1.5 (in Γ_sim/2 units) matches the Lorentzian drop to ~32% |2p,+1⟩, leaving a beating 1s + 2p superposition.",
+  "caption": "Red-detuning by −1.5 (in Γ_sim/2 units) suppresses excitation to ~40.6% |2p,+1⟩ / ~59.4% |1s⟩, leaving a beating 1s + 2p superposition.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 50,
@@ -82,7 +82,7 @@ At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), this predicts 1 
 
 ## 6.3 Branch Projection (Polarization & Electron Superpositions), Atom–Photon Entanglement & Mixed States
 
-In **Single photon** mode, you are free to choose *any* initial superposition and *any* polarization vector **ε** manually—even when selection rules, non-resonant spectator orbitals, or Zeeman splitting couple only a fraction of the joint atom–photon state. Look at the **Branch match** readout beneath **Wavepacket** (and click **Match** beside the polarization chips whenever you want to snap **ε** to the transition's valid dipole polarization).
+In **Single photon** mode, only **one** photon quantum is exchanged with the atom (**initial ↔ target**, preventing 2-photon cascades or double excitations across degenerate or equidistant Zeeman levels), and you are free to choose *any* initial superposition and *any* polarization vector **ε** manually—even when selection rules, non-resonant spectator orbitals, or Zeeman splitting couple only a fraction of the joint atom–photon state. Look at the **Branch match** readout beneath **Wavepacket** (and click **Match** beside the polarization chips whenever you want to snap **ε** to the transition's valid dipole polarization).
 
 ### How the Simulator Projects the Interacting Branch (Bandwidth-Aware Branching)
 Around the chosen transition energy ω₀, the simulated wavepacket has spectral half-width `bw` = Γ<sub>sim</sub>/2. The simulator computes two independent overlaps inside `bw`:
@@ -235,12 +235,12 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 
 ### A. `Single photon` Mode: Weak-Field RWA + Exact Multipole Continuity Flow
 A real 1-photon wavepacket is extremely weak (*E*₀ ≪ *E*<sub>OBI</sub>), so non-resonant counter-rotating terms and competing shells never get dressed during absorption or stimulated emission:
-1. **Interaction-picture Rotating-Wave Approximation (RWA):** Evolves the resonant bound channel amplitudes directly under the exact dipole coupling within the simulated *e*<sup>+Γ<sub>sim</sub>*t*/2</sup> wavepacket over 24 cycles—eliminating time-compression OBI ionization and accidental multi-level dressing for all *n* = 1..7.
-2. **Exact multipole continuity flow (∇·δ**J** = −σ):** Dropping off-resonant couplings makes the projected Hamiltonian mildly non-local (leaving a residual radial population source σ = −2 Im ∑ *c*<sub>*a*</sub>* *H*<sub>ab</sub> *c*<sub>*b*</sub> ψ<sub>*a*</sub>* ψ<sub>*b*</sub> across shells of different radii). The solver integrates Poisson's equation ∇²χ = −σ multipole-by-multipole on a 1D spherical mesh and adds δ**J** = ∇χ to **J** so ∂|ψ|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 holds **identically**, transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
+1. **Interaction-picture Rotating-Wave Approximation (RWA):** Evolves the single-excitation bound channel manifold (**initial ↔ partner** only) directly under the exact dipole coupling within the simulated *e*<sup>+Γ<sub>sim</sub>*t*/2</sup> wavepacket over 24 cycles—eliminating time-compression OBI ionization, multi-photon cascades, and off-resonant dressing for all *n* = 1..7.
+2. **Exact multipole continuity flow (∇·δJ = −σ):** Dropping off-resonant couplings makes the projected interaction mildly non-local in **r**, adding a local source term to Schrödinger probability conservation: ∂\|ψ\|²/∂*t* + ∇·**J**₀ = +σ, where σ = +2 Im ∑<sub>*a*,*b*</sub> *c*<sub>*a*</sub><sup>∗</sup> (*Ĥ*<sub>eff</sub> *c*)<sub>*b*</sub> ψ<sub>*a*</sub><sup>∗</sup> ψ<sub>*b*</sub>. The solver integrates Poisson's equation ∇²χ = −σ multipole-by-multipole on a 1D spherical mesh and adds δ**J** = ∇χ to **J**₀ so ∂\|ψ\|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 holds **identically**, transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
 
 ### B. `Coherent EM wave` Mode: Continuous 3D Radial-Grid TDSE
 During strong laser/RF pulses, `electron_orbitals.html` solves the genuine **full-spectrum TDSE** on the fly:
-1. **Radial-grid spherical-harmonic expansion:** The wavefunction is written as ψ(*r*, θ, φ, *t*) = ∑<sub>*l*≤*L*<sub>max</sub>,*m*</sub> [*u*<sub>*lm*</sub>(*r*, *t*)/*r*] *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) on a continuous radial mesh (~380 points, *L*<sub>max</sub> ≤ 5), capturing **all** bound shells, AC Stark shifts, multi-photon transitions, and continuum ionization simultaneously.
+1. **Radial-grid spherical-harmonic expansion:** The wavefunction is written as ψ(*r*, θ, φ, *t*) = ∑<sub>*l*≤*L*<sub>max</sub>,*m*</sub> [*u*<sub>*lm*</sub>(*r*, *t*)/*r*] *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) on a continuous radial mesh (234–380 points depending on *n*, *L*<sub>max</sub> ≤ 5), capturing **all** bound shells, AC Stark shifts, multi-photon transitions, and continuum ionization simultaneously.
 2. **Unitary Strang-split propagation:** Each small time step splits the evolution into symmetric half-steps so the method stays **norm-conserving** (unitary) without blowing up: (a) a 4th-order **Numerov + Crank–Nicolson** tridiagonal matrix solver for the radial kinetic + Coulomb operator *Ĥ*₀ = −½ ∂²/∂*r*² + *l*(*l*+1)/(2*r*²) − 1/*r*, (b) an adaptive 4th-order **Runge–Kutta (RK4)** step for the **r**·**E**(*t*) or ½**B**₁(*t*)·**L** coupling across (*l*, *m*) channels, and (c) exact Zeeman *e*<sup>−*imB*<sub>*z*</sub>Δ*t*/2</sup> phase rotation.
 3. **Complex Absorbing Potential (CAP):** In the outer 14% of the radial grid, a smooth damping mask absorbs outgoing ionized probability (and attenuates outward radial drift) so unbound continuum waves leave cleanly instead of bouncing artificially off the simulation wall.
 4. **Live Bohmian tracking & post-pulse projection:** At every substep, the 3D electron dots integrate **v** = Im(∇ψ/ψ) + **A** directly from the radial grid via cubic interpolation. When the pulse ends (or **Stop pulse** is pressed), bound eigenstate components above the **\|*c*\| > 0.14** amplitude cutoff (~2% population threshold) form the continuing analytical superposition, keeping all bound electron positions and trails intact while re-homing only escaped continuum outliers beyond 1.25 *E*.

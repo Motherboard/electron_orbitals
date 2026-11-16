@@ -741,9 +741,34 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       const contInfoText = document.getElementById('info').textContent;
       finishPulse(true);
       Bau = 0; rescaleB(); buildTransitions(); updateEmUI();
+
+      // 5f. Audit pedagogy/perf UI checks: dual B_z a.u.+T readout, fmtCycNat, #spd readout, Ch.1 <details>, zero ** in Ch.6, 2p->3d x-pol zero leak, tooltips & dz_cam
+      Bau = 0.1; rescaleB();
+      const bvHighText = document.getElementById('bv').textContent;
+      Bau = 0; rescaleB();
+      const bvZeroText = document.getElementById('bv').textContent;
+      const cycNatBig = fmtCycNat(9.23e12);
+      const spdEl = document.getElementById('spd');
+      spdEl.value = '1.4'; spdEl.dispatchEvent(new Event('input'));
+      const svText = document.getElementById('sv').textContent;
+      spdEl.value = '0.8'; spdEl.dispatchEvent(new Event('input'));
+      const polSpTitle = document.querySelector('.chip[data-pol="sp"]').title;
+      const polSmTitle = document.querySelector('.chip[data-pol="sm"]').title;
+      const ovProjOpt = document.querySelector('#ov-mode option[value="proj"]').textContent;
+
+      if (document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      const tutSel = document.getElementById('tut-sel');
+      tutSel.value = '0'; tutSel.dispatchEvent(new Event('change'));
+      const ch1Details = [...document.querySelectorAll('#tut-body details.tut-details')];
+      const ch1DetClosedInitially = ch1Details.length >= 2 && ch1Details.every((d) => !d.open);
+      if (ch1Details[0]) ch1Details[0].querySelector('summary').click();
+      const ch1DetToggledOpen = ch1Details[0] ? ch1Details[0].open : false;
+      tutSel.value = '5'; tutSel.dispatchEvent(new Event('change'));
+      const ch6HasRawStars = document.getElementById('tut-body').textContent.includes('**J**');
+
       const overflow320 = document.documentElement.scrollWidth > window.innerWidth;
       document.getElementById('tut-toggle').click();
-      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, overflow320 };
+      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, bvHighText, bvZeroText, cycNatBig, svText, polSpTitle, polSmTitle, ovProjOpt, ch1DetClosedInitially, ch1DetToggledOpen, ch6HasRawStars, overflow320 };
     })()`);
     assert.deepEqual(postSupAndStim.compsAfterSup, [{ n: 3, l: 1, m: 1, amp: 1 }]);
     assert.match(postSupAndStim.trOptText, /stim\. emit/);
@@ -762,6 +787,16 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.ok(postSupAndStim.trailLen >= 10, `Expected dense substep trails during fast Zeeman frame, got ${postSupAndStim.trailLen}`);
     assert.ok(postSupAndStim.trailDtMax <= 4.0, `Expected smooth small trail step <= 4 a.u., got ${postSupAndStim.trailDtMax}`);
     assert.match(postSupAndStim.contInfoText, /continuum \/ higher n: 81%/);
+    assert.match(postSupAndStim.bvHighText, /23\.5 kT \(0\.10 a\.u\.\)/);
+    assert.equal(postSupAndStim.bvZeroText, '0 T (0 a.u.)');
+    assert.equal(postSupAndStim.cycNatBig, '9.23×10¹² cyc');
+    assert.equal(postSupAndStim.svText, '1.4×');
+    assert.match(postSupAndStim.polSpTitle, /Counterclockwise.*viewed from \+z/);
+    assert.match(postSupAndStim.polSmTitle, /Clockwise.*viewed from \+z/);
+    assert.match(postSupAndStim.ovProjOpt, /dz_cam/);
+    assert.equal(postSupAndStim.ch1DetClosedInitially, true);
+    assert.equal(postSupAndStim.ch1DetToggledOpen, true);
+    assert.equal(postSupAndStim.ch6HasRawStars, false);
     assert.equal(postSupAndStim.overflow320, false);
 
     // 6. Verify zero runtime or console errors across the session
