@@ -86,12 +86,15 @@ function createCoreContext() {
       setBau: (b) => { Bau = b; updateEnergies(); },
       setE: (v) => { E = v; },
       setP: (arr) => { P = arr; },
+      getP: () => P,
       sampSingle,
       radialDipole, angularDipole, dipoleElement, angularMagDipole,
       getTransitionList, buildCoupledSystem, computeBrightDipole, resolvePhotonPolarization, getPulseConfig,
+      buildPhotonSim, evalPhotonVel, advancePhotonRK4,
       fieldVecAt, stepTdseC, weisskopfWigner,
       buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
-      ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel
+      ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel,
+      consts: { B_SLIDER_MAX, B_SLIDER_SPAN, B_SLIDER_STEP, PHOTON_CYC, PHOTON_KTAU }
     };
   `;
   vm.runInNewContext(coreSrc + '\n' + exportsTail, sandbox);
@@ -754,7 +757,7 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
         const it = d.interaction;
         if (it.detuning !== undefined) assert.ok(it.detuning >= -2.5 && it.detuning <= 2.5);
         if (it.duration !== undefined) assert.ok(it.duration >= 4 && it.duration <= 50);
-        if (it.power !== undefined) assert.ok(it.power >= 0.05 && it.power <= 16);
+        if (it.power !== undefined) assert.ok(it.power >= 0.01 && it.power <= 16);
 
         api.setBau(d.B || 0);
         api.setComps(d.states.map((s, i) => ({ id: i + 1, ...s })));
@@ -991,4 +994,118 @@ test('single-photon bandwidth-aware polarization match and projection onto inter
   assert.ok(dotAbs(rM1X.pol, polSp) > 0.9999);
   assert.ok(Math.abs(rM1X.muRabi - 0.5) < 1e-12);
   api.setBau(0);
+});
+
+test('weak-field RWA single-photon solver, multipole continuity flow, and electron-superposition branch collapse', () => {
+  const polX = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }]);
+  const polZ = makePol([{ amp: 0, phaseDeg: 0 }, { amp: 0, phaseDeg: 0 }, { amp: 1, phaseDeg: 0 }]);
+  const polSp = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 90 }, { amp: 0, phaseDeg: 0 }]);
+  const polSm = makePol([{ amp: 1, phaseDeg: 0 }, { amp: 1, phaseDeg: 270 }, { amp: 0, phaseDeg: 0 }]);
+  const dotAbs = (p1, p2) => {
+    let re = 0, im = 0;
+    for (let i = 0; i < 3; i++) {
+      re += p1[i].re * p2[i].re + p1[i].im * p2[i].im;
+      im += p1[i].re * p2[i].im - p1[i].im * p2[i].re;
+    }
+    return Math.hypot(re, im);
+  };
+  const runPhotonSim = (initComps, trKey, polIntObj, opts = {}) => {
+    api.setBau(opts.bau || 0);
+    api.setComps(initComps.map((c, idx) => ({ id: idx + 1, ...c })));
+    const trSpec = api.getTransitionList().find((t) => t.key === trKey);
+    assert.ok(trSpec, `Expected transition ${trKey}`);
+    const sys = api.buildCoupledSystem(trSpec);
+    const omega0 = trSpec.omega0;
+    const T = (api.consts.PHOTON_CYC * 2 * Math.PI) / omega0;
+    const gammaSim = api.consts.PHOTON_KTAU / T;
+    const bw = 0.5 * gammaSim;
+    const polRes = api.resolvePhotonPolarization(sys, trSpec, polIntObj, bw);
+    const omegaL = Math.max(0.05 * omega0, omega0 + (opts.det || 0) * bw);
+    const effDur = (2 / gammaSim) * (1 - Math.exp(-0.5 * api.consts.PHOTON_KTAU));
+    const E0 = polRes.muRabi > 1e-7 ? Math.PI / (polRes.muRabi * effDur) : 0;
+    const cfg = {
+      sys, trSpec, polInt: polRes.pol, cActive: polRes.cActive,
+      omegaL, gammaSim, T, E0
+    };
+    const psim = api.buildPhotonSim(cfg);
+    // Sample 3D particles from active initial orbital
+    let maxE = 6;
+    for (const s of psim.states) if (s.b.E995 > maxE) maxE = s.b.E995;
+    api.setE(maxE);
+    const initBasis = api.getBasis(initComps[0].n, initComps[0].l, initComps[0].m);
+    const pts = [];
+    for (let i = 0; i < (opts.nPart ?? 300); i++) {
+      const q = api.sampSingle(initBasis);
+      pts.push({ x: q.rho * Math.cos(q.ph), y: q.rho * Math.sin(q.ph), z: q.z });
+    }
+    api.setP(pts);
+    const nSteps = opts.nSteps ?? 160;
+    const h = T / nSteps;
+    for (let s = 0; s < nSteps; s++) api.advancePhotonRK4(psim, s * h, h);
+    const rs = api.getP().map((q) => Math.hypot(q.x, q.y, q.z)).sort((a, b) => a - b);
+    const medR = rs[Math.floor(rs.length / 2)];
+    return { psim, polRes, medR, cFinal: psim.c1v };
+  };
+
+  const popOf = (psim, n, l, m) => {
+    const i = psim.states.findIndex((s) => s.n === n && s.l === l && s.m === m);
+    return i >= 0 ? psim.c1v[i * 2] ** 2 + psim.c1v[i * 2 + 1] ** 2 : 0;
+  };
+
+  // 1. 3p,+1 -> 1s stimulated emission: clean 100% transfer (0% 2p) + inward Bohmian flow
+  const r3p1s = runPhotonSim([{ n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '3|1|1|0', polSp);
+  assert.ok(popOf(r3p1s.psim, 1, 0, 0) > 0.9999, 'Expected 100% |1s,0> after 3p,+1 -> 1s photon');
+  assert.ok(r3p1s.medR > 0.8 && r3p1s.medR < 1.9, `Expected Bohmian median r near 1s (~1.3 a0), got ${r3p1s.medR}`);
+  // bestPol for 3p,+1 -> 1s snaps wrong-spin polarization to sigma+
+  api.setComps([{ id: 1, n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  const tr31 = api.getTransitionList().find((t) => t.key === '3|1|1|0');
+  const sys31 = api.buildCoupledSystem(tr31);
+  const resWrong = api.resolvePhotonPolarization(sys31, tr31, polSm, 2.5 / ((24 * 2 * Math.PI) / tr31.omega0));
+  assert.equal(resWrong.match, 0);
+  assert.ok(dotAbs(resWrong.bestPol, polSp) > 0.9999, 'Expected Match bestPol for 3p,+1 -> 1s to be sigma+');
+
+  // 2. 1s -> 4p,+1 single photon (24 cycles): 100% bound transfer + outward Bohmian flow to ~24 a0
+  const r1s4p = runPhotonSim([{ n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }], '1|0|4|1', polSp);
+  assert.ok(popOf(r1s4p.psim, 4, 1, 1) > 0.9999, 'Expected 100% |4p,+1> in 24-cycle RWA single-photon solver');
+  assert.ok(r1s4p.medR > 19 && r1s4p.medR < 29, `Expected Bohmian median r to expand near 4p (~24 a0), got ${r1s4p.medR}`);
+
+  // 3. Electron superposition entanglement branch projection: 0.98|1s> + 0.20|2p,+1> receiving 1s -> 3p (sigma+)
+  const rSup = runPhotonSim(
+    [{ n: 1, l: 0, m: 0, amp: 0.98, phaseDeg: 0 }, { n: 2, l: 1, m: 1, amp: 0.2, phaseDeg: 0 }],
+    '1|0|3|1',
+    polSp,
+    { nPart: 40 }
+  );
+  assert.equal(rSup.polRes.elecCollapsed, true);
+  assert.ok(Math.abs(rSup.polRes.elecMatch - 0.98 ** 2 / (0.98 ** 2 + 0.2 ** 2)) < 1e-10);
+  assert.ok(Math.abs(rSup.polRes.match - rSup.polRes.elecMatch) < 1e-10);
+  assert.ok(popOf(rSup.psim, 3, 1, 1) > 0.9999, 'Expected collapsed branch to finish 100% in |3p,+1>');
+  assert.ok(popOf(rSup.psim, 2, 1, 1) < 1e-12, 'Expected uncoupled spectator |2p,+1> projected out');
+
+  // Combined electron + polarization collapse: 0.98|1s> + 0.20|2p,+1> at Bau=0.05 on 1s->2p,-1 with x-pol
+  api.setBau(0.05);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 0.98, phaseDeg: 0 }, { id: 2, n: 2, l: 1, m: 1, amp: 0.2, phaseDeg: 0 }]);
+  const trZ = api.getTransitionList().find((t) => t.key === '1|0|2|1|-1');
+  const sysComb = api.buildCoupledSystem(trZ);
+  const resComb = api.resolvePhotonPolarization(sysComb, trZ, polX, 2.5 / ((24 * 2 * Math.PI) / trZ.omega0));
+  assert.equal(resComb.elecCollapsed, true);
+  assert.equal(resComb.polCollapsed, true);
+  assert.ok(Math.abs(resComb.polMatch - 0.5) < 1e-9);
+  assert.ok(Math.abs(resComb.match - 0.5 * resComb.elecMatch) < 1e-9);
+  assert.ok(dotAbs(resComb.pol, polSm) > 0.9999);
+
+  // 4. Red-detuned single photon (det = -1.5 on 1s -> 2p,+1) follows Lorentzian suppression cleanly
+  const rDet = runPhotonSim([{ n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }], '1|0|2|1', polSp, { det: -1.5, nPart: 40 });
+  const pDet1s = popOf(rDet.psim, 1, 0, 0), pDet2p = popOf(rDet.psim, 2, 1, 1);
+  assert.ok(Math.abs(pDet1s + pDet2p - 1) < 1e-6);
+  assert.ok(pDet2p > 0.25 && pDet2p < 0.45, `Expected det=-1.5 Lorentzian excitation (~0.31-0.41), got ${pDet2p}`);
+
+  // 5. Weak-field B_z slider constant step (0.10 / 3) & bestPol for pi/z transition
+  assert.ok(Math.abs(api.consts.B_SLIDER_MAX - 0.10) < 1e-12);
+  assert.ok(Math.abs(api.consts.B_SLIDER_STEP - 0.10 / 3) < 1e-12);
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 3, l: 1, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trPi = api.getTransitionList().find((t) => t.key === '3|1|1|0');
+  const resPi = api.resolvePhotonPolarization(api.buildCoupledSystem(trPi), trPi, polX, 2.5 / ((24 * 2 * Math.PI) / trPi.omega0));
+  assert.ok(dotAbs(resPi.bestPol, polZ) > 0.9999);
 });

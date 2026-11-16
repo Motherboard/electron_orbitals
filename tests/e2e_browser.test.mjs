@@ -623,7 +623,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       const top = sorted[0] ? { n: sorted[0].n, l: sorted[0].l, m: sorted[0].m, prob: sorted[0].prob } : null;
       // Now switch back to 1s with B=0.05 and z-pol: should show 0% match and disable Send photon
       const bfEl = document.getElementById('bf');
-      bfEl.value = String(0.05 * bscale() / 2);
+      bfEl.value = String(0.05 / B_SLIDER_STEP);
       const rows = document.querySelectorAll('.comp');
       const sels = rows[0].querySelectorAll('select');
       sels[0].value = '1'; sels[0].dispatchEvent(new Event('change'));
@@ -649,6 +649,90 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(blockedAndCleanup.blockedZ.fireDisabled, true);
     assert.match(blockedAndCleanup.blockedZ.matchText, /^0%/);
     assert.equal(blockedAndCleanup.hiddenInWave, true);
+
+    // 5b. Electron-superposition branch collapse, stimulated emission Match button, 1pi chip & weak-B/OBI warnings
+    const newUiChecks = await evalJS(`(() => {
+      document.getElementById('tut-toggle').click();
+      // Reset to 0.98 |1s> + 0.20 |2p,+1> in Single photon mode
+      document.querySelector('input[name="imode"][value="photon"]').checked = true;
+      document.querySelector('input[name="imode"][value="photon"]').dispatchEvent(new Event('change'));
+      while (document.querySelectorAll('.rm').length > 1) document.querySelectorAll('.rm')[1].click();
+      const s0 = document.querySelectorAll('.comp select');
+      s0[0].value = '1'; s0[0].dispatchEvent(new Event('change'));
+      document.getElementById('add').click();
+      const rows = document.querySelectorAll('.comp');
+      const s1 = rows[1].querySelectorAll('select');
+      s1[0].value = '2'; s1[0].dispatchEvent(new Event('change'));
+      s1[1].value = '1'; s1[1].dispatchEvent(new Event('change'));
+      s1[2].value = '1'; s1[2].dispatchEvent(new Event('change'));
+      rows[0].querySelectorAll('input[type=range]')[0].value = '0.98';
+      rows[0].querySelectorAll('input[type=range]')[0].dispatchEvent(new Event('input'));
+      rows[1].querySelectorAll('input[type=range]')[0].value = '0.2';
+      rows[1].querySelectorAll('input[type=range]')[0].dispatchEvent(new Event('input'));
+      document.getElementById('tr-sel').value = '1|0|3|1';
+      document.getElementById('tr-sel').dispatchEvent(new Event('change'));
+      document.querySelector('.chip[data-pol="sp"]').click();
+      const supMatchText = document.getElementById('pmatch-v').textContent;
+      document.getElementById('spd').value = '3';
+      document.getElementById('fire').click();
+      return { supMatchText };
+    })()`);
+    assert.match(newUiChecks.supMatchText, /^96%/);
+    await waitUntil(`pulse === null`, 15000);
+    const postSupAndStim = await evalJS(`(() => {
+      const compsAfterSup = components.map((c) => ({ n: c.n, l: c.l, m: c.m, amp: c.amp }));
+      // Check stimulated emission label & Match button on |3p,+1> -> 1s with wrong spin sigma-
+      document.getElementById('tr-sel').value = '3|1|1|0';
+      document.getElementById('tr-sel').dispatchEvent(new Event('change'));
+      const trOptText = document.getElementById('tr-sel').selectedOptions[0].textContent;
+      document.querySelector('.chip[data-pol="sm"]').click();
+      const blockedWrongSpin = document.getElementById('fire').disabled;
+      document.getElementById('pol-match-btn').click();
+      const matchedEnabled = !document.getElementById('fire').disabled;
+      const matchedText = document.getElementById('pmatch-v').textContent;
+      // Check wave mode 1pi button, strong-field warning, and weak-field B_z warnings
+      document.querySelector('input[name="imode"][value="wave"]').checked = true;
+      document.querySelector('input[name="imode"][value="wave"]').dispatchEvent(new Event('change'));
+      const bfEl = document.getElementById('bf');
+      const bfDefaultMax = +bfEl.max;
+      document.getElementById('tr-sel').value = '3|1|1|0';
+      document.getElementById('tr-sel').dispatchEvent(new Event('change'));
+      document.getElementById('pdur').value = '50';
+      document.getElementById('pdur').dispatchEvent(new Event('input'));
+      document.getElementById('ppow').value = '16';
+      document.getElementById('ppow').dispatchEvent(new Event('input'));
+      const obiWarn = document.getElementById('em-note').textContent;
+      document.getElementById('p1pi').click();
+      const p1Readout = document.getElementById('ppow-v').textContent;
+      // Check 1s -> 2p at 50 cyc gives exact p1 = 0.04 (1pi chip)
+      while (document.querySelectorAll('.comp').length > 1) document.querySelectorAll('.rm')[1].click();
+      const s = document.querySelectorAll('.comp select');
+      s[0].value = '1'; s[0].dispatchEvent(new Event('change'));
+      document.getElementById('pdur').value = '50';
+      document.getElementById('pdur').dispatchEvent(new Event('input'));
+      document.getElementById('p1pi').click();
+      const p1Pow1s2p = +document.getElementById('ppow').value;
+      const p1Readout1s2p = document.getElementById('ppow-v').textContent;
+      Bau = 0.25; rescaleB(); buildTransitions();
+      document.getElementById('pol-match-btn').click();
+      const highBWarn = document.getElementById('em-note').textContent;
+      Bau = 0; rescaleB(); buildTransitions(); updateEmUI();
+      const overflow320 = document.documentElement.scrollWidth > window.innerWidth;
+      document.getElementById('tut-toggle').click();
+      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Readout1s2p, highBWarn, overflow320 };
+    })()`);
+    assert.deepEqual(postSupAndStim.compsAfterSup, [{ n: 3, l: 1, m: 1, amp: 1 }]);
+    assert.match(postSupAndStim.trOptText, /stim\. emit/);
+    assert.equal(postSupAndStim.blockedWrongSpin, true);
+    assert.equal(postSupAndStim.matchedEnabled, true);
+    assert.equal(postSupAndStim.matchedText, '100%');
+    assert.equal(postSupAndStim.bfDefaultMax, 3);
+    assert.match(postSupAndStim.obiWarn, /expect OBI ionization/);
+    assert.match(postSupAndStim.p1Readout, /Θ=1\.00π/);
+    assert.equal(postSupAndStim.p1Pow1s2p, 0.04);
+    assert.match(postSupAndStim.p1Readout1s2p, /Θ=1\.00π/);
+    assert.match(postSupAndStim.highBWarn, /High B_z/);
+    assert.equal(postSupAndStim.overflow320, false);
 
     // 6. Verify zero runtime or console errors across the session
     const errors = cdp.events.filter(

@@ -79,7 +79,7 @@ Here α ≈ 1/137.036 is the fine-structure constant (1/*c* in atomic units). Pl
 
 *(For Zeeman M1 transitions, Γ scales with α⁵ instead of α³, making spontaneous M1 decay ~10⁵ times weaker than an E1 transition of the same energy.)*
 
-> **Stimulated vs. Spontaneous in the Simulation:** In the semiclassical TDSE (`Coherent EM wave`), the classical electric field **E**(*t*) drives both **stimulated absorption** and **stimulated emission** symmetrically, whereas true **spontaneous emission** requires vacuum quantum fluctuations and does not trigger spontaneously on its own. Instead, **Single photon** mode displays the exact QED rate *A*₂₁ = Γ, reports **Pol. match** (collapsing arbitrary **ε** onto the interacting dipole component when selection rules or Zeeman shifts filter the polarization), and sends in its time-reversed wavepacket for 100% absorption of that interacting branch (Chapter 6, §§6.1–6.3).
+> **Stimulated vs. Spontaneous in the Simulation:** Both **`Coherent EM wave`** and **`Single photon`** configure an **incoming** radiation field hitting the atom (`stim. emit` in the transition menu drives stimulated downward emission, never spontaneous emission of a coherent EM wave—true spontaneous decay requires vacuum QED fluctuations). Instead, **Single photon** mode displays the exact QED spontaneous rate *A*₂₁ = Γ, reports **Branch match** (projecting both uncoupled initial electron spectators and arbitrary **ε** onto the interacting dipole channel **ε**<sub>int</sub>, while blocking wrong-spin emission at `0%`—click **Match** to auto-select the valid polarization), and sends in its time-reversed wavepacket for 100% absorption or stimulated emission of that branch (Chapter 6, §§6.1–6.3).
 
 ---
 
@@ -224,8 +224,8 @@ Watch conservation of angular momentum literally spin up—and spin down—the B
 
 ```demo
 {
-  "label": "Allowed upward σ⁻: 2p,+1 → 3d,0 (plus 3s,0 branching)",
-  "caption": "Same |2p,+1⟩ and σ⁻ helicity now absorb upward (Δm = −1): reaches ~80% |3d,0⟩ + ~14% degenerate |3s,0⟩ at H_α energy!",
+  "label": "Allowed upward σ⁻: 2p,+1 → 3d,0",
+  "caption": "Same |2p,+1⟩ and σ⁻ helicity now absorb upward (Δm = −1): transfers cleanly to 100% |3d, 0⟩ at H_α energy via weak-field RWA!",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 0,

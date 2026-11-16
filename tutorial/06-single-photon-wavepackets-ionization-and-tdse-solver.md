@@ -2,7 +2,7 @@
 
 Three key physics and numerical ideas behind `electron_orbitals.html` deserve closer inspection:
 1. Why does **Single photon** mode use an exponentially growing wavepacket *e*<sup>+Γ*t*/2</sup> with an abrupt cutoff?
-2. When a single photon polarization only partially matches an atomic transition, why do we project onto the **interacting polarization branch** (`Pol. match`), and what does atom–photon entanglement mean for mixtures vs. coherent superpositions?
+2. When a single photon polarization or initial electron superposition only partially couples to a transition, why do we project onto the **interacting branch** (`Branch match`), and what does atom–photon entanglement mean for mixtures vs. coherent superpositions?
 3. Why does the readout sometimes report **`continuum / higher n`** during strong pulses, and how does the browser solve the full 3D quantum dynamics on the fly?
 
 ---
@@ -23,13 +23,13 @@ The unique answer is the **time-reversed replica** of spontaneous emission:
 
 ---
 
-## 6.2 Time Compression (10⁶–10⁸ Cycles vs. 24–52 Simulated Cycles) & Lorentzian Lineshape
+## 6.2 Time Compression (10⁶–10⁸ Cycles vs. 24 Simulated Cycles) & Lorentzian Lineshape
 
 Because electromagnetic coupling is weak (α ≈ 1/137), real atomic photons last millions of optical cycles. For **Lyman-α (1s → 2p)**, τ = 1.595 ns spans **N ≈ 3.94 × 10⁶ cycles**; for the partial **2p → 3s** channel (*A* = 6.317 × 10⁶ s⁻¹, τ = 158.3 ns), the natural photon spans **~7.23 × 10⁷ cycles** (versus **~2.03 × 10⁷ cycles** for the faster 44.5 ns **2s → 3p** H<sub>α</sub> channel).
 
 Simulating millions of cycles cycle-by-cycle in real time would take hours. To keep individual light oscillations and Bohmian trajectories clearly visible, `electron_orbitals.html`:
 1. Computes and reports the **exact physical Weisskopf–Wigner quantities** (Γ, linewidth Γ/2π, lifetime τ = 1/Γ, and natural cycles *N*).
-2. Renders the pulse **time-compressed** with Γ<sub>sim</sub> = 5/*T* over *N*<sub>sim</sub> = 24 cycles (automatically stretched up to 52 cycles for *n* ≥ 3 so the field stays below the ionization threshold). At *t* = 0, the envelope begins at *e*<sup>−2.5</sup> ≈ 8.2% of *E*₀ and surges rapidly in the final quarter before snapping off at *t* = *T*.
+2. Renders the pulse **time-compressed** with Γ<sub>sim</sub> = 5/*T* over *N*<sub>sim</sub> = 24 cycles. At *t* = 0, the envelope begins at *e*<sup>−2.5</sup> ≈ 8.2% of *E*₀ and surges rapidly in the final quarter before snapping off at *t* = *T*.
 
 ### Natural Lorentzian Lineshape & Spectroscopy Broadening
 Just as an exponentially decaying *e*<sup>−Γ*t*/2</sup> wavepacket Fourier-transforms into a **Lorentzian** spectral profile, absorption probability falls off with detuning Δω = ω<sub>L</sub> − ω₀ (scaled in `det` units of half-width Γ/2) as:
@@ -80,20 +80,21 @@ At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), this predicts 1 
 
 ---
 
-## 6.3 Polarization Projection, Atom–Photon Entanglement & Mixed States
+## 6.3 Branch Projection (Polarization & Electron Superpositions), Atom–Photon Entanglement & Mixed States
 
-In **Single photon** mode, you are free to choose *any* polarization vector **ε** manually—even when selection rules or Zeeman splitting favor a narrower dipole polarization. Look at the **Pol. match** readout beneath **Wavepacket** to see how `electron_orbitals.html` handles this honestly.
+In **Single photon** mode, you are free to choose *any* initial superposition and *any* polarization vector **ε** manually—even when selection rules, non-resonant spectator orbitals, or Zeeman splitting couple only a fraction of the joint atom–photon state. Look at the **Branch match** readout beneath **Wavepacket** (and click **Match** beside the polarization chips whenever you want to snap **ε** to the transition's valid dipole polarization).
 
-### How the Simulator Projects **ε → ε**<sub>int</sub> (Bandwidth-Aware Branching)
-Around the chosen transition energy ω₀, the simulated wavepacket has spectral half-width `bw` = Γ<sub>sim</sub>/2. Within the active target shell, any sublevel whose transition frequency falls within `bw` of the selected transition defines the **interacting polarization subspace**:
-- **Unresolved levels (e.g., *B*<sub>*z*</sub> = 0, or weak fields where Zeeman splitting ≪ `bw`):** All magnetic sublevels (*m* = −1, 0, +1) overlap in energy within the photon spectrum. Linear **x̂** = (**σ**⁺ + **σ**⁻)/√2 matches **100%** and excites a genuine coherent `2p_x` (Larmor-precessing) superposition without over-rotating.
-- **Resolved Zeeman sublevels or chiral states (e.g., `1s → 2p, Δm = −1` at strong *B*<sub>*z*</sub> with `pol = x`, or `2p,+1 → 1s` with `pol = x`):** Because the **σ**⁺ line lies well outside `bw` (or is dipole-blocked), the interacting dipole operator couples *only* **σ**⁻ (or **σ**⁺ downward). Orthogonal **ε** (`z` or `σ⁺` on Δ*m* = −1) shows **0% match (blocked)**. For linear **x̂**, **ε** = *c*<sub>int</sub> **ε**<sub>int</sub> + *c*<sub>⊥</sub> **ε**<sub>⊥</sub> gives **Pol. match = \|*c*<sub>int</sub>\|² = 50%**.
-- Rather than secretly doubling pulse energy *E*₀² or showing an unabsorbed arrow on the **E**(*t*) gizmo, `electron_orbitals.html` **collapses ε onto ε**<sub>int</sub>, calibrates exact 1-photon area Θ = 1.00π for **ε**<sub>int</sub>, and simulates strictly that **absorbed interacting branch**.
+### How the Simulator Projects the Interacting Branch (Bandwidth-Aware Branching)
+Around the chosen transition energy ω₀, the simulated wavepacket has spectral half-width `bw` = Γ<sub>sim</sub>/2. The simulator computes two independent overlaps inside `bw`:
+- **Active electron overlap (`elecMatch`):** Any initial orbital component whose energy falls outside `bw` of the chosen channel (for example, `0.20 |2p⟩` in `0.98 |1s⟩ + 0.20 |2p⟩` during `1s → 3p`, or an off-resonance Zeeman sublevel at large *B*<sub>*z*</sub>) does not interact and passes alongside an unabsorbed photon in `|1⟩_field`. Conditioned on the transition occurring (`0.98² ≈ 96%`), **Single photon** collapses onto the active initial orbital (`|1s⟩ → |3p⟩`), whereas a macroscopic laser coherent state (`Coherent EM wave`) does *not* entangle photon number and preserves the coherent `0.20 |2p⟩` spectator.
+- **Unresolved polarization (e.g., *B*<sub>*z*</sub> = 0, or weak fields where Zeeman splitting ≪ `bw`):** All magnetic sublevels (*m* = −1, 0, +1) overlap in energy within the photon spectrum. Linear **x̂** = (**σ**⁺ + **σ**⁻)/√2 matches **100%** and excites a genuine coherent `2p_x` (Larmor-precessing) superposition without over-rotating.
+- **Resolved Zeeman sublevels or chiral stimulated emission (e.g., `1s → 2p, Δm = −1` at *B*<sub>*z*</sub> = 0.05 a.u. with `pol = x`, or `2p,+1 → 1s · stim. emit` with `pol = x`):** Because the **σ**⁺ line lies well outside `bw` (or is dipole-blocked—wrong spin `σ⁻` on `2p,+1 → 1s` cannot stimulate emission!), the interacting dipole operator couples *only* **σ**⁻ (or **σ**⁺ downward). Orthogonal **ε** shows **0% match (blocked)**; linear **x̂** gives **Branch match = 50%** (and combined with an `e⁻` spectator overlap gives `elecMatch × polMatch`).
+- Rather than secretly multiplying pulse energy or leaving unentangled coherence after photon tracing, `electron_orbitals.html` **collapses onto the active electron subspace and ε<sub>int</sub>**, calibrates Θ = 1.00π for that branch, and simulates strictly the **post-selected transition arm**.
 
 ```demo
 {
   "label": "Zeeman-resolved linear x → 50% σ⁻ branch (B_z = 0.05 a.u.)",
-  "caption": "At B_z = 0.05 a.u. (11.8 kT), σ⁻ (2p,−1) and σ⁺ (2p,+1) are resolved well outside bw: Pol. match reads 50% (collapses → σ⁻), and the E(t) gizmo rotates cleanly as σ⁻.",
+  "caption": "At B_z = 0.05 a.u. (11.8 kT), σ⁻ (2p,−1) and σ⁺ (2p,+1) are resolved well outside bw: Branch match reads 50% (collapses → σ⁻), and the E(t) gizmo rotates cleanly as σ⁻.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0.05,
   "tilt": 75,
@@ -113,7 +114,7 @@ Around the chosen transition energy ω₀, the simulated wavepacket has spectral
 ```demo
 {
   "label": "Weak B_z = 0.0004 a.u.: unresolved 100% match → precessing 2p_x",
-  "caption": "Here the Zeeman splitting (~94 T) is far smaller than bw: both σ⁺ and σ⁻ overlap, Pol. match = 100%, and x-pol excites a real Larmor-precessing 2p_x superposition!",
+  "caption": "Here the Zeeman splitting (~94 T) is far smaller than bw: both σ⁺ and σ⁻ overlap, Branch match = 100%, and x-pol excites a real Larmor-precessing 2p_x superposition!",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0.0004,
   "tilt": 85,
@@ -156,13 +157,13 @@ Look closely at those two terms: the joint superposition contains **two compleme
 
 **Restoring interference:** Only if we **project the outgoing photon onto the {\|+⟩ = (\|0⟩ + \|1⟩)/√2, \|−⟩ = (\|0⟩ − \|1⟩)/√2} basis** and sort atomic measurements using **coincidence counters**—keeping only runs where the photon clicks in \|+⟩ (or only \|−⟩)—do we erase the which-way record and recover full interference fringes! (In the laboratory, projecting two orthogonal 1-photon polarization/path states onto (\|1<sub>*A*</sub>⟩ ± \|1<sub>*B*</sub>⟩)/√2 uses a polarizer or 50/50 beam splitter, whereas projecting photon-number states \|0⟩ ± \|1⟩ requires homodyne interference with a phase-locked local oscillator.)
 
-> **Simulation Summary:** Showing **Pol. match** and simulating the collapsed interacting component **ε**<sub>int</sub> displays the **post-selected absorbed branch** (which occurs in **Pol. match**% of trials, while 100% − **Pol. match**% passes unabsorbed). Meanwhile, mid-pulse and detuned (`det ≠ 0`) trajectories under the semiclassical **r**·**E**(*t*) solver evolve as a pure coherent superposition rather than a photon-traced mixed state.
+> **Simulation Summary:** Showing **Branch match** (`elecMatch × polMatch`) and simulating the collapsed active electron channel and **ε**<sub>int</sub> displays the **post-selected transition branch** (which occurs in **Branch match**% of trials, while 100% − **Branch match**% leaves the photon unabsorbed / spectator unchanged). Meanwhile, mid-pulse and detuned (`det ≠ 0`) trajectories from a matched initial branch evolve coherently (modeling the quantum-erased `|+⟩` homodyne outcome rather than a photon-traced mixed state).
 
 ---
 
 ## 6.4 Deriving Over-the-Barrier Ionization (*E*<sub>OBI</sub> = 1 / 16*n*⁴)
 
-Why must higher-*n* single-photon pulses stretch beyond 24 cycles? Because squeezing a π-pulse into a shorter time *T* demands a stronger peak field *E*₀—and above a sharp threshold, the electric field literally tears the electron out of the atom!
+In **Coherent EM wave** mode, why does cranking **Power** up—or squeezing a pulse into too few optical cycles—literally tear the electron out of the atom? Because squeezing a π-pulse into a short time *T* demands a strong peak field *E*₀, and above a sharp threshold the electric potential drops below the orbital's binding energy!
 
 We can derive that exact threshold with **first-year calculus**. Along the electric-field axis (*z* > 0 when −*qE*₀*z* pulls the electron toward +*z*, in atomic units), the total potential energy is Coulomb attraction minus the linear field ramp:
 
@@ -181,13 +182,13 @@ Plug *z*<sub>max</sub> back into *U*(*z*) to get the **barrier peak height**:
 > −2 √*E*₀ = −1 / (2*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; √*E*₀ = 1 / (4*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; ***E*<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴)**
 
 Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈ 0.0625 a.u.; for *n* = 3, *E*<sub>OBI</sub> = 1/1296 ≈ 7.72 × 10⁻⁴ a.u.—over 80 times lower!
-- In **Single photon** mode for *n* ≥ 3, the code automatically stretches the cycle count (up to 52 cycles) so *E*₀ ≤ *E*<sub>OBI</sub>(*n*), keeping >96% of the wavefunction cleanly bound.
-- In **Coherent EM wave** mode, cranking **Power** up pushes *E*₀ past *E*<sub>OBI</sub>, driving real **photoionization** into **`continuum / higher n`**! Notice in Demo #4 below (`2s → 3p` at 1.889 eV, `Power = 16`): besides pushing *E*₀ above 4.5× *E*<sub>OBI</sub>(3), once amplitude reaches *n* = 3 (binding energy 1.512 eV), each 1.889 eV photon itself exceeds the ionization threshold (just like the **photoelectric effect**!), while two photons exceed *n* = 2's 3.401 eV threshold (**resonance-enhanced multiphoton ionization, REMPI**).
+- In **Single photon** mode, a true weak-field photon takes 10⁶–10⁸ cycles and never reaches *E*<sub>OBI</sub>; compressing into 24 visual cycles would exceed *E*<sub>OBI</sub> if fed to a strong-field solver, so **Single photon** mode instead uses the **weak-field RWA + exact multipole continuity solver** (§6.5), keeping *every* transition *n* = 1..7 cleanly 100% bound without compression ionization!
+- In **Coherent EM wave** mode (full continuous radial-grid TDSE), cranking **Power** up pushes *E*₀ past *E*<sub>OBI</sub>, driving real **photoionization** into **`continuum / higher n`** (with an inline warning when *E*₀ > 2 *E*<sub>OBI</sub>—click the **`1π`** button to jump straight to clean Θ = 1.00π transfer at the selected Duration!). Notice in Demo #4 below (`2s → 3p` at 1.889 eV, `Power = 16`): besides pushing *E*₀ above 4.5× *E*<sub>OBI</sub>(3), once amplitude reaches *n* = 3 (binding energy 1.512 eV), each 1.889 eV photon itself exceeds the ionization threshold (just like the **photoelectric effect**!), while two photons exceed *n* = 2's 3.401 eV threshold (**resonance-enhanced multiphoton ionization, REMPI**).
 
 ```demo
 {
-  "label": "OBI-safe single photon (2p,+1 → 3d,+2)",
-  "caption": "Stretches automatically to 41 cycles so E₀ ≤ E_OBI(3), expanding the orbital smoothly from r ≈ 4.5 to 10.3 a0 (>96% bound).",
+  "label": "Clean higher-shell single photon (2p,+1 → 3d,+2)",
+  "caption": "Weak-field RWA + multipole continuity flow transfers 100% cleanly from r ≈ 4.5 to 10.3 a0 in 24 cycles with zero OBI ionization.",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 55,
@@ -228,10 +229,17 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 
 ---
 
-## 6.5 Inside the Continuous Radial-Grid TDSE Solver
+## 6.5 Two Solvers: Weak-Field RWA + Continuity Flow vs. Continuous Radial-Grid TDSE
 
-Rather than hard-coding a simplified 2-level Rabi formula, `electron_orbitals.html` solves the genuine **3D Time-Dependent Schrödinger Equation** during every pulse:
+`electron_orbitals.html` chooses the right quantum solver for each physical regime:
 
+### A. `Single photon` Mode: Weak-Field RWA + Exact Multipole Continuity Flow
+A real 1-photon wavepacket is extremely weak (*E*₀ ≪ *E*<sub>OBI</sub>), so non-resonant counter-rotating terms and competing shells never get dressed during absorption or stimulated emission:
+1. **Interaction-picture Rotating-Wave Approximation (RWA):** Evolves the resonant bound channel amplitudes directly under the exact dipole coupling within the simulated *e*<sup>+Γ<sub>sim</sub>*t*/2</sup> wavepacket over 24 cycles—eliminating time-compression OBI ionization and accidental multi-level dressing for all *n* = 1..7.
+2. **Exact multipole continuity flow (∇·δ**J** = −σ):** Dropping off-resonant couplings makes the projected Hamiltonian mildly non-local (leaving a residual radial population source σ = −2 Im ∑ *c*<sub>*a*</sub>* *H*<sub>ab</sub> *c*<sub>*b*</sub> ψ<sub>*a*</sub>* ψ<sub>*b*</sub> across shells of different radii). The solver integrates Poisson's equation ∇²χ = −σ multipole-by-multipole on a 1D spherical mesh and adds δ**J** = ∇χ to **J** so ∂|ψ|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 holds **identically**, transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
+
+### B. `Coherent EM wave` Mode: Continuous 3D Radial-Grid TDSE
+During strong laser/RF pulses, `electron_orbitals.html` solves the genuine **full-spectrum TDSE** on the fly:
 1. **Radial-grid spherical-harmonic expansion:** The wavefunction is written as ψ(*r*, θ, φ, *t*) = ∑<sub>*l*≤*L*<sub>max</sub>,*m*</sub> [*u*<sub>*lm*</sub>(*r*, *t*)/*r*] *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) on a continuous radial mesh (~380 points, *L*<sub>max</sub> ≤ 5), capturing **all** bound shells, AC Stark shifts, multi-photon transitions, and continuum ionization simultaneously.
 2. **Unitary Strang-split propagation:** Each small time step splits the evolution into symmetric half-steps so the method stays **norm-conserving** (unitary) without blowing up: (a) a 4th-order **Numerov + Crank–Nicolson** tridiagonal matrix solver for the radial kinetic + Coulomb operator *Ĥ*₀ = −½ ∂²/∂*r*² + *l*(*l*+1)/(2*r*²) − 1/*r*, (b) an adaptive 4th-order **Runge–Kutta (RK4)** step for the **r**·**E**(*t*) or ½**B**₁(*t*)·**L** coupling across (*l*, *m*) channels, and (c) exact Zeeman *e*<sup>−*imB*<sub>*z*</sub>Δ*t*/2</sup> phase rotation.
 3. **Complex Absorbing Potential (CAP):** In the outer 14% of the radial grid, a smooth damping mask absorbs outgoing ionized probability (and attenuates outward radial drift) so unbound continuum waves leave cleanly instead of bouncing artificially off the simulation wall.
