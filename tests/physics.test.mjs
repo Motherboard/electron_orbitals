@@ -39,6 +39,12 @@ function createCoreContext() {
     hidden: false,
   });
 
+  const els = new Map();
+  const getEl = (id) => {
+    if (!els.has(id)) els.set(id, fakeEl());
+    return els.get(id);
+  };
+
   const sandbox = {
     Math,
     Number,
@@ -51,7 +57,7 @@ function createCoreContext() {
     JSON,
     console,
     document: {
-      getElementById: fakeEl,
+      getElementById: getEl,
       querySelector: fakeEl,
       querySelectorAll: () => [],
       createElement: fakeEl,
@@ -84,6 +90,13 @@ function createCoreContext() {
       computeEffective, getEff: () => eff, getEffStatus: () => effStatus,
       setComps: (c) => { components = c; computeEffective(); },
       setBau: (b) => { Bau = b; updateEnergies(); },
+      setMode: (m) => { interactionMode = m; },
+      setPol: (x, y, z) => {
+        pol[0] = { axis: 'x', amp: x[0], phaseDeg: x[1] };
+        pol[1] = { axis: 'y', amp: y[0], phaseDeg: y[1] };
+        pol[2] = { axis: 'z', amp: z[0], phaseDeg: z[1] };
+      },
+      setEl: (id, v) => { document.getElementById(id).value = String(v); },
       setE: (v) => { E = v; },
       setP: (arr) => { P = arr; },
       getP: () => P,
@@ -1108,4 +1121,28 @@ test('weak-field RWA single-photon solver, multipole continuity flow, and electr
   const trPi = api.getTransitionList().find((t) => t.key === '3|1|1|0');
   const resPi = api.resolvePhotonPolarization(api.buildCoupledSystem(trPi), trPi, polX, 2.5 / ((24 * 2 * Math.PI) / trPi.omega0));
   assert.ok(dotAbs(resPi.bestPol, polZ) > 0.9999);
+
+  // 6. Near-orthogonal polarization (271° vs 90° on 2s->2p,+1 Zeeman E1) keeps coherent E0 bounded via matched bestPol
+  api.setBau(0.006266);
+  api.setComps([{ id: 1, n: 2, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  const trZe = api.getTransitionList().find((t) => t.key === '2|0|2|1|1');
+  const sysZe = api.buildCoupledSystem(trZe);
+  const pol271 = makePol([{ amp: 0.71, phaseDeg: 0 }, { amp: 0.71, phaseDeg: 271 }, { amp: 0, phaseDeg: 0 }]);
+  const bwZe = trZe.omega0 / (2 * 50);
+  const resZe = api.resolvePhotonPolarization(sysZe, trZe, pol271, bwZe);
+  const muLeak = api.computeBrightDipole(sysZe, trZe, pol271).muRabi;
+  const muBest = api.computeBrightDipole(sysZe, trZe, resZe.bestPol).muRabi;
+  assert.ok(muLeak < 0.05 && muBest > 2.9, `Expected muLeak << muBest (~3.0), got ${muLeak} vs ${muBest}`);
+  assert.ok(dotAbs(resZe.bestPol, polSp) > 0.9999);
+  api.setMode('wave');
+  api.setPol([0.71, 0], [0.71, 271], [0, 0]);
+  api.setEl('tr-sel', '2|0|2|1|1');
+  api.setEl('pdur', 50);
+  api.setEl('pdet', 0);
+  api.setEl('ppow', 1);
+  const cfgZe = api.getPulseConfig();
+  assert.ok(cfgZe.E0 < 0.05 * cfgZe.Eobi, `Expected E0 << Eobi for 271° leak, got E0/Eobi=${cfgZe.E0 / cfgZe.Eobi}`);
+  assert.ok(cfgZe.theta < 0.1 * Math.PI, `Expected small Theta for 271° leak, got theta/pi=${cfgZe.theta / Math.PI}`);
+  api.setMode('photon');
+  api.setBau(0);
 });

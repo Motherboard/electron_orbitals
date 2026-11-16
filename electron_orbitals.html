@@ -1288,13 +1288,14 @@ const isM1=trSpec.kind==='M1';
 const nUpper=Math.max(trSpec.n1,trSpec.n2);
 const Eobi=isM1?Infinity:(1/(16*Math.pow(nUpper,4)));
 let polRes=null,muRabi=0,muShell=0,polInt=np,bestPol=np,match=1,polMatch=1,elecMatch=1,collapsed=false,polCollapsed=false,elecCollapsed=false,cActive=sys.c0;
+const bw0=isPhoton?(0.5*PHOTON_KTAU/(cyc*TAU/omega0)):(omega0/(2*cyc));
+polRes=resolvePhotonPolarization(sys,trSpec,np,Math.max(bw0,1e-12));
+bestPol=polRes.bestPol;
 if(isPhoton){
-const T0=cyc*TAU/omega0,bw0=0.5*PHOTON_KTAU/T0;
-polRes=resolvePhotonPolarization(sys,trSpec,np,bw0);
-({pol:polInt,bestPol,match,polMatch,elecMatch,muRabi,muShell,collapsed,polCollapsed,elecCollapsed,cActive}=polRes);
-}else{
-({muRabi,muShell}=computeBrightDipole(sys,trSpec,np));}
-const muRef=muRabi>1e-7?muRabi:muShell;
+({pol:polInt,match,polMatch,elecMatch,muRabi,muShell,collapsed,polCollapsed,elecCollapsed,cActive}=polRes);
+}else{({muRabi,muShell}=computeBrightDipole(sys,trSpec,np));}
+const muBest=bestPol?computeBrightDipole(sys,trSpec,bestPol).muRabi:0;
+const muRef=isPhoton?(muRabi>1e-7?muRabi:muShell):Math.max(muRabi,muBest,muShell);
 const T=cyc*TAU/omega0;
 const TrefCyc=(isM1||nUpper<=2)?10:Math.min(80,Math.max(Math.round(10*Math.pow(nUpper/2,2.5)),muRef>1e-7?Math.ceil(omega0/(muRef*1.15*Eobi)):28));
 const Tref=TrefCyc*TAU/omega0;
@@ -1592,31 +1593,37 @@ function stepPulse(dtFrame,spd,span){
 const dtSim=Math.min(dtFrame*spd*tscale(),pulse.T-pulse.t);
 if(dtSim<=0){finishPulse(false);return;}
 const isM1=pulse.kind==='M1';
+const minStep=Math.min(Math.max(span/22,1e-6),Math.max(0.35,0.04*tscaleBase()));
+const runSub=(nSub,stepFn)=>{
+const h=dtSim/nSub,stride=Math.max(1,Math.ceil(minStep/h));
+const fastWin=dtSim>22*stride*h,firstS=fastWin?(nSub-1-21*stride):-1;
+if(fastWin)for(const q of P)q.hist.length=0;
+for(let s=0;s<nSub;s++){
+const tStep=pulse.t+s*h,tEnd=tStep+h;
+stepFn(tStep,h);
+if(fastWin){
+if(s>=firstS&&(nSub-1-s)%stride===0){pulse.lastHistT=tEnd;for(const q of P)q.hist.push([q.x,q.y,q.z,tEnd]);}
+}else if((tEnd-pulse.lastHistT)>=minStep){
+pulse.lastHistT=tEnd;
+for(const q of P){q.hist.push([q.x,q.y,q.z,tEnd]);if(q.hist.length>22)q.hist.shift();}}}};
 if(pulse.photonSim){
 const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,1e-4);
 const dtTarget=isM1?Math.min(4.0,Math.max(0.4,0.25/Math.max(pulse.omegaL,Math.abs(Bau),0.05))):Math.min(0.42,Math.max(0.18,0.25/Math.max(pulse.omegaL,Math.abs(Bau),0.05)));
 const nSub=Math.max(1,Math.min(48,Math.ceil(Math.max(dtSim/dtTarget,maxFreq*dtSim/0.14))));
-const h=dtSim/nSub;
-for(let s=0;s<nSub;s++)advancePhotonRK4(pulse.photonSim,pulse.t+s*h,h);
+runSub(nSub,(tStep,h)=>advancePhotonRK4(pulse.photonSim,tStep,h));
 pulse.t+=dtSim;
 pulse.boundNorm=1;pulse.totalNorm=1;
 }else{
 const maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,isM1?(pulse.E0*(pulse.trSpec.l1+1)):(pulse.E0*pulse.grid.rMax),1e-4);
 const dtTarget=isM1?Math.min(0.8,0.18/Math.max(pulse.omegaL,Math.abs(Bau),0.05)):Math.min(0.35,Math.max(0.16,1.15*pulse.grid.dr));
-const nSub=Math.max(1,Math.min(64,Math.ceil(Math.max(dtSim/dtTarget,maxFreq*dtSim/0.1))));
-const h=dtSim/nSub;
-for(let s=0;s<nSub;s++)advanceGridParticlesRK4(pulse.grid,pulse,pulse.t+s*h,h);
+const nSub=Math.max(1,Math.min(128,Math.ceil(Math.max(dtSim/dtTarget,maxFreq*dtSim/0.1))));
+runSub(nSub,(tStep,h)=>advanceGridParticlesRK4(pulse.grid,pulse,tStep,h));
 
 pulse.t+=dtSim;
 const projInfo=projectGridStates(pulse.grid,pulse.c);
 pulse.boundNorm=projInfo.boundNorm;
 pulse.totalNorm=projInfo.totalNorm;}
-const minStep=Math.max(span/22,1e-6);
-const rec=(pulse.t-pulse.lastHistT)>=minStep;
-if(rec)pulse.lastHistT=pulse.t;
-for(const q of P){
-q.col=colr(Math.hypot(q.x,q.y));
-if(rec){q.hist.push([q.x,q.y,q.z,pulse.t]);if(q.hist.length>22)q.hist.shift();}}
+for(const q of P)q.col=colr(Math.hypot(q.x,q.y));
 overlayDirty=true;
 updatePulseInfo();
 if(pulse.t>=pulse.T-1e-9)finishPulse(false);}
@@ -1784,9 +1791,9 @@ const pops=[];
 for(let i=0;i<pulse.proj.length;i++){
 const p=pulse.c[i*2]*pulse.c[i*2]+pulse.c[i*2+1]*pulse.c[i*2+1];
 if(p>=0.005){const s=pulse.proj[i];pops.push({p,lbl:'|'+s.n+LET[s.l]+', '+s.m+'⟩: '+Math.round(p*100)+'%'});}}
-pops.sort((a,b)=>b.p-a.p);
 const cont=Math.max(0,1-pulse.boundNorm);
 if(cont>=0.025)pops.push({p:cont,lbl:'continuum / higher n: '+Math.round(cont*100)+'%'});
+pops.sort((a,b)=>b.p-a.p);
 const modeName=pulse.mode==='photon'?'Single-photon e<sup>+Γt/2</sup> wavepacket':(pulse.kind==='M1'?'Coherent Zeeman RF (M1) pulse':'Coherent EM pulse');
 const natInfo=pulse.mode==='photon'&&pulse.ww?(', Γ = '+fmtGamma(pulse.ww.gammaSi)+', N = '+fmtCycNat(pulse.ww.cycNat)):'';
 const matchInfo=pulse.mode==='photon'&&pulse.collapsed?(', match '+Math.round(pulse.match*100)+'%'):'';
@@ -2105,6 +2112,7 @@ const suffix=isWave?'':' within the photon linewidth';
 $('em-note').textContent=prefix+(isM1Cfg?'magnetic ':'')+'dipole coupling between the active state and '+cfg.trSpec.n2+LET[cfg.trSpec.l2]+(isM1Cfg?' (m='+cfg.trSpec.m2+')':'')+' for this polarization'+suffix+' (selection rule mismatch). Adjust x/y/z polarization, click Match, or change the initial state.';
 }else if(isWave){
 let warn='';
+if(cfg.muRef>1e-12&&cfg.muRabi<0.95*cfg.muRef)warn+=' Polarization captures only '+Math.round(100*cfg.muRabi/cfg.muRef)+'% of the transition dipole (click Match for full coupling).';
 if(Number.isFinite(cfg.Eobi)&&cfg.E0>2*cfg.Eobi)warn+=' Strong field (E₀ ≈ '+(cfg.E0/cfg.Eobi).toFixed(1)+'× E_OBI): expect OBI ionization—lower Power or click 1π for clean bound transfer.';
 if(Math.abs(Bau)>0.12)warn+=' High B_z (|B_z| > 0.12 a.u.) exceeds the weak-field linear-Zeeman regime and lowers negative-m thresholds.';
 $('em-note').textContent='Incoming coherent '+(isM1Cfg?'RF magnetic (B₁) ':'sin²-envelope ')+'EM pulse at ω = '+omEvStr+(isEmit?' (drives stimulated emission & Rabi cycling)':'')+' · Rabi pulse area Θ = '+(cfg.theta/Math.PI).toFixed(2)+'π (π transfers population; 2π flips phase/m across dark & bright states).'+warn;

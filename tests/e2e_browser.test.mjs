@@ -716,10 +716,34 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       Bau = 0.25; rescaleB(); buildTransitions();
       document.getElementById('pol-match-btn').click();
       const highBWarn = document.getElementById('em-note').textContent;
+      // Near-orthogonal y phase = 271° on 2s->2p,+1 Zeeman E1 keeps E0 << E_OBI, drops Theta, and records smooth trails
+      const sels2 = document.querySelectorAll('.comp select');
+      sels2[0].value = '2'; sels2[0].dispatchEvent(new Event('change'));
+      Bau = 0.006266; rescaleB(); buildTransitions();
+      document.getElementById('tr-sel').value = '2|0|2|1|1';
+      document.getElementById('tr-sel').dispatchEvent(new Event('change'));
+      document.querySelector('.chip[data-pol="sm"]').click();
+      document.getElementById('pol-p-y').value = '271';
+      document.getElementById('pol-p-y').dispatchEvent(new Event('input'));
+      document.getElementById('pdur').value = '50';
+      document.getElementById('pdur').dispatchEvent(new Event('input'));
+      document.getElementById('ppow').value = '1';
+      document.getElementById('ppow').dispatchEvent(new Event('input'));
+      const orthCfg = getPulseConfig();
+      const orthNote = document.getElementById('em-note').textContent;
+      startPulse();
+      stepPulse(0.03, 1, tscale() * 0.7);
+      const trailLen = P[0]?.hist?.length || 0;
+      const trailDtMax = trailLen >= 2 ? Math.max(...P[0].hist.slice(1).map((h, idx) => h[3] - P[0].hist[idx][3])) : 999;
+      pulse.boundNorm = 0.19;
+      for (let i = 0; i < Math.min(6, pulse.c.length / 2); i++) { pulse.c[i * 2] = i === 0 ? 0.3 : 0.1; pulse.c[i * 2 + 1] = 0; }
+      updatePulseInfo();
+      const contInfoText = document.getElementById('info').textContent;
+      finishPulse(true);
       Bau = 0; rescaleB(); buildTransitions(); updateEmUI();
       const overflow320 = document.documentElement.scrollWidth > window.innerWidth;
       document.getElementById('tut-toggle').click();
-      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Readout1s2p, highBWarn, overflow320 };
+      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, overflow320 };
     })()`);
     assert.deepEqual(postSupAndStim.compsAfterSup, [{ n: 3, l: 1, m: 1, amp: 1 }]);
     assert.match(postSupAndStim.trOptText, /stim\. emit/);
@@ -732,6 +756,12 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(postSupAndStim.p1Pow1s2p, 0.04);
     assert.match(postSupAndStim.p1Readout1s2p, /Θ=1\.00π/);
     assert.match(postSupAndStim.highBWarn, /High B_z/);
+    assert.ok(postSupAndStim.orthCfg.E0 < 0.05 * postSupAndStim.orthCfg.Eobi, `Expected E0 << Eobi for 271° leak, got E0=${postSupAndStim.orthCfg.E0} vs Eobi=${postSupAndStim.orthCfg.Eobi}`);
+    assert.ok(postSupAndStim.orthCfg.theta < 0.1 * Math.PI, `Expected small Theta for 271° leak, got ${postSupAndStim.orthCfg.theta}`);
+    assert.match(postSupAndStim.orthNote, /Polarization captures only/);
+    assert.ok(postSupAndStim.trailLen >= 10, `Expected dense substep trails during fast Zeeman frame, got ${postSupAndStim.trailLen}`);
+    assert.ok(postSupAndStim.trailDtMax <= 4.0, `Expected smooth small trail step <= 4 a.u., got ${postSupAndStim.trailDtMax}`);
+    assert.match(postSupAndStim.contInfoText, /continuum \/ higher n: 81%/);
     assert.equal(postSupAndStim.overflow320, false);
 
     // 6. Verify zero runtime or console errors across the session
