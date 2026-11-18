@@ -799,6 +799,143 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(postSupAndStim.ch6HasRawStars, false);
     assert.equal(postSupAndStim.overflow320, false);
 
+    // 5g. Blob Worker over file://, <16ms main-thread responsiveness during 4f->5g Coherent EM + #tilt drag, and stepGridDipole fast-path accuracy & speedup
+    const workerSetup = await evalJS(`(() => {
+      while (document.querySelectorAll('.rm').length > 1) document.querySelectorAll('.rm')[1].click();
+      const sels = document.querySelectorAll('.comp select');
+      sels[0].value = '4'; sels[0].dispatchEvent(new Event('change'));
+      sels[1].value = '3'; sels[1].dispatchEvent(new Event('change'));
+      sels[2].value = '3'; sels[2].dispatchEvent(new Event('change'));
+      document.querySelector('input[name="imode"][value="wave"]').checked = true;
+      document.querySelector('input[name="imode"][value="wave"]').dispatchEvent(new Event('change'));
+      document.querySelector('.chip[data-pol="sp"]').click();
+      document.getElementById('tr-sel').value = '4|3|5|4';
+      document.getElementById('tr-sel').dispatchEvent(new Event('change'));
+      document.getElementById('pdur').value = '16';
+      document.getElementById('pdur').dispatchEvent(new Event('input'));
+      document.getElementById('ppow').value = '1';
+      document.getElementById('ppow').dispatchEvent(new Event('input'));
+      document.getElementById('spd').value = '1.5';
+      document.getElementById('spd').dispatchEvent(new Event('input'));
+
+      // Measure stepGridDipole fast path vs unfiltered 150-edge reference on 4f,+3 -> 5g,+4
+      const cfg = getPulseConfig();
+      const pObj = { kind: 'E1', trSpec: cfg.trSpec, omegaL: cfg.omegaL, T: cfg.T, gamma: 0, E0: cfg.E0, pol: cfg.polInt };
+      const gFast = buildGridSystem(cfg.trSpec, cfg.sys);
+      const gFull = buildGridSystem(cfg.trSpec, cfg.sys);
+      function stepDipoleUnfiltered(g, dt, ex, ey, ez) {
+        const amp = Math.hypot(ex, ey, ez); if (!amp) return;
+        const { Nr, dr, Mch, URe, UIm, edges, scratch } = g, nE = edges.length;
+        const { eVR, eVI, tmpR, tmpI, k1R, k1I, k2R, k2I, k3R, k3I, k4R, k4I } = scratch;
+        for (let e = 0; e < nE; e++) { const ed = edges[e]; eVR[e] = ex * ed.xRe + ey * ed.yRe + ez * ed.zRe; eVI[e] = ex * ed.xIm + ey * ed.yIm + ez * ed.zIm; }
+        const ap = (rS, sR, sI, dR, dI) => {
+          dR.fill(0); dI.fill(0);
+          for (let e = 0; e < nE; e++) {
+            const vr = eVR[e], vi = eVI[e], ed = edges[e], k = ed.j, i = ed.i, xR = sR[k], xI = sI[k];
+            dR[i] += rS * (vr * xI + vi * xR); dI[i] -= rS * (vr * xR - vi * xI);
+          }
+        };
+        for (let j = 0; j < Nr; j++) {
+          const base = j * Mch, rS = (j + 1) * dr;
+          const nS = Math.max(1, Math.min(32, Math.ceil(Math.abs(dt) * rS * amp / 0.35)));
+          const hD = dt / nS;
+          for (let s = 0; s < nS; s++) {
+            for (let i = 0; i < Mch; i++) { tmpR[i] = URe[base + i]; tmpI[i] = UIm[base + i]; }
+            ap(rS, tmpR, tmpI, k1R, k1I);
+            for (let i = 0; i < Mch; i++) { tmpR[i] = URe[base + i] + 0.5 * hD * k1R[i]; tmpI[i] = UIm[base + i] + 0.5 * hD * k1I[i]; }
+            ap(rS, tmpR, tmpI, k2R, k2I);
+            for (let i = 0; i < Mch; i++) { tmpR[i] = URe[base + i] + 0.5 * hD * k2R[i]; tmpI[i] = UIm[base + i] + 0.5 * hD * k2I[i]; }
+            ap(rS, tmpR, tmpI, k3R, k3I);
+            for (let i = 0; i < Mch; i++) { tmpR[i] = URe[base + i] + hD * k3R[i]; tmpI[i] = UIm[base + i] + hD * k3I[i]; }
+            ap(rS, tmpR, tmpI, k4R, k4I);
+            for (let i = 0; i < Mch; i++) {
+              URe[base + i] += (hD / 6) * (k1R[i] + 2 * k2R[i] + 2 * k3R[i] + k4R[i]);
+              UIm[base + i] += (hD / 6) * (k1I[i] + 2 * k2I[i] + 2 * k3I[i] + k4I[i]);
+            }
+          }
+        }
+        g.chAct.fill(1); syncGridActList(g);
+      }
+      const hStep = 0.34, tStart = 0.45 * cfg.T;
+      for (let s = 0; s < 120; s++) {
+        const tF = tStart + s * 0.5 * hStep;
+        const [ex, ey, ez] = fieldVecAt(pObj, tF);
+        advanceGridHalf(gFast, pObj, 0.5 * hStep, tF);
+        for (let ai = 0; ai < gFull.nActCh; ai++) stepGridChannelCN(gFull, gFull.chans[gFull.actChans[ai]].l, 0.25 * hStep, gFull.actChans[ai]);
+        if (ex || ey || ez) stepDipoleUnfiltered(gFull, 0.5 * hStep, ex, ey, ez);
+        for (let ai = 0; ai < gFull.nActCh; ai++) {
+          const c = gFull.actChans[ai];
+          stepGridChannelCN(gFull, gFull.chans[c].l, 0.25 * hStep, c);
+          for (let j = gFull.jCap; j < gFull.Nr; j++) { const att = Math.exp(-gFull.capRate[j] * 0.5 * hStep), off = j * gFull.Mch + c; gFull.URe[off] *= att; gFull.UIm[off] *= att; }
+        }
+      }
+      const cF = new Float64Array(gFast.projStates.length * 2), cU = new Float64Array(gFull.projStates.length * 2);
+      projectGridStates(gFast, cF); projectGridStates(gFull, cU);
+      let maxPopDiff = 0;
+      for (let i = 0; i < gFast.projStates.length; i++) {
+        maxPopDiff = Math.max(maxPopDiff, Math.abs((cF[2 * i] ** 2 + cF[2 * i + 1] ** 2) - (cU[2 * i] ** 2 + cU[2 * i + 1] ** 2)));
+      }
+      // Benchmark single stepGridDipole speedup (4 active channels [3d+2, 4f+3, 5g+2, 5g+4] vs full 150-edge unfiltered)
+      const gBench = buildGridSystem(cfg.trSpec, cfg.sys);
+      gBench.chAct[8] = 1; gBench.chAct[15] = 1; gBench.chAct[22] = 1; gBench.chAct[24] = 1; syncGridActList(gBench);
+      const savedAct = new Uint8Array(gBench.chAct);
+      for (let k = 0; k < 150; k++) { gBench.chAct.set(savedAct); stepGridDipole(gBench, 0.17, cfg.E0 * 0.7, cfg.E0 * 0.7, 0, false); }
+      for (let k = 0; k < 150; k++) stepDipoleUnfiltered(gBench, 0.17, cfg.E0 * 0.7, cfg.E0 * 0.7, 0);
+      const tf0 = performance.now();
+      for (let k = 0; k < 250; k++) { gBench.chAct.set(savedAct); stepGridDipole(gBench, 0.17, cfg.E0 * 0.7, cfg.E0 * 0.7, 0, false); }
+      const fastDipMs = (performance.now() - tf0) / 250;
+      const tu0 = performance.now();
+      for (let k = 0; k < 250; k++) stepDipoleUnfiltered(gBench, 0.17, cfg.E0 * 0.7, cfg.E0 * 0.7, 0);
+      const fullDipMs = (performance.now() - tu0) / 250;
+
+      // Launch live 4f->5g Coherent EM pulse in Blob Worker and instrument main-thread responsiveness
+      window.__e2eLag = [];
+      window.__e2eRafDts = [];
+      let prevTick = performance.now(), prevRaf = performance.now();
+      window.__e2eTimer = setInterval(() => { const now = performance.now(); window.__e2eLag.push(now - prevTick - 5); prevTick = now; }, 5);
+      function rafProbe(now) { window.__e2eRafDts.push(now - prevRaf); prevRaf = now; if (window.__e2eRafDts.length < 36) requestAnimationFrame(rafProbe); }
+      document.getElementById('fire').click();
+      requestAnimationFrame(rafProbe);
+      return { workerActive, maxPopDiff, fastDipMs, fullDipMs, speedup: fullDipMs / fastDipMs };
+    })()`);
+    assert.equal(workerSetup.workerActive, true, 'Expected inline Blob Worker to run over file://');
+    assert.ok(workerSetup.maxPopDiff < 1e-6, `Expected 4f->5g stepGridDipole fast path pop diff < 1e-6, got ${workerSetup.maxPopDiff}`);
+    assert.ok(workerSetup.fastDipMs < 0.25 && workerSetup.speedup >= 4, `Expected stepGridDipole speedup >= 4x (got ${workerSetup.speedup.toFixed(2)}x, fast=${workerSetup.fastDipMs.toFixed(3)}ms, full=${workerSetup.fullDipMs.toFixed(3)}ms)`);
+
+    const tiltInputTimes = [];
+    for (let step = 0; step < 10; step++) {
+      await new Promise((r) => setTimeout(r, 40));
+      const dt = await evalJS(`(() => {
+        const t0 = performance.now();
+        const el = document.getElementById('tilt');
+        if (${step} === 0) el.dispatchEvent(new PointerEvent('pointerdown'));
+        el.value = String(25 + ${step} * 5);
+        el.dispatchEvent(new Event('input'));
+        if (${step} === 9) el.dispatchEvent(new PointerEvent('pointerup'));
+        return performance.now() - t0;
+      })()`);
+      tiltInputTimes.push(dt);
+    }
+    await new Promise((r) => setTimeout(r, 200));
+    const workerLive = await evalJS(`(() => {
+      clearInterval(window.__e2eTimer);
+      const dts = window.__e2eRafDts.slice(1);
+      const lags = window.__e2eLag.slice(1);
+      const medRaf = dts.length ? [...dts].sort((a, b) => a - b)[Math.floor(dts.length / 2)] : 999;
+      const maxLag = lags.length ? Math.max(...lags) : 999;
+      const pulseT = pulse ? pulse.t : 0;
+      const hasOv = ovHasImage;
+      if (pulse) finishPulse(true);
+      document.getElementById('spd').value = '0.8';
+      document.getElementById('spd').dispatchEvent(new Event('input'));
+      return { pulseT, medRaf, maxLag, ovHasImage: hasOv };
+    })()`);
+    assert.ok(workerLive.pulseT > 20, `Expected worker to advance 4f->5g pulse smoothly, got pulseT=${workerLive.pulseT}`);
+    assert.ok(workerLive.maxLag < 16, `Expected main-thread event-loop lag < 16 ms during 4f->5g + #tilt drag, got ${workerLive.maxLag.toFixed(2)} ms`);
+    assert.ok(Math.max(...tiltInputTimes) < 16, `Expected #tilt input dispatch < 16 ms, got ${Math.max(...tiltInputTimes).toFixed(2)} ms`);
+    assert.ok(workerLive.medRaf < 25, `Expected smooth ~60 Hz rAF cadence during 4f->5g, got median ${workerLive.medRaf.toFixed(2)} ms`);
+    assert.equal(workerLive.ovHasImage, true);
+
     // 6. Verify zero runtime or console errors across the session
     const errors = cdp.events.filter(
       (e) =>

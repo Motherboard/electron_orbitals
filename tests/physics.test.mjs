@@ -566,16 +566,38 @@ test('2p->3d higher-shell calibration, Zeeman dipole selection, and strong-field
   assert.ok(api.computeBrightDipole(zSys, trDmMinus, polSm).muRabi > 0.5);
   api.setBau(0);
 
-  // 2. stepGridDipole explicit RK4 automatically substeps under large dt * rMax * |E|
+  // 2. stepGridDipole strong-field unitary eigenbasis (nS >= 4) preserves norm to 1e-11 and matches fine sub-stepped RK4 on oblique E1 & M1
   api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
   const tr2p3d = api.getTransitionList().find((t) => t.key === '2|1|3|2');
   assert.ok(tr2p3d);
   const sys23 = api.buildCoupledSystem(tr2p3d);
   const gStab = api.buildGridSystem(tr2p3d, sys23);
-  api.stepGridDipole(gStab, 0.8, 0.08, 0, 0);
   const cStab = new Float64Array(gStab.projStates.length * 2);
+  const initStab = api.projectGridStates(gStab, cStab);
+  api.stepGridDipole(gStab, 0.8, 0.08, 0, 0);
   const infoStab = api.projectGridStates(gStab, cStab);
-  assert.ok(Number.isFinite(infoStab.totalNorm) && Math.abs(infoStab.totalNorm - 1) < 1e-4, `Expected unitary norm under strong stepGridDipole, got ${infoStab.totalNorm}`);
+  assert.ok(Number.isFinite(infoStab.totalNorm) && Math.abs(infoStab.totalNorm - 1) < 1e-4, `Expected unitary norm near 1 under strong stepGridDipole, got ${infoStab.totalNorm}`);
+  assert.ok(Math.abs(infoStab.totalNorm - initStab.totalNorm) < 1e-11, `Expected exact norm preservation under unitary stepGridDipole, drift=${Math.abs(infoStab.totalNorm - initStab.totalNorm)}`);
+
+  for (const isM1 of [false, true]) {
+    const gU = api.buildGridSystem(tr2p3d, sys23);
+    const gRef = api.buildGridSystem(tr2p3d, sys23);
+    gRef.chAct.fill(1);
+    const cU = new Float64Array(gU.projStates.length * 2), cR = new Float64Array(gRef.projStates.length * 2);
+    const initNorm = api.projectGridStates(gU, cU).totalNorm;
+    const dt = isM1 ? 2.5 : 0.8, ex = isM1 ? 1.2 : 0.05, ey = isM1 ? -1.4 : -0.06, ez = isM1 ? 0.9 : 0.04;
+    api.stepGridDipole(gU, dt, ex, ey, ez, isM1);
+    const sub = 256, hSub = dt / sub;
+    for (let s = 0; s < sub; s++) api.stepGridDipole(gRef, hSub, ex, ey, ez, isM1);
+    const iU = api.projectGridStates(gU, cU);
+    api.projectGridStates(gRef, cR);
+    assert.ok(Math.abs(iU.totalNorm - initNorm) < 1e-11, `Expected exact norm preservation for strong ${isM1 ? 'M1' : 'E1'} unitary dipole`);
+    let maxP = 0;
+    for (let i = 0; i < gU.projStates.length; i++) {
+      maxP = Math.max(maxP, Math.abs((cU[2 * i] ** 2 + cU[2 * i + 1] ** 2) - (cR[2 * i] ** 2 + cR[2 * i + 1] ** 2)));
+    }
+    assert.ok(maxP < 1e-9, `Expected strong-field ${isM1 ? 'M1' : 'E1'} unitary stepGridDipole to match 256-substep RK4 (<1e-9), got ${maxP}`);
+  }
 
   // 3. 2p,+1 -> 3d,+2 Single photon scaled to <= E_OBI(3) stays >96% bound with ~3d median r
   const { muRabi } = api.computeBrightDipole(sys23, tr2p3d, polSp);
