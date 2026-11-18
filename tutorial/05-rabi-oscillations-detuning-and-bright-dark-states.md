@@ -2,6 +2,14 @@
 
 Einstein's *A* and *B* rate equations apply when an atom sits in **broadband, incoherent** thermal light. When you switch the simulator to **Coherent EM wave**, the atom interacts with a **phase-coherent laser or RF pulse** shaped by a smooth sin²(π*t*/*T*) envelope. Instead of irreversible exponential relaxation, coherent light drives reversible **Rabi oscillations**, prepares exact superpositions, and flips quantum states by interference.
 
+> **In a Nutshell:**
+> - A steady, coherent laser does not just "excite" an atom. It pushes population **up and back down** in a smooth cycle called **Rabi oscillation**.
+> - The outcome depends on the **pulse area** Θ, which grows with field strength × duration: Θ = π moves everything to the upper level, Θ = π/2 makes a 50/50 mix, and Θ = 2π brings it all back. This is the same idea as the 90° and 180° pulses of an NMR spectrometer.
+> - If the laser is off resonance (**detuned**), the transfer is incomplete and faster. The farther off, the less gets excited.
+> - Combinations of orbitals that the light cannot "see" are **dark states**. Mixing bright and dark parts produces surprising results, such as flipping *m* = +1 to *m* = −1 with linearly polarized light.
+>
+> **First read:** the boxed results (*P*₂ = sin²(Θ/2), the Bloch sphere, the generalized Rabi formula) and the demos matter more than the step-by-step derivation.
+
 ---
 
 ## 5.1 Deriving Two-Level Rabi Oscillations & Pulse Area Θ
@@ -12,16 +20,16 @@ Write the evolving wavefunction with time-varying coefficients *c*₁(*t*) and *
 
 > Ψ(**r**, *t*) = *c*₁(*t*) *e*<sup>−*iE*₁*t*</sup> ψ₁(**r**) + *c*₂(*t*) *e*<sup>−*iE*₂*t*</sup> ψ₂(**r**)
 
-Differentiating with the product rule gives *i* ∂Ψ/∂*t* = ∑<sub>*k*</sub> (*i* *ċ*<sub>*k*</sub> + *E*<sub>*k*</sub> *c*<sub>*k*</sub>) *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> ψ<sub>*k*</sub>. Because *Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>, the *E*<sub>*k*</sub>*c*<sub>*k*</sub> terms cancel on both sides! Multiplying by ψ₂* *e*<sup>+*iE*₂*t*</sup> and integrating over space uses orthonormality ∫ψ<sub>*j*</sub>* ψ<sub>*k*</sub> *d*³*r* = δ<sub>*jk*</sub> and diagonal dipole zero ∫ψ<sub>*k*</sub>* **r** ψ<sub>*k*</sub> *d*³*r* = 0 (for any single eigenstate ψ<sub>*k*</sub> of definite parity, \|ψ<sub>*k*</sub>(**r**)\|² is even under **r** → −**r**, whereas **r** is odd; only mixed-parity *superpositions* like 1s + 2p,0 have an oscillating permanent dipole!). This leaves:
+Differentiating with the product rule gives *i* ∂Ψ/∂*t* = ∑<sub>*k*</sub> (*i* *ċ*<sub>*k*</sub> + *E*<sub>*k*</sub> *c*<sub>*k*</sub>) *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> ψ<sub>*k*</sub>. Because *Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>, the *E*<sub>*k*</sub>*c*<sub>*k*</sub> terms cancel on both sides! Multiplying by ψ₂* *e*<sup>+*iE*₂*t*</sup> and integrating over space uses orthonormality ∫ψ<sub>*j*</sub>* ψ<sub>*k*</sub> *d*³*r* = δ<sub>*jk*</sub> and diagonal dipole zero ∫ψ<sub>*k*</sub>* **r** ψ<sub>*k*</sub> *d*³*r* = 0 (for any single eigenstate ψ<sub>*k*</sub> of definite parity, \|ψ<sub>*k*</sub>(**r**)\|² is even under **r** → −**r**, whereas **r** is odd; only mixed-parity *superpositions* like 1s + 2p,0 carry a dipole, and it oscillates in time!). This leaves:
 
 > *i* *ċ*₂(*t*) = *e*<sup>+*i*ω₀*t*</sup> ⟨ψ₂\| **r** · **E**(*t*) \|ψ₁⟩ *c*₁(*t*)
 
-Now substitute **E**(*t*) = *E*<sub>env</sub>(*t*) Re(**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup>) = ½ *E*<sub>env</sub>(*t*) (**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> + **ε*** *e*<sup>+*i*ω<sub>L</sub>*t*</sup>). Writing the transition matrix element in polar form ⟨ψ₂\| **r**·**ε** \|ψ₁⟩ = μ<sub>Rabi</sub> *e*<sup>*i*φ<sub>d</sub></sup> and absorbing its constant complex phase φ<sub>d</sub> into *c*₂ (leaving Ω<sub>R</sub>(*t*) = μ<sub>Rabi</sub> *E*<sub>env</sub>(*t*) real and non-negative):
+Now substitute **E**(*t*) = *E*<sub>env</sub>(*t*) Re(**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup>) = ½ *E*<sub>env</sub>(*t*) (**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> + **ε*** *e*<sup>+*i*ω<sub>L</sub>*t*</sup>). The two pieces couple through slightly different matrix elements: the *e*<sup>−*i*ω<sub>L</sub>*t*</sup> piece through ⟨ψ₂\| **r**·**ε** \|ψ₁⟩ and the *e*<sup>+*i*ω<sub>L</sub>*t*</sup> piece through ⟨ψ₂\| **r**·**ε**<sup>∗</sup> \|ψ₁⟩. For linear polarization (real **ε**) they are equal; for circular light they generally differ, and one of them can vanish. Write the first one in polar form, ⟨ψ₂\| **r**·**ε** \|ψ₁⟩ = μ<sub>Rabi</sub> *e*<sup>*i*φ<sub>d</sub></sup>, absorb its constant phase φ<sub>d</sub> into *c*₂, and define the real, non-negative **Rabi frequency** Ω<sub>R</sub>(*t*) = μ<sub>Rabi</sub> *E*<sub>env</sub>(*t*):
 
-> *i* *ċ*₂(*t*) = ½ Ω<sub>R</sub>(*t*) [ *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> + *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup> ] *c*₁(*t*)
+> *i* *ċ*₂(*t*) = ½ Ω<sub>R</sub>(*t*) *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> *c*₁(*t*) + [counter-rotating term ∝ ⟨ψ₂\| **r**·**ε**<sup>∗</sup> \|ψ₁⟩ *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup>] *c*₁(*t*)
 
 ### The Rotating-Wave Approximation (RWA)
-Near resonance (ω<sub>L</sub> ≈ ω₀), the first exponential *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> varies very slowly, whereas the second exponential *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup> oscillates violently at twice the optical frequency (~2ω₀) and averages to near zero over an optical cycle. Dropping that fast counter-rotating term is the **Rotating-Wave Approximation (RWA)**.
+Near resonance (ω<sub>L</sub> ≈ ω₀), the first exponential *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> varies very slowly, whereas the counter-rotating exponential *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup> oscillates violently at twice the optical frequency (~2ω₀) and averages to near zero over an optical cycle. Dropping that fast counter-rotating term is the **Rotating-Wave Approximation (RWA)**.
 
 At exact resonance (ω<sub>L</sub> = ω₀), the two coupled differential equations simplify to:
 
@@ -108,10 +116,12 @@ Recombine them at *t* = *T*:
 
 Without any magnetic field, a 2π linear pulse flips the electron's orbital angular momentum by −2*ħ* by routing the bright half of the wavefunction down through \|1s, 0⟩ and back with a −1 phase flip!
 
+**Where does the −2*ħ* go?** Recall from Chapter 3 that *x*-polarized light is an equal mix of σ⁺ and σ⁻. Going down, \|2p, +1⟩ → \|1s, 0⟩ is stimulated emission of a σ⁺ photon (Δ*m* = −1). Coming back up, \|1s, 0⟩ → \|2p, −1⟩ is absorption of a σ⁻ photon (Δ*m* = −1 again). The light field gains one σ⁺ photon and loses one σ⁻ photon, carrying away +2*ħ* in total, so angular momentum is conserved.
+
 ```demo
 {
   "label": "2π bright/dark m-flip: 2p,+1 → 2p,-1 via x-pol",
-  "caption": "40-cycle x-polarized pulse at Power = 0.25 (Θ = 2.00π; E₀ ≈ 6.4× E_OBI(2) greatly curbs ionization): amplitude dips into 1s and transfers ~96.7% into |2p,-1⟩ (~1.3% left in |2p,+1⟩, ~2% continuum loss)!",
+  "caption": "40-cycle x-polarized pulse at Power = 0.25 (Θ = 2.00π at half the peak field of a 20-cycle 2π pulse, which roughly halves ionization loss; field-ionization thresholds are derived in §6.4): amplitude dips into 1s and transfers ~96.7% into |2p,-1⟩ (~1.3% left in |2p,+1⟩, ~2% continuum loss)!",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 80,
@@ -176,7 +186,7 @@ In the ordered basis {|2p,+1⟩, |2p,0⟩, |2p,−1⟩}, the *x*-component of th
 
 > ½ *L*<sub>*x*</sub> = (1 / 2√2) [ [0, 1, 0], [1, 0, 1], [0, 1, 0] ]
 
-Every adjacent step (*m* = +1 ↔ 0 and 0 ↔ −1) carries that characteristic **1/√2** ladder matrix element relative to a simple 2-level ½ σ<sub>*x*</sub> rotation. Consequently, rotating the entire orbital angular momentum vector upside down from **\|2p, +1⟩** through **\|2p, 0⟩** into **\|2p, −1⟩** requires **Θ = √2 π ≈ 1.414π**—achieved cleanly with `Duration = 10 cyc` and `Power = 2` (100.0% transfer into |2p, −1⟩)!
+**Why Θ = √2 π, not π, for the full flip?** The UI calibrates Θ as if a *single* adjacent pair (say \|2p, +1⟩ ↔ \|2p, 0⟩) were an isolated two-level system: Θ = π would fully invert that pair. But in the three-level ladder, both steps are driven at once with equal coupling, and the whole ladder behaves like a rotating angular-momentum vector. Its rotation angle is β = Θ/√2. (The √2 comes from the ladder's coupling matrix above, whose eigenvalues are 0 and ±√2 times the single-step coupling.) Turning **L** completely upside down, from \|2p, +1⟩ to \|2p, −1⟩, needs β = π, so **Θ = √2 π ≈ 1.414π**. That is `Duration = 10 cyc` and `Power = 2`, which gives 100.0% transfer into \|2p, −1⟩. The same √2 appears for the E1 ladder in Chapter 2 (§2.4). *(**SU(2)** is the mathematicians' name for the group of quantum rotations; "spin-1 SU(2)" simply means "three-level system that rotates exactly like an *l* = 1 angular momentum".)*
 
 ```demo
 {
@@ -206,3 +216,18 @@ Every adjacent step (*m* = +1 ↔ 0 and 0 ↔ −1) carries that characteristic 
 1. Check directly from *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2) that \|*c*₁\|² + \|*c*₂\|² = 1 holds at *every* time *t* (unitarity / probability conservation).
 2. In the **2π *m*-flip**, what happens if you accidentally drive **\|2p, +1⟩** with **z-polarized** light at the `2p ↔ 1s` frequency instead of **x-polarized** light? Why does *m* = +1 stay completely untouched? *(Hint: check the Δm = 0 selection rule!)*
 3. Why did `+1.5 bw` blue detuning on `1s → 2p` fail to stay two-level while `-1.5 bw` red detuning worked cleanly?
+
+### Pen-and-Paper Practice
+- **P1.** A resonant pulse gives Θ = π/3. What fraction of the population ends up in the upper level?
+- **P2.** A laser is detuned from resonance by exactly its Rabi frequency (Δω = Ω<sub>R</sub>). For a constant-amplitude pulse, what is the largest excited-state population you can ever reach?
+
+<details>
+<summary>Answers</summary>
+
+- **1.** \|*c*₁\|² + \|*c*₂\|² = cos²(Θ/2) + \|−*i*\|² sin²(Θ/2) = cos²(Θ/2) + sin²(Θ/2) = 1 at every Θ(*t*), so probability is conserved throughout the pulse.
+- **2.** *z*-polarized light only drives Δ*m* = 0. From \|2p, +1⟩ that would need a 1s state with *m* = +1, which does not exist, so the coupling is exactly zero and the atom is untouched.
+- **3.** A 10-cycle pulse has a bandwidth of about 1 eV. Blue-detuning to 11.73 eV puts the laser only 0.36 eV below the 1s → 3p line (12.09 eV), well inside that bandwidth, so the TDSE leaks about 23% into \|3p, +1⟩. Red-detuning to 8.67 eV moves *away* from every other hydrogen line, so the atom behaves as a clean two-level system.
+- **P1.** *P*₂ = sin²(π/6) = (½)² = **25%**.
+- **P2.** The peak is Ω<sub>R</sub>²/(Ω<sub>R</sub>² + Δω²) = 1/2 = **50%**, reached when ½√2 Ω<sub>R</sub>*t* = π/2.
+
+</details>

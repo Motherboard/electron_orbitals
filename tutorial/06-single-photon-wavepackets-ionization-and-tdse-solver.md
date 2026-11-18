@@ -5,6 +5,12 @@ Three key physics and numerical ideas behind `electron_orbitals.html` deserve cl
 2. When a single photon polarization or initial electron superposition only partially couples to a transition, why do we project onto the **interacting branch** (`Branch match`), and what does atom–photon entanglement mean for mixtures vs. coherent superpositions?
 3. Why does the readout sometimes report **`continuum / higher n`** during strong pulses, and how does the browser solve the full 3D quantum dynamics on the fly?
 
+> **In a Nutshell:**
+> - A real atom absorbs a single photon perfectly only if the photon's shape is the **time-reverse of spontaneous emission**: a pulse that rises exponentially and then stops.
+> - Real photons from atoms last millions of optical cycles. The app squeezes them into 24 cycles so you can watch, while still printing the true lifetime.
+> - A strong enough laser field can pull the electron right out of the atom (**field ionization**). The threshold field drops steeply for larger orbitals, as 1/*n*⁴.
+> - §6.3 (entanglement, mixed states) and §6.5 (how the solvers work) are **advanced/optional**: read them if you are curious about quantum optics or numerical methods.
+
 ---
 
 ## 6.1 Time-Reversed Spontaneous Emission (*e*<sup>+Γ*t*/2</sup>)
@@ -18,6 +24,8 @@ The unique answer is the **time-reversed replica** of spontaneous emission:
 - Reaching peak field *E*₀ right at *t* = *T*, then **cutting off abruptly** with integrated Rabi pulse area:
 
 > Θ = ∫₀<sup>*T*</sup> μ<sub>Rabi</sub> *E*₀ *e*<sup>+Γ(*t*−*T*)/2</sup> *dt* = (2 μ<sub>Rabi</sub> *E*₀ / Γ)(1 − *e*<sup>−Γ*T*/2</sup>) = π
+
+> **What the app's "Single photon" mode really is:** a fully quantum photon has no adjustable "pulse area". If its shape is perfectly matched, it is absorbed with 100% probability, automatically. The app imitates this with a **semiclassical** model: a classical field with the time-reversed shape whose strength is scaled so that Θ = π. On resonance that reproduces the ideal 100% absorption exactly. Off resonance or mid-pulse, the two descriptions differ in detail (see §6.2).
 
 *(By contrast, a symmetric Gaussian or sin² single-photon pulse partially reflects back off the atom in free space and cannot achieve 100% excitation without placing the atom inside optical mirrors or a cavity that blocks backward escape.)*
 
@@ -36,7 +44,7 @@ Just as an exponentially decaying *e*<sup>−Γ*t*/2</sup> wavepacket Fourier-tr
 
 > *P*<sub>exc</sub>(Δω) ≈ 1 / [ 1 + (Δω / (Γ/2))² ] = 1 / (1 + `det`²)
 
-At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), that weak-drive perturbative Lorentzian predicts 1 / (1 + 1.5²) ≈ **30.8%** excitation; because a full Θ = π pulse saturates strongly on resonance (**power broadening** plus finite *e*<sup>+5/2</sup> truncation on [0, *T*]), exact 2-level RWA evolution in **Single photon** mode yields **`40.6%` in |2p,+1⟩ and `59.4%` in |1s⟩**—still cleanly suppressed compared with 100% at `det = 0`, leaving a glowing beating superposition! *(In warm chemistry gas-phase spectra, thermal velocity spreads also add Gaussian **Doppler broadening** on top of this intrinsic **natural linewidth**.)*
+At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), that weak-drive perturbative Lorentzian predicts 1 / (1 + 1.5²) ≈ **30.8%** excitation; but the app's semiclassical Θ = π drive is strong enough to saturate the transition. Saturation flattens and widens the response (**power broadening**, plus the finite *e*<sup>+5/2</sup> truncation on [0, *T*]). As a result the 2-level RWA evolution in **Single photon** mode gives **`40.6%` in |2p,+1⟩ and `59.4%` in |1s⟩**, still well below the 100% at `det = 0`, and leaves a glowing, beating superposition. *(A true single photon cannot power-broaden anything. For a perfectly mode-matched quantum photon, the excitation probability is 1/[1 + (Δω/Γ)²], wider again than both curves, about 64% at det = −1.5. All three agree that excitation falls off with detuning over a width set by Γ.)* *(In warm chemistry gas-phase spectra, thermal velocity spreads also add Gaussian **Doppler broadening** on top of this intrinsic **natural linewidth**.)*
 
 ```demo
 {
@@ -80,7 +88,7 @@ At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), that weak-drive 
 
 ---
 
-## 6.3 Branch Projection (Polarization & Electron Superpositions), Atom–Photon Entanglement & Mixed States
+## 6.3 Branch Projection, Atom–Photon Entanglement & Mixed States (Advanced)
 
 In **Single photon** mode, only **one** photon quantum is exchanged with the atom (**initial ↔ target**, preventing 2-photon cascades or double excitations across degenerate or equidistant Zeeman levels), and you are free to choose *any* initial superposition and *any* polarization vector **ε** manually—even when selection rules, non-resonant spectator orbitals, or Zeeman splitting couple only a fraction of the joint atom–photon state. Look at the **Branch match** readout beneath **Wavepacket** (and click **Match** beside the polarization chips whenever you want to snap **ε** to the transition's valid dipole polarization).
 
@@ -141,7 +149,7 @@ Start with a 1-photon Fock state polarized along **x̂**: \|1<sub>*x*</sub>⟩ =
 Notice the crucial distinction: **only the combined atom + photon system is in a coherent superposition**—the atom by itself is *entangled* with orthogonal photon states (\|0⟩ vs. \|1<sub>σ⁺</sub>⟩). (Even along a 100% matching polarization at intermediate time or partial detuning like §6.2's `det = −1.5`, quantized single-photon evolution produces *a* \|0⟩\|*e*⟩ + *b* \|1⟩\|*g*⟩ correlated with photon number \|0⟩ vs. \|1⟩.)
 
 How does a **mixture of states** differ from a **coherent superposition**?
-1. **Pure coherent superposition** \|ψ⟩ = *a* \|*e*⟩ + *b* \|*g*⟩: Has a definite relative phase between \|*e*⟩ and \|*g*⟩. Its spatial probability density \|ψ(**r**, *t*)\|² = \|*a*\|²\|ψ<sub>*e*</sub>\|² + \|*b*\|²\|ψ<sub>*g*</sub>\|² + 2 Re(*a*<sup>∗</sup> *b* *e*<sup>−*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>) includes the oscillating **interference cross-term** (Bohr quantum beats and time-varying Bohmian trajectories). In density-operator language, ρ̂<sub>coh</sub> = \|ψ⟩⟨ψ\| has non-zero off-diagonal **coherences** *ab*<sup>∗</sup> \|*e*⟩⟨*g*\| + *a*<sup>∗</sup>*b* \|*g*⟩⟨*e*\|.
+1. **Pure coherent superposition** \|ψ⟩ = *a* \|*e*⟩ + *b* \|*g*⟩: Has a definite relative phase between \|*e*⟩ and \|*g*⟩. Its spatial probability density \|ψ(**r**, *t*)\|² = \|*a*\|²\|ψ<sub>*e*</sub>\|² + \|*b*\|²\|ψ<sub>*g*</sub>\|² + 2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>) includes the oscillating **interference cross-term**, with Δ*E* = *E*<sub>*e*</sub> − *E*<sub>*g*</sub> > 0 (Bohr quantum beats and time-varying Bohmian trajectories). In density-operator language, ρ̂<sub>coh</sub> = \|ψ⟩⟨ψ\| has non-zero off-diagonal **coherences** *ab*<sup>∗</sup> \|*e*⟩⟨*g*\| + *a*<sup>∗</sup>*b* \|*g*⟩⟨*e*\|.
 2. **Statistical mixture of states** ρ̂<sub>mix</sub> = \|*a*\|² \|*e*⟩⟨*e*\| + \|*b*\|² \|*g*⟩⟨*g*\|: Describes classical uncertainty ("excited state *e* with probability \|*a*\|², **or** ground state *g* with probability \|*b*\|²"). All off-diagonal coherences are **zero**, so spatial density is simply ρ(**r**, *t*) = \|*a*\|²\|ψ<sub>*e*</sub>\|² + \|*b*\|²\|ψ<sub>*g*</sub>\|²—**no interference, no dipole beats**. A single electron wavefunction ψ(**r**, *t*) cannot represent a mixed state!
 3. **Why ignoring the photon yields a mixture:** If we look only at the atom and discard/ignore the photon (mathematically taking the **partial trace** ρ̂<sub>atom</sub> = Tr<sub>field</sub>(\|Ψ<sub>total</sub>⟩⟨Ψ<sub>total</sub>\|)), every cross-term between \|*e*⟩ and \|*g*⟩ is multiplied by the inner product ⟨0\|1<sub>σ⁺</sub>⟩ = 0 (or ⟨0\|1⟩ = 0). Because the photon states are **orthogonal** ("which-way" information: *zero* escaping photons tells you the atom absorbed and sits in \|*e*⟩; *one* escaping photon tells you it stayed in \|*g*⟩), all coherences vanish and the atom reduces to the **mixed state** ρ̂<sub>atom</sub> = \|*a*\|² \|*e*⟩⟨*e*\| + \|*b*\|² \|*g*⟩⟨*g*\|!
 
@@ -151,8 +159,8 @@ Even though \|Ψ<sub>total</sub>⟩ is a genuine quantum superposition of the co
 > \|Ψ<sub>total</sub>⟩ = (1/√2) \|+⟩ (*a* \|*e*⟩ + *b* \|*g*⟩) + (1/√2) \|−⟩ (*a* \|*e*⟩ − *b* \|*g*⟩)
 
 Look closely at those two terms: the joint superposition contains **two complementary atomic superpositions**—*a*\|*e*⟩ + *b*\|*g*⟩ paired with \|+⟩, and its opposite-phase twin *a*\|*e*⟩ − *b*\|*g*⟩ paired with \|−⟩!
-- The \|+⟩ branch carries positive interference **+2 Re(*a*<sup>∗</sup> *b* *e*<sup>−*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>)**.
-- The \|−⟩ branch carries negative anti-interference **−2 Re(*a*<sup>∗</sup> *b* *e*<sup>−*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>)**.
+- The \|+⟩ branch carries positive interference **+2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>)**.
+- The \|−⟩ branch carries negative anti-interference **−2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>)**.
 - Whenever you trace over (ignore) the photon, you sum both complementary branches equally—and their opposite-sign interference terms **cancel each other out**, destroying all atomic interference!
 
 **Restoring interference:** Only if we **project the outgoing photon onto the {\|+⟩ = (\|0⟩ + \|1⟩)/√2, \|−⟩ = (\|0⟩ − \|1⟩)/√2} basis** and sort atomic measurements using **coincidence counters**—keeping only runs where the photon clicks in \|+⟩ (or only \|−⟩)—do we erase the which-way record and recover full interference fringes! (In the laboratory, projecting two orthogonal 1-photon polarization/path states onto (\|1<sub>*A*</sub>⟩ ± \|1<sub>*B*</sub>⟩)/√2 uses a polarizer or 50/50 beam splitter, whereas projecting photon-number states \|0⟩ ± \|1⟩ requires homodyne interference with a phase-locked local oscillator.)
@@ -163,7 +171,7 @@ Look closely at those two terms: the joint superposition contains **two compleme
 
 ## 6.4 Deriving Over-the-Barrier Ionization (*E*<sub>OBI</sub> = 1 / 16*n*⁴)
 
-In **Coherent EM wave** mode, why does cranking **Power** up—or squeezing a pulse into too few optical cycles—literally tear the electron out of the atom? Because squeezing a π-pulse into a short time *T* demands a strong peak field *E*₀, and above a sharp threshold the electric potential drops below the orbital's binding energy!
+In **Coherent EM wave** mode, why does cranking **Power** up—or squeezing a pulse into too few optical cycles—literally tear the electron out of the atom? Because squeezing a π-pulse into a short time *T* demands a strong peak field *E*₀, and above a sharp threshold the field pulls the top of the Coulomb barrier down below the orbital's energy, so the electron can simply roll out!
 
 We can derive that exact threshold with **first-year calculus**. Along the electric-field axis (*z* > 0 when −*qE*₀*z* pulls the electron toward +*z*, in atomic units), the total potential energy is Coulomb attraction minus the linear field ramp:
 
@@ -188,7 +196,7 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 ```demo
 {
   "label": "Clean higher-shell single photon (2p,+1 → 3d,+2)",
-  "caption": "Weak-field RWA + multipole continuity flow transfers 100% cleanly from r ≈ 4.5 to 10.3 a0 in 24 cycles with zero OBI ionization.",
+  "caption": "Weak-field RWA + multipole continuity flow transfers 100% cleanly from ⟨r⟩ = 5 a0 (2p) to ⟨r⟩ = 10.5 a0 (3d) in 24 cycles with zero OBI ionization.",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 55,
@@ -229,7 +237,7 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 
 ---
 
-## 6.5 Two Solvers: Weak-Field RWA + Continuity Flow vs. Continuous Radial-Grid TDSE
+## 6.5 Under the Hood: Two Solvers (Optional, for the Curious)
 
 `electron_orbitals.html` chooses the right quantum solver for each physical regime:
 
@@ -243,12 +251,22 @@ During strong laser/RF pulses, `electron_orbitals.html` solves the genuine **ful
 1. **Radial-grid spherical-harmonic expansion:** The wavefunction is written as ψ(*r*, θ, φ, *t*) = ∑<sub>*l*≤*L*<sub>max</sub>,*m*</sub> [*u*<sub>*lm*</sub>(*r*, *t*)/*r*] *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) on a continuous radial mesh (234–380 points depending on *n*, *L*<sub>max</sub> ≤ 5), capturing **all** bound shells, AC Stark shifts, multi-photon transitions, and continuum ionization simultaneously.
 2. **Unitary Strang-split propagation:** Each small time step splits the evolution into symmetric half-steps so the method stays **norm-conserving** (unitary) without blowing up: (a) a 4th-order **Numerov + Crank–Nicolson** tridiagonal matrix solver for the radial kinetic + Coulomb operator *Ĥ*₀ = −½ ∂²/∂*r*² + *l*(*l*+1)/(2*r*²) − 1/*r*, (b) an adaptive 4th-order **Runge–Kutta (RK4)** step for the **r**·**E**(*t*) or ½**B**₁(*t*)·**L** coupling across (*l*, *m*) channels, and (c) exact Zeeman *e*<sup>−*imB*<sub>*z*</sub>Δ*t*/2</sup> phase rotation.
 3. **Complex Absorbing Potential (CAP):** In the outer 14% of the radial grid, a smooth damping mask absorbs outgoing ionized probability (and attenuates outward radial drift) so unbound continuum waves leave cleanly instead of bouncing artificially off the simulation wall.
-4. **Live Bohmian tracking & post-pulse projection:** At every substep, the 3D electron dots integrate **v** = Im(∇ψ/ψ) + **A** directly from the radial grid via cubic interpolation. When the pulse ends (or **Stop pulse** is pressed), bound eigenstate components above the **\|*c*\| > 0.14** amplitude cutoff (~2% population threshold) form the continuing analytical superposition, keeping all bound electron positions and trails intact while re-homing only escaped continuum outliers beyond 1.25 *E*.
+4. **Live Bohmian tracking & post-pulse projection:** At every substep, the 3D electron dots integrate **v** = Im(∇ψ/ψ) + **A** directly from the radial grid via cubic interpolation. When the pulse ends (or **Stop pulse** is pressed), bound eigenstate components above the **\|*c*\| > 0.14** amplitude cutoff (~2% population threshold) form the continuing analytical superposition, keeping all bound electron positions and trails intact while re-homing only escaped continuum outliers beyond 1.25 *R*<sub>box</sub> (*R*<sub>box</sub> is the view-box radius that encloses 99.5% of the orbital density, §7.1).
 
 ---
 
 ### Quick Self-Check
-1. Using *E*<sub>OBI</sub>(*n*) = 1/(16*n*⁴), compute *E*<sub>OBI</sub> for *n* = 1, 2, 3, and 4 in atomic units (1 a.u. = 5.142 × 10¹¹ V/m). Why is Rydberg *n* = 4 stripped ~256× more easily than ground-state *n* = 1?
-2. Why does a partial detuning of `1.0` in **Single photon** mode produce roughly 50% excitation amplitude squared (1/(1 + 1²) = 0.5)?
-3. After **Stop pulse** or pulse completion, why do bound trajectories seamlessly continue without teleporting, whereas trajectories past 1.25 *E* get resampled?
+1. Using *E*<sub>OBI</sub>(*n*) = 1/(16*n*⁴), compute *E*<sub>OBI</sub> for *n* = 1, 2, 3, and 4 in atomic units (1 a.u. = 5.142 × 10¹¹ V/m). Why is the excited *n* = 4 shell stripped ~256× more easily than the ground state *n* = 1?
+2. The weak-pulse Lorentzian 1/(1 + `det`²) predicts 50% excitation at `det = 1.0`. Run **Single photon** mode at `det = 1.0`: you get about 66% instead. Why is the app's result higher?
+3. After **Stop pulse** or pulse completion, why do bound trajectories seamlessly continue without teleporting, whereas trajectories past 1.25 *R*<sub>box</sub> get resampled?
 4. When linear `x`-polarized light hits a Zeeman-resolved `1s → 2p, Δm = −1` transition in **Single photon** mode, why do **\|2p, −1⟩** and **\|1s, 0⟩** fail to interfere if you ignore the outgoing photon—and how do coincidence measurements in the (\|0⟩ ± \|1⟩)/√2 basis restore that interference?
+
+<details>
+<summary>Answers</summary>
+
+- **1.** *E*<sub>OBI</sub> = 1/16, 1/256, 1/1296, 1/4096 a.u. for *n* = 1–4, i.e. about 3.2 × 10¹⁰, 2.0 × 10⁹, 4.0 × 10⁸, and 1.3 × 10⁸ V/m. The ratio between *n* = 1 and *n* = 4 is 4⁴ = **256**: a larger orbital is both less tightly bound (*E*<sub>*n*</sub> ∝ 1/*n*²) and reaches farther out, where a given field lowers the barrier more.
+- **2.** The app drives the transition with a semiclassical field scaled to Θ = π. That is a strong drive that saturates the transition, and saturation widens the response (power broadening), so detuned light still excites more than the weak-pulse formula predicts: 65.7% at `det = 1`, 40.6% at `det = 1.5`. Three models, three answers at `det = 1`: a **weak classical pulse** gives 1/(1 + det²) = 50%; the app's **π-area classical stand-in** gives 65.7%; a **true single photon** in the matched time-reversed mode gives Γ²/(Γ² + Δ²) = 1/(1 + det²/4) = 80%, the widest line because the photon's spectrum and the atom's response (each with half-width Γ/2) combine in amplitude.
+- **3.** Bound amplitudes above \|*c*\| > 0.14 become the new analytic superposition, and the dots keep their positions, so nothing jumps. A dot beyond 1.25 *R*<sub>box</sub> has followed probability that left the atom (ionization) and is no longer described by any bound orbital, so it is redrawn from the remaining bound density.
+- **4.** The full state is (1/√2)(\|0⟩\|2p, −1⟩ + \|1<sub>σ⁺</sub>⟩\|1s, 0⟩). The two atomic states are tagged by orthogonal photon states, so ignoring the photon (tracing it out) multiplies every interference term by ⟨0\|1<sub>σ⁺</sub>⟩ = 0: the atom alone is a 50/50 mixture with no beats. Measuring the photon in the (\|0⟩ ± \|1⟩)/√2 basis and keeping only the "+" (or only the "−") outcomes erases the which-path tag, and the beats reappear within that subset.
+
+</details>

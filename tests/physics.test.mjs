@@ -105,7 +105,7 @@ function createCoreContext() {
       getTransitionList, buildCoupledSystem, computeBrightDipole, resolvePhotonPolarization, getPulseConfig,
       buildPhotonSim, evalPhotonVel, advancePhotonRK4,
       fieldVecAt, stepTdseC, weisskopfWigner,
-      buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
+      buildGridSystem, stepGridDipole, advanceGridHalf, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
       ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel,
       consts: { B_SLIDER_MAX, B_SLIDER_SPAN, B_SLIDER_STEP, PHOTON_CYC, PHOTON_KTAU }
     };
@@ -822,26 +822,30 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
   const omega0 = tr.omega0;
   const T = (d.interaction.duration * 2 * Math.PI) / omega0;
   const bw = (2 * Math.PI) / T;
-  const omegaL = omega0 + d.interaction.detuning * bw;
   const { muRabi } = api.computeBrightDipole(sys, tr, np);
   const E0 = (2 * Math.PI) / (muRabi * T);
-  const grid = api.buildGridSystem(tr, sys);
-  const pRed = { kind: 'E1', trSpec: tr, omegaL, T, gamma: 0, E0, pol: np };
-  const nSteps = Math.ceil(T / 0.25);
-  const h = T / nSteps;
-  for (let s = 0; s < nSteps; s++) api.stepGridDipole(grid, pRed, s * h, h);
-  const c = new Float64Array(grid.projStates.length * 2);
-  api.projectGridStates(grid, c);
-  const p1s = (() => {
-    const i = grid.projStates.findIndex((s) => s.n === 1 && s.l === 0 && s.m === 0);
-    return c[i * 2] ** 2 + c[i * 2 + 1] ** 2;
-  })();
-  const p3p = (() => {
-    const i = grid.projStates.findIndex((s) => s.n === 3 && s.l === 1 && s.m === 1);
-    return i >= 0 ? c[i * 2] ** 2 + c[i * 2 + 1] ** 2 : 0;
-  })();
-  assert.ok(p1s > 0.85, `Expected Ch5 red-detuned pulse to return >0.85 to |1s,0>, got ${p1s}`);
-  assert.ok(p3p < 0.02, `Expected Ch5 red-detuned pulse to avoid |3p,+1> (<0.02), got ${p3p}`);
+  // Drive the full radial-grid TDSE with the same Strang half-step (advanceGridHalf) used by stepPulseCore
+  const runDetuned = (det) => {
+    const grid = api.buildGridSystem(tr, sys);
+    const pObj = { kind: 'E1', trSpec: tr, omegaL: omega0 + det * bw, T, gamma: 0, E0, pol: np };
+    const nSteps = Math.ceil(T / 0.1);
+    const h = T / nSteps;
+    for (let s = 0; s < nSteps; s++) api.advanceGridHalf(grid, pObj, h, (s + 0.5) * h);
+    const c = new Float64Array(grid.projStates.length * 2);
+    api.projectGridStates(grid, c);
+    const pop = (n, l, m) => {
+      const i = grid.projStates.findIndex((st) => st.n === n && st.l === l && st.m === m);
+      return i >= 0 ? c[i * 2] ** 2 + c[i * 2 + 1] ** 2 : 0;
+    };
+    return { p1s: pop(1, 0, 0), p3p: pop(3, 1, 1) };
+  };
+  const red = runDetuned(d.interaction.detuning);
+  // Tutorial Ch5 quotes ~94% back in |1s,0>; < 0.99 proves the pulse actually evolved the state
+  assert.ok(red.p1s > 0.9 && red.p1s < 0.99, `Expected Ch5 red-detuned pulse to return ~94% to |1s,0>, got ${red.p1s}`);
+  assert.ok(red.p3p < 0.02, `Expected Ch5 red-detuned pulse to avoid |3p,+1> (<0.02), got ${red.p3p}`);
+  // Mirror-image blue detuning (+|det| bw) sits near 1s -> 3p and must leak substantially (tutorial quotes ~23%)
+  const blue = runDetuned(-d.interaction.detuning);
+  assert.ok(blue.p3p > 0.12, `Expected Ch5 blue-detuned pulse to leak into |3p,+1> (>0.12), got ${blue.p3p}`);
 });
 
 test('Direct-density overlay alpha curve, 2D column-projection vs sampled histogram, and superposition projection', () => {
