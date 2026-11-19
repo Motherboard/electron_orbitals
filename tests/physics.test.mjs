@@ -103,7 +103,7 @@ function createCoreContext() {
       sampSingle,
       radialDipole, angularDipole, dipoleElement, angularMagDipole,
       getTransitionList, buildCoupledSystem, computeBrightDipole, resolvePhotonPolarization, getPulseConfig,
-      buildPhotonSim, evalPhotonVel, advancePhotonRK4,
+      buildPhotonSim, evalPhotonVel, advancePhotonRK4, photonOutcome, hydDecayChannels,
       fieldVecAt, stepTdseC, weisskopfWigner,
       buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
       photoIonCoef, ionSafety, safeTrefCyc, onePiSetting, getRadTable, gauntCoeff,
@@ -1137,11 +1137,12 @@ test('weak-field RWA single-photon solver, multipole continuity flow, and electr
   assert.ok(Math.abs(resComb.match - 0.5 * resComb.elecMatch) < 1e-9);
   assert.ok(dotAbs(resComb.pol, polSm) > 0.9999);
 
-  // 4. Red-detuned single photon (det = -1.5 on 1s -> 2p,+1) follows Lorentzian suppression cleanly
+  // 4. Red-detuned single photon (det = -1.5 on 1s -> 2p,+1): the animation is conditioned on absorption, so it still finishes
+  //    100% in |2p,+1>; the Lorentzian odds are reported by photonOutcome (see the cascade test)
   const rDet = runPhotonSim([{ n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }], '1|0|2|1', polSp, { det: -1.5, nPart: 40 });
   const pDet1s = popOf(rDet.psim, 1, 0, 0), pDet2p = popOf(rDet.psim, 2, 1, 1);
   assert.ok(Math.abs(pDet1s + pDet2p - 1) < 1e-6);
-  assert.ok(pDet2p > 0.25 && pDet2p < 0.45, `Expected det=-1.5 Lorentzian excitation (~0.31-0.41), got ${pDet2p}`);
+  assert.ok(pDet2p > 0.9999, `Expected the conditioned det=-1.5 display to finish in |2p,+1>, got ${pDet2p}`);
 
   // 5. Weak-field B_z slider constant step (0.10 / 3) & bestPol for pi/z transition
   assert.ok(Math.abs(api.consts.B_SLIDER_MAX - 0.10) < 1e-12);
@@ -1420,4 +1421,88 @@ test('Bohmian equivariance fixes: exact Gaunt monopoles, grid continuity with fi
   assert.ok(Math.abs(flux - dPdt) < 0.1 * Math.abs(dPdt) + 1e-9, `Photon tail flux ${flux} != dP/dt ${dPdt} at R = 1.2 E995`);
   api.finishPulse(true);
   api.setBau(0);
+});
+
+test('single-photon cascade: conditioned display timing, Gamma_b/Gamma_tot odds, detuning Lorentzian, Raman branches', () => {
+  const AU_S = 2.4188843265857e-17;
+  api.setBau(0);
+  api.setMode('photon');
+  const cfgFor = (comps, key, pol, det = 0) => {
+    api.setComps(comps.map((c, i) => ({ id: i + 1, ...c })));
+    api.setPol(...pol);
+    api.setEl('tr-sel', key);
+    api.setEl('pdet', det);
+    const cfg = api.getPulseConfig();
+    assert.ok(cfg.ok && cfg.trSpec.key === key, `Expected transition ${key}`);
+    return cfg;
+  };
+  const SP = [[1, 0], [1, 90], [0, 0]], X = [[1, 0], [0, 0], [0, 0]];
+  const s1 = [{ n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }];
+
+  // Total Einstein-A decay of the upper levels (NIST: 2p 6.265e8, 3p 1.897e8, 3d 6.469e7 s^-1)
+  for (const [n, l, ref] of [[2, 1, 6.265e8], [3, 1, 1.897e8], [3, 2, 6.469e7]]) {
+    const g = api.hydDecayChannels(n, l).tot / AU_S;
+    assert.ok(Math.abs(g / ref - 1) < 0.01, `Gamma_tot(${n}${'spd'[l]}) = ${g}, expected ${ref}`);
+  }
+
+  // 1s -> 2p,+1 resonant sigma+: Gamma_b = Gamma_tot, the truncated time-reversed photon (Gamma T = 5) is absorbed with 1 - e^-5
+  const c2p = cfgFor(s1, '1|0|2|1', SP);
+  const o2p = api.photonOutcome(c2p);
+  assert.ok(Math.abs(o2p.beta - 1) < 2e-3, `beta(1s->2p) = ${o2p.beta}`);
+  assert.ok(Math.abs(o2p.pAbs - (1 - Math.exp(-5))) < 2e-3, `pAbs(1s->2p) = ${o2p.pAbs}`);
+  assert.equal(o2p.raman.length, 0);
+  assert.ok(o2p.sameOther < 1e-6);
+
+  // Red detuning det = -1.5 (units of Gamma/2): closed-form cascade Lorentzian (~65%, not the 40% of a classical pi-pulse)
+  const cDet = cfgFor(s1, '1|0|2|1', SP, -1.5);
+  const oDet = api.photonOutcome(cDet);
+  const G = cDet.gammaSim, T = cDet.T, dl = cDet.omega0 - cDet.omegaL;
+  const pRef = (G * G / (1 - Math.exp(-G * T))) * (1 + Math.exp(-2 * G * T) - 2 * Math.exp(-G * T) * Math.cos(dl * T)) / (G * G + dl * dl);
+  assert.ok(Math.abs(oDet.pAbs - pRef) < 3e-3 && pRef > 0.6 && pRef < 0.7, `pAbs(det=-1.5) = ${oDet.pAbs}, closed form ${pRef}`);
+
+  // Conditioned display follows the cascade timing: w(t) = |K(t)|^2 / |K(T)|^2, ending at 100%
+  const psim = api.buildPhotonSim(cDet);
+  api.setP([]);
+  const nSteps = 120, h = T / nSteps;
+  const K2 = (t) => {
+    const er = Math.exp(G * t) * Math.cos(-dl * t) - 1, ei = Math.exp(G * t) * Math.sin(-dl * t);
+    return Math.exp(-G * (t + T)) * (er * er + ei * ei) / (G * G + dl * dl);
+  };
+  const i2p = psim.states.findIndex((st) => st.n === 2 && st.l === 1 && st.m === 1);
+  let maxErr = 0;
+  for (let s = 0; s < nSteps; s++) {
+    api.advancePhotonRK4(psim, s * h, h);
+    const t = (s + 1) * h, w = psim.c1v[2 * i2p] ** 2 + psim.c1v[2 * i2p + 1] ** 2;
+    maxErr = Math.max(maxErr, Math.abs(w - K2(t) / K2(T)));
+  }
+  assert.ok(maxErr < 1e-9, `Conditioned weight deviates from cascade timing by ${maxErr}`);
+  assert.ok(psim.c1v[2 * i2p] ** 2 + psim.c1v[2 * i2p + 1] ** 2 > 0.999999);
+
+  // 1s -> 3p: best case Gamma(3p->1s)/Gamma_tot = 88.2%; the rest is Raman into 2s (Balmer-alpha)
+  const o3p = api.photonOutcome(cfgFor(s1, '1|0|3|1', SP));
+  assert.ok(Math.abs(o3p.beta - 0.8817) < 0.01, `beta(1s->3p) = ${o3p.beta}`);
+  assert.ok(o3p.raman.length === 1 && o3p.raman[0].n === 2 && o3p.raman[0].l === 0);
+  // Resonant beta = 1 photon: X = Gamma int|c_e|^2 = 0.939 (during) + 0.993 (after) = 1.93 for Gamma T = 5 (closed form)
+  const X1 = (Math.exp(-5) * (Math.exp(5) - 1 - 10 + 1 - Math.exp(-5))) / (1 - Math.exp(-5)) + (1 - Math.exp(-5));
+  assert.ok(Math.abs(o2p.X - X1) < 5e-3, `X(1s->2p) = ${o2p.X}, closed form ${X1}`);
+  assert.ok(Math.abs(o3p.raman[0].p - (1 - o3p.beta) * o3p.X) < 1e-9 && o3p.raman[0].p > 0.15 && o3p.raman[0].p < 0.25, `Raman 2s = ${o3p.raman[0].p}`);
+  for (const o of [o3p, o2p]) {
+    const lost = o.raman.reduce((a, r) => a + r.p, 0) + o.sameOther;
+    assert.ok(lost <= (1 - o.beta) * o.X + 1e-9 && (1 - o.beta) * o.X <= 1 + 1e-9, 'Other-channel decay must be a valid probability');
+  }
+
+  // 2s -> 3p: only ~11.8% of 3p decay returns to 2s, so absorption is capped there and Raman into 1s dominates
+  const o23 = api.photonOutcome(cfgFor([{ n: 2, l: 0, m: 0, amp: 1, phaseDeg: 0 }], '2|0|3|1', SP));
+  assert.ok(Math.abs(o23.beta - 0.1183) < 0.01, `beta(2s->3p) = ${o23.beta}`);
+  assert.ok(o23.pAbs <= o23.beta + 1e-9 && o23.raman[0].n === 1 && o23.raman[0].p > o23.pAbs);
+
+  // 2p,+1 -> 3d with x polarization: the bright 3d superposition also decays into other 2p sublevels (sublevel Raman)
+  const o23d = api.photonOutcome(cfgFor([{ n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '2|1|3|2', X));
+  assert.ok(o23d.beta < 1 && o23d.sameOther > 0.01, `2p,+1 -> 3d x-pol: beta ${o23d.beta}, sameOther ${o23d.sameOther}`);
+  assert.ok(o23d.raman.length === 0, 'Expected 3d to decay only to 2p');
+
+  // Stimulated emission is outside the single-excitation model
+  const oEm = api.photonOutcome(cfgFor([{ n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '3|1|1|0', SP));
+  assert.equal(oEm.isEmit, true);
+  api.setEl('pdet', 0);
 });

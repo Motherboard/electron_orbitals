@@ -215,7 +215,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     })`);
     assert.equal(prePhotonUI.wwHidden, false, 'Wavepacket Weisskopf-Wigner readout should be visible in Single photon mode');
     assert.equal(prePhotonUI.durHidden, true, 'Arbitrary Duration slider should be hidden in Single photon mode');
-    assert.match(prePhotonUI.wwText, /Γ = 6\.27×10⁸ s⁻¹.*1\.60 ns.*3\.94M cyc/);
+    assert.match(prePhotonUI.wwText, /Γ_tot = 6\.27×10⁸ s⁻¹.*1\.60 ns.*3\.94M cyc.*Γ_b\/Γ_tot = 100/);
     assert.ok(prePhotonUI.medianBefore < 2.2, `Expected initial 1s median radius < 2.2, got ${prePhotonUI.medianBefore}`);
 
     await evalJS(`(() => {

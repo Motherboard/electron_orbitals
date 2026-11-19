@@ -2,7 +2,7 @@
 
 Three key physics and numerical ideas behind `electron_orbitals.html` deserve closer inspection:
 1. Why does **Single photon** mode use an exponentially growing wavepacket *e*<sup>+Γ*t*/2</sup> with an abrupt cutoff?
-2. When a single photon polarization or initial electron superposition only partially couples to a transition, why do we project onto the **interacting branch** (`Branch match`), and what does atom–photon entanglement mean for mixtures vs. coherent superpositions?
+2. Why does the animation always show the photon being absorbed, while the note reports odds well below 100% (branching ratios, detuning, Raman scattering)? And when a polarization or initial electron superposition only partially couples to a transition, why do we project onto the **interacting branch** (`Branch match`), and what does atom–photon entanglement mean for mixtures vs. coherent superpositions?
 3. Why does the readout sometimes report **`continuum / higher n`** during strong pulses, and how does the browser solve the full 3D quantum dynamics on the fly?
 
 ---
@@ -11,37 +11,41 @@ Three key physics and numerical ideas behind `electron_orbitals.html` deserve cl
 
 When an excited hydrogen atom undergoes **spontaneous emission** in free space, its excited-state probability decays exponentially as *e*<sup>−Γ*t*</sup>, launching an outgoing 4π electric-dipole photon whose field amplitude begins with a sharp wavefront at *t* = 0 and decays smoothly afterward as *e*<sup>−Γ*t*/2</sup>.
 
-Both Maxwell's equations and the Schrödinger equation are **time-reversal symmetric**. Reversing that spontaneous-emission movie in time answers a subtle question in quantum optics: *what single-photon pulse shape achieves 100% deterministic absorption by a free-space atom?*
+Both Maxwell's equations and the Schrödinger equation are **time-reversal symmetric**. Reversing that spontaneous-emission movie in time answers a subtle question in quantum optics: *what single-photon pulse shape is absorbed best by a free-space atom?*
 
-The unique answer is the **time-reversed replica** of spontaneous emission:
-- An incoming 4π dipole mode whose envelope **grows exponentially as *e*<sup>+Γ(*t*−*T*)/2</sup>** on (0, *T*)
-- Reaching peak field *E*₀ right at *t* = *T*, then **cutting off abruptly** with integrated Rabi pulse area:
+The answer is the **time-reversed replica** of spontaneous emission: an incoming 4π dipole mode whose envelope **grows exponentially as *e*<sup>+Γ(*t*−*T*)/2</sup>** on (0, *T*) and **cuts off abruptly** at *t* = *T*.
 
-> Θ = ∫₀<sup>*T*</sup> μ<sub>Rabi</sub> *E*₀ *e*<sup>+Γ(*t*−*T*)/2</sup> *dt* = (2 μ<sub>Rabi</sub> *E*₀ / Γ)(1 − *e*<sup>−Γ*T*/2</sup>) = π
+A single photon carries exactly one quantum, so there is no pulse area to tune. The atom and the photon share that quantum, and the standard **cascaded (input–output) model** gives the upper-level amplitude *c*<sub>*e*</sub> directly:
 
-*(By contrast, a symmetric Gaussian or sin² single-photon pulse partially reflects back off the atom in free space and cannot achieve 100% excitation without placing the atom inside optical mirrors or a cavity that blocks backward escape.)*
+> *dc*<sub>*e*</sub>/*dt* = −(Γ<sub>tot</sub>/2) *c*<sub>*e*</sub> − √Γ<sub>*b*</sub> ξ(*t*), &nbsp;&nbsp; *c*<sub>*e*</sub>(0) = 0
+
+Here ξ(*t*) is the normalized photon envelope, Γ<sub>*b*</sub> is the decay rate of the upper level back into exactly the photon's channel, and Γ<sub>tot</sub> is the upper level's **total** decay rate (it leaks out through every channel while it fills). The ideal photon is the time-reversal of the upper level's emission, so its rise rate is Γ<sub>tot</sub>. Then:
+- For a **two-level atom** (Γ<sub>*b*</sub> = Γ<sub>tot</sub>, e.g. `1s → 2p`), absorption reaches 1 − *e*<sup>−Γ*T*</sup> (99.3% for the simulated Γ*T* = 5).
+- For any other photon shape, or when the upper level has several decay channels, absorption is lower. By the Cauchy–Schwarz inequality, it can never exceed the **branching ratio** Γ<sub>*b*</sub>/Γ<sub>tot</sub> (§6.3).
+
+*(A symmetric Gaussian or sin² single-photon pulse partially reflects back off the atom in free space; even the best Gaussian tops out near 80%.)*
 
 ---
 
 ## 6.2 Time Compression (10⁶–10⁸ Cycles vs. 24 Simulated Cycles) & Lorentzian Lineshape
 
-Because electromagnetic coupling is weak (α ≈ 1/137), real atomic photons last millions of optical cycles. For **Lyman-α (1s → 2p)**, τ = 1.595 ns spans **N ≈ 3.94 × 10⁶ cycles**; for the partial **2p → 3s** channel (*A* = 6.317 × 10⁶ s⁻¹, τ = 158.3 ns), the natural photon spans **~7.23 × 10⁷ cycles** (versus **~2.03 × 10⁷ cycles** for the faster 44.5 ns **2s → 3p** H<sub>α</sub> channel).
+Because electromagnetic coupling is weak (α ≈ 1/137), real atomic photons last millions of optical cycles. For **Lyman-α (1s → 2p)**, τ = 1.595 ns spans **N ≈ 3.94 × 10⁶ cycles**. At the same H<sub>α</sub> energy, a photon driving **2p → 3s** lasts τ(3s) = 158.3 ns (**~7.23 × 10⁷ cycles**), while one driving **2s → 3p** lasts only τ(3p) = 5.27 ns (**~2.41 × 10⁶ cycles**), because 3p empties mostly into 1s.
 
 Simulating millions of cycles cycle-by-cycle in real time would take hours. To keep individual light oscillations and Bohmian trajectories clearly visible, `electron_orbitals.html`:
-1. Computes and reports the **exact physical Weisskopf–Wigner quantities** (Γ, linewidth Γ/2π, lifetime τ = 1/Γ, and natural cycles *N*).
+1. Computes and reports the **exact physical Weisskopf–Wigner quantities** of the upper level: total rate Γ<sub>tot</sub>, linewidth Γ<sub>tot</sub>/2π, lifetime τ = 1/Γ<sub>tot</sub> (which sets the photon's real duration), and natural cycles *N*, plus the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub>.
 2. Renders the pulse **time-compressed** with Γ<sub>sim</sub> = 5/*T* over *N*<sub>sim</sub> = 24 cycles. At *t* = 0, the envelope begins at *e*<sup>−2.5</sup> ≈ 8.2% of *E*₀ and surges rapidly in the final quarter before snapping off at *t* = *T*.
 
 ### Natural Lorentzian Lineshape & Spectroscopy Broadening
-Just as an exponentially decaying *e*<sup>−Γ*t*/2</sup> wavepacket Fourier-transforms into a **Lorentzian** spectral profile, absorption probability falls off with detuning Δω = ω<sub>L</sub> − ω₀ (scaled in `det` units of half-width Γ/2) as:
+Just as an exponentially decaying *e*<sup>−Γ*t*/2</sup> wavepacket Fourier-transforms into a **Lorentzian** spectral profile, absorption falls off with detuning Δω = ω<sub>L</sub> − ω₀. The photon's spectrum (half-width Γ/2) and the atom's line (half-width Γ/2) combine, so solving the cascade equation gives a Lorentzian of half-width Γ. In `det` units of Γ/2:
 
-> *P*<sub>exc</sub>(Δω) ≈ 1 / [ 1 + (Δω / (Γ/2))² ] = 1 / (1 + `det`²)
+> *P*<sub>abs</sub>(Δω) = (Γ<sub>*b*</sub>/Γ<sub>tot</sub>) / [ 1 + (Δω / Γ)² ] = (Γ<sub>*b*</sub>/Γ<sub>tot</sub>) / (1 + `det`²/4)
 
-At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), that weak-drive perturbative Lorentzian predicts 1 / (1 + 1.5²) ≈ **30.8%** excitation; because a full Θ = π pulse saturates strongly on resonance (**power broadening** plus finite *e*<sup>+5/2</sup> truncation on [0, *T*]), exact 2-level RWA evolution in **Single photon** mode yields **`40.6%` in |2p,+1⟩ and `59.4%` in |1s⟩**—still cleanly suppressed compared with 100% at `det = 0`, leaving a glowing beating superposition! *(In warm chemistry gas-phase spectra, thermal velocity spreads also add Gaussian **Doppler broadening** on top of this intrinsic **natural linewidth**.)*
+At `det = −1.5` (red-detuned to stay clear of higher *n* = 3 levels), this predicts 1 / (1 + 0.5625) ≈ **64%** for `1s → 2p,+1`, and the exact truncated photon gives the **65.1%** shown in the note. One photon cannot over-rotate or power-broaden the line the way a classical π-pulse does, which is why this differs from the ~41% a classical Θ = π pulse with the same envelope would leave in 2p. *(In warm gas-phase spectra, thermal velocity spreads also add Gaussian **Doppler broadening** on top of this intrinsic **natural linewidth**.)*
 
 ```demo
 {
   "label": "Single-photon time-reversed wavepacket (1s → 2p,+1)",
-  "caption": "Watch the E(t) gizmo grow exponentially as e^(+Γt/2), driving rapid excitation in the final 25% before abrupt cutoff.",
+  "caption": "Watch the E(t) gizmo grow exponentially as e^(+Γt/2), driving most of the absorption in the final 25% before the abrupt cutoff (odds 99.3%).",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 50,
@@ -61,7 +65,7 @@ At `det = −1.5` (red-detuned to avoid higher *n* = 3 levels), that weak-drive 
 ```demo
 {
   "label": "Red-detuned single photon (Detuning = −1.5 Γ/2)",
-  "caption": "Red-detuning by −1.5 (in Γ_sim/2 units) suppresses excitation to ~40.6% |2p,+1⟩ / ~59.4% |1s⟩, leaving a beating 1s + 2p superposition.",
+  "caption": "Red-detuning by −1.5 (in Γ_sim/2 units) lowers the odds to ~65% (see the note). The animation shows the absorbed branch, which still ends in |2p,+1⟩.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 50,
@@ -89,7 +93,7 @@ Around the chosen transition energy ω₀, the simulated wavepacket has spectral
 - **Active electron overlap (`elecMatch`):** Any initial orbital component whose energy falls outside `bw` of the chosen channel (for example, `0.20 |2p⟩` in `0.98 |1s⟩ + 0.20 |2p⟩` during `1s → 3p`, or an off-resonance Zeeman sublevel at large *B*<sub>*z*</sub>) does not interact and passes alongside an unabsorbed photon in `|1⟩_field`. Conditioned on the transition occurring (`0.98² ≈ 96%`), **Single photon** collapses onto the active initial orbital (`|1s⟩ → |3p⟩`), whereas a macroscopic laser coherent state (`Coherent EM wave`) does *not* entangle photon number and preserves the coherent `0.20 |2p⟩` spectator.
 - **Unresolved polarization (e.g., *B*<sub>*z*</sub> = 0, or weak fields where Zeeman splitting ≪ `bw`):** All magnetic sublevels (*m* = −1, 0, +1) overlap in energy within the photon spectrum. Linear **x̂** = (**σ**⁺ + **σ**⁻)/√2 matches **100%** and excites a genuine coherent `2p_x` (Larmor-precessing) superposition without over-rotating.
 - **Resolved Zeeman sublevels or chiral stimulated emission (e.g., `1s → 2p, Δm = −1` at *B*<sub>*z*</sub> = 0.05 a.u. with `pol = x`, or `2p,+1 → 1s · stim. emit` with `pol = x`):** Because the **σ**⁺ line lies well outside `bw` (or is dipole-blocked—wrong spin `σ⁻` on `2p,+1 → 1s` cannot stimulate emission!), the interacting dipole operator couples *only* **σ**⁻ (or **σ**⁺ downward). Orthogonal **ε** shows **0% match (blocked)**; linear **x̂** gives **Branch match = 50%** (and combined with an `e⁻` spectator overlap gives `elecMatch × polMatch`).
-- Rather than secretly multiplying pulse energy or leaving unentangled coherence after photon tracing, `electron_orbitals.html` **collapses onto the active electron subspace and ε<sub>int</sub>**, calibrates Θ = 1.00π for that branch, and simulates strictly the **post-selected transition arm**.
+- Rather than secretly multiplying pulse energy or leaving unentangled coherence after photon tracing, `electron_orbitals.html` **collapses onto the active electron subspace and ε<sub>int</sub>** and simulates strictly the **post-selected transition arm**.
 
 ```demo
 {
@@ -131,6 +135,24 @@ Around the chosen transition energy ω₀, the simulated wavepacket has spectral
 }
 ```
 
+### Conditioned on Absorption: What the Animation Shows vs. What the Note Reports
+The animation answers one question: *what does the electron do during this transition, given that it happened?* So it always ends 100% in the target state, and the real odds appear in the note below the controls. Those odds are computed from the cascade equation (§6.1) for the actual photon, detuning, and polarization:
+- **Branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub>.** The photon couples only through the channel back to your initial state, but the upper level drains through all of its channels while filling. Hydrogen levels above *n* = 2 have several channels, so even a perfect resonant photon is absorbed only partly.
+- **Inelastic (Raman) scattering.** While excited, the atom can decay to a *different* lower level, emitting a different photon. The note lists each such immediate decay and its probability.
+- **Elastic outcome.** Otherwise the photon passes or is re-emitted, and the atom ends back where it started.
+
+| Transition (resonant, matched ε) | Absorbed | Best case Γ<sub>*b*</sub>/Γ<sub>tot</sub> | Raman (atom ends elsewhere) |
+| :--- | :--- | :--- | :--- |
+| `1s → 2p,+1` | 99.3% | 100% | — |
+| `1s → 3p,+1` | 87.6% | 88.2% | 20.2% in 2s (via 3p → 2s, H<sub>α</sub>) |
+| `1s → 4p,+1` | 83.3% | 83.9% | 11.9% in 2s, 3.8% in 3s, 0.4% in 3d |
+| `2s → 3p,0` | 11.7% | 11.8% | 20.2% in 1s (via 3p → 1s, Lyman-β) |
+| `2p,+1 → 3d,0` (σ⁻) | 16.6% | 16.7% | 26.8% in other 2p sublevels |
+
+The Raman numbers can exceed the shortfall in absorption because the atom also decays *while* the photon is still arriving. Notice that `1s → 3p` ends in 2s exactly as often as `2s → 3p` ends in 1s: that is microscopic **reciprocity**.
+
+The displayed branch is drawn as a **coherent** superposition (with dipole beats), timed by the cascade model: the target weight follows |*c*<sub>*e*</sub>(*t*)|² normalized to its peak. A one-photon Fock state has no definite carrier phase, so the beat phase in the animation is one arbitrary choice; averaging the animation over all choices would cancel the beats and leave the mixture described next.
+
 ### Why We Display Just One Branch: Atom–Photon Entanglement vs. Mixed States
 Why doesn't sending one **x̂**-polarized photon onto a Zeeman-resolved atom put the **atom alone** into a coherent superposition `a|2p, −1⟩ + b|1s, 0⟩`? Because in quantum electrodynamics the photon itself is a quantum object!
 
@@ -157,7 +179,7 @@ Look closely at those two terms: the joint superposition contains **two compleme
 
 **Restoring interference:** Only if we **project the outgoing photon onto the {\|+⟩ = (\|0⟩ + \|1⟩)/√2, \|−⟩ = (\|0⟩ − \|1⟩)/√2} basis** and sort atomic measurements using **coincidence counters**—keeping only runs where the photon clicks in \|+⟩ (or only \|−⟩)—do we erase the which-way record and recover full interference fringes! (In the laboratory, projecting two orthogonal 1-photon polarization/path states onto (\|1<sub>*A*</sub>⟩ ± \|1<sub>*B*</sub>⟩)/√2 uses a polarizer or 50/50 beam splitter, whereas projecting photon-number states \|0⟩ ± \|1⟩ requires homodyne interference with a phase-locked local oscillator.)
 
-> **Simulation Summary:** Showing **Branch match** (`elecMatch × polMatch`) and simulating the collapsed active electron channel and **ε**<sub>int</sub> displays the **post-selected transition branch** (which occurs in **Branch match**% of trials, while 100% − **Branch match**% leaves the photon unabsorbed / spectator unchanged). Meanwhile, mid-pulse and detuned (`det ≠ 0`) trajectories from a matched initial branch evolve coherently (modeling the quantum-erased `|+⟩` homodyne outcome rather than a photon-traced mixed state).
+> **Simulation Summary:** **Branch match** (`elecMatch × polMatch`) selects the interacting electron channel and **ε**<sub>int</sub>; within it, the animation shows the **absorbed branch** (100% by construction), drawn coherently and timed by the cascade model. The note reports how often that branch actually happens (**Branch match** × cascade absorption, ≤ Γ<sub>*b*</sub>/Γ<sub>tot</sub>) and where the atom ends otherwise. Mid-pulse coherence between initial and target corresponds to the quantum-erased `|+⟩` homodyne outcome rather than the photon-traced mixed state. Stimulated emission (two photons) is shown the same way, without odds.
 
 ---
 
@@ -182,13 +204,13 @@ Plug *z*<sub>max</sub> back into *U*(*z*) to get the **barrier peak height**:
 > −2 √*E*₀ = −1 / (2*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; √*E*₀ = 1 / (4*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; ***E*<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴)**
 
 Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈ 0.0625 a.u.; for *n* = 3, *E*<sub>OBI</sub> = 1/1296 ≈ 7.72 × 10⁻⁴ a.u.—over 80 times lower!
-- In **Single photon** mode, a true weak-field photon takes 10⁶–10⁸ cycles and never reaches *E*<sub>OBI</sub>; compressing into 24 visual cycles would exceed *E*<sub>OBI</sub> if fed to a strong-field solver, so **Single photon** mode instead uses the **weak-field RWA + shell-local multipole continuity solver** (§6.5), keeping *every* transition *n* = 1..7 cleanly 100% bound without compression ionization!
+- In **Single photon** mode, a true weak-field photon takes 10⁶–10⁸ cycles and never reaches *E*<sub>OBI</sub>; compressing into 24 visual cycles would exceed *E*<sub>OBI</sub> if fed to a strong-field solver, so **Single photon** mode instead uses the **single-photon cascade + shell-local multipole continuity solver** (§6.5). One photon below threshold cannot ionize, so *every* transition *n* = 1..7 stays bound without compression ionization.
 - In **Coherent EM wave** mode (full continuous radial-grid TDSE), `Power = 1` at the reference Duration *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** (estimated continuum loss below ~0.6%; see Chapter 5), and the **`1π`** button keeps Power ≤ 1, stretching the Duration when needed. Cranking **Power** above 1 pushes *E*₀ past that safe field and drives real **photoionization** into **`continuum / higher n`**, with an inline loss estimate. Notice in Demo #4 below (`1s → 2p` at 10.204 eV, `Duration = 54`, `Power = 16`): *E*₀ reaches ~10× *E*<sub>OBI</sub>(2), and once amplitude reaches *n* = 2 (binding energy 3.401 eV), each further 10.204 eV photon exceeds its ionization threshold (just like the **photoelectric effect**!)—two photons from 1s cross the 13.6 eV threshold through the real 2p resonance (**resonance-enhanced multiphoton ionization, REMPI**).
 
 ```demo
 {
   "label": "Clean higher-shell single photon (2p,+1 → 3d,+2)",
-  "caption": "Weak-field RWA + multipole continuity flow transfers 100% cleanly from r ≈ 4.5 to 10.3 a0 in 24 cycles with zero OBI ionization.",
+  "caption": "The cascade-timed absorbed branch carries electrons cleanly from r ≈ 4.5 to 10.3 a0 in 24 cycles with zero OBI ionization (odds 99.3%: 3d,+2 decays only back to 2p,+1).",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 55,
@@ -229,14 +251,14 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 
 ---
 
-## 6.5 Two Solvers: Weak-Field RWA + Continuity Flow vs. Continuous Radial-Grid TDSE
+## 6.5 Two Solvers: Single-Photon Cascade + Continuity Flow vs. Continuous Radial-Grid TDSE
 
 `electron_orbitals.html` chooses the right quantum solver for each physical regime:
 
-### A. `Single photon` Mode: Weak-Field RWA + Shell-Local Multipole Continuity Flow
+### A. `Single photon` Mode: Single-Photon Cascade + Shell-Local Multipole Continuity Flow
 A real 1-photon wavepacket is extremely weak (*E*₀ ≪ *E*<sub>OBI</sub>), so non-resonant counter-rotating terms and competing shells never get dressed during absorption or stimulated emission:
-1. **Interaction-picture Rotating-Wave Approximation (RWA):** Evolves the single-excitation bound channel manifold (**initial ↔ partner** only) directly under the exact dipole coupling within the simulated *e*<sup>+Γ<sub>sim</sub>*t*/2</sup> wavepacket over 24 cycles—eliminating time-compression OBI ionization, multi-photon cascades, and off-resonant dressing for all *n* = 1..7.
-2. **Shell-local multipole continuity flow (∇·δJ = −σ):** Dropping off-resonant couplings makes the projected interaction mildly non-local in **r**, adding a local source term to Schrödinger probability conservation: ∂\|ψ\|²/∂*t* + ∇·**J**₀ = +σ, where σ = +2 Im ∑<sub>*a*,*b*</sub> *c*<sub>*a*</sub><sup>∗</sup> (*Ĥ*<sub>eff</sub> *c*)<sub>*b*</sub> ψ<sub>*a*</sub><sup>∗</sup> ψ<sub>*b*</sub>. The solver splits σ into multipoles: the monopole (*L* = 0) carries the Gauss-law radial flux δ*J*<sub>*r*</sub> = −(1/*r*²)∫₀<sup>*r*</sup> σ₀ *r*′² d*r*′, while every *L* ≥ 1 part is balanced tangentially on its own sphere (δ**J**<sub>⊥</sub> = (1/*r*) ∇<sub>Ω</sub>[*r*² σ<sub>*LM*</sub> *Y*<sub>*LM*</sub> / *L*(*L*+1)]). Adding δ**J** to **J**₀ makes ∂\|ψ\|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 hold **identically** while δ**J** stays proportional to the local source—so electrons in the exponentially thin outer tail are never flung outward by long-range multipole fields—transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
+1. **Closed-form cascade amplitudes (single-excitation manifold, initial → partner only):** For the time-reversed photon on (0, *T*), the cascade equation of §6.1 integrates exactly, *c*<sub>*e*</sub>(*t*) ∝ *e*<sup>−Γ(*t*+*T*)/2</sup>(*e*<sup>(Γ+*i*δ)*t*</sup> − 1)/(Γ + *i*δ), separately for every coupled sublevel pair with its own detuning δ. The displayed branch normalizes this to its peak (target weight → 100%) and shrinks the initial amplitude to keep the state normalized. No time-stepping of the amplitudes is needed, and there is no compression OBI ionization, multi-photon cascade, or off-resonant dressing for any *n* = 1..7.
+2. **Shell-local multipole continuity flow (∇·δJ = −σ):** Dropping off-resonant couplings makes the projected interaction mildly non-local in **r**, adding a local source term to Schrödinger probability conservation: ∂\|ψ\|²/∂*t* + ∇·**J**₀ = +σ, where σ = 2 Re ∑<sub>*a*,*b*</sub> *c*<sub>*a*</sub><sup>∗</sup> *ċ*<sub>*b*</sub><sup>int</sup> ψ<sub>*a*</sub><sup>∗</sup> ψ<sub>*b*</sub> is set by the interaction-driven change *ċ*<sup>int</sup> of the amplitudes. The solver splits σ into multipoles: the monopole (*L* = 0) carries the Gauss-law radial flux δ*J*<sub>*r*</sub> = −(1/*r*²)∫₀<sup>*r*</sup> σ₀ *r*′² d*r*′, while every *L* ≥ 1 part is balanced tangentially on its own sphere (δ**J**<sub>⊥</sub> = (1/*r*) ∇<sub>Ω</sub>[*r*² σ<sub>*LM*</sub> *Y*<sub>*LM*</sub> / *L*(*L*+1)]). Adding δ**J** to **J**₀ makes ∂\|ψ\|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 hold **identically** while δ**J** stays proportional to the local source—so electrons in the exponentially thin outer tail are never flung outward by long-range multipole fields—transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
 
 ### B. `Coherent EM wave` Mode: Continuous 3D Radial-Grid TDSE
 During strong laser/RF pulses, `electron_orbitals.html` solves the genuine **full-spectrum TDSE** on the fly:
@@ -249,6 +271,6 @@ During strong laser/RF pulses, `electron_orbitals.html` solves the genuine **ful
 
 ### Quick Self-Check
 1. Using *E*<sub>OBI</sub>(*n*) = 1/(16*n*⁴), compute *E*<sub>OBI</sub> for *n* = 1, 2, 3, and 4 in atomic units (1 a.u. = 5.142 × 10¹¹ V/m). Why is Rydberg *n* = 4 stripped ~256× more easily than ground-state *n* = 1?
-2. Why does a partial detuning of `1.0` in **Single photon** mode produce roughly 50% excitation amplitude squared (1/(1 + 1²) = 0.5)?
+2. Why does a detuning of `det = 1.0` in **Single photon** mode leave absorption odds near 80% (1/(1 + 1²/4)), even though `det` is measured in units of the photon's half-width Γ/2? And why can `2s → 3p` never exceed ~12% absorption, even with a perfectly shaped resonant photon?
 3. After **Stop pulse** or pulse completion, why do bound trajectories seamlessly continue without teleporting, whereas trajectories past 1.25 *E* get resampled?
 4. When linear `x`-polarized light hits a Zeeman-resolved `1s → 2p, Δm = −1` transition in **Single photon** mode, why do **\|2p, −1⟩** and **\|1s, 0⟩** fail to interfere if you ignore the outgoing photon—and how do coincidence measurements in the (\|0⟩ ± \|1⟩)/√2 basis restore that interference?

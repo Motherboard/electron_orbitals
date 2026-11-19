@@ -66,7 +66,7 @@ Compare this expression to **Planck's universal blackbody radiation law**, ρ(ω
 *(If written per ordinary frequency ν = ω/2π, A₂₁ / B₂₁<sup>(ν)</sup> = 8πhν³/c³.)*
 
 ### Exact Weisskopf–Wigner Spontaneous Decay Rate Γ = *A*₂₁
-Quantum electrodynamics (**Weisskopf–Wigner theory**) evaluates *A*₂₁ directly from the atom's dipole coupling to vacuum electromagnetic modes. In `electron_orbitals.html`, the **Single photon** panel calculates and displays the exact spontaneous decay rate Γ = *A*₂₁, natural lifetime τ = 1/Γ, linewidth Δν = Γ/2π, and natural optical cycles *N* = ω₀/(2πΓ):
+Quantum electrodynamics (**Weisskopf–Wigner theory**) evaluates *A*₂₁ directly from the atom's dipole coupling to vacuum electromagnetic modes. In `electron_orbitals.html`, the **Single photon** panel calculates and displays the upper level's exact spontaneous decay rate (summed over its channels, Γ<sub>tot</sub>), natural lifetime τ = 1/Γ<sub>tot</sub>, linewidth Δν = Γ<sub>tot</sub>/2π, natural optical cycles *N* = ω₀/(2πΓ<sub>tot</sub>), and the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel. Each channel's rate is:
 
 > *A*₂₁ = Γ = ω₀³ \|*d*\|² / (3π ε₀ *ħ* *c*³) = (4/3) α³ ω₀³ [ max(*l*<sub>u</sub>, *l*<sub>l</sub>) / (2*l*<sub>u</sub> + 1) ] \|⟨*n*<sub>l</sub>*l*<sub>l</sub> \|*r*\| *n*<sub>u</sub>*l*<sub>u</sub>⟩\|² &nbsp;&nbsp; *(atomic units)*
 
@@ -75,11 +75,11 @@ Here α ≈ 1/137.036 is the fine-structure constant (1/*c* in atomic units). Pl
 - Lifetime τ = 1.595 ns
 - Natural oscillations *N* ≈ 3.94 × 10⁶ cycles!
 
-> **Partial vs. Total Excited-State Lifetime:** For **2p**, **1s** is the *only* lower E1-allowed level, so the single channel rate *A*<sub>2p→1s</sub> equals the total decay rate and τ<sub>2p</sub> = 1.595 ns. Above *n* = 2, multiple downward channels compete (for example, **3p** decays mainly to **1s** in the UV at 102.6 nm and more slowly to **2s** at Balmer H<sub>α</sub> 656.3 nm); total decay rate sums all lower channels, Γ<sub>tot</sub> = ∑<sub>*f*<*i*</sub> *A*<sub>*i*→*f*</sub>, whereas **Single photon** mode reports the **partial** rate *A*<sub>*i*→*f*</sub> and partial lifetime 1/*A*<sub>*i*→*f*</sub> for the selected pair. Even within the same Balmer H<sub>α</sub> energy (656.3 nm), **3s → 2p** (*A* = 6.317 × 10⁶ s⁻¹, τ = 158.3 ns) is ~3.5× slower than **3p → 2s** (*A* = 2.246 × 10⁷ s⁻¹, τ = 44.5 ns)!
+> **Partial vs. Total Excited-State Lifetime:** For **2p**, **1s** is the *only* lower E1-allowed level, so the single channel rate *A*<sub>2p→1s</sub> equals the total decay rate and τ<sub>2p</sub> = 1.595 ns. Above *n* = 2, multiple downward channels compete (for example, **3p** decays mainly to **1s** in the UV at 102.6 nm and more slowly to **2s** at Balmer H<sub>α</sub> 656.3 nm); total decay rate sums all lower channels, Γ<sub>tot</sub> = ∑<sub>*f*<*i*</sub> *A*<sub>*i*→*f*</sub>. **Single photon** mode reports Γ<sub>tot</sub> and τ = 1/Γ<sub>tot</sub>, because the ideal photon is the time-reversed emission of the whole upper level, plus the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel, which caps how often that photon can be absorbed. Even within the same Balmer H<sub>α</sub> energy (656.3 nm), **3s → 2p** (*A* = 6.317 × 10⁶ s⁻¹) is ~3.5× slower than **3p → 2s** (*A* = 2.246 × 10⁷ s⁻¹). Yet 3s has no other channel (τ = 158.3 ns), while 3p empties mostly into 1s (τ = 5.27 ns), so only ~11.8% of 3p's decay returns to 2s!
 
 *(For Zeeman M1 transitions, Γ scales with α⁵ instead of α³, making spontaneous M1 decay ~10⁵ times weaker than an E1 transition of the same energy.)*
 
-> **Stimulated vs. Spontaneous in the Simulation:** Both **`Coherent EM wave`** and **`Single photon`** configure an **incoming** radiation field hitting the atom (`stim. emit` in the transition menu drives stimulated downward emission, never spontaneous emission of a coherent EM wave—true spontaneous decay requires vacuum QED fluctuations). Instead, **Single photon** mode displays the exact QED spontaneous rate *A*₂₁ = Γ (for the selected *m*₁ → *m*₂ Zeeman channel when *B*<sub>*z*</sub> ≠ 0, or summed over final *m* when *B*<sub>*z*</sub> = 0), enforces a 1-quantum excitation cap, reports **Branch match** (projecting both uncoupled initial electron spectators and arbitrary **ε** onto the interacting dipole channel **ε**<sub>int</sub>, while blocking wrong-spin emission at `0%`—click **Match** to auto-select the valid polarization), and sends in its time-reversed wavepacket for 100% absorption or stimulated emission of that branch (Chapter 6, §§6.1–6.3).
+> **Stimulated vs. Spontaneous in the Simulation:** Both **`Coherent EM wave`** and **`Single photon`** configure an **incoming** radiation field hitting the atom (`stim. emit` in the transition menu drives stimulated downward emission, never spontaneous emission of a coherent EM wave—true spontaneous decay requires vacuum QED fluctuations). Instead, **Single photon** mode displays the exact QED spontaneous rate *A*₂₁ = Γ (for the selected *m*₁ → *m*₂ Zeeman channel when *B*<sub>*z*</sub> ≠ 0, or summed over final *m* when *B*<sub>*z*</sub> = 0), enforces a 1-quantum excitation cap, reports **Branch match** (projecting both uncoupled initial electron spectators and arbitrary **ε** onto the interacting dipole channel **ε**<sub>int</sub>, while blocking wrong-spin emission at `0%`—click **Match** to auto-select the valid polarization), and sends in its time-reversed wavepacket. The animation shows the branch where the photon is absorbed (or stimulates emission), ending 100% in the target, while the note reports how likely that absorption really is (Chapter 6, §§6.1–6.3).
 
 ---
 
@@ -225,7 +225,7 @@ Watch conservation of angular momentum literally spin up—and spin down—the B
 ```demo
 {
   "label": "Allowed upward σ⁻: 2p,+1 → 3d,0",
-  "caption": "Same |2p,+1⟩ and σ⁻ helicity now absorb upward (Δm = −1): transfers cleanly to 100% |3d, 0⟩ at H_α energy via weak-field RWA!",
+  "caption": "Same |2p,+1⟩ and σ⁻ helicity now absorb upward (Δm = −1) into |3d, 0⟩ at H_α energy. The note gives only ~17% odds: 3d,0 decays mostly to 2p,0, not back to 2p,+1.",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 0,
