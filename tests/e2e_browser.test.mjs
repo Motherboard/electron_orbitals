@@ -260,7 +260,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(afterPhoton.trailsKept, true, 'Pulse trails should carry smoothly past finishPulse');
     assert.ok(afterPhoton.trOptions.includes('2|1|1|0'), 'Transition list should update to offer 2p -> 1s');
 
-    // 4. Coherent 2pi x-polarized wave: |2p, m = +1> -> |2p, m = -1> via |1s, 0> (20 cyc at pow=1 => Theta=2.00pi)
+    // 4. Coherent 2pi x-polarized wave: |2p, m = +1> -> |2p, m = -1> via |1s, 0> (397 cyc at pow=1: ionization-safe Theta=2.00pi)
     await evalJS(`(() => {
       const waveRadio = document.querySelector('input[name="imode"][value="wave"]');
       waveRadio.checked = true;
@@ -270,9 +270,11 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       sel.value = '2|1|1|0';
       sel.dispatchEvent(new Event('change'));
       const pdur = document.getElementById('pdur');
-      pdur.value = '20'; pdur.dispatchEvent(new Event('input'));
+      pdur.value = '397'; pdur.dispatchEvent(new Event('input'));
       const ppow = document.getElementById('ppow');
       ppow.value = '1'; ppow.dispatchEvent(new Event('input'));
+      const spd = document.getElementById('spd');
+      spd.value = '3'; spd.dispatchEvent(new Event('input'));
     })()`);
 
     const preWave = await evalJS(`({
@@ -287,12 +289,12 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.match(preWave.ppowV, /Θ=2\.00π/);
 
     await evalJS(`document.getElementById('fire').click()`);
-    await waitUntil(`pulse !== null && pulse.t > 0.35 * pulse.T`, 5000);
+    await waitUntil(`pulse !== null && pulse.t > 0.35 * pulse.T`, 30000);
     const midWaveInfo = await evalJS(`document.getElementById('info').textContent`);
     assert.match(midWaveInfo, /Coherent EM pulse/);
     assert.match(midWaveInfo, /\|1s, 0⟩:/);
 
-    await waitUntil(`pulse === null`, 15000);
+    await waitUntil(`pulse === null`, 45000);
     const afterWave = await evalJS(`(() => {
       const rs = P.map((q) => Math.hypot(q.x ?? q.rho, q.y ?? 0, q.z)).sort((a, b) => a - b);
       const sorted = [...components].sort((a, b) => b.amp - a.amp);
@@ -704,7 +706,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       const obiWarn = document.getElementById('em-note').textContent;
       document.getElementById('p1pi').click();
       const p1Readout = document.getElementById('ppow-v').textContent;
-      // Check 1s -> 2p at 50 cyc gives exact p1 = 0.04 (1pi chip)
+      // Check 1s -> 2p at 50 cyc: 1pi chip lengthens to the 54-cyc safe Tref at Power = 1
       while (document.querySelectorAll('.comp').length > 1) document.querySelectorAll('.rm')[1].click();
       const s = document.querySelectorAll('.comp select');
       s[0].value = '1'; s[0].dispatchEvent(new Event('change'));
@@ -712,6 +714,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       document.getElementById('pdur').dispatchEvent(new Event('input'));
       document.getElementById('p1pi').click();
       const p1Pow1s2p = +document.getElementById('ppow').value;
+      const p1Dur1s2p = +document.getElementById('pdur').value;
       const p1Readout1s2p = document.getElementById('ppow-v').textContent;
       Bau = 0.25; rescaleB(); buildTransitions();
       document.getElementById('pol-match-btn').click();
@@ -768,7 +771,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
 
       const overflow320 = document.documentElement.scrollWidth > window.innerWidth;
       document.getElementById('tut-toggle').click();
-      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, bvHighText, bvZeroText, cycNatBig, svText, polSpTitle, polSmTitle, ovProjOpt, ch1DetClosedInitially, ch1DetToggledOpen, ch6HasRawStars, overflow320 };
+      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Dur1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, bvHighText, bvZeroText, cycNatBig, svText, polSpTitle, polSmTitle, ovProjOpt, ch1DetClosedInitially, ch1DetToggledOpen, ch6HasRawStars, overflow320 };
     })()`);
     assert.deepEqual(postSupAndStim.compsAfterSup, [{ n: 3, l: 1, m: 1, amp: 1 }]);
     assert.match(postSupAndStim.trOptText, /stim\. emit/);
@@ -776,9 +779,11 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(postSupAndStim.matchedEnabled, true);
     assert.equal(postSupAndStim.matchedText, '100%');
     assert.equal(postSupAndStim.bfDefaultMax, 3);
-    assert.match(postSupAndStim.obiWarn, /expect OBI ionization/);
+    assert.match(postSupAndStim.obiWarn, /exceeds the ionization-safe field/);
     assert.match(postSupAndStim.p1Readout, /Θ=1\.00π/);
-    assert.equal(postSupAndStim.p1Pow1s2p, 0.04);
+    // 1π never exceeds the ionization-safe Power = 1: from 50 cyc it stretches 1s -> 2p to its 54-cycle safe reference duration
+    assert.equal(postSupAndStim.p1Pow1s2p, 1);
+    assert.equal(postSupAndStim.p1Dur1s2p, 54);
     assert.match(postSupAndStim.p1Readout1s2p, /Θ=1\.00π/);
     assert.match(postSupAndStim.highBWarn, /High B_z/);
     assert.ok(postSupAndStim.orthCfg.E0 < 0.05 * postSupAndStim.orthCfg.Eobi, `Expected E0 << Eobi for 271° leak, got E0=${postSupAndStim.orthCfg.E0} vs Eobi=${postSupAndStim.orthCfg.Eobi}`);

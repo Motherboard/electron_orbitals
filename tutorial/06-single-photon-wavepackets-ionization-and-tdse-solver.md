@@ -182,8 +182,8 @@ Plug *z*<sub>max</sub> back into *U*(*z*) to get the **barrier peak height**:
 > −2 √*E*₀ = −1 / (2*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; √*E*₀ = 1 / (4*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; ***E*<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴)**
 
 Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈ 0.0625 a.u.; for *n* = 3, *E*<sub>OBI</sub> = 1/1296 ≈ 7.72 × 10⁻⁴ a.u.—over 80 times lower!
-- In **Single photon** mode, a true weak-field photon takes 10⁶–10⁸ cycles and never reaches *E*<sub>OBI</sub>; compressing into 24 visual cycles would exceed *E*<sub>OBI</sub> if fed to a strong-field solver, so **Single photon** mode instead uses the **weak-field RWA + exact multipole continuity solver** (§6.5), keeping *every* transition *n* = 1..7 cleanly 100% bound without compression ionization!
-- In **Coherent EM wave** mode (full continuous radial-grid TDSE), cranking **Power** up pushes *E*₀ past *E*<sub>OBI</sub>, driving real **photoionization** into **`continuum / higher n`** (with an inline warning when *E*₀ > 2 *E*<sub>OBI</sub>—click the **`1π`** button to jump straight to clean Θ = 1.00π transfer at the selected Duration!). Notice in Demo #4 below (`2s → 3p` at 1.889 eV, `Power = 16`): besides pushing *E*₀ above 4.5× *E*<sub>OBI</sub>(3), once amplitude reaches *n* = 3 (binding energy 1.512 eV), each 1.889 eV photon itself exceeds the ionization threshold (just like the **photoelectric effect**!), while two photons exceed *n* = 2's 3.401 eV threshold (**resonance-enhanced multiphoton ionization, REMPI**).
+- In **Single photon** mode, a true weak-field photon takes 10⁶–10⁸ cycles and never reaches *E*<sub>OBI</sub>; compressing into 24 visual cycles would exceed *E*<sub>OBI</sub> if fed to a strong-field solver, so **Single photon** mode instead uses the **weak-field RWA + shell-local multipole continuity solver** (§6.5), keeping *every* transition *n* = 1..7 cleanly 100% bound without compression ionization!
+- In **Coherent EM wave** mode (full continuous radial-grid TDSE), `Power = 1` at the reference Duration *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** (estimated continuum loss below ~0.6%; see Chapter 5), and the **`1π`** button keeps Power ≤ 1, stretching the Duration when needed. Cranking **Power** above 1 pushes *E*₀ past that safe field and drives real **photoionization** into **`continuum / higher n`**, with an inline loss estimate. Notice in Demo #4 below (`1s → 2p` at 10.204 eV, `Duration = 54`, `Power = 16`): *E*₀ reaches ~10× *E*<sub>OBI</sub>(2), and once amplitude reaches *n* = 2 (binding energy 3.401 eV), each further 10.204 eV photon exceeds its ionization threshold (just like the **photoelectric effect**!)—two photons from 1s cross the 13.6 eV threshold through the real 2p resonance (**resonance-enhanced multiphoton ionization, REMPI**).
 
 ```demo
 {
@@ -207,19 +207,19 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 
 ```demo
 {
-  "label": "Strong-field ionization (2s,0 → 3p, Power = 16)",
-  "caption": "Peak field E₀ exceeds E_OBI(3) by >4.5× (~24% leaks into continuum / higher-n states) as Bohmian electrons stream outward!",
-  "states": [{"n": 2, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
+  "label": "Strong-field ionization (1s,0 → 2p, Power = 16)",
+  "caption": "Power = 16 drives 4× the ionization-safe field (E₀ ≈ 10× E_OBI(2)): Θ = 4π cycles the electron through 2p twice, a second 10.2 eV photon photoionizes ~7% (REMPI), and those Bohmian electrons stream outward!",
+  "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 0,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
-    "transition": "2|0|3|1",
+    "transition": "1|0|2|1",
     "pol": "z",
-    "duration": 16,
+    "duration": 54,
     "detuning": 0,
     "power": 16,
     "fire": true
@@ -233,15 +233,15 @@ Notice the steep **1/*n*⁴** scaling! For *n* = 1, *E*<sub>OBI</sub> = 1/16 ≈
 
 `electron_orbitals.html` chooses the right quantum solver for each physical regime:
 
-### A. `Single photon` Mode: Weak-Field RWA + Exact Multipole Continuity Flow
+### A. `Single photon` Mode: Weak-Field RWA + Shell-Local Multipole Continuity Flow
 A real 1-photon wavepacket is extremely weak (*E*₀ ≪ *E*<sub>OBI</sub>), so non-resonant counter-rotating terms and competing shells never get dressed during absorption or stimulated emission:
 1. **Interaction-picture Rotating-Wave Approximation (RWA):** Evolves the single-excitation bound channel manifold (**initial ↔ partner** only) directly under the exact dipole coupling within the simulated *e*<sup>+Γ<sub>sim</sub>*t*/2</sup> wavepacket over 24 cycles—eliminating time-compression OBI ionization, multi-photon cascades, and off-resonant dressing for all *n* = 1..7.
-2. **Exact multipole continuity flow (∇·δJ = −σ):** Dropping off-resonant couplings makes the projected interaction mildly non-local in **r**, adding a local source term to Schrödinger probability conservation: ∂\|ψ\|²/∂*t* + ∇·**J**₀ = +σ, where σ = +2 Im ∑<sub>*a*,*b*</sub> *c*<sub>*a*</sub><sup>∗</sup> (*Ĥ*<sub>eff</sub> *c*)<sub>*b*</sub> ψ<sub>*a*</sub><sup>∗</sup> ψ<sub>*b*</sub>. The solver integrates Poisson's equation ∇²χ = −σ multipole-by-multipole on a 1D spherical mesh and adds δ**J** = ∇χ to **J**₀ so ∂\|ψ\|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 holds **identically**, transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
+2. **Shell-local multipole continuity flow (∇·δJ = −σ):** Dropping off-resonant couplings makes the projected interaction mildly non-local in **r**, adding a local source term to Schrödinger probability conservation: ∂\|ψ\|²/∂*t* + ∇·**J**₀ = +σ, where σ = +2 Im ∑<sub>*a*,*b*</sub> *c*<sub>*a*</sub><sup>∗</sup> (*Ĥ*<sub>eff</sub> *c*)<sub>*b*</sub> ψ<sub>*a*</sub><sup>∗</sup> ψ<sub>*b*</sub>. The solver splits σ into multipoles: the monopole (*L* = 0) carries the Gauss-law radial flux δ*J*<sub>*r*</sub> = −(1/*r*²)∫₀<sup>*r*</sup> σ₀ *r*′² d*r*′, while every *L* ≥ 1 part is balanced tangentially on its own sphere (δ**J**<sub>⊥</sub> = (1/*r*) ∇<sub>Ω</sub>[*r*² σ<sub>*LM*</sub> *Y*<sub>*LM*</sub> / *L*(*L*+1)]). Adding δ**J** to **J**₀ makes ∂\|ψ\|²/∂*t* + ∇·**J**<sub>eff</sub> = 0 hold **identically** while δ**J** stays proportional to the local source—so electrons in the exponentially thin outer tail are never flung outward by long-range multipole fields—transporting Bohmian electrons smoothly between shells (e.g., *r* ≈ 1.5 ↔ 24 *a*₀ for `1s ↔ 4p`) with zero teleportation!
 
 ### B. `Coherent EM wave` Mode: Continuous 3D Radial-Grid TDSE
 During strong laser/RF pulses, `electron_orbitals.html` solves the genuine **full-spectrum TDSE** on the fly:
-1. **Radial-grid spherical-harmonic expansion:** The wavefunction is written as ψ(*r*, θ, φ, *t*) = ∑<sub>*l*≤*L*<sub>max</sub>,*m*</sub> [*u*<sub>*lm*</sub>(*r*, *t*)/*r*] *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) on a continuous radial mesh (234–380 points depending on *n*, *L*<sub>max</sub> ≤ 5), capturing **all** bound shells, AC Stark shifts, multi-photon transitions, and continuum ionization simultaneously.
-2. **Unitary Strang-split propagation:** Each small time step splits the evolution into symmetric half-steps so the method stays **norm-conserving** (unitary) without blowing up: (a) a 4th-order **Numerov + Crank–Nicolson** tridiagonal matrix solver for the radial kinetic + Coulomb operator *Ĥ*₀ = −½ ∂²/∂*r*² + *l*(*l*+1)/(2*r*²) − 1/*r*, (b) an adaptive 4th-order **Runge–Kutta (RK4)** step for the **r**·**E**(*t*) or ½**B**₁(*t*)·**L** coupling across (*l*, *m*) channels, and (c) exact Zeeman *e*<sup>−*imB*<sub>*z*</sub>Δ*t*/2</sup> phase rotation.
+1. **Radial-grid spherical-harmonic expansion:** The wavefunction is written as ψ(*r*, θ, φ, *t*) = ∑<sub>*l*≤*L*<sub>max</sub>,*m*</sub> [*u*<sub>*lm*</sub>(*r*, *t*)/*r*] *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) on a continuous radial mesh (234–380 points depending on *n*, *L*<sub>max</sub> ≤ 7 so even *n* = 7, *l* = 6 orbitals couple to their *l* = 7 continuum), capturing **all** bound shells, AC Stark shifts, multi-photon transitions, and continuum ionization simultaneously.
+2. **Unitary Strang-split propagation:** Each small time step splits the evolution into symmetric half-steps so the method stays **norm-conserving** (unitary) without blowing up: (a) a 4th-order **Numerov + Crank–Nicolson** tridiagonal matrix solver for the radial kinetic + Coulomb operator *Ĥ*₀ = −½ ∂²/∂*r*² + *l*(*l*+1)/(2*r*²) − 1/*r*, (b) an adaptive **Runge–Kutta** step (2nd order when the per-step dipole phase is below 0.004 rad, 4th order otherwise, and an exact unitary eigenbasis rotation for strong fields) for the **r**·**E**(*t*) or ½**B**₁(*t*)·**L** coupling across (*l*, *m*) channels, and (c) exact Zeeman *e*<sup>−*imB*<sub>*z*</sub>Δ*t*/2</sup> phase rotation.
 3. **Complex Absorbing Potential (CAP):** In the outer 14% of the radial grid, a smooth damping mask absorbs outgoing ionized probability (and attenuates outward radial drift) so unbound continuum waves leave cleanly instead of bouncing artificially off the simulation wall.
 4. **Live Bohmian tracking & post-pulse projection:** At every substep, the 3D electron dots integrate **v** = Im(∇ψ/ψ) + **A** directly from the radial grid via cubic interpolation. When the pulse ends (or **Stop pulse** is pressed), bound eigenstate components above the **\|*c*\| > 0.14** amplitude cutoff (~2% population threshold) form the continuing analytical superposition, keeping all bound electron positions and trails intact while re-homing only escaped continuum outliers beyond 1.25 *E*.
 

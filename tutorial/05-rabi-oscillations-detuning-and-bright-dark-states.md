@@ -37,26 +37,26 @@ Squaring \|*c*₂(*T*)\|² yields the excited-state population:
 
 > **The Bloch Sphere Picture (NMR & Quantum Optics Intuition):** Imagine the two-level quantum state as a unit arrow pointing **North** (\|1⟩) on a sphere. A resonant pulse rotates that arrow continuously downward by angle Θ: **Θ = π/2** stops on the equator (maximum coherence between \|1⟩ and \|2⟩, just like an NMR 90° RF pulse creating free-induction decay), **Θ = π** flips to the South Pole (\|2⟩), and **Θ = 2π** completes a full 360° turn back North—where spin-½ geometry attaches a minus sign cos(π) = **−1**!
 
-Three milestone pulse areas stand out (the UI reports Θ = π √Power · (Duration / *T*<sub>ref</sub>), with reference *T*<sub>ref</sub> = 10 cycles for *n* ≤ 2 and M1, scaling up to 80 cycles for *n* ≥ 3 to curb ionization—so doubling Θ takes **2× Duration** or **4× Power**):
-- **Θ = π/2** (`Duration = 5 cyc, Power = 1` on `1s → 2p`): *P*₁ = ½, *P*₂ = ½ — creates an exact **50/50 coherent superposition** that keeps beating after the pulse ends!
-- **Θ = π** (`Duration = 10 cyc, Power = 1`): *P*₂ = 1 — **complete population inversion** (or complete stimulated de-excitation).
-- **Θ = 2π** (`Duration = 20 cyc, Power = 1`, or `Duration = 40, Power = 0.25` to curb continuum loss): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever a dark state stands alongside it.
+Three milestone pulse areas stand out. The UI reports Θ = π √Power · (Duration / *T*<sub>ref</sub>), where the reference *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** for the selected line: the Duration at which a resonant π-pulse's peak field drops to the level that keeps the estimated continuum loss below ~0.6% (one-photon ionization of every populated shell, computed from exact Coulomb continuum waves, plus a multiphoton guard). For `1s → 2p`, *T*<sub>ref</sub> = 54 cycles; weak or Rydberg lines need longer (the Duration slider reaches 400 cycles), M1 Zeeman lines use 10. Longer than *T*<sub>ref</sub>, the field is held at the safe level, so Θ grows as √Duration; Power > 1 exceeds that level and the readout warns about continuum loss. The **1π** button always picks Power ≤ 1 and stretches the Duration when needed:
+- **Θ = π/2** (`Duration = 27 cyc, Power = 1` on `1s → 2p`): *P*₁ = ½, *P*₂ = ½ — creates an exact **50/50 coherent superposition** that keeps beating after the pulse ends!
+- **Θ = π** (`Duration = 54 cyc, Power = 1`): *P*₂ = 1 — **complete population inversion** (or complete stimulated de-excitation).
+- **Θ = 2π** (`Duration = 216 cyc, Power = 1`, since Θ ∝ √Duration beyond *T*<sub>ref</sub>; or `Duration = 54, Power = 4` with a ~2% continuum-loss warning): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever a dark state stands alongside it.
 
 ```demo
 {
   "label": "π/2 pulse: prepare beating 1s + 2p,0 dipole",
-  "caption": "5-cycle z-polarized pulse at Power = 1 (Θ = 0.50π): leaves ~51% |1s⟩ and ~45% |2p,0⟩ beating continuously afterward.",
+  "caption": "27-cycle z-polarized pulse at Power = 1 (Θ = 0.50π): leaves ~50% |1s⟩ and ~50% |2p,0⟩ beating continuously afterward.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 0,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "z",
-    "duration": 5,
+    "duration": 27,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -67,18 +67,18 @@ Three milestone pulse areas stand out (the UI reports Θ = π √Power · (Durat
 ```demo
 {
   "label": "π pulse: full Rabi inversion 1s → 2p,+1",
-  "caption": "10-cycle σ⁺ sin² pulse at Power = 1 (Θ = 1.00π): transfers ~91% cleanly to |2p,+1⟩ (~4% |1s⟩, ~4% continuum).",
+  "caption": "54-cycle σ⁺ sin² pulse at Power = 1 (Θ = 1.00π at T_ref, the shortest ionization-safe π-pulse for this line): transfers ~99% to |2p,+1⟩ with only ~0.5% continuum loss.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 60,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "sp",
-    "duration": 10,
+    "duration": 54,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -111,20 +111,20 @@ Without any magnetic field, a 2π linear pulse flips the electron's orbital angu
 ```demo
 {
   "label": "2π bright/dark m-flip: 2p,+1 → 2p,-1 via x-pol",
-  "caption": "40-cycle x-polarized pulse at Power = 0.25 (Θ = 2.00π; E₀ ≈ 6.4× E_OBI(2) greatly curbs ionization): amplitude dips into 1s and transfers ~96.7% into |2p,-1⟩ (~1.3% left in |2p,+1⟩, ~2% continuum loss)!",
+  "caption": "400-cycle x-polarized pulse at Power = 1 (Θ = 2.01π: beyond T_ref = 100 cycles the field is held at the ionization-safe level, so Θ grows as √Duration): amplitude dips into 1s and transfers ~99.8% into |2p,-1⟩ with only ~0.2% continuum loss!",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 80,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "2|1|1|0",
     "pol": "x",
-    "duration": 40,
+    "duration": 400,
     "detuning": 0,
-    "power": 0.25,
+    "power": 1,
     "fire": true
   }
 }
@@ -142,23 +142,23 @@ Notice two effects of detuning:
 1. The oscillation speeds up to **Ω̃ = √(Ω<sub>R</sub>² + Δω²)**.
 2. The peak transfer probability shrinks by the **Lorentzian envelope** Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²): because the driving field drifts out of phase with the atom's natural Bohr beat ω₀, it pulls probability partway up and then stimulates it right back down before reaching 100%.
 
-> **Real-Atom Caution — Red vs. Blue Detuning:** Because hydrogen has **more than two levels**, blue-detuning `1s → 2p` (10.204 eV) on a short 10-cycle pulse (`bw` = 10% = 1.02 eV) to `+1.5 bw` puts the laser at **11.73 eV**—close enough to `1s → 3p` (12.09 eV) that the multi-level TDSE leaks ~23% into `3p,+1`! Detuning to the **red side** (`-1.5 bw`, **8.67 eV**) keeps higher shells far away and cleanly isolates the 2-level off-resonant flop back to `1s` (~94%).
+> **Real-Atom Caution — Red vs. Blue Detuning:** Because hydrogen has **more than two levels**, blue-detuning `1s → 2p` (10.204 eV) on a short 10-cycle pulse (`bw` = 10% = 1.02 eV) to `+1.5 bw` puts the laser at **11.73 eV**—close enough to `1s → 3p` (12.09 eV) that the multi-level TDSE leaks population into `3p,+1`! Detuning to the **red side** keeps higher shells far away: on the safe 54-cycle π-pulse below (`bw` = 1.9% = 0.19 eV), `-1.5 bw` (**9.92 eV**) cleanly isolates the 2-level off-resonant flop back to `1s` (~99%).
 
 ```demo
 {
   "label": "Off-resonant red-detuned pulse (Detuning = −1.5 bw)",
-  "caption": "Same Θ = π pulse parameters red-detuned by −1.5 bw (8.67 eV, away from 3p): population flops partway up and returns ~94% to |1s⟩.",
+  "caption": "Same Θ = π pulse parameters red-detuned by −1.5 bw (9.92 eV, away from 3p): population flops partway up and returns ~99% to |1s⟩.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 60,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "sp",
-    "duration": 10,
+    "duration": 54,
     "detuning": -1.5,
     "power": 1,
     "fire": true

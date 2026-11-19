@@ -187,9 +187,9 @@ An oscillating electric field **E**(*t*) drives **E1 (electric-dipole)** transit
 
 In our simplified linear-Zeeman model (dropping ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>², which would shift the spacing by ~10% at *B*<sub>*z*</sub> = 0.1 a.u.), \|2s, 0⟩ lies **exactly halfway** between \|2p, +1⟩ and \|2p, −1⟩ with equal circular dipole strength **3.00 a.u.** (\|⟨2s, 0\| **r** · **ε**<sub>+</sub><sup>∗</sup> \|2p, +1⟩\| = 3.00 *a*₀, whereas \|⟨2s, 0\|*x*\|2p, +1⟩\| = 3/√2 ≈ 2.12 *a*₀). Therefore, **σ⁺** circularly polarized **Coherent EM wave** light tuned to resonance frequency ω₀ = ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 couples an **equidistant 3-level ladder** (`|2p,+1⟩ ↔ |2s,0⟩ ↔ |2p,-1⟩`)!
 
-To understand the `Power` slider and pulse-area readout **Θ** previewed here (and derived fully in Chapter 5): in **Coherent EM wave** mode at `10 cyc`, `Power = 1` is calibrated to a **π-pulse** (Θ = π, 100% inversion for an isolated **2-level** pair), and since field amplitude scales as √Power, Θ = π√Power at `10 cyc`. In a classical **Coherent EM wave** driving all three levels symmetrically, the effective ladder rotation angle is **Θ / √2** (so full transfer across all three levels requires √2 more amplitude, i.e., `Power = 2`):
-- **Half-power (`Power = 0.5`, Θ = π/√2, effective angle π/2):** A 10-cycle **Coherent EM wave** **σ⁺** pulse drives coherent Rabi transfer into an exact **50% / 25% / 25%** split (~50% \|2s, 0⟩, ~25% \|2p, +1⟩, ~25% \|2p, −1⟩).
-- **2-level π-area (`Power = 1, 10 cyc`, Θ = π in `Coherent EM wave`):** Coherently over-rotates past \|2s, 0⟩ along the multi-photon classical ladder into ~3.9% \|2p, +1⟩, ~31.6% \|2s, 0⟩, and ~64.5% \|2p, −1⟩. By contrast, **`Single photon` mode enforces a strict single-excitation (1-quantum) cap**, halting cleanly at **100% \|2s, 0⟩** (and **100% \|2p, 0⟩** for M1) without cascading a second quantum into \|2p, −1⟩!
+To understand the `Power` slider and pulse-area readout **Θ** previewed here (and derived fully in Chapter 5): in **Coherent EM wave** mode at this line's reference duration (`13 cyc`, its shortest ionization-safe π-pulse), `Power = 1` is calibrated to a **π-pulse** (Θ = π, 100% inversion for an isolated **2-level** pair), and since field amplitude scales as √Power, Θ = π√Power at `13 cyc`. In a classical **Coherent EM wave** driving all three levels symmetrically, the effective ladder rotation angle is **Θ / √2** (so full transfer across all three levels requires √2 more amplitude, i.e., `Power = 2`):
+- **Half-power (`Power = 0.5`, Θ = π/√2, effective angle π/2):** A 13-cycle **Coherent EM wave** **σ⁺** pulse drives coherent Rabi transfer into an exact **50% / 25% / 25%** split (~50% \|2s, 0⟩, ~25% \|2p, +1⟩, ~25% \|2p, −1⟩).
+- **2-level π-area (`Power = 1, 13 cyc`, Θ = π in `Coherent EM wave`):** Coherently over-rotates past \|2s, 0⟩ along the multi-photon classical ladder into ~3.9% \|2p, +1⟩, ~31.6% \|2s, 0⟩, and ~64.5% \|2p, −1⟩. By contrast, **`Single photon` mode enforces a strict single-excitation (1-quantum) cap**, halting cleanly at **100% \|2s, 0⟩** (and **100% \|2p, 0⟩** for M1) without cascading a second quantum into \|2p, −1⟩!
 - **Double power (`Power = 2`, Θ = √2 π ≈ 1.41π, effective angle π in `Coherent EM wave`):** Transfers **100%** cleanly from \|2p, +1⟩ right through \|2s, 0⟩ into \|2p, −1⟩!
 
 ### 2. Intra-Orbital Zeeman M1 (Magnetic Resonance) Transitions (Δ*n* = 0, Δ*l* = 0 with *l* ≥ 1, Δ*m* = ±1)
@@ -198,7 +198,7 @@ Just as an NMR or EPR spectrometer flips spins inside a static *B*<sub>*z*</sub>
 ```demo
 {
   "label": "Zeeman intra-shell E1 ladder: 2p,+1 → 2s,0 (half-power peak)",
-  "caption": "At B_z = 0.1 a.u., |2s,0⟩ sits midway between |2p,+1⟩ and |2p,-1⟩ in our linear-Zeeman model. A 10-cyc, Power = 0.5 σ⁺ pulse (Θ = π/√2) puts ~50% into |2s,0⟩ and ~25% each into |2p,±1⟩!",
+  "caption": "At B_z = 0.1 a.u., |2s,0⟩ sits midway between |2p,+1⟩ and |2p,-1⟩ in our linear-Zeeman model. A 13-cyc, Power = 0.5 σ⁺ pulse (Θ = π/√2) puts ~50% into |2s,0⟩ and ~25% each into |2p,±1⟩!",
   "states": [{"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0}],
   "B": 0.1,
   "tilt": 45,
@@ -209,7 +209,7 @@ Just as an NMR or EPR spectrometer flips spins inside a static *B*<sub>*z*</sub>
     "mode": "wave",
     "transition": "2|1|2|0|-1",
     "pol": "sp",
-    "duration": 10,
+    "duration": 13,
     "detuning": 0,
     "power": 0.5,
     "fire": true
@@ -243,4 +243,4 @@ Just as an NMR or EPR spectrometer flips spins inside a static *B*<sub>*z*</sub>
 
 ### Quick Self-Check (Try in the Controls)
 1. Start in **\|2p, +1⟩** with `B_z = 0.1 a.u.` (for example, right from the **Zeeman M1** demo setup) and target **`2p → 2p (m: 1→0, Zeeman M1)`** in the transition dropdown, then switch polarization from **σ⁺** to **σ⁻**. Why does the simulator disable the pulse trigger with zero *resonant* M1 coupling—and physically, why is **σ⁻** strongly suppressed rather than truly zero in exact dynamics? *(Hint: for `B_z > 0`, Larmor precession is counterclockwise; compare the rotation direction of `σ⁺` vs. `σ⁻` relative to that precession and note the `2ω_Larmor` frequency mismatch!)*
-2. Starting from **\|2p, +1⟩** with `B_z = 0.1 a.u.` and the **Zeeman intra-shell E1** demo settings (`2p → 2s (Δm=-1, Zeeman E1)`, `σ⁺`, `10 cyc`), increase **Power** from `0.5` to `2` before firing. Just like the M1 spin-1 flip, what state takes nearly 100% of the population at `Power = 2`?
+2. Starting from **\|2p, +1⟩** with `B_z = 0.1 a.u.` and the **Zeeman intra-shell E1** demo settings (`2p → 2s (Δm=-1, Zeeman E1)`, `σ⁺`, `13 cyc`), increase **Power** from `0.5` to `2` before firing. Just like the M1 spin-1 flip, what state takes nearly 100% of the population at `Power = 2`?

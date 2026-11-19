@@ -76,14 +76,14 @@ When all active components share phase 0° or mix 0° and 180° (where 180° sim
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 0,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "z",
-    "duration": 10,
+    "duration": 54,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -98,14 +98,14 @@ When all active components share phase 0° or mix 0° and 180° (where 180° sim
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 90,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "x",
-    "duration": 10,
+    "duration": 54,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -149,14 +149,14 @@ In spectroscopy—such as **circular dichroism (CD)**, where chiral molecules or
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 90,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "sp",
-    "duration": 10,
+    "duration": 54,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -171,14 +171,14 @@ In spectroscopy—such as **circular dichroism (CD)**, where chiral molecules or
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 90,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": "sm",
-    "duration": 10,
+    "duration": 54,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -189,18 +189,18 @@ In spectroscopy—such as **circular dichroism (CD)**, where chiral molecules or
 ```demo
 {
   "label": "Elliptical polarization (x = 1, y = 0.4 at 90°)",
-  "caption": "The E(t) tip traces an ellipse counterclockwise, producing ~77% |2p,+1⟩ / ~15% |2p,-1⟩ (the 84% : 16% helicity split, with ~5% left in 1s and ~3% continuum/higher n).",
+  "caption": "The E(t) tip traces an ellipse counterclockwise, producing ~84% |2p,+1⟩ / ~15% |2p,-1⟩ (the 84% : 16% helicity split) with only ~0.4% lost to the continuum.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 90,
-  "speed": 0.8,
+  "speed": 1.5,
   "trails": true,
   "overlay": true,
   "interaction": {
     "mode": "wave",
     "transition": "1|0|2|1",
     "pol": [[1, 0], [0.4, 90], [0, 0]],
-    "duration": 10,
+    "duration": 54,
     "detuning": 0,
     "power": 1,
     "fire": true
@@ -252,4 +252,4 @@ A finite pulse of duration *T* cannot be purely monochromatic: compressing a wav
 ### Quick Self-Check
 1. Using *ka*₀ = 2π*a*₀/λ, explain why infrared vibrational radiation (λ ≈ 3000 nm) satisfies the electric-dipole approximation even better than UV Lyman-α (~121.5 nm), while hard X-rays (λ ~ 0.1 nm) break it.
 2. With `x = 1 at 0°` and `y = 1 at 270°`, plug φ<sub>*y*</sub> = 270° into cos(ω<sub>L</sub>*t* − φ<sub>*y*</sub>) to verify which direction **E**(*t*) points at ω<sub>L</sub>*t* = 90° and 180°. *(Recall that E<sub>env</sub>(t) > 0 throughout the pulse, so the signs of the cosines directly give the direction of **E**(t).)*
-3. If a 10-cycle coherent pulse gives Θ = π at `Power = 1`, what **Power** gives Θ = 2π in the same 10 cycles? *(Answer: Power = 4, because E₀ ∝ √Power and Θ ∝ E₀·T.)*
+3. If a 54-cycle coherent `1s → 2p` pulse gives Θ = π at `Power = 1`, what **Power** gives Θ = 2π in the same 54 cycles? *(Answer: Power = 4, because E₀ ∝ √Power and Θ ∝ E₀·T. Power above 1 exceeds the ionization-safe field, so the readout warns about continuum loss—alternatively keep Power = 1 and stretch the Duration.)*

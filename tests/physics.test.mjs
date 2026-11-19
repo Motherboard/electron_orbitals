@@ -106,11 +106,14 @@ function createCoreContext() {
       buildPhotonSim, evalPhotonVel, advancePhotonRK4,
       fieldVecAt, stepTdseC, weisskopfWigner,
       buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
+      photoIonCoef, ionSafety, safeTrefCyc, onePiSetting, getRadTable, gauntCoeff,
+      startPulse, stepPulseCore, finishPulse, getPulse: () => pulse,
       ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel,
       consts: { B_SLIDER_MAX, B_SLIDER_SPAN, B_SLIDER_STEP, PHOTON_CYC, PHOTON_KTAU }
     };
   `;
-  vm.runInNewContext(coreSrc + '\n' + exportsTail, sandbox);
+  // overlayDirty lives in the UI half of the script (the Blob worker declares it in its own header)
+  vm.runInNewContext('let overlayDirty = false;\n' + coreSrc + '\n' + exportsTail, sandbox);
   return sandbox.__api;
 }
 
@@ -791,7 +794,7 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
       if (d.interaction) {
         const it = d.interaction;
         if (it.detuning !== undefined) assert.ok(it.detuning >= -2.5 && it.detuning <= 2.5);
-        if (it.duration !== undefined) assert.ok(it.duration >= 4 && it.duration <= 50);
+        if (it.duration !== undefined) assert.ok(it.duration >= 4 && it.duration <= 400);
         if (it.power !== undefined) assert.ok(it.power >= 0.01 && it.power <= 16);
 
         api.setBau(d.B || 0);
@@ -815,23 +818,28 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
   assert.ok(totalDemos >= 40, `Expected >= 40 tutorial demos, got ${totalDemos}`);
   assert.ok(ch5RedDemo, 'Expected Ch 5 red-detuned demo to exist');
 
-  // Verify Ch 5 red-detuned demo stays predominantly in |1s,0> with zero 3p leak
+  // Verify Ch 5 red-detuned demo (actual app calibration) stays predominantly in |1s,0> with zero 3p leak and no ionization
   api.setBau(0);
   api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
-  const { tr, sys, np, d } = ch5RedDemo;
-  const omega0 = tr.omega0;
-  const T = (d.interaction.duration * 2 * Math.PI) / omega0;
-  const bw = (2 * Math.PI) / T;
-  const omegaL = omega0 + d.interaction.detuning * bw;
-  const { muRabi } = api.computeBrightDipole(sys, tr, np);
-  const E0 = (2 * Math.PI) / (muRabi * T);
-  const grid = api.buildGridSystem(tr, sys);
-  const pRed = { kind: 'E1', trSpec: tr, omegaL, T, gamma: 0, E0, pol: np };
-  const nSteps = Math.ceil(T / 0.25);
-  const h = T / nSteps;
-  for (let s = 0; s < nSteps; s++) api.stepGridDipole(grid, pRed, s * h, h);
+  const { tr, d } = ch5RedDemo;
+  api.setMode('wave');
+  const redPol = typeof d.interaction.pol === 'string' ? presets[d.interaction.pol] : d.interaction.pol;
+  api.setPol(redPol[0], redPol[1], redPol[2]);
+  api.setEl('tr-sel', tr.key);
+  api.setEl('pdur', d.interaction.duration);
+  api.setEl('ppow', d.interaction.power);
+  api.setEl('pdet', d.interaction.detuning);
+  const cfgRed = api.getPulseConfig();
+  assert.ok(cfgRed.ok && cfgRed.detAu < 0 && cfgRed.E0 > 0);
+  const grid = api.buildGridSystem(cfgRed.trSpec, cfgRed.sys);
+  api.setP([]);
+  const pRed = { kind: 'E1', trSpec: cfgRed.trSpec, omegaL: cfgRed.omegaL, T: cfgRed.T, gamma: 0, E0: cfgRed.E0, pol: cfgRed.polInt };
+  const nSteps = Math.ceil(cfgRed.T / 0.25);
+  const h = cfgRed.T / nSteps;
+  for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(grid, pRed, s * h, h);
   const c = new Float64Array(grid.projStates.length * 2);
-  api.projectGridStates(grid, c);
+  const redInfo = api.projectGridStates(grid, c);
+  assert.ok(redInfo.boundNorm > 0.99, `Expected Ch5 red-detuned pulse to stay >99% bound, got ${redInfo.boundNorm}`);
   const p1s = (() => {
     const i = grid.projStates.findIndex((s) => s.n === 1 && s.l === 0 && s.m === 0);
     return c[i * 2] ** 2 + c[i * 2 + 1] ** 2;
@@ -1284,4 +1292,132 @@ test('single-photon Fock cap, Zeeman partial WW rate, s-wave cusp, and markdown 
   }
   assert.ok(renderTutMarkdown('  - orphan indented bullet\n\n  - spaced bullet\n', []).includes('<ul>'));
   assert.equal(parseTutInline('z\\* and *em*'), 'z* and <em>em</em>');
+});
+
+test('ionization-safe wave calibration: Coulomb photoionization rates, safe Tref, 1π, and l = 6 grid channels', () => {
+  // 1. Fermi-golden-rule rate with Numerov Coulomb continuum reproduces the hydrogen 1s threshold cross-section (6.30e-18 cm^2)
+  const sigmaCm2 = (n, l, om) => (api.photoIonCoef(n, l, om) * 8 * Math.PI * om / 137.035999) * 2.80028e-17;
+  const s1s = sigmaCm2(1, 0, 0.50001);
+  assert.ok(Math.abs(s1s / 6.30e-18 - 1) < 0.01, `Expected 1s threshold sigma ~6.30e-18 cm^2, got ${s1s}`);
+  assert.ok(sigmaCm2(1, 0, 1.0) < 0.2 * s1s, 'Expected 1s cross-section to fall steeply above threshold');
+  assert.equal(api.photoIonCoef(3, 2, 0.05), 0, 'Closed one-photon channel (omega < I_3) must give zero rate');
+
+  // 2. Safe reference duration: Power = 1 at Tref is a resonant pi-pulse whose field equals the ionization-safe field
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  api.setMode('wave');
+  api.setPol([1, 0], [1, 90], [0, 0]);
+  api.setEl('tr-sel', '1|0|2|1');
+  api.setEl('ppow', 1);
+  api.setEl('pdet', 0);
+  api.setEl('pdur', 10);
+  const cfg10 = api.getPulseConfig();
+  assert.ok(cfg10.TrefCyc >= 40 && cfg10.TrefCyc <= 60, `Expected 1s->2p safe Tref ~50 cyc, got ${cfg10.TrefCyc}`);
+  assert.ok(Math.abs(cfg10.theta / Math.PI - 10 / cfg10.TrefCyc) < 1e-6, 'Below Tref, Theta = pi * Duration / Tref at Power = 1');
+  assert.ok(cfg10.E0 <= cfg10.eSafe * (1 + 1e-9));
+
+  // 3. 1π lengthens Duration (never raises Power above 1) and lands on Theta = pi
+  const cfgAt = (c) => { api.setEl('pdur', c); const k = api.getPulseConfig(); api.setEl('pdur', 10); return k; };
+  const v = api.onePiSetting(cfg10, 4, 400, cfgAt);
+  assert.ok(v.reachable && v.pow <= 1 && v.cyc === cfg10.TrefCyc, `Expected 1π -> (${cfg10.TrefCyc} cyc, P<=1), got ${JSON.stringify(v)}`);
+  api.setEl('pdur', v.cyc);
+  api.setEl('ppow', v.pow);
+  const cfgPi = api.getPulseConfig();
+  assert.ok(Math.abs(cfgPi.theta / Math.PI - 1) < 0.02, `Expected Theta ~ pi after 1π, got ${cfgPi.theta / Math.PI}`);
+
+  // 4. Full radial-grid TDSE of that 1π pulse stays >= 99% bound and inverts into |2p,+1>
+  const g = api.buildGridSystem(cfgPi.trSpec, cfgPi.sys);
+  api.setP([]);
+  const pObj = { kind: 'E1', trSpec: cfgPi.trSpec, omegaL: cfgPi.omegaL, T: cfgPi.T, gamma: 0, E0: cfgPi.E0, pol: cfgPi.polInt };
+  const nSteps = Math.ceil(cfgPi.T / 0.25), h = cfgPi.T / nSteps;
+  for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(g, pObj, s * h, h);
+  const c = new Float64Array(g.projStates.length * 2);
+  const info = api.projectGridStates(g, c);
+  const i2p = g.projStates.findIndex((s) => s.n === 2 && s.l === 1 && s.m === 1);
+  assert.ok(info.boundNorm >= 0.99, `Expected 1π 1s->2p to stay >= 99% bound, got ${info.boundNorm}`);
+  assert.ok(c[2 * i2p] ** 2 + c[2 * i2p + 1] ** 2 > 0.95, 'Expected >95% inversion into |2p,+1>');
+
+  // 5. Beyond Tref the unit field is held at the (shrinking) safe level, and Power > 1 is flagged with a loss estimate
+  api.setEl('pdur', 200);
+  api.setEl('ppow', 1);
+  const cfg200 = api.getPulseConfig();
+  assert.ok(cfg200.E0 < cfgPi.E0 && cfg200.ionEst <= 0.0061, `Expected long pulse field clamped to safe level, got E0=${cfg200.E0}, est=${cfg200.ionEst}`);
+  api.setEl('ppow', 16);
+  const cfgHot = api.getPulseConfig();
+  assert.ok(cfgHot.E0 > 3.9 * cfgHot.eSafe && cfgHot.ionEst > 0.02, 'Expected Power = 16 to exceed the safe field with a visible loss estimate');
+
+  // 6. n = 7, l = 6 initial states are represented on the grid (Lmax up to 7) and keep their norm
+  api.setComps([{ id: 1, n: 7, l: 6, m: 0, amp: 1, phaseDeg: 0 }]);
+  const tr76 = api.getTransitionList().find((t) => t.key === '7|6|6|5');
+  const sys76 = api.buildCoupledSystem(tr76);
+  const g76 = api.buildGridSystem(tr76, sys76);
+  assert.ok(g76.Lmax >= 7, `Expected Lmax >= 7 for l = 6 states, got ${g76.Lmax}`);
+  const c76 = new Float64Array(g76.projStates.length * 2);
+  const info76 = api.projectGridStates(g76, c76);
+  assert.ok(Math.abs(info76.totalNorm - 1) < 0.02 && info76.boundNorm > 0.98, `Expected |7i,0> to load onto the grid, got total=${info76.totalNorm}, bound=${info76.boundNorm}`);
+  api.setPol([1, 0], [0, 0], [0, 0]);
+  api.setEl('pdur', 16);
+});
+
+test('Bohmian equivariance fixes: exact Gaunt monopoles, grid continuity with field on, photon tail-flux balance', () => {
+  // 1. Gauss-Legendre Gaunt coefficients are exact: G(0,0; l,m; l,m) = 1/sqrt(4 pi) for every l <= 7
+  for (let l = 0; l <= 7; l++) for (const m of [0, l]) {
+    assert.ok(Math.abs(api.gauntCoeff(0, 0, l, m, l, m) - 1 / Math.sqrt(4 * Math.PI)) < 1e-12, `G(0,0;${l},${m};${l},${m}) not exact`);
+  }
+
+  const POL = { sp: [[1, 0], [1, 90], [0, 0]], x: [[1, 0], [0, 0], [0, 0]] };
+  const setup = (comps, trKey, mode, pol, B = 0) => {
+    api.setBau(B);
+    api.setComps(comps.map((c, i) => ({ id: i + 1, amp: 1, phaseDeg: 0, ...c })));
+    api.setMode(mode);
+    api.setPol(...POL[pol]);
+    api.setEl('cnt', 0);
+    api.setEl('pdur', 50);
+    api.setEl('ppow', 1);
+    api.setEl('pdet', 0);
+    api.setEl('tr-sel', trKey);
+    api.setP([]);
+    api.startPulse();
+    const p = api.getPulse();
+    assert.ok(p, 'pulse must start');
+    return p;
+  };
+  const rec = { nSnap: 1, record() {} };
+
+  // 2. 4p,0 + sigma+ drives the degenerate n = 5 manifold: the grid keeps every l of n = 5 (Lmax >= 5), so d|psi|^2/dt = -div j
+  //    holds pointwise along the axis where truncated couplings used to fling electrons outward
+  const pw = setup([{ n: 4, l: 1, m: 0 }], '4|1|5|0', 'wave', 'sp');
+  const g = pw.grid;
+  assert.ok(g.Lmax >= 5, `Expected Lmax >= 5 for n = 5 manifold, got ${g.Lmax}`);
+  for (let t = 0; t < 3000; t += 1) api.advanceGridParticlesRK4(g, pw, t, 1);
+  const o = new Float64Array(8);
+  const rho = (x, y, z) => { api.evalGridPsiGrad(g, x, y, z, o); return o[0] ** 2 + o[1] ** 2; };
+  const J = (x, y, z) => { api.evalGridPsiGrad(g, x, y, z, o); return [o[0] * o[3] - o[1] * o[2], o[0] * o[5] - o[1] * o[4], o[0] * o[7] - o[1] * o[6]]; };
+  const pts = [[1, 0.5, 30], [2, -1, 40], [3, 0, -35], [4, 0, 30], [8, 3, -12]];
+  const d = 1e-3, dt = 0.02;
+  const div = pts.map(([x, y, z]) => { let sDiv = 0; for (let k = 0; k < 3; k++) { const e = [0, 0, 0]; e[k] = d; sDiv += (J(x + e[0], y + e[1], z + e[2])[k] - J(x - e[0], y - e[1], z - e[2])[k]) / (2 * d); } return sDiv; });
+  const r0 = pts.map((pt) => rho(...pt));
+  api.advanceGridParticlesRK4(g, pw, 3000, dt);
+  pts.forEach((pt, i) => {
+    const drdt = (rho(...pt) - r0[i]) / dt;
+    assert.ok(Math.abs(drdt + div[i]) <= 0.03 * Math.abs(div[i]) + 1e-14, `Grid continuity broken at ${pt}: drho/dt=${drdt}, -divJ=${-div[i]}`);
+  });
+  api.finishPulse(true);
+
+  // 3. Single-photon 2p,0 -> 4d,+1 (x, B = 0.1): shell-local + exact-Gaunt flow carries no spurious flux through tail spheres
+  const pp = setup([{ n: 2, l: 1, m: 0 }], '2|1|4|2|1', 'photon', 'x', 0.1);
+  const ps = pp.photonSim;
+  while (pp.t < 0.8 * pp.T) api.stepPulseCore(1 / 60, 0.8, 0.56, null, rec);
+  const psiAt = (c, x, y, z) => { let re = 0, im = 0; for (let i = 0; i < ps.M; i++) { const [br, bi] = api.evalBasisPsi(ps.bases[i], x, y, z); re += c[2 * i] * br - c[2 * i + 1] * bi; im += c[2 * i] * bi + c[2 * i + 1] * br; } return re * re + im * im; };
+  const sphere = (R, fn) => { let F = 0; const Nt = 60, Np = 32; for (let i = 0; i < Nt; i++) { const th = Math.PI * (i + 0.5) / Nt; for (let j = 0; j < Np; j++) { const ph = 2 * Math.PI * (j + 0.5) / Np; F += fn(R * Math.sin(th) * Math.cos(ph), R * Math.sin(th) * Math.sin(ph), R * Math.cos(th)) * R * R * Math.sin(th) * (Math.PI / Nt) * (2 * Math.PI / Np); } } return F; };
+  const E995 = Math.max(...ps.states.map((st) => st.b.E995));
+  const R = 1.2 * E995, v = new Float64Array(3), c0 = new Float64Array(ps.c1v), rv = new Float64Array(ps.r1v);
+  const flux = sphere(R, (x, y, z) => { api.evalPhotonVel(ps, x, y, z, c0, rv, v); return psiAt(c0, x, y, z) * (v[0] * x + v[1] * y + v[2] * z) / R; });
+  const tail = (c) => { let sT = 0; const R2 = ps.rMax * 1.5, N = 60; for (let k = 0; k < N; k++) { const r = R + (R2 - R) * (k + 0.5) / N; sT += sphere(r, (x, y, z) => psiAt(c, x, y, z)) * (R2 - R) / N; } return sT; };
+  const P0 = tail(c0), t0 = pp.t;
+  api.stepPulseCore(1 / 60, 0.8, 0.56, null, rec);
+  const dPdt = (tail(ps.c1v) - P0) / (pp.t - t0);
+  assert.ok(Math.abs(flux - dPdt) < 0.1 * Math.abs(dPdt) + 1e-9, `Photon tail flux ${flux} != dP/dt ${dPdt} at R = 1.2 E995`);
+  api.finishPulse(true);
+  api.setBau(0);
 });

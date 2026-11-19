@@ -110,7 +110,7 @@ Like any good scientific model, `electron_orbitals.html` balances mathematical e
 
 - **Exact within the model:**
   - Non-relativistic Schrödinger hydrogen eigenstates ψ<sub>*nlm*</sub> (*n* = 1..7) and exact E1/M1 dipole matrix elements.
-  - **Coherent EM wave:** Full continuous radial-grid TDSE (*L*<sub>max</sub> ≤ 5) during pulses, capturing multi-shell coupling, AC Stark shifts, and continuum ionization. **Single photon:** Single-excitation RWA manifold + exact Poisson multipole continuity flow (∇·δ**J** = −σ) over *n* = 1..7 without compression ionization or 2-photon cascades.
+  - **Coherent EM wave:** Full continuous radial-grid TDSE (*L*<sub>max</sub> ≤ 7) during pulses, capturing multi-shell coupling, AC Stark shifts, and continuum ionization; `Power ≤ 1` and `1π` stay within the ionization-safe field (~0.6% estimated loss). **Single photon:** Single-excitation RWA manifold + shell-local multipole continuity flow (∇·δ**J** = −σ) over *n* = 1..7 without compression ionization or 2-photon cascades.
   - Exact 3D Bohmian velocities **v** = Im(∇ψ/ψ) + **A** integrated with adaptive RK4.
   - Exact Weisskopf–Wigner spontaneous rates Γ = *A*₂₁ and natural lifetimes τ.
 
