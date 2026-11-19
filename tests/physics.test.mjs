@@ -756,7 +756,7 @@ test('magnetic field unlocks intra-shell E1 and M1 Zeeman level transitions', ()
 test('tutorial bundle stays synced with tutorial/*.md and validates every demo and red-detuned Ch5 TDSE', () => {
   const tutDir = path.resolve(import.meta.dirname, '..', 'tutorial');
   const mdFiles = fs.readdirSync(tutDir).filter((f) => f.endsWith('.md')).sort();
-  assert.equal(mdFiles.length, 7, 'Expected 7 markdown tutorial chapters');
+  assert.equal(mdFiles.length, 8, 'Expected 8 markdown tutorial chapters (7 + math toolkit appendix)');
 
   const bundleMatch = HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/);
   assert.ok(bundleMatch, 'Expected embedded #tut-bundle JSON script in electron_orbitals.html');
@@ -1286,7 +1286,7 @@ test('single-photon Fock cap, Zeeman partial WW rate, s-wave cusp, and markdown 
     assert.ok(Math.hypot(outRe[k] - pr, outIm[k] - pi) < 1e-14);
   });
 
-  // 5. Tutorial markdown renderer: balanced tags across all 7 chapters, no literal **, no hang on indented/separated lists, \* escape works
+  // 5. Tutorial markdown renderer: balanced tags across all chapters, no literal **, no hang on indented/separated lists, \* escape works
   const tutStart = SCRIPT_SRC.indexOf('function parseTutInline(');
   const tutEnd = SCRIPT_SRC.indexOf('function initTutorial(');
   const tutSb = { Math, Number, Array, Object, JSON };
@@ -1518,4 +1518,65 @@ test('single-photon cascade: conditioned display timing, Gamma_b/Gamma_tot odds,
   const oEm = api.photonOutcome(cfgFor([{ n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 }], '3|1|1|0', SP));
   assert.equal(oEm.isEmit, true);
   api.setEl('pdet', 0);
+});
+
+test('tutorial figure blocks, toolkit links and heading anchors render safely', () => {
+  const tutStart = SCRIPT_SRC.indexOf('function parseTutInline(');
+  const tutEnd = SCRIPT_SRC.indexOf('function initTutorial(');
+  const sb = { Math, Number, Array, Object, JSON, String };
+  vm.runInNewContext(SCRIPT_SRC.slice(tutStart, tutEnd) + '\nglobalThis.__tut={renderTutMarkdown,parseTutInline,TUT_FIG_KINDS};', sb);
+  const { renderTutMarkdown, parseTutInline, TUT_FIG_KINDS } = sb.__tut;
+  const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+  // 1. A valid figure block becomes a <figure> carrying its spec, an escaped caption and a text alternative
+  const fig = renderTutMarkdown('```figure\n{"kind": "euler-phasor", "caption": "Watch <both> shadows", "omega": 2}\n```\n', []);
+  assert.match(fig, /^<figure class="tut-fig" data-fig-kind="euler-phasor" data-fig-spec="/);
+  assert.equal(JSON.parse(unesc(fig.match(/data-fig-spec="([^"]*)"/)[1])).omega, 2);
+  assert.ok(fig.includes('<figcaption>Watch &lt;both&gt; shadows</figcaption>'));
+  assert.ok(fig.includes(`<p class="tut-fig-alt">${TUT_FIG_KINDS['euler-phasor']}</p>`));
+
+  // 2. Unknown kinds and broken JSON degrade to a note and never swallow the rest of the chapter
+  const unk = renderTutMarkdown('```figure\n{"kind": "warp-drive"}\n```\n\nAfter text.\n', []);
+  assert.ok(unk.includes('tut-fig-err') && unk.includes('unknown kind “warp-drive”'));
+  assert.ok(!unk.includes('<figure') && unk.endsWith('<p>After text.</p>'));
+  const bad = renderTutMarkdown('```figure\n{"kind": oops\n```\n## Next {#nx}\n\n- item\n', []);
+  assert.ok(bad.includes('tut-fig-err') && bad.includes('<h3 id="tut-a-nx" tabindex="-1">Next</h3>') && bad.includes('<li>item</li>'));
+  assert.ok(renderTutMarkdown('```figure\n["euler-phasor"]\n```\n', []).includes('tut-fig-err'));
+  assert.ok(renderTutMarkdown('```figure\n{"kind": "__proto__"}\n```\n', []).includes('tut-fig-err'));
+
+  // 3. Nested Level-1/Level-2 collapsibles keep a figure and a toolkit link inside the inner box
+  const nested = renderTutMarkdown([
+    '<details>', '<summary>Level 1 · Picture: a leaky bucket</summary>', '', 'Intro.', '',
+    '<details>', '<summary>Level 2 · Full derivation: integrating factor</summary>', '',
+    '```figure', '{"kind": "leaky-bucket", "mode": "fill"}', '```', '',
+    'See [T3 · *ODEs*](tut:08#T3) and [Chapter 5](tut:05).', '', '</details>', '', '</details>', '', 'After.',
+  ].join('\n'), []);
+  const outer = nested.indexOf('<details'), inner = nested.indexOf('<details', outer + 1), figAt = nested.indexOf('<figure');
+  assert.ok(outer === 0 && inner > outer && figAt > inner && nested.indexOf('</details>') > figAt);
+  assert.equal((nested.match(/<details/g) || []).length, 2);
+  assert.ok(nested.includes('<a class="tut-link" href="#tut-a-T3" data-tut-ch="08" data-tut-anchor="T3">T3 · <em>ODEs</em></a>'));
+  assert.ok(nested.includes('data-tut-ch="05" data-tut-anchor=""'));
+  assert.ok(nested.endsWith('</details><p>After.</p>'));
+  assert.equal(parseTutInline('`[x](tut:08#T1)` [y](http://e.x)'), '<code>[x](tut:08#T1)</code> [y](http://e.x)');
+
+  // 4. Every registered kind has a widget, and every figure / link in the shipped chapters resolves
+  for (const kind of Object.keys(TUT_FIG_KINDS)) assert.ok(SCRIPT_SRC.includes(`TF_MOUNT['${kind}']=`), `No widget for figure kind ${kind}`);
+  const bundle = JSON.parse(HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/)[1]);
+  const anchors = new Map(bundle.map((ch) => [ch.file.slice(0, 2), new Set([...ch.md.matchAll(/^#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]))]));
+  let figures = 0;
+  for (const ch of bundle) {
+    assert.ok(!/<details\s+open/i.test(ch.md), `${ch.file} has a <details open> box; zoom boxes must start closed`);
+    for (const m of ch.md.matchAll(/```figure\s*\n([\s\S]*?)\n```/g)) {
+      figures++;
+      const spec = JSON.parse(m[1]);
+      assert.ok(Object.prototype.hasOwnProperty.call(TUT_FIG_KINDS, spec.kind), `Unknown figure kind ${spec.kind} in ${ch.file}`);
+    }
+    const html = renderTutMarkdown(ch.md, []);
+    assert.ok(!html.includes('tut-fig-err'), `Broken figure block in ${ch.file}`);
+    for (const m of ch.md.matchAll(/\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g)) {
+      assert.ok(anchors.has(m[1]), `Link to missing chapter ${m[1]} in ${ch.file}`);
+      if (m[2]) assert.ok(anchors.get(m[1]).has(m[2]), `Link to missing anchor ${m[1]}#${m[2]} in ${ch.file}`);
+    }
+  }
+  console.log(`[figures] ${figures} figure blocks across ${bundle.length} chapters`);
 });

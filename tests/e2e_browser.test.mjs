@@ -439,7 +439,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(mobTutOpen.expanded, 'true');
     assert.equal(mobTutOpen.inert, true);
     assert.ok(mobTutOpen.demoCount >= 8, `Expected Ch1 demos rendered, got ${mobTutOpen.demoCount}`);
-    assert.equal(mobTutOpen.prog, '1 / 7');
+    assert.equal(mobTutOpen.prog, '1 / 8');
     assert.ok(mobTutOpen.scrollW <= mobTutOpen.innerW, `Mobile drawer caused overflow: ${mobTutOpen.scrollW} > ${mobTutOpen.innerW}`);
 
     await evalJS(`document.getElementById('tut-close').click()`);
@@ -485,7 +485,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.ok(deskState.canvasW >= 500, `Expected side-by-side main canvas >=500px, got ${deskState.canvasW}`);
     assert.ok(deskState.scrollW <= deskState.innerW, `Desktop sidepanel overflow: ${deskState.scrollW} > ${deskState.innerW}`);
     assert.match(deskState.ch5Title, /^5\./);
-    assert.equal(deskState.prog, '5 / 7');
+    assert.equal(deskState.prog, '5 / 8');
 
     // Click Ch5 Demo #5 (M1 flip: 2p,+1 -> 2p,0 -> 2p,-1)
     await evalJS(`(() => {
