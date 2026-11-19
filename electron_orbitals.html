@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bohmian trajectories in hydrogen orbitals</title>
 <style>
-:root{color-scheme:light dark;--bg:#fbfbfa;--fg:#1c1c1e;--mut:#6b6b70;--line:#d9d9dc;--panel:#f0f0ee;--acc:#534ab7;--ov:83,74,183;--grid:rgba(110,110,115,.55);--target-size:24px}
-@media (prefers-color-scheme:dark){:root{--bg:#161618;--fg:#ececee;--mut:#9a9aa2;--line:#35353a;--panel:#212125;--acc:#a79df0;--ov:110,100,210;--grid:rgba(170,170,180,.55)}}
+:root{color-scheme:light dark;--bg:#fbfbfa;--fg:#1c1c1e;--mut:#6b6b70;--line:#d9d9dc;--panel:#f0f0ee;--acc:#534ab7;--ov:83,74,183;--grid:rgba(110,110,115,.55);--target-size:24px;--fig2:#c25e00;--fig3:#0a7f73;--fig-neg:#c2324a;--fig-fill:rgba(83,74,183,.16)}
+@media (prefers-color-scheme:dark){:root{--bg:#161618;--fg:#ececee;--mut:#9a9aa2;--line:#35353a;--panel:#212125;--acc:#a79df0;--ov:110,100,210;--grid:rgba(170,170,180,.55);--fig2:#f0a35a;--fig3:#4fcfbe;--fig-neg:#ff7d92;--fig-fill:rgba(167,157,240,.2)}}
 @media (pointer:coarse){:root{--target-size:44px}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow-wrap:anywhere}
@@ -131,6 +131,51 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 #tut-body details.tut-details>.tut-det-inner{padding:2px 12px 10px;border-top:1px solid var(--line)}
 #tut-body details.tut-details>.tut-det-inner>:first-child{margin-top:8px}
 #tut-body details.tut-details>.tut-det-inner>:last-child{margin-bottom:0}
+#tut-body details.tut-details details.tut-details{background:var(--panel)}
+#tut-body details.tut-details details.tut-details details.tut-details{background:var(--bg)}
+#tut-body a.tut-link{color:var(--acc);text-decoration:underline;text-underline-offset:2px;font-weight:600}
+#tut-body a.tut-link:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:3px}
+#tut-body [id^="tut-a-"]{scroll-margin-top:8px}
+#tut-body [id^="tut-a-"]:focus{outline:none}
+.tut-fig{margin:10px 0 12px;padding:8px 9px 9px;background:var(--bg);border:1px solid var(--line);border-radius:10px;min-inline-size:0;max-inline-size:100%}
+.tut-fig-stage{display:flex;flex-direction:column;gap:6px;min-inline-size:0}
+.tut-fig svg{display:block;inline-size:100%;block-size:auto;max-inline-size:460px;margin:0 auto;overflow:visible;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.tut-fig svg.tf-drag{touch-action:none;cursor:grab}
+.tut-fig svg:focus-visible,.tut-fig .tf-handle:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tut-fig .tf-handle{cursor:grab;touch-action:none}
+.tut-fig figcaption{margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.4}
+.tut-fig-alt{margin:0;font-size:12.5px;color:var(--mut)}
+.tut-fig.is-live .tut-fig-alt{position:absolute;clip-path:inset(50%);overflow:hidden;width:1px;height:1px;margin:-1px;padding:0;border:0;white-space:nowrap}
+.tut-fig-err{margin:10px 0 12px;padding:7px 10px;border:1px dashed var(--line);border-radius:8px;font-size:12.5px;color:var(--mut)}
+.tf-ctl{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;min-inline-size:0}
+.tf-ctl label,.tf-field{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);min-inline-size:0;flex:1 1 170px}
+.tf-field>span:first-child{white-space:nowrap}
+.tf-ctl input[type=range]{min-width:60px;flex:1 1 60px}
+.tf-ctl output{flex:0 0 auto;min-width:44px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg);text-align:end}
+.tf-ctl select{font-size:13px;padding:3px 6px;min-block-size:max(32px,var(--target-size))}
+.tf-ctl button{font-size:13px;padding:3px 10px;min-block-size:max(32px,var(--target-size))}
+.tf-ctl .tf-chk{flex:0 0 auto;min-inline-size:auto}
+.tf-read{margin:0;font-size:12.5px;color:var(--fg);line-height:1.4;font-variant-numeric:tabular-nums;min-block-size:1.4em}
+.tut-fig svg text{fill:var(--fg);font-size:11px}
+.tut-fig svg text.tf-m{fill:var(--mut);font-size:10px}
+.tut-fig svg text.tf-b{font-weight:600}
+.tf-ax{stroke:var(--mut);stroke-width:1;fill:none}
+.tf-grid{stroke:var(--line);stroke-width:.8;fill:none}
+.tf-dash{stroke-dasharray:3 3}
+.tf-s1{stroke:var(--acc);fill:none;stroke-width:2}
+.tf-s2{stroke:var(--fig2);fill:none;stroke-width:2}
+.tf-s3{stroke:var(--fig3);fill:none;stroke-width:2}
+.tf-sn{stroke:var(--fig-neg);fill:none;stroke-width:2}
+.tf-sm{stroke:var(--mut);fill:none;stroke-width:1.2}
+.tf-f1{fill:var(--acc);stroke:none}
+.tf-f2{fill:var(--fig2);stroke:none}
+.tf-f3{fill:var(--fig3);stroke:none}
+.tf-fn{fill:var(--fig-neg);stroke:none}
+.tf-fm{fill:var(--mut);stroke:none}
+.tf-fill{fill:var(--fig-fill);stroke:none}
+.tf-fneg{fill:var(--fig-neg);fill-opacity:.22;stroke:none}
+.tf-fbg{fill:var(--bg);stroke:var(--line)}
+.tf-fpanel{fill:var(--panel);stroke:var(--line)}
 </style>
 </head>
 <body>
@@ -233,6 +278,7 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 <div id="tut-body"></div>
 <div class="tut-foot">
 <button type="button" id="tut-prev">← Prev</button>
+<button type="button" id="tut-back" hidden aria-label="Back to where you followed the link from">↩ Back</button>
 <span class="val" id="tut-prog">1 / 7</span>
 <button type="button" id="tut-next">Next →</button>
 </div>
@@ -3560,8 +3606,9 @@ requestAnimationFrame(frame);
 
 /* ---------- interactive tutorial sidepanel ---------- */
 function parseTutInline(src){
-  const codes=[];
-  let s=src.replace(/`([^`]+)`/g,(_,c)=>{codes.push(c);return '\x00C'+(codes.length-1)+'\x00';});
+  const codes=[],links=[];
+  let s=String(src).replace(/`([^`]+)`/g,(_,c)=>{codes.push(c);return '\x00C'+(codes.length-1)+'\x00';});
+  s=s.replace(/\[([^\]\n]+)\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g,(_,lbl,ch,an)=>{links.push({lbl:lbl.replace(/\x00C(\d+)\x00/g,(_,i)=>'`'+codes[+i]+'`'),ch,an:an||''});return '\x00L'+(links.length-1)+'\x00';});
   s=s.replace(/\\\*/g,'\x01').replace(/\\\|/g,'|');
   s=s.replace(/<(?!\/?(?:sub|sup)>)/g,'&lt;');
   s=s.replace(/([ψΨ][₀₁₂]?|<\/sub>|\])\*(?!\*)(?=[\s().,;:!?·<]|$)/g,'$1\x01');
@@ -3601,6 +3648,7 @@ function parseTutInline(src){
   let out='';
   for(const n of nodes)out+=n.type==='text'?n.val:(n.close+'*'.repeat(n.count)+n.open);
   out=out.replace(/\x01/g,'*');
+  out=out.replace(/\x00L(\d+)\x00/g,(_,i)=>{const l=links[+i];return '<a class="tut-link" href="#tut-a-'+l.an+'" data-tut-ch="'+l.ch+'" data-tut-anchor="'+l.an+'">'+parseTutInline(l.lbl)+'</a>';});
   return out.replace(/\x00C(\d+)\x00/g,(_,i)=>'<code>'+codes[+i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</code>');}
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -3623,6 +3671,33 @@ function renderDemoCardHtml(jsonText,demosOut){
     const btnLbl=(d.interaction&&d.interaction.fire===false)?'Load setup':'Run demo';
     return '<div class="tut-demo" data-demo-idx="'+idx+'"><div class="tut-demo-top"><span class="tut-demo-title">'+escHtml(d.label||'Demo')+'</span><span class="tut-demo-badges">'+badges.map(b=>'<span class="tut-badge">'+escHtml(b)+'</span>').join('')+'</span></div>'+(d.caption?'<p class="tut-demo-cap">'+escHtml(d.caption)+'</p>':'')+'<button type="button" class="tut-demo-btn" data-demo-idx="'+idx+'">'+btnLbl+'</button></div>';
   }catch(_){return '';}}
+
+const TUT_FIG_KINDS={
+  'euler-phasor':'Animated unit circle: an arrow e^(iθ) rotates; its horizontal shadow traces cos θ and its vertical shadow traces sin θ.',
+  'phase-beats':'Two phase clocks spin at different rates; the interference term oscillates as cos(Δω t), the quantum beat.',
+  'radial-distribution':'Plot of the radial distribution P(r) = r²R(r)² for a hydrogen orbital, with peaks and radial nodes marked.',
+  'effective-potential':'Plot of the effective radial potential −1/r + l(l+1)/(2r²) with the hydrogen energy levels drawn as horizontal lines.',
+  'vector-divergence':'A 2D vector field with a movable box; arrows on each side show flux in and out, and the net outflow equals divergence times area.',
+  'gradient-contour':'Contour map of a function of x and y with a movable point; the gradient arrow is perpendicular to the contour and points uphill.',
+  'leaky-bucket':'A bucket filled by a hose and leaking through a hole: N(t) rises as (R/Γ)(1 − e^(−Γt)) toward the steady level R/Γ.',
+  'rabi-bloch':'Two-level Rabi oscillation: upper-state population versus time and the Bloch-sphere arrow rotating about the drive axis.',
+  'spherical-coords':'3D axes with a point set by r, θ and φ; the projection and angle arcs show how x, y and z follow.',
+  'odd-even':'A function on a symmetric interval with positive area shaded in one color and negative area in another; the integral is shown.',
+  'fourier-pulse':'A light pulse versus time and its frequency spectrum; shorter pulses give wider spectra.',
+  'tilted-coulomb':'Coulomb potential along the field axis, tilted by an electric field; when the barrier top drops below the energy level the electron can escape.',
+  'cross-product':'3D vectors a and b with their cross product a × b, perpendicular to both, and the parallelogram whose area is |a × b|.',
+  'flux-box-diagram':'A small box of sides dx, dy, dz; current J_x enters through the left face and leaves through the right face.',
+  'polarization-decomposition':'An elliptical polarization x̂ + 0.4iŷ drawn as the sum of a large counterclockwise circle (weight 1.4) and a small clockwise circle (weight 0.6).',
+  'two-level-diagram':'Energy-level diagram: ground |1⟩ and excited |2⟩ separated by ħω₀, a laser photon ħω_L detuned by Δ, and decay at rate Γ.'};
+
+function renderFigureHtml(jsonText){
+  let spec=null;
+  try{spec=JSON.parse(jsonText);}catch(_){spec=null;}
+  if(!spec||typeof spec!=='object'||Array.isArray(spec))return '<div class="tut-fig-err" role="note">Figure unavailable: its description could not be read.</div>';
+  if(typeof spec.kind!=='string'||!Object.prototype.hasOwnProperty.call(TUT_FIG_KINDS,spec.kind))return '<div class="tut-fig-err" role="note">Figure unavailable: unknown kind “'+escHtml(String(spec.kind??''))+'”.</div>';
+  const alt=(typeof spec.alt==='string'&&spec.alt.trim())?spec.alt.trim():TUT_FIG_KINDS[spec.kind];
+  const cap=typeof spec.caption==='string'?spec.caption.trim():'';
+  return '<figure class="tut-fig" data-fig-kind="'+escHtml(spec.kind)+'" data-fig-spec="'+escHtml(JSON.stringify(spec))+'"><div class="tut-fig-stage"><p class="tut-fig-alt">'+escHtml(alt)+'</p></div>'+(cap?'<figcaption>'+escHtml(cap)+'</figcaption>':'')+'</figure>';}
 
 function renderTutMarkdown(md,demosOut){
   const lines=md.replace(/\r\n?/g,'\n').split('\n');
@@ -3652,13 +3727,17 @@ function renderTutMarkdown(md,demosOut){
       while(i<lines.length&&!lines[i].trim().startsWith('```')){buf.push(lines[i]);i++;}
       if(i<lines.length)i++;
       if(kind==='demo')html+=renderDemoCardHtml(buf.join('\n'),demosOut);
+      else if(kind==='figure')html+=renderFigureHtml(buf.join('\n'));
       else html+='<pre><code>'+escHtml(buf.join('\n'))+'</code></pre>';
       continue;}
     if(/^---+$/.test(trim)){html+='<hr>';i++;continue;}
     const hm=trim.match(/^(#{1,4})\s+(.+)$/);
     if(hm){
       const lvl=Math.min(5,hm[1].length+1);
-      html+='<h'+lvl+'>'+parseTutInline(hm[2])+'</h'+lvl+'>';
+      let hTxt=hm[2],hId='';
+      const am=hTxt.match(/\s*\{#([A-Za-z0-9_-]+)\}\s*$/);
+      if(am){hId=am[1];hTxt=hTxt.slice(0,am.index);}
+      html+='<h'+lvl+(hId?' id="tut-a-'+hId+'" tabindex="-1"':'')+'>'+parseTutInline(hTxt)+'</h'+lvl+'>';
       i++;continue;}
     if(trim.startsWith('>')){
       const qLines=[];
@@ -3700,13 +3779,14 @@ function renderTutMarkdown(md,demosOut){
   return html;}
 
 function initTutorial(){
-  const bundleEl=$('tut-bundle'),shell=$('app-shell'),mainCol=$('main-col'),panel=$('tut-panel'),backdrop=$('tut-backdrop'),toggleBtn=$('tut-toggle'),closeBtn=$('tut-close'),sel=$('tut-sel'),body=$('tut-body'),prevBtn=$('tut-prev'),nextBtn=$('tut-next'),prog=$('tut-prog');
+  const bundleEl=$('tut-bundle'),shell=$('app-shell'),mainCol=$('main-col'),panel=$('tut-panel'),backdrop=$('tut-backdrop'),toggleBtn=$('tut-toggle'),closeBtn=$('tut-close'),sel=$('tut-sel'),body=$('tut-body'),prevBtn=$('tut-prev'),nextBtn=$('tut-next'),prog=$('tut-prog'),backBtn=$('tut-back');
   if(!bundleEl||!panel)return;
   let chapters=[];
   try{chapters=JSON.parse(bundleEl.textContent);}catch(_){return;}
   if(!chapters.length)return;
   const desktopMql=window.matchMedia('(min-width: 1020px)');
-  let curIdx=0,curDemos=[],tutOpen=false;
+  let curIdx=0,curDemos=[],tutOpen=false,pendingAnchor='';
+  const navStack=[];
 
   chapters.forEach((ch,idx)=>{
     const o=document.createElement('option');
@@ -3771,15 +3851,43 @@ function initTutorial(){
     prevBtn.disabled=curIdx===0;
     nextBtn.disabled=curIdx===chapters.length-1;
     curDemos=[];
+    tfUnmountAll();
     body.innerHTML=renderTutMarkdown(chapters[curIdx].md,curDemos);
     body.scrollTop=0;
+    tfMountAll(body);
+    if(pendingAnchor)goAnchor(pendingAnchor);
     if(location.protocol==='http:'||location.protocol==='https:'){
       const snapIdx=curIdx,ch=chapters[curIdx];
       fetch('tutorial/'+ch.file).then(r=>r.ok?r.text():null).then(txt=>{
-        if(txt&&curIdx===snapIdx&&txt!==ch.md){ch.md=txt;curDemos=[];body.innerHTML=renderTutMarkdown(txt,curDemos);}
+        if(txt&&curIdx===snapIdx&&txt!==ch.md){const top=body.scrollTop;ch.md=txt;curDemos=[];tfUnmountAll();body.innerHTML=renderTutMarkdown(txt,curDemos);tfMountAll(body);if(pendingAnchor)goAnchor(pendingAnchor);else body.scrollTop=top;}
       }).catch(()=>{});}}
 
+  function goAnchor(id){
+    const el=id?body.querySelector('#tut-a-'+(window.CSS&&CSS.escape?CSS.escape(id):id)):null;
+    if(!el)return;
+    for(let d=el.parentElement;d&&d!==body;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;
+    body.scrollTop+=el.getBoundingClientRect().top-body.getBoundingClientRect().top-8;
+    try{el.focus({preventScroll:true});}catch(_){}}
+
+  function updateBack(){
+    backBtn.hidden=!navStack.length;
+    if(navStack.length){const t=chapters[navStack[navStack.length-1].idx].title;backBtn.title='Back to '+t;backBtn.setAttribute('aria-label','Back to '+t);}}
+
+  function followTutLink(a){
+    const ch=a.getAttribute('data-tut-ch')||'',an=a.getAttribute('data-tut-anchor')||'';
+    const idx=chapters.findIndex(c=>c.file.startsWith(ch+'-'));
+    if(idx<0)return;
+    navStack.push({idx:curIdx,top:body.scrollTop,open:[...body.querySelectorAll('details')].map((d,i)=>d.open?i:-1).filter(i=>i>=0)});
+    if(navStack.length>20)navStack.shift();
+    pendingAnchor=an;
+    if(idx!==curIdx)renderChapter(idx);
+    else if(an)goAnchor(an);
+    if(!an)body.scrollTop=0;
+    updateBack();}
+
   body.addEventListener('click',e=>{
+    const lk=e.target.closest('a.tut-link');
+    if(lk){e.preventDefault();followTutLink(lk);return;}
     const btn=e.target.closest('.tut-demo-btn');
     if(!btn)return;
     const d=curDemos[+btn.dataset.demoIdx];
@@ -3787,9 +3895,17 @@ function initTutorial(){
   toggleBtn.onclick=()=>setTutOpen(!tutOpen,tutOpen);
   closeBtn.onclick=()=>setTutOpen(false,true);
   backdrop.onclick=()=>setTutOpen(false,true);
-  sel.onchange=()=>renderChapter(+sel.value);
-  prevBtn.onclick=()=>renderChapter(curIdx-1);
-  nextBtn.onclick=()=>renderChapter(curIdx+1);
+  const manualNav=idx=>{navStack.length=0;pendingAnchor='';updateBack();renderChapter(idx);};
+  sel.onchange=()=>manualNav(+sel.value);
+  prevBtn.onclick=()=>manualNav(curIdx-1);
+  nextBtn.onclick=()=>manualNav(curIdx+1);
+  backBtn.onclick=()=>{
+    const b=navStack.pop();if(!b)return;
+    pendingAnchor='';
+    if(b.idx!==curIdx)renderChapter(b.idx);
+    const ds=body.querySelectorAll('details');(b.open||[]).forEach(i=>{if(ds[i])ds[i].open=true;});
+    body.scrollTop=b.top;updateBack();
+    if(!navStack.length)sel.focus();};
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&tutOpen&&!desktopMql.matches)setTutOpen(false,true);});
   desktopMql.addEventListener('change',syncTutSurface);
   if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe(cv);
@@ -3797,6 +3913,593 @@ function initTutorial(){
   renderChapter(0);
   if(desktopMql.matches)setTutOpen(true,false);
   else syncTutSurface();}
+
+/* ---------- tutorial figures: inline SVG widgets, no external libraries ---------- */
+const TF_NS='http://www.w3.org/2000/svg';
+const TF={
+  rm(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);},
+  svg(st,w,h,label){const s=document.createElementNS(TF_NS,'svg');s.setAttribute('viewBox','0 0 '+w+' '+h);s.setAttribute('role','img');s.setAttribute('aria-label',label);st.appendChild(s);return s;},
+  el(par,tag,attrs,txt){const e=document.createElementNS(TF_NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(txt!=null)e.textContent=txt;if(par)par.appendChild(e);return e;},
+  set(e,attrs){for(const k in attrs)e.setAttribute(k,attrs[k]);return e;},
+  n(x,d){const v=(+x).toFixed(d);return /^-0?\.?0*$/.test(v)?v.slice(1):v.replace('-','−');},
+  pts(arr){let d='',pen=false;for(const p of arr){if(!p||!Number.isFinite(p[0])||!Number.isFinite(p[1])){pen=false;continue;}d+=(pen?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);pen=true;}return d;},
+  arrowD(x1,y1,x2,y2,h){const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy);if(L<0.5)return '';const ux=dx/L,uy=dy/L;h=Math.min(h||7,L*0.6);const bx=x2-ux*h,by=y2-uy*h,px=-uy*h*0.5,py=ux*h*0.5;const f=v=>v.toFixed(1);return 'M'+f(x1)+' '+f(y1)+'L'+f(x2)+' '+f(y2)+'M'+f(bx+px)+' '+f(by+py)+'L'+f(x2)+' '+f(y2)+'L'+f(bx-px)+' '+f(by-py);},
+  ctl(st){const d=document.createElement('div');d.className='tf-ctl';st.appendChild(d);return d;},
+  slider(row,o){
+    const lab=document.createElement('label');lab.className='tf-field';
+    const sp=document.createElement('span');sp.textContent=o.label;
+    const inp=document.createElement('input');inp.type='range';inp.min=String(o.min);inp.max=String(o.max);inp.step=String(o.step);inp.value=String(o.value);
+    const out=document.createElement('output');
+    const upd=()=>{out.textContent=o.fmt?o.fmt(+inp.value):inp.value;inp.setAttribute('aria-valuetext',out.textContent);};
+    inp.addEventListener('input',()=>{upd();o.on(+inp.value);});
+    upd();lab.append(sp,inp,out);row.appendChild(lab);
+    return {inp,lab,set(v){inp.value=String(v);upd();}};},
+  select(row,label,opts,val,on){
+    const lab=document.createElement('label');lab.className='tf-field';
+    const sp=document.createElement('span');sp.textContent=label;
+    const s=document.createElement('select');
+    for(const [v,t] of opts){const o=document.createElement('option');o.value=v;o.textContent=t;s.appendChild(o);}
+    s.value=val;s.addEventListener('change',()=>on(s.value));
+    lab.append(sp,s);row.appendChild(lab);return s;},
+  check(row,label,val,on){const lab=document.createElement('label');lab.className='tf-field tf-chk';const c=document.createElement('input');c.type='checkbox';c.checked=!!val;c.addEventListener('change',()=>on(c.checked));lab.append(c,document.createTextNode(label));row.appendChild(lab);return c;},
+  button(row,label,on){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',on);row.appendChild(b);return b;},
+  playBtn(row,f){const b=TF.button(row,'',()=>f.setPlaying(!f.playing));f.onPlayChange=()=>{b.textContent=f.playing?'❚❚ Pause':'▶ Play';b.setAttribute('aria-pressed',String(f.playing));b.setAttribute('aria-label',f.playing?'Pause animation':'Play animation');};f.onPlayChange();return b;},
+  readout(st){const p=document.createElement('p');p.className='tf-read';st.appendChild(p);return p;},
+  toV(svg,e){const m=svg.getScreenCTM();if(!m)return null;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(m.inverse());},
+  drag(svg,target,on){
+    let id=null;
+    target.addEventListener('pointerdown',e=>{id=e.pointerId;try{target.setPointerCapture(id);}catch(_){}const p=TF.toV(svg,e);if(p)on(p.x,p.y,'start');e.preventDefault();});
+    target.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const p=TF.toV(svg,e);if(p)on(p.x,p.y,'move');});
+    const end=e=>{if(e.pointerId===id)id=null;};
+    target.addEventListener('pointerup',end);target.addEventListener('pointercancel',end);},
+  keys(target,label,on){target.setAttribute('tabindex','0');target.setAttribute('aria-label',label);target.addEventListener('keydown',e=>{const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(m){e.preventDefault();on(m[0],m[1]);}});},
+  // orbit camera for 3D figures: returns projector and wires drag + arrow keys on the svg
+  orbit(svg,cx,cy,S,az0,el0,redraw,label){
+    const cam={az:az0,el:el0};
+    svg.classList.add('tf-drag');
+    let last=null;
+    TF.drag(svg,svg,(x,y,ph)=>{if(ph==='start'||!last){last=[x,y];return;}cam.az-=(x-last[0])*0.012;cam.el=Math.max(-1.2,Math.min(1.2,cam.el+(y-last[1])*0.012));last=[x,y];redraw();});
+    svg.addEventListener('pointerup',()=>{last=null;});svg.addEventListener('pointercancel',()=>{last=null;});
+    TF.keys(svg,label,(dx,dy)=>{cam.az-=dx*0.12;cam.el=Math.max(-1.2,Math.min(1.2,cam.el+dy*0.12));redraw();});
+    svg.setAttribute('role','img');
+    cam.p=(x,y,z)=>{const ca=Math.cos(cam.az),sa=Math.sin(cam.az),ce=Math.cos(cam.el),se=Math.sin(cam.el);const x1=x*ca-y*sa,y1=x*sa+y*ca;return [cx+S*x1,cy-S*(z*ce+y1*se)];};
+    return cam;}
+};
+
+const TF_MOUNT={};
+
+TF_MOUNT['euler-phasor']=(st,sp,f)=>{
+  const om=Number.isFinite(+sp.omega)&&+sp.omega!==0?+sp.omega:1;
+  const svg=TF.svg(st,320,176,'Rotating arrow e^(iθ) on the unit circle with its cosine and sine shadows plotted against θ');
+  const cx=76,cy=90,R=62,px0=166,px1=314;
+  TF.el(svg,'circle',{cx,cy,r:R,class:'tf-grid'});
+  TF.el(svg,'path',{d:`M${cx-R-8} ${cy}H${cx+R+8}M${cx} ${cy-R-8}V${cy+R+8}`,class:'tf-ax'});
+  TF.el(svg,'text',{x:cx+R+2,y:cy+13,class:'tf-m'},'Re');TF.el(svg,'text',{x:cx+4,y:cy-R-1,class:'tf-m'},'Im');
+  TF.el(svg,'path',{d:`M${px0} ${cy}H${px1}M${px0} ${cy-R}V${cy+R}M${px0-3} ${cy-R}H${px0+3}M${px0-3} ${cy+R}H${px0+3}`,class:'tf-ax'});
+  TF.el(svg,'text',{x:px0-4,y:cy-R+4,class:'tf-m','text-anchor':'end'},'1');TF.el(svg,'text',{x:px0-4,y:cy+R+4,class:'tf-m','text-anchor':'end'},'−1');
+  TF.el(svg,'text',{x:px1,y:cy+13,class:'tf-m','text-anchor':'end'},'θ now →');
+  TF.el(svg,'text',{x:px0+6,y:12,class:'tf-b',style:'fill:var(--fig2)'},'cos θ');TF.el(svg,'text',{x:px0+52,y:12,class:'tf-b',style:'fill:var(--fig3)'},'sin θ');
+  const cosP=TF.el(svg,'path',{class:'tf-s2'}),sinP=TF.el(svg,'path',{class:'tf-s3'});
+  const proj=TF.el(svg,'path',{class:'tf-sm tf-dash'});
+  const shX=TF.el(svg,'path',{class:'tf-s2','stroke-width':4,'stroke-linecap':'round'}),shY=TF.el(svg,'path',{class:'tf-s3','stroke-width':4,'stroke-linecap':'round'});
+  const arc=TF.el(svg,'path',{class:'tf-sm'});
+  const arr=TF.el(svg,'path',{class:'tf-s1','stroke-width':2.5});const tip=TF.el(svg,'circle',{r:3.5,class:'tf-f1'});
+  const dc=TF.el(svg,'circle',{r:3,class:'tf-f2'}),ds=TF.el(svg,'circle',{r:3,class:'tf-f3'});
+  let th=0.9;
+  const row=TF.ctl(st);TF.playBtn(row,f);
+  const sl=TF.slider(row,{label:'θ',min:0,max:360,step:1,value:52,fmt:v=>v+'°',on:v=>{th=v*Math.PI/180;f.setPlaying(false);draw();}});
+  const rd=TF.readout(st);
+  function draw(){
+    const c=Math.cos(th),s=Math.sin(th),x=cx+R*c,y=cy-R*s;
+    arr.setAttribute('d',TF.arrowD(cx,cy,x,y,9));TF.set(tip,{cx:x,cy:y});
+    shX.setAttribute('d',`M${cx} ${cy}H${x.toFixed(1)}`);shY.setAttribute('d',`M${cx} ${cy}V${y.toFixed(1)}`);
+    proj.setAttribute('d',`M${x.toFixed(1)} ${y.toFixed(1)}V${cy}M${x.toFixed(1)} ${y.toFixed(1)}H${cx}M${x.toFixed(1)} ${y.toFixed(1)}H${px1}`);
+    const a=((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI),ar=17;
+    arc.setAttribute('d',a<1e-3?'':`M${cx+ar} ${cy}A${ar} ${ar} 0 ${a>Math.PI?1:0} 0 ${(cx+ar*Math.cos(a)).toFixed(1)} ${(cy-ar*Math.sin(a)).toFixed(1)}`);
+    const N=140,pc=[],ps=[];
+    for(let i=0;i<=N;i++){const t=th-2*Math.PI+2*Math.PI*i/N,X=px0+(px1-px0)*i/N;pc.push([X,cy-R*Math.cos(t)]);ps.push([X,cy-R*Math.sin(t)]);}
+    cosP.setAttribute('d',TF.pts(pc));sinP.setAttribute('d',TF.pts(ps));
+    TF.set(dc,{cx:px1,cy:cy-R*c});TF.set(ds,{cx:px1,cy:cy-R*s});
+    const deg=Math.round(a*180/Math.PI)%360;
+    rd.innerHTML=`θ = ${deg}° = ${TF.n(a,2)} rad: <i>e</i><sup><i>i</i>θ</sup> = cos θ + <i>i</i> sin θ = ${TF.n(c,2)} ${s<0?'−':'+'} ${TF.n(Math.abs(s),2)}<i>i</i>, and |<i>e</i><sup><i>i</i>θ</sup>| = 1 always.`;}
+  f.animated=true;
+  f.tick=dt=>{th+=om*dt*1.1;const a=((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI);sl.set(Math.round(a*180/Math.PI)%360);draw();};
+  draw();};
+
+TF_MOUNT['phase-beats']=(st,sp,f)=>{
+  let dE=Number.isFinite(+sp.dE)?Math.max(0,Math.min(1,+sp.dE)):0.375,w=Number.isFinite(+sp.c2)?Math.max(0,Math.min(1,+sp.c2)):0.5,t=0;
+  const E1=-0.5,Wt=60;
+  const svg=TF.svg(st,320,170,'Two phase clocks and the beating probability density');
+  const cx=70,cy=86,R=36,px0=150,px1=314,py0=150,py1=22;
+  TF.el(svg,'circle',{cx,cy,r:2*R,class:'tf-grid'});
+  TF.el(svg,'path',{d:`M${cx-2*R-6} ${cy}H${cx+2*R+6}M${cx} ${cy-2*R-6}V${cy+2*R+6}`,class:'tf-grid'});
+  const a1=TF.el(svg,'path',{class:'tf-s1','stroke-width':2.5}),a2=TF.el(svg,'path',{class:'tf-s2','stroke-width':2.5}),as=TF.el(svg,'path',{class:'tf-s3','stroke-width':2});
+  TF.el(svg,'text',{x:4,y:12,class:'tf-b',style:'fill:var(--acc)'},'c₁e^(−iE₁t)');TF.el(svg,'text',{x:4,y:166,class:'tf-b',style:'fill:var(--fig2)'},'c₂e^(−iE₂t)');
+  TF.el(svg,'text',{x:96,y:166,class:'tf-b',style:'fill:var(--fig3)'},'sum');
+  TF.el(svg,'path',{d:`M${px0} ${py0}H${px1}M${px0} ${py0}V${py1}`,class:'tf-ax'});
+  TF.el(svg,'text',{x:px0+4,y:py1-6,class:'tf-m'},'|Ψ|² at a point where ψ₁ = ψ₂');
+  TF.el(svg,'text',{x:px1,y:py0+13,class:'tf-m','text-anchor':'end'},'time →');
+  const base=TF.el(svg,'path',{class:'tf-sm tf-dash'}),curve=TF.el(svg,'path',{class:'tf-s3'}),dot=TF.el(svg,'circle',{r:3.5,class:'tf-f3'});
+  const row=TF.ctl(st);TF.playBtn(row,f);
+  TF.slider(row,{label:'E₂ − E₁',min:0,max:1,step:0.005,value:dE,fmt:v=>TF.n(v,3)+' Ha',on:v=>{dE=v;draw();}});
+  TF.slider(row,{label:'|c₂|²',min:0,max:1,step:0.01,value:w,fmt:v=>Math.round(v*100)+'%',on:v=>{w=v;draw();}});
+  const rd=TF.readout(st);
+  const ymap=v=>py0-(py0-py1)*v/2.05;
+  function draw(){
+    const c1=Math.sqrt(1-w),c2=Math.sqrt(w),E2=E1+dE,p1=-E1*t,p2=-E2*t;
+    const x1=cx+2*R*c1*Math.cos(p1)*0.7071,y1=cy-2*R*c1*Math.sin(p1)*0.7071;
+    const x2=x1+2*R*c2*Math.cos(p2)*0.7071,y2=y1-2*R*c2*Math.sin(p2)*0.7071;
+    a1.setAttribute('d',TF.arrowD(cx,cy,x1,y1,7));a2.setAttribute('d',TF.arrowD(x1,y1,x2,y2,7));as.setAttribute('d',TF.arrowD(cx,cy,x2,y2,7));
+    const dens=tt=>c1*c1+c2*c2+2*c1*c2*Math.cos(dE*tt);
+    base.setAttribute('d',`M${px0} ${ymap(1).toFixed(1)}H${px1}`);
+    const N=160,pp=[];for(let i=0;i<=N;i++){const tt=t-Wt+Wt*i/N;pp.push([px0+(px1-px0)*i/N,ymap(dens(tt))]);}
+    curve.setAttribute('d',TF.pts(pp));TF.set(dot,{cx:px1,cy:ymap(dens(t))});
+    const rel=((dE*t)%(2*Math.PI))/Math.PI;
+    rd.innerHTML=dE<1e-9?'Equal energies: both clocks turn together, the relative phase never changes, so |Ψ|² is frozen (a stationary, degenerate superposition).':
+      `Relative phase (E₂ − E₁)<i>t</i> = ${TF.n(rel,2)}π. Interference term 2|c₁c₂| cos(Δω <i>t</i>) = ${TF.n(2*c1*c2*Math.cos(dE*t),2)}; beat period 2π/Δω = ${TF.n(2*Math.PI/dE,1)} a.u. of time.`;}
+  f.animated=true;f.tick=dt=>{t+=dt*3;draw();};
+  draw();};
+
+const TF_RAD={
+  '1s':{l:0,rmax:8,R:r=>2*Math.exp(-r)},
+  '2s':{l:0,rmax:16,R:r=>(2-r)*Math.exp(-r/2)},
+  '2p':{l:1,rmax:16,R:r=>r*Math.exp(-r/2)},
+  '3s':{l:0,rmax:28,R:r=>(27-18*r+2*r*r)*Math.exp(-r/3)},
+  '3p':{l:1,rmax:28,R:r=>(6*r-r*r)*Math.exp(-r/3)},
+  '3d':{l:2,rmax:28,R:r=>r*r*Math.exp(-r/3)}};
+TF_MOUNT['radial-distribution']=(st,sp,f)=>{
+  let key=Object.prototype.hasOwnProperty.call(TF_RAD,sp.state)?sp.state:'2s',rc=2;
+  const svg=TF.svg(st,320,176,'Radial distribution function P(r) for a hydrogen orbital');
+  const x0=34,x1=312,y0=150,y1=14;
+  const gAx=TF.el(svg,'g'),fill=TF.el(svg,'path',{class:'tf-fill'}),curve=TF.el(svg,'path',{class:'tf-s1'}),gMk=TF.el(svg,'g'),cur=TF.el(svg,'path',{class:'tf-s2'});
+  TF.el(svg,'text',{x:x0+4,y:y1+2,class:'tf-m'},'P(r) = r²R(r)²');
+  const row=TF.ctl(st);
+  TF.select(row,'Orbital',Object.keys(TF_RAD).map(k=>[k,k]),key,v=>{key=v;rc=Math.min(rc,TF_RAD[key].rmax);sl.inp.max=String(TF_RAD[key].rmax);sl.set(rc);draw();});
+  const sl=TF.slider(row,{label:'Shell radius r',min:0,max:TF_RAD[key].rmax,step:0.02,value:rc,fmt:v=>TF.n(v,2)+' a₀',on:v=>{rc=v;draw();}});
+  const rd=TF.readout(st);
+  function draw(){
+    const S=TF_RAD[key],N=500,h=S.rmax/N,rs=[],P=[];
+    for(let i=0;i<=N;i++){const r=i*h,R=S.R(r);rs.push(r);P.push(r*r*R*R);}
+    let norm=0;for(let i=0;i<N;i++)norm+=0.5*(P[i]+P[i+1])*h;
+    let pm=0;for(let i=0;i<=N;i++){P[i]/=norm;pm=Math.max(pm,P[i]);}
+    const X=r=>x0+(x1-x0)*r/S.rmax,Y=p=>y0-(y0-y1-8)*p/pm;
+    gAx.textContent='';
+    TF.el(gAx,'path',{d:`M${x0} ${y0}H${x1}M${x0} ${y0}V${y1}`,class:'tf-ax'});
+    const step=S.rmax<=8?1:S.rmax<=16?2:4;
+    for(let r=0;r<=S.rmax+1e-9;r+=step){TF.el(gAx,'path',{d:`M${X(r)} ${y0}v3`,class:'tf-ax'});TF.el(gAx,'text',{x:X(r),y:y0+13,class:'tf-m','text-anchor':'middle'},String(r));}
+    TF.el(gAx,'text',{x:x1,y:y0-4,class:'tf-m','text-anchor':'end'},'r (a₀)');
+    curve.setAttribute('d',TF.pts(rs.map((r,i)=>[X(r),Y(P[i])])));
+    const ic=Math.min(N,Math.round(rc/h)),fp=[[X(0),y0]];for(let i=0;i<=ic;i++)fp.push([X(rs[i]),Y(P[i])]);fp.push([X(rs[ic]),y0]);
+    fill.setAttribute('d',TF.pts(fp)+'Z');
+    let inside=0;for(let i=0;i<ic;i++)inside+=0.5*(P[i]+P[i+1])*h;
+    cur.setAttribute('d',`M${X(rc).toFixed(1)} ${y0}V${y1+6}`);
+    gMk.textContent='';
+    const peaks=[],nodes=[];
+    for(let i=1;i<N;i++){if(P[i]>P[i-1]&&P[i]>=P[i+1]&&P[i]>1e-4*pm){const den=P[i-1]-2*P[i]+P[i+1];peaks.push({r:rs[i]+(den?0.5*(P[i-1]-P[i+1])/den:0)*h,i});}const a=S.R(rs[i]),b=S.R(rs[i+1]);if(i>2&&a*b<0)nodes.push(rs[i]-a*(rs[i+1]-rs[i])/(b-a));}
+    peaks.forEach(({r,i})=>{TF.el(gMk,'circle',{cx:X(r),cy:Y(P[i]),r:3,class:'tf-f1'});TF.el(gMk,'text',{x:X(r)+5,y:Y(P[i])-6,class:'tf-m'},'peak '+TF.n(r,2));});
+    nodes.forEach((r,k)=>{TF.el(gMk,'path',{d:`M${X(r).toFixed(1)} ${y0}V${y1+18+k*12}`,class:'tf-sn tf-dash','stroke-width':1});TF.el(gMk,'text',{x:X(r)+3,y:y1+18+k*12,class:'tf-m',style:'fill:var(--fig-neg)'},'node '+TF.n(r,2));});
+    rd.innerHTML=`${key}: peaks at <i>r</i> = ${peaks.map(p=>TF.n(p.r,2)).join(', ')} <i>a</i>₀${nodes.length?'; radial node'+(nodes.length>1?'s':'')+' at '+nodes.map(r=>TF.n(r,2)).join(', ')+' <i>a</i>₀':''}. Probability inside <i>r</i> = ${TF.n(rc,2)} <i>a</i>₀: <b>${TF.n(100*Math.min(1,inside),1)}%</b> (shaded area).`;}
+  draw();};
+
+TF_MOUNT['effective-potential']=(st,sp,f)=>{
+  let l=Number.isFinite(+sp.l)?Math.max(0,Math.min(3,Math.round(+sp.l))):1;
+  const svg=TF.svg(st,320,180,'Effective radial potential with energy levels');
+  const x0=36,x1=312,y0=10,y1=166,rmax=40,ymin=-0.55,ymax=0.12;
+  const X=r=>x0+(x1-x0)*r/rmax,Y=v=>y0+(y1-y0)*(ymax-v)/(ymax-ymin);
+  TF.el(svg,'path',{d:`M${x0} ${Y(0)}H${x1}M${x0} ${y0}V${y1}`,class:'tf-ax'});
+  [-0.5,-0.25].forEach(v=>{TF.el(svg,'text',{x:x0-3,y:Y(v)+3,class:'tf-m','text-anchor':'end'},TF.n(v,2));TF.el(svg,'path',{d:`M${x0-3} ${Y(v)}h3`,class:'tf-ax'});});
+  TF.el(svg,'text',{x:x0-3,y:Y(0)+3,class:'tf-m','text-anchor':'end'},'0');
+  [10,20,30,40].forEach(r=>TF.el(svg,'text',{x:X(r),y:Y(0)-4,class:'tf-m','text-anchor':'middle'},String(r)));
+  TF.el(svg,'text',{x:x1,y:Y(0)+12,class:'tf-m','text-anchor':'end'},'r (a₀)');
+  const gL=TF.el(svg,'g'),pc=TF.el(svg,'path',{class:'tf-sm tf-dash'}),pb=TF.el(svg,'path',{class:'tf-s3 tf-dash'}),pv=TF.el(svg,'path',{class:'tf-s1'});
+  TF.el(svg,'text',{x:x1-4,y:y1-28,class:'tf-b','text-anchor':'end',style:'fill:var(--acc)'},'V_eff');
+  TF.el(svg,'text',{x:x1-4,y:y1-16,class:'tf-m','text-anchor':'end'},'−1/r (dashed)');
+  TF.el(svg,'text',{x:x1-4,y:y1-4,class:'tf-m','text-anchor':'end',style:'fill:var(--fig3)'},'l(l+1)/2r² barrier');
+  const row=TF.ctl(st);
+  TF.slider(row,{label:'l',min:0,max:3,step:1,value:l,fmt:v=>v+' ('+'spdf'[v]+')',on:v=>{l=v;draw();}});
+  const rd=TF.readout(st);
+  const clip=v=>(v>ymax||v<ymin)?NaN:v;
+  function draw(){
+    const N=400,a=[],b=[],c=[],L=l*(l+1)/2;
+    for(let i=1;i<=N;i++){const r=rmax*i/N;a.push([X(r),Y(clip(-1/r))]);b.push(L?[X(r),Y(clip(L/(r*r)))]:null);c.push([X(r),Y(Math.max(ymin,clip(-1/r+L/(r*r))))]);}
+    pc.setAttribute('d',TF.pts(a));pb.setAttribute('d',TF.pts(b));pv.setAttribute('d',TF.pts(c));
+    gL.textContent='';
+    for(let n=l+1;n<=5;n++){const E=-1/(2*n*n);let rl=null,rr=null;for(let i=1;i<=2000;i++){const r=rmax*i/2000;if(-1/r+L/(r*r)<=E){if(rl===null)rl=r;rr=r;}}
+      if(rl===null)continue;TF.el(gL,'path',{d:`M${X(rl).toFixed(1)} ${Y(E).toFixed(1)}H${X(rr).toFixed(1)}`,class:'tf-s2'});
+      if(n<=3)TF.el(gL,'text',{x:X(rl)-3,y:Y(E)+3,class:'tf-m','text-anchor':'end'},'n='+n);}
+    rd.innerHTML=l===0?'<i>l</i> = 0 (s): no centrifugal barrier, so the electron can reach the nucleus. Orange lines: allowed energies <i>E<sub>n</sub></i> = −1/(2<i>n</i>²) Ha, drawn between the classical turning points.':
+      `<i>l</i> = ${l}: barrier <i>l</i>(<i>l</i>+1)/(2<i>r</i>²) = ${L}/<i>r</i>² pushes the electron out; <i>V</i><sub>eff</sub> is lowest at <i>r</i> = <i>l</i>(<i>l</i>+1) = ${l*(l+1)} <i>a</i>₀ (value −1/(2<i>l</i>(<i>l</i>+1)) = ${TF.n(-1/(2*l*(l+1)),3)} Ha). Only <i>n</i> ≥ ${l+1} fit.`;}
+  draw();};
+
+const TF_FIELDS={
+  source:{J:(x,y)=>[x,y],div:()=>2,txt:'J = (x, y): ∇·J = 1 + 1 = 2 everywhere'},
+  sink:{J:(x,y)=>[-x,-y],div:()=>-2,txt:'J = (−x, −y): ∇·J = −2 everywhere'},
+  uniform:{J:()=>[0.8,0.35],div:()=>0,txt:'J = constant: ∇·J = 0 (what flows in flows out)'},
+  swirl:{J:(x,y)=>[-y,x],div:()=>0,txt:'J = (−y, x): ∇·J = 0 + 0 = 0 (pure circulation)'},
+  shear:{J:(x,y)=>[y,0],div:()=>0,txt:'J = (y, 0): ∇·J = ∂y/∂x = 0, uneven but no pile-up'},
+  ramp:{J:(x)=>[0.5*(x+1)*(x+1),0],div:(x)=>x+1,txt:'J = ((x+1)²/2, 0): ∇·J = x + 1, depends on position'}};
+TF_MOUNT['vector-divergence']=(st,sp,f)=>{
+  let key=Object.prototype.hasOwnProperty.call(TF_FIELDS,sp.field)?sp.field:'source',bx=0.35,by=0.2;const h=0.22;
+  const svg=TF.svg(st,320,244,'Vector field with a movable box showing flux through each side');
+  const ox=50,S=110,cy=116;
+  const X=x=>ox+S*(x+1),Y=y=>cy-S*y;
+  TF.el(svg,'rect',{x:ox,y:cy-S,width:2*S,height:2*S,class:'tf-fbg'});
+  const gF=TF.el(svg,'g'),box=TF.el(svg,'rect',{class:'tf-handle',style:'fill:var(--fig-fill);stroke:var(--acc);stroke-width:2'}),gS=TF.el(svg,'g');
+  TF.el(svg,'text',{x:ox,y:cy+S+14,class:'tf-m'},'Drag the box (or focus it and use arrow keys)');
+  const row=TF.ctl(st);
+  TF.select(row,'Field',[['source','Source (x, y)'],['sink','Sink (−x, −y)'],['uniform','Uniform'],['swirl','Swirl (−y, x)'],['shear','Shear (y, 0)'],['ramp','Ramp ((x+1)²/2, 0)']],key,v=>{key=v;draw();});
+  const rd=TF.readout(st);
+  const move=(x,y)=>{bx=Math.max(-0.75,Math.min(0.75,x));by=Math.max(-0.75,Math.min(0.75,y));draw();};
+  let off=null;
+  TF.drag(svg,box,(x,y,ph)=>{const u=(x-ox)/S-1,v=(cy-y)/S;if(ph==='start'){off=[bx-u,by-v];return;}move(u+off[0],v+off[1]);});
+  TF.keys(box,'Movable box. Use the arrow keys to move it.',(dx,dy)=>move(bx+0.05*dx,by+0.05*dy));
+  box.setAttribute('role','button');
+  function draw(){
+    const F=TF_FIELDS[key];gF.textContent='';
+    let mx=0;for(let i=0;i<9;i++)for(let j=0;j<9;j++){const v=F.J(-0.89+i*0.2225,-0.89+j*0.2225);mx=Math.max(mx,Math.hypot(v[0],v[1]));}
+    for(let i=0;i<9;i++)for(let j=0;j<9;j++){const x=-0.89+i*0.2225,y=-0.89+j*0.2225,v=F.J(x,y),k=0.2*S/(mx||1);
+      TF.el(gF,'path',{d:TF.arrowD(X(x)-v[0]*k/2,Y(y)+v[1]*k/2,X(x)+v[0]*k/2,Y(y)-v[1]*k/2,4),class:'tf-sm'});}
+    TF.set(box,{x:X(bx-h),y:Y(by+h),width:2*h*S,height:2*h*S});
+    const n=16,ds=2*h/n;let R=0,L=0,T=0,B=0;
+    for(let k=0;k<n;k++){const u=-h+(k+0.5)*ds;R+=F.J(bx+h,by+u)[0]*ds;L-=F.J(bx-h,by+u)[0]*ds;T+=F.J(bx+u,by+h)[1]*ds;B-=F.J(bx+u,by-h)[1]*ds;}
+    gS.textContent='';
+    const side=(fl,x,y,nx,ny,lab)=>{const len=Math.min(30,Math.abs(fl)*90);if(len<1.5){TF.el(gS,'text',{x:x+nx*12,y:y-ny*12+3,class:'tf-m','text-anchor':'middle'},'0');return;}
+      const out=fl>0,cls=out?'tf-s3':'tf-sn';const xa=out?x:x+nx*len,ya=out?y:y-ny*len,xb=out?x+nx*len:x,yb=out?y-ny*len:y;
+      TF.el(gS,'path',{d:TF.arrowD(xa,ya,xb,yb,6),class:cls,'stroke-width':2.5});
+      TF.el(gS,'text',{x:x+nx*(len+11),y:y-ny*(len+11)+3,class:'tf-m','text-anchor':'middle'},(out?'+':'−')+TF.n(Math.abs(fl),3));};
+    side(R,X(bx+h),Y(by),1,0);side(L,X(bx-h),Y(by),-1,0);side(T,X(bx),Y(by+h),0,1);side(B,X(bx),Y(by-h),0,-1);
+    const net=R+L+T+B,area=4*h*h,dv=F.div(bx,by);
+    rd.innerHTML=`${F.txt}.<br>Net outflow through the box = <b>${TF.n(net,3)}</b>; (∇·<b>J</b> at the centre) × area = ${TF.n(dv,2)} × ${TF.n(area,4)} = <b>${TF.n(dv*area,3)}</b>. Green = out, red = in.`;}
+  draw();};
+
+const TF_FN={
+  bowl:{f:(x,y)=>x*x+y*y,g:(x,y)=>[2*x,2*y],lv:[0.25,0.5,1,1.5,2,2.5,3,3.5],txt:'f = x² + y² (a bowl)'},
+  hill:{f:(x,y)=>Math.exp(-(x*x+y*y)),g:(x,y)=>{const e=Math.exp(-(x*x+y*y));return [-2*x*e,-2*y*e];},lv:[0.1,0.2,0.35,0.5,0.65,0.8,0.92],txt:'f = e^(−x²−y²) (a hill)'},
+  saddle:{f:(x,y)=>x*x-y*y,g:(x,y)=>[2*x,-2*y],lv:[-1.6,-1.1,-0.6,-0.2,0.2,0.6,1.1,1.6],txt:'f = x² − y² (a saddle)'}};
+TF_MOUNT['gradient-contour']=(st,sp,f)=>{
+  let key=Object.prototype.hasOwnProperty.call(TF_FN,sp.fn)?sp.fn:'hill',px=0.6,py=0.35;
+  const svg=TF.svg(st,320,246,'Contour map with a movable point and its gradient arrow');
+  const ox=50,S=73,cy=114,D=1.5;
+  const X=x=>ox+S*(x+D),Y=y=>cy-S*y;
+  TF.el(svg,'rect',{x:ox,y:cy-S*D,width:2*S*D,height:2*S*D,class:'tf-fbg'});
+  const gC=TF.el(svg,'g'),tan=TF.el(svg,'path',{class:'tf-sm tf-dash'}),ga=TF.el(svg,'path',{class:'tf-s2','stroke-width':2.5});
+  const pt=TF.el(svg,'circle',{r:7,class:'tf-handle',style:'fill:var(--acc);stroke:var(--bg);stroke-width:2'});
+  TF.el(svg,'text',{x:ox,y:cy+S*D+14,class:'tf-m'},'Drag the dot (or focus it and use arrow keys)');
+  const row=TF.ctl(st);
+  TF.select(row,'Function',[['hill','Hill e^(−r²)'],['bowl','Bowl x² + y²'],['saddle','Saddle x² − y²']],key,v=>{key=v;contours();draw();});
+  const rd=TF.readout(st);
+  const move=(x,y)=>{px=Math.max(-1.4,Math.min(1.4,x));py=Math.max(-1.4,Math.min(1.4,y));draw();};
+  TF.drag(svg,pt,(x,y)=>move((x-ox)/S-D,(cy-y)/S));
+  TF.keys(pt,'Movable point. Use the arrow keys to move it.',(dx,dy)=>move(px+0.05*dx,py+0.05*dy));pt.setAttribute('role','button');
+  function contours(){
+    const F=TF_FN[key],n=40,h=2*D/n;gC.textContent='';
+    const v=[];for(let i=0;i<=n;i++){v.push([]);for(let j=0;j<=n;j++)v[i].push(F.f(-D+i*h,-D+j*h));}
+    for(const lv of F.lv){let d='';
+      for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+        const c=[v[i][j],v[i+1][j],v[i+1][j+1],v[i][j+1]],xy=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]],hits=[];
+        for(let e=0;e<4;e++){const a=c[e]-lv,b=c[(e+1)%4]-lv;if((a<0)!==(b<0)){const s=a/(a-b),p=xy[e],q=xy[(e+1)%4];hits.push([X(-D+(p[0]+s*(q[0]-p[0]))*h),Y(-D+(p[1]+s*(q[1]-p[1]))*h)]);}}
+        for(let k=0;k+1<hits.length;k+=2)d+='M'+hits[k][0].toFixed(1)+' '+hits[k][1].toFixed(1)+'L'+hits[k+1][0].toFixed(1)+' '+hits[k+1][1].toFixed(1);}
+      TF.el(gC,'path',{d,class:lv<0?'tf-sn':'tf-s3','stroke-width':1.2,'stroke-opacity':0.75});}}
+  function draw(){
+    const F=TF_FN[key],g=F.g(px,py),m=Math.hypot(g[0],g[1]),sx=X(px),sy=Y(py),k=m>1e-9?Math.min(60,30+20*m)/m:0;
+    TF.set(pt,{cx:sx,cy:sy});
+    ga.setAttribute('d',m>1e-6?TF.arrowD(sx,sy,sx+g[0]*k,sy-g[1]*k,8):'');
+    tan.setAttribute('d',m>1e-6?`M${(sx-g[1]/m*28).toFixed(1)} ${(sy-g[0]/m*28).toFixed(1)}L${(sx+g[1]/m*28).toFixed(1)} ${(sy+g[0]/m*28).toFixed(1)}`:'');
+    rd.innerHTML=`${F.txt}. At (${TF.n(px,2)}, ${TF.n(py,2)}): <i>f</i> = ${TF.n(F.f(px,py),3)}, ∇<i>f</i> = (∂<i>f</i>/∂<i>x</i>, ∂<i>f</i>/∂<i>y</i>) = (${TF.n(g[0],2)}, ${TF.n(g[1],2)}), |∇<i>f</i>| = ${TF.n(m,2)}. The orange arrow points straight uphill and is perpendicular to the contour (dashed).`;}
+  contours();draw();};
+
+TF_MOUNT['leaky-bucket']=(st,sp,f)=>{
+  const decay=sp.mode==='decay';
+  let G=Number.isFinite(+sp.gamma)?Math.max(0.5,Math.min(2,+sp.gamma)):1,Rt=Number.isFinite(+sp.rate)?Math.max(0.2,Math.min(1.5,+sp.rate)):1,t=decay?0:0,hold=0;
+  const Nmax=3.2,N0=3,tmax=8;
+  const svg=TF.svg(st,320,176,decay?'Bucket draining through a hole: exponential decay':'Bucket filled by a hose and leaking through a hole');
+  const bx0=22,bx1=92,by0=46,by1=156,px0=124,px1=314,py0=156,py1=20;
+  TF.el(svg,'path',{d:`M${bx0} ${by0}V${by1}H${bx1}V${by0}`,class:'tf-ax','stroke-width':2});
+  const water=TF.el(svg,'rect',{x:bx0+1,width:bx1-bx0-2,class:'tf-fill'}),surf=TF.el(svg,'path',{class:'tf-s1'});
+  const hose=TF.el(svg,'path',{class:'tf-s3','stroke-linecap':'round'}),leak=TF.el(svg,'path',{class:'tf-s2','stroke-linecap':'round'});
+  const ssB=TF.el(svg,'path',{class:'tf-sm tf-dash'});
+  if(!decay)TF.el(svg,'text',{x:bx0+24,y:12,class:'tf-m',style:'fill:var(--fig3)'},'in: R');
+  TF.el(svg,'text',{x:bx1+3,y:by1+14,class:'tf-m',style:'fill:var(--fig2)','text-anchor':'middle'},'out: ΓN');
+  TF.el(svg,'path',{d:`M${px0} ${py0}H${px1}M${px0} ${py0}V${py1}`,class:'tf-ax'});
+  TF.el(svg,'text',{x:px1,y:py0+13,class:'tf-m','text-anchor':'end'},'time t');TF.el(svg,'text',{x:px0+4,y:py1-6,class:'tf-m'},'N(t)');
+  const ss=TF.el(svg,'path',{class:'tf-sm tf-dash'}),ssT=TF.el(svg,'text',{class:'tf-m','text-anchor':'end'});
+  const ghost=TF.el(svg,'path',{class:'tf-sm','stroke-opacity':0.5}),curve=TF.el(svg,'path',{class:'tf-s1','stroke-width':2.5}),dot=TF.el(svg,'circle',{r:3.5,class:'tf-f1'});
+  const m5=TF.el(svg,'path',{class:'tf-s2 tf-dash','stroke-width':1}),m5T=TF.el(svg,'text',{class:'tf-m',style:'fill:var(--fig2)'});
+  const row=TF.ctl(st);TF.playBtn(row,f);
+  TF.button(row,'↺ Restart',()=>{t=0;hold=0;draw();if(!TF.rm())f.setPlaying(true);});
+  TF.slider(row,{label:'Leak rate Γ',min:0.5,max:2,step:0.05,value:G,fmt:v=>TF.n(v,2),on:v=>{G=v;draw();}});
+  if(!decay)TF.slider(row,{label:'Hose R',min:0.2,max:1.5,step:0.05,value:Rt,fmt:v=>TF.n(v,2),on:v=>{Rt=v;draw();}});
+  const rd=TF.readout(st);
+  const NofT=tt=>decay?N0*Math.exp(-G*tt):(Rt/G)*(1-Math.exp(-G*tt));
+  const X=tt=>px0+(px1-px0)*tt/tmax,Y=n=>py0-(py0-py1)*n/Nmax;
+  function draw(){
+    const N=NofT(t),lvl=by1-(by1-by0)*Math.min(1,N/Nmax);
+    TF.set(water,{y:lvl,height:Math.max(0,by1-lvl)});surf.setAttribute('d',`M${bx0+1} ${lvl.toFixed(1)}H${bx1-1}`);
+    if(!decay)TF.set(hose,{d:`M${bx0+30} 16V${Math.max(18,lvl-4).toFixed(1)}`,'stroke-width':(1+4*Rt).toFixed(1)});
+    TF.set(leak,{d:`M${bx1} ${by1-6}q12 0 14 14`,'stroke-width':(0.6+2.2*G*N/2).toFixed(1)});
+    const full=[],now=[];for(let i=0;i<=160;i++){const tt=tmax*i/160;full.push([X(tt),Y(NofT(tt))]);if(tt<=t)now.push([X(tt),Y(NofT(tt))]);}
+    now.push([X(t),Y(N)]);
+    ghost.setAttribute('d',TF.pts(full));curve.setAttribute('d',TF.pts(now));TF.set(dot,{cx:X(t),cy:Y(N)});
+    if(decay){ss.setAttribute('d','');ssT.textContent='';ssB.setAttribute('d','');
+      const t1=1/G;m5.setAttribute('d',`M${X(t1).toFixed(1)} ${py0}V${Y(N0*Math.exp(-1)).toFixed(1)}`);TF.set(m5T,{x:X(t1)+3,y:Y(N0*Math.exp(-1))-5});m5T.textContent='t = 1/Γ: 36.8% left';
+      rd.innerHTML=`<i>N</i>(<i>t</i>) = <i>N</i>₀<i>e</i><sup>−Γ<i>t</i></sup>. At <i>t</i> = ${TF.n(t,2)}: ${TF.n(100*Math.exp(-G*t),1)}% left. Half-life ln 2/Γ = ${TF.n(Math.log(2)/G,2)}; lifetime 1/Γ = ${TF.n(1/G,2)}.`;}
+    else{const sv=Rt/G;ss.setAttribute('d',`M${px0} ${Y(sv).toFixed(1)}H${px1}`);TF.set(ssT,{x:px1,y:Y(sv)-4});ssT.textContent='steady level R/Γ = '+TF.n(sv,2);
+      const ly=by1-(by1-by0)*Math.min(1,sv/Nmax);ssB.setAttribute('d',`M${bx0} ${ly.toFixed(1)}H${bx1}`);
+      const t5=5/G;m5.setAttribute('d',t5<=tmax?`M${X(t5).toFixed(1)} ${py0}V${Y(sv*(1-Math.exp(-5))).toFixed(1)}`:'');TF.set(m5T,{x:Math.min(X(t5)+4,px1-78),y:py0-6});m5T.textContent=t5<=tmax?'ΓT = 5: 99.33%':'';
+      rd.innerHTML=`<i>dN</i>/<i>dt</i> = <i>R</i> − Γ<i>N</i> ⇒ <i>N</i>(<i>t</i>) = (<i>R</i>/Γ)(1 − <i>e</i><sup>−Γ<i>t</i></sup>). At <i>t</i> = ${TF.n(t,2)}: <i>N</i> = ${TF.n(N,3)} = <b>${TF.n(100*(1-Math.exp(-G*t)),2)}%</b> of the steady level. Inflow balances leak when Γ<i>N</i> = <i>R</i>.`;}}
+  f.animated=true;
+  f.tick=dt=>{if(t>=tmax){hold+=dt;if(hold>1.5){t=0;hold=0;}}else t=Math.min(tmax,t+dt*1.4);draw();};
+  if(TF.rm())t=5;
+  draw();};
+
+TF_MOUNT['rabi-bloch']=(st,sp,f)=>{
+  let Om=1,De=Number.isFinite(+sp.detuning)?Math.max(-2,Math.min(2,+sp.detuning)):0,t=0;const Tw=20;let trail=[];
+  const svg=TF.svg(st,320,180,'Bloch sphere arrow and upper-state population during Rabi oscillation');
+  const cx=74,cy=92,R=58,px0=160,px1=314,py0=150,py1=28;
+  const az=-0.55,el=0.32,P=(x,y,z)=>{const x1=x*Math.cos(az)-y*Math.sin(az),y1=x*Math.sin(az)+y*Math.cos(az);return [cx+R*x1,cy-R*(z*Math.cos(el)+y1*Math.sin(el))];};
+  TF.el(svg,'circle',{cx,cy,r:R,class:'tf-grid'});
+  const eq=[];for(let i=0;i<=64;i++){const a=2*Math.PI*i/64;eq.push(P(Math.cos(a),Math.sin(a),0));}
+  TF.el(svg,'path',{d:TF.pts(eq),class:'tf-grid tf-dash'});
+  const zt=P(0,0,1),zb=P(0,0,-1);TF.el(svg,'path',{d:`M${zt[0]} ${zt[1]}L${zb[0]} ${zb[1]}`,class:'tf-grid'});
+  TF.el(svg,'text',{x:zt[0]+5,y:zt[1]-3,class:'tf-m'},'|1⟩ (start)');TF.el(svg,'text',{x:zb[0]+5,y:zb[1]+11,class:'tf-m'},'|2⟩');
+  const axis=TF.el(svg,'path',{class:'tf-s3 tf-dash'}),tr=TF.el(svg,'path',{class:'tf-s2','stroke-width':1,'stroke-opacity':0.6}),vec=TF.el(svg,'path',{class:'tf-s2','stroke-width':2.5});
+  TF.el(svg,'text',{x:4,y:174,class:'tf-m',style:'fill:var(--fig3)'},'dashed: rotation axis');
+  TF.el(svg,'path',{d:`M${px0} ${py0}H${px1}M${px0} ${py0}V${py1}`,class:'tf-ax'});
+  TF.el(svg,'text',{x:px0-3,y:py1+4,class:'tf-m','text-anchor':'end'},'1');TF.el(svg,'text',{x:px0-3,y:py0+3,class:'tf-m','text-anchor':'end'},'0');
+  TF.el(svg,'text',{x:px0+4,y:py1-8,class:'tf-m'},'P₂(t), upper-state population');TF.el(svg,'text',{x:px1,y:py0+13,class:'tf-m','text-anchor':'end'},'time →');
+  const ghost=TF.el(svg,'path',{class:'tf-sm','stroke-opacity':0.5}),curve=TF.el(svg,'path',{class:'tf-s1','stroke-width':2.5}),dot=TF.el(svg,'circle',{r:3.5,class:'tf-f1'}),cap=TF.el(svg,'path',{class:'tf-sn tf-dash','stroke-width':1});
+  const row=TF.ctl(st);TF.playBtn(row,f);TF.button(row,'↺ Restart',()=>{t=0;trail=[];draw();});
+  TF.slider(row,{label:'Rabi Ω',min:0.2,max:2,step:0.05,value:Om,fmt:v=>TF.n(v,2),on:v=>{Om=v;t=0;trail=[];draw();}});
+  TF.slider(row,{label:'Detuning Δ',min:-2,max:2,step:0.05,value:De,fmt:v=>TF.n(v,2),on:v=>{De=v;t=0;trail=[];draw();}});
+  const rd=TF.readout(st);
+  const W=()=>Math.hypot(Om,De);
+  const bloch=tt=>{const w=W(),n=[Om/w,0,De/w],c=Math.cos(w*tt),s=Math.sin(w*tt),nd=-n[2];return [n[0]*nd*(1-c),n[0]*s,-c+n[2]*nd*(1-c)];};
+  const P2=tt=>(Om*Om/(W()*W()))*Math.sin(W()*tt/2)**2;
+  const X=tt=>px0+(px1-px0)*tt/Tw,Y=p=>py0-(py0-py1)*p;
+  function draw(){
+    const w=W(),a0=P(-Om/w*1.25,0,De/w*1.25),a1=P(Om/w*1.25,0,-De/w*1.25);
+    axis.setAttribute('d',TF.arrowD(a0[0],a0[1],a1[0],a1[1],7));
+    const b=bloch(t),pb=P(b[0],b[1],-b[2]);vec.setAttribute('d',TF.arrowD(cx,cy,pb[0],pb[1],8));
+    trail.push(pb);if(trail.length>90)trail.shift();tr.setAttribute('d',TF.pts(trail));
+    const full=[],now=[];for(let i=0;i<=200;i++){const tt=Tw*i/200;full.push([X(tt),Y(P2(tt))]);if(tt<=t)now.push([X(tt),Y(P2(tt))]);}now.push([X(t),Y(P2(t))]);
+    ghost.setAttribute('d',TF.pts(full));curve.setAttribute('d',TF.pts(now));TF.set(dot,{cx:X(t),cy:Y(P2(t))});
+    const mx=Om*Om/(w*w);cap.setAttribute('d',`M${px0} ${Y(mx).toFixed(1)}H${px1}`);
+    rd.innerHTML=`Generalized Rabi frequency Ω′ = √(Ω² + Δ²) = ${TF.n(w,2)}; best transfer Ω²/(Ω² + Δ²) = <b>${TF.n(100*mx,1)}%</b> (red dashed line). Now <i>P</i>₂ = ${TF.n(100*P2(t),1)}%, pulse area Ω<i>t</i> = ${TF.n(Om*t/Math.PI,2)}π.`;}
+  f.animated=true;f.tick=dt=>{t+=dt*1.6;if(t>Tw){t=0;trail=[];}draw();};
+  if(TF.rm()){t=Math.PI/Om;}
+  draw();};
+
+TF_MOUNT['spherical-coords']=(st,sp,f)=>{
+  let r=Number.isFinite(+sp.r)?Math.max(0.2,Math.min(1.5,+sp.r)):1.2,th=(Number.isFinite(+sp.theta)?+sp.theta:50)*Math.PI/180,ph=(Number.isFinite(+sp.phi)?+sp.phi:35)*Math.PI/180;
+  const svg=TF.svg(st,320,230,'');
+  const g=TF.el(svg,'g');
+  const cam=TF.orbit(svg,160,118,74,-2.25,0.38,()=>draw(),'3D view of spherical coordinates. Drag or use the arrow keys to rotate.');
+  svg.setAttribute('aria-label','3D axes with a point at radius r, polar angle θ from the z axis and azimuth φ from the x axis. Drag or use arrow keys to rotate the view.');
+  TF.el(svg,'text',{x:4,y:226,class:'tf-m'},'Drag to rotate the view');
+  const row=TF.ctl(st);
+  TF.slider(row,{label:'r',min:0.2,max:1.5,step:0.01,value:r,fmt:v=>TF.n(v,2),on:v=>{r=v;draw();}});
+  TF.slider(row,{label:'θ (polar)',min:0,max:180,step:1,value:Math.round(th*180/Math.PI),fmt:v=>v+'°',on:v=>{th=v*Math.PI/180;draw();}});
+  TF.slider(row,{label:'φ (azimuth)',min:0,max:360,step:1,value:Math.round(ph*180/Math.PI),fmt:v=>v+'°',on:v=>{ph=v*Math.PI/180;draw();}});
+  const rd=TF.readout(st);
+  function line(a,b,cls,arrow){const p=cam.p(...a),q=cam.p(...b);TF.el(g,'path',{d:arrow?TF.arrowD(p[0],p[1],q[0],q[1],7):`M${p[0].toFixed(1)} ${p[1].toFixed(1)}L${q[0].toFixed(1)} ${q[1].toFixed(1)}`,class:cls});}
+  function lbl(a,txt,cls,style){const p=cam.p(...a);TF.el(g,'text',{x:p[0],y:p[1],class:cls||'tf-m','text-anchor':'middle',style:style||''},txt);}
+  function draw(){
+    g.textContent='';
+    const sq=[];for(const [x,y] of [[-1.5,-1.5],[1.5,-1.5],[1.5,1.5],[-1.5,1.5],[-1.5,-1.5]])sq.push(cam.p(x,y,0));
+    TF.el(g,'path',{d:TF.pts(sq),class:'tf-grid'});
+    line([0,0,0],[1.7,0,0],'tf-ax',true);line([0,0,0],[0,1.7,0],'tf-ax',true);line([0,0,0],[0,0,1.6],'tf-ax',true);
+    lbl([1.85,0,0],'x');lbl([0,1.85,0],'y');lbl([0,0,1.75],'z');
+    const x=r*Math.sin(th)*Math.cos(ph),y=r*Math.sin(th)*Math.sin(ph),z=r*Math.cos(th);
+    line([0,0,0],[x,y,0],'tf-sm tf-dash');line([x,y,0],[x,y,z],'tf-sm tf-dash');
+    const aphi=[];for(let i=0;i<=40;i++){const a=ph*i/40;aphi.push(cam.p(0.38*Math.cos(a),0.38*Math.sin(a),0));}
+    TF.el(g,'path',{d:TF.pts(aphi),class:'tf-s1'});lbl([0.52*Math.cos(ph/2),0.52*Math.sin(ph/2),0],'φ','tf-b','fill:var(--acc)');
+    const ath=[];for(let i=0;i<=40;i++){const a=th*i/40;ath.push(cam.p(0.45*Math.sin(a)*Math.cos(ph),0.45*Math.sin(a)*Math.sin(ph),0.45*Math.cos(a)));}
+    TF.el(g,'path',{d:TF.pts(ath),class:'tf-s3'});lbl([0.6*Math.sin(th/2)*Math.cos(ph),0.6*Math.sin(th/2)*Math.sin(ph),0.6*Math.cos(th/2)],'θ','tf-b','fill:var(--fig3)');
+    line([0,0,0],[x,y,z],'tf-s2',true);
+    const pp=cam.p(x,y,z);TF.el(g,'circle',{cx:pp[0],cy:pp[1],r:4,class:'tf-f2'});TF.el(g,'text',{x:pp[0]+6,y:pp[1]-5,class:'tf-b'},'P');
+    rd.innerHTML=`<i>x</i> = <i>r</i> sin θ cos φ = ${TF.n(x,2)}, <i>y</i> = <i>r</i> sin θ sin φ = ${TF.n(y,2)}, <i>z</i> = <i>r</i> cos θ = ${TF.n(z,2)}; distance from the <i>z</i>-axis ρ<sub>cyl</sub> = <i>r</i> sin θ = ${TF.n(r*Math.sin(th),2)}.`;}
+  draw();};
+
+const TF_ODD={
+  x:{f:x=>x,lab:'f(x) = x',par:'odd'},
+  x2:{f:x=>x*x/3,lab:'f(x) = x²/3',par:'even'},
+  x3gauss:{f:x=>x*x*x*Math.exp(-x*x),lab:'f(x) = x³e^(−x²)',par:'odd'},
+  x2gauss:{f:x=>x*x*Math.exp(-x*x),lab:'f(x) = x²e^(−x²)',par:'even'},
+  sin:{f:x=>Math.sin(x),lab:'f(x) = sin x',par:'odd'},
+  cos:{f:x=>Math.cos(x),lab:'f(x) = cos x',par:'even'}};
+TF_MOUNT['odd-even']=(st,sp,f)=>{
+  let key=Object.prototype.hasOwnProperty.call(TF_ODD,sp.fn)?sp.fn:'x3gauss',s=0,mir=false;const a=2.5,D=3;
+  const svg=TF.svg(st,320,170,'Odd or even function with shaded positive and negative areas');
+  const x0=12,x1=308,ym=85,hy=66;
+  TF.el(svg,'path',{d:`M${x0} ${ym}H${x1}M160 ${ym-hy-6}V${ym+hy+6}`,class:'tf-ax'});
+  const pos=TF.el(svg,'path',{class:'tf-fill'}),neg=TF.el(svg,'path',{class:'tf-fneg'}),win=TF.el(svg,'path',{class:'tf-sm tf-dash'});
+  const cur=TF.el(svg,'path',{class:'tf-s1'}),mp=TF.el(svg,'path',{class:'tf-s2 tf-dash','stroke-width':1.5});
+  const lab=TF.el(svg,'text',{x:x0+2,y:12,class:'tf-b'});
+  TF.el(svg,'text',{x:x1,y:ym+13,class:'tf-m','text-anchor':'end'},'x');
+  const row=TF.ctl(st);
+  TF.select(row,'Function',Object.keys(TF_ODD).map(k=>[k,TF_ODD[k].lab]),key,v=>{key=v;draw();});
+  TF.slider(row,{label:'Shift window',min:-0.6,max:0.6,step:0.05,value:0,fmt:v=>TF.n(v,2),on:v=>{s=v;draw();}});
+  TF.check(row,'Show f(−x)',false,v=>{mir=v;draw();});
+  const rd=TF.readout(st);
+  function draw(){
+    const F=TF_ODD[key];let m=0;for(let i=0;i<=300;i++)m=Math.max(m,Math.abs(F.f(-D+2*D*i/300)));
+    const X=x=>160+(x1-160)*x/D,Y=v=>ym-hy*v/(m||1);
+    const all=[],mirr=[],P=[],Nn=[],lo=-a+s,hi=a+s;
+    for(let i=0;i<=300;i++){const x=-D+2*D*i/300;all.push([X(x),Y(F.f(x))]);mirr.push([X(x),Y(F.f(-x))]);}
+    P.push([X(lo),ym]);Nn.push([X(lo),ym]);let I=0,Ip=0,In=0;const n=400,h=(hi-lo)/n;
+    for(let i=0;i<=n;i++){const x=lo+i*h,v=F.f(x);P.push([X(x),Y(Math.max(0,v))]);Nn.push([X(x),Y(Math.min(0,v))]);
+      if(i<n){const vm=F.f(x+h/2);I+=vm*h;if(vm>0)Ip+=vm*h;else In-=vm*h;}}
+    P.push([X(hi),ym]);Nn.push([X(hi),ym]);
+    pos.setAttribute('d',TF.pts(P)+'Z');neg.setAttribute('d',TF.pts(Nn)+'Z');cur.setAttribute('d',TF.pts(all));mp.setAttribute('d',mir?TF.pts(mirr):'');
+    win.setAttribute('d',`M${X(lo).toFixed(1)} ${ym-hy-4}V${ym+hy+4}M${X(hi).toFixed(1)} ${ym-hy-4}V${ym+hy+4}`);
+    lab.textContent=F.lab+' — '+F.par;
+    const sym=Math.abs(s)<1e-9;
+    rd.innerHTML=`∫ from ${TF.n(lo,2)} to ${TF.n(hi,2)} of <i>f</i> d<i>x</i> = <b>${TF.n(I,4)}</b> (shaded + area ${TF.n(Ip,3)}, − area ${TF.n(In,3)}). `+(F.par==='odd'?(sym?'Odd function (<i>f</i>(−<i>x</i>) = −<i>f</i>(<i>x</i>)) on a symmetric window: the halves cancel exactly.':'The window is no longer symmetric, so the cancellation fails.'):'Even function (<i>f</i>(−<i>x</i>) = <i>f</i>(<i>x</i>)): the two halves add, so the integral is twice the right half.');}
+  draw();};
+
+TF_MOUNT['fourier-pulse']=(st,sp,f)=>{
+  const ex=sp.envelope==='exp';
+  let N=Number.isFinite(+sp.cycles)?+sp.cycles:(ex?6:10);N=ex?Math.max(1,Math.min(20,N)):Math.max(2,Math.min(40,N));
+  const svg=TF.svg(st,320,212,ex?'Exponentially decaying wave and its Lorentzian spectrum':'Light pulse of N cycles and its spectrum');
+  const x0=14,x1=312,ty=46,th=32,sy0=192,sy1=116,Tw=42,dmax=0.6;
+  TF.el(svg,'path',{d:`M${x0} ${ty}H${x1}`,class:'tf-ax'});TF.el(svg,'text',{x:x0,y:10,class:'tf-m'},ex?'field: e^(−Γt/2) cos ω₀t':'field: sin²(πt/T) cos ω₀t');
+  TF.el(svg,'text',{x:x1,y:ty+th+12,class:'tf-m','text-anchor':'end'},'time (42 optical cycles shown)');
+  const env=TF.el(svg,'path',{class:'tf-s2 tf-dash','stroke-width':1}),wave=TF.el(svg,'path',{class:'tf-s1','stroke-width':1.2});
+  TF.el(svg,'path',{d:`M${x0} ${sy0}H${x1}M163 ${sy0}V${sy1-4}`,class:'tf-ax'});
+  TF.el(svg,'text',{x:x0,y:sy1-6,class:'tf-m'},'spectrum |F(ω)|² (peak = 1)');
+  [-0.5,-0.25,0,0.25,0.5].forEach(v=>TF.el(svg,'text',{x:163+(x1-163)*v/dmax,y:sy0+12,class:'tf-m','text-anchor':'middle'},v===0?'ω₀':(v>0?'+':'−')+Math.abs(v)+'ω₀'));
+  const spec=TF.el(svg,'path',{class:'tf-s3'}),fw=TF.el(svg,'path',{class:'tf-s2','stroke-width':2}),fwT=TF.el(svg,'text',{class:'tf-m',style:'fill:var(--fig2)'});
+  const row=TF.ctl(st);
+  TF.slider(row,{label:ex?'Decay time 1/Γ':'Duration T',min:ex?1:2,max:ex?20:40,step:1,value:N,fmt:v=>v+' cycles',on:v=>{N=v;draw();}});
+  const rd=TF.readout(st);
+  const SX=d=>163+(x1-163)*d/dmax;
+  function draw(){
+    const ns=Tw*14,e=[],w=[],ts=[],ev=[];
+    for(let i=0;i<=ns;i++){const t=Tw*i/ns;let v;if(ex)v=Math.exp(-t/(2*N));else v=t<=N?Math.sin(Math.PI*t/N)**2:0;ts.push(t);ev.push(v);
+      const X=x0+(x1-x0)*t/Tw;e.push([X,ty-th*v]);w.push([X,ty-th*v*Math.cos(2*Math.PI*t)]);}
+    env.setAttribute('d',TF.pts(e));wave.setAttribute('d',TF.pts(w));
+    const M=181,S=[];let pk=0;
+    for(let k=0;k<M;k++){const d=-dmax+2*dmax*k/(M-1);let val;
+      if(ex){const G=1/N,dd=2*Math.PI*d;val=(G*G/4)/(dd*dd+G*G/4);}
+      else{let re=0,im=0;const dt=Tw/ns;for(let i=0;i<=ns;i++){if(!ev[i])continue;const ph=2*Math.PI*d*ts[i];re+=ev[i]*Math.cos(ph)*dt;im+=ev[i]*Math.sin(ph)*dt;}val=re*re+im*im;}
+      S.push(val);pk=Math.max(pk,val);}
+    const pts=S.map((v,k)=>[SX(-dmax+2*dmax*k/(M-1)),sy0-(sy0-sy1)*v/pk]);spec.setAttribute('d',TF.pts(pts));
+    const c=(M-1)/2;let k=c;while(k<M-1&&S[k]/pk>0.5)k++;const fr=k>c?(k-1)+(S[k-1]/pk-0.5)/((S[k-1]-S[k])/pk):c;const half=(-dmax+2*dmax*fr/(M-1));
+    const yh=sy0-(sy0-sy1)/2;fw.setAttribute('d',`M${SX(-half).toFixed(1)} ${yh}H${SX(half).toFixed(1)}`);TF.set(fwT,{x:Math.min(SX(half)+4,x1-30),y:yh+4});fwT.textContent='FWHM';
+    const fwhm=2*half;
+    rd.innerHTML=ex?`Decay time 1/Γ = ${N} cycles → Lorentzian line with FWHM = Γ = ω₀/(2π·${N}) = <b>${TF.n(fwhm,4)} ω₀</b>. Long decay ⇒ narrow line; the tails fall off only as 1/δ².`:
+      `<i>T</i> = ${N} cycles → spectral FWHM = <b>${TF.n(fwhm,3)} ω₀</b>. Width × duration = ${TF.n(fwhm,3)} × ${N} = <b>${TF.n(fwhm*N,2)}</b>, the same for every <i>T</i>: halve the pulse, double the bandwidth.`;}
+  draw();};
+
+TF_MOUNT['tilted-coulomb']=(st,sp,f)=>{
+  let n=Number.isFinite(+sp.n)?Math.max(1,Math.min(4,Math.round(+sp.n))):2;
+  const Fo=()=>1/(16*n**4);
+  let fr=Number.isFinite(+sp.field)&&+sp.field>0?Math.min(2,+sp.field/Fo()):0.6,ph=0;
+  const svg=TF.svg(st,320,190,'Coulomb potential tilted by an electric field, with the energy level and barrier top');
+  const x0=8,x1=312,yT=14,yB=172;
+  const gA=TF.el(svg,'g'),free=TF.el(svg,'path',{class:'tf-sm tf-dash'}),cur=TF.el(svg,'path',{class:'tf-s1','stroke-width':2.2}),lev=TF.el(svg,'path',{'stroke-width':2}),top=TF.el(svg,'circle',{r:3.5,class:'tf-f2'}),topT=TF.el(svg,'text',{class:'tf-m',style:'fill:var(--fig2)'}),ball=TF.el(svg,'circle',{r:5});
+  const levT=TF.el(svg,'text',{class:'tf-m'});
+  const row=TF.ctl(st);TF.playBtn(row,f);
+  TF.select(row,'Level n',[['1','n = 1'],['2','n = 2'],['3','n = 3'],['4','n = 4']],String(n),v=>{n=+v;draw();});
+  TF.slider(row,{label:'Field ℰ',min:0,max:2,step:0.01,value:fr,fmt:v=>TF.n(v,2)+' ℰ_OBI',on:v=>{fr=v;draw();}});
+  const rd=TF.readout(st);
+  function draw(){
+    const E=-1/(2*n*n),zr=10*n*n,ymin=4*E,ymax=-1.6*E,F=fr*Fo();
+    const X=z=>x0+(x1-x0)*(z+zr)/(2*zr),Y=v=>yT+(yB-yT)*(ymax-v)/(ymax-ymin),cl=v=>(v>ymax||v<ymin)?NaN:v;
+    gA.textContent='';TF.el(gA,'path',{d:`M${x0} ${Y(0)}H${x1}M${X(0)} ${yT}V${yB}`,class:'tf-grid'});
+    TF.el(gA,'text',{x:x1,y:Y(0)-4,class:'tf-m','text-anchor':'end'},'z → (force on electron)');TF.el(gA,'text',{x:X(0)+4,y:yT+8,class:'tf-m'},'U(z)');
+    TF.el(gA,'text',{x:X(0)+4,y:yB-2,class:'tf-m'},'nucleus');
+    const a=[],b=[];for(let i=0;i<=600;i++){const z=-zr+2*zr*i/600;if(Math.abs(z)<1e-6){a.push(null);b.push(null);continue;}a.push([X(z),Y(cl(-1/Math.abs(z)))]);b.push([X(z),Y(cl(-1/Math.abs(z)-F*z))]);}
+    free.setAttribute('d',TF.pts(a));cur.setAttribute('d',TF.pts(b));
+    const over=F>Fo();
+    TF.set(lev,{d:`M${x0} ${Y(E).toFixed(1)}H${x1}`,class:over?'tf-sn':'tf-s2'});TF.set(levT,{x:x0+2,y:Y(E)-4});levT.textContent='E'+'₁₂₃₄'[n-1]+' = '+TF.n(E,4)+' Ha';
+    if(F>0){const zs=1/Math.sqrt(F),Um=-2*Math.sqrt(F);if(zs<zr){TF.set(top,{cx:X(zs),cy:Y(Um),style:''});TF.set(topT,{x:Math.min(X(zs),x1-70),y:Y(Um)-7});topT.textContent='barrier top';}else{top.setAttribute('style','display:none');topT.textContent='';}}
+    else{top.setAttribute('style','display:none');topT.textContent='';}
+    let zb;if(over){const span=zr*1.05;zb=-1/Math.abs(E)*0.5+(ph%1)*span;}else{const zt=1/Math.abs(E);zb=zt*0.92*Math.sin(2*Math.PI*ph*0.8);}
+    TF.set(ball,{cx:X(Math.min(zr,zb)),cy:Y(E),class:over?'tf-fn':'tf-f1',style:(over&&zb>zr)?'display:none':''});
+    rd.innerHTML=(F>0?`Barrier top at <i>z</i> = 1/√ℰ = ${TF.n(1/Math.sqrt(F),1)} <i>a</i>₀ with <i>U</i><sub>max</sub> = −2√ℰ = ${TF.n(-2*Math.sqrt(F),4)} Ha. `:'No field: the well is symmetric and infinitely wide at the top. ')+
+      `Threshold ℰ<sub>OBI</sub> = 1/(16<i>n</i>⁴) = ${Fo().toExponential(2).replace('-','−')} a.u. `+(over?'<b>Over the barrier</b>: the level lies above the barrier top, so the electron rolls out.':'<b>Still bound</b>: the level lies below the barrier top (it could only tunnel out).');}
+  f.animated=true;f.tick=dt=>{ph+=dt*0.5;draw();};
+  draw();};
+
+TF_MOUNT['cross-product']=(st,sp,f)=>{
+  let ang=(Number.isFinite(+sp.angle)?+sp.angle:60)*Math.PI/180,bl=0.9;const al=1.1;
+  const svg=TF.svg(st,320,230,'');const g=TF.el(svg,'g');
+  const cam=TF.orbit(svg,160,140,70,-2.25,0.38,()=>draw(),'3D view of a cross product. Drag or use the arrow keys to rotate.');
+  svg.setAttribute('aria-label','Vectors a and b in the xy plane and their cross product a × b along z; the parallelogram area equals |a × b|. Drag or use arrow keys to rotate.');
+  TF.el(svg,'text',{x:4,y:226,class:'tf-m'},'Drag to rotate the view');
+  const row=TF.ctl(st);
+  TF.slider(row,{label:'Angle a→b',min:0,max:360,step:1,value:Math.round(ang*180/Math.PI),fmt:v=>v+'°',on:v=>{ang=v*Math.PI/180;draw();}});
+  TF.slider(row,{label:'|b|',min:0.3,max:1.3,step:0.05,value:bl,fmt:v=>TF.n(v,2),on:v=>{bl=v;draw();}});
+  const rd=TF.readout(st);
+  function arrow(a,b,cls,w){const p=cam.p(...a),q=cam.p(...b);TF.el(g,'path',{d:TF.arrowD(p[0],p[1],q[0],q[1],8),class:cls,'stroke-width':w||2.5});}
+  function lbl(a,txt,style){const p=cam.p(...a);TF.el(g,'text',{x:p[0],y:p[1],class:'tf-b','text-anchor':'middle',style},txt);}
+  function draw(){
+    g.textContent='';
+    const sq=[];for(const [x,y] of [[-1.4,-1.4],[1.4,-1.4],[1.4,1.4],[-1.4,1.4],[-1.4,-1.4]])sq.push(cam.p(x,y,0));TF.el(g,'path',{d:TF.pts(sq),class:'tf-grid'});
+    for(const [v,t] of [[[1.5,0,0],'x'],[[0,1.5,0],'y'],[[0,0,1.5],'z']]){const p=cam.p(0,0,0),q=cam.p(...v);TF.el(g,'path',{d:`M${p[0]} ${p[1]}L${q[0].toFixed(1)} ${q[1].toFixed(1)}`,class:'tf-grid'});const r=cam.p(v[0]*1.08,v[1]*1.08,v[2]*1.08);TF.el(g,'text',{x:r[0],y:r[1],class:'tf-m','text-anchor':'middle'},t);}
+    const a=[al,0,0],b=[bl*Math.cos(ang),bl*Math.sin(ang),0],cz=al*bl*Math.sin(ang),c=[0,0,cz];
+    TF.el(g,'path',{d:TF.pts([cam.p(0,0,0),cam.p(...a),cam.p(a[0]+b[0],a[1]+b[1],0),cam.p(...b)])+'Z',class:'tf-fill'});
+    const arc=[];const na=Math.max(2,Math.round(Math.abs(ang)*20));for(let i=0;i<=na;i++){const t=ang*i/na;arc.push(cam.p(0.35*Math.cos(t),0.35*Math.sin(t),0));}
+    TF.el(g,'path',{d:TF.pts(arc),class:'tf-sm'});
+    arrow([0,0,0],a,'tf-s1');arrow([0,0,0],b,'tf-s3');if(Math.abs(cz)>0.02)arrow([0,0,0],c,'tf-s2',3);
+    lbl([a[0]*1.12,0,-0.08],'a','fill:var(--acc)');lbl([b[0]*1.15,b[1]*1.15,0.05],'b','fill:var(--fig3)');if(Math.abs(cz)>0.02)lbl([0.1,0,cz+(cz>0?0.15:-0.2)],'a × b','fill:var(--fig2)');
+    const deg=Math.round(ang*180/Math.PI);
+    rd.innerHTML=`<b>a</b> × <b>b</b> = (<i>a<sub>y</sub>b<sub>z</sub></i> − <i>a<sub>z</sub>b<sub>y</sub></i>, <i>a<sub>z</sub>b<sub>x</sub></i> − <i>a<sub>x</sub>b<sub>z</sub></i>, <i>a<sub>x</sub>b<sub>y</sub></i> − <i>a<sub>y</sub>b<sub>x</sub></i>) = (0, 0, ${TF.n(cz,2)}). |<b>a</b> × <b>b</b>| = |<b>a</b>||<b>b</b>| sin ${deg}° = ${TF.n(Math.abs(cz),2)} = shaded area. Right hand: fingers curl from <b>a</b> to <b>b</b>, thumb gives <b>a</b> × <b>b</b> (${cz>0.02?'up':cz<-0.02?'down':'zero: a ∥ b'}).`;}
+  draw();};
+
+TF_MOUNT['flux-box-diagram']=(st)=>{
+  const svg=TF.svg(st,320,170,'Small box with sides dx, dy, dz. Current J_x(x) enters the left face and J_x(x+dx) leaves the right face; the difference times the face area dy dz is the net outflow through those two faces.');
+  const ax=105,ay=48,w=96,h=72,ddx=34,ddy=-24;
+  TF.el(svg,'path',{d:`M${ax+ddx} ${ay+ddy}h${w}v${h}M${ax+ddx} ${ay+ddy}v${h}h${w}`,class:'tf-grid tf-dash'});
+  TF.el(svg,'path',{d:`M${ax} ${ay}l${ddx} ${ddy}M${ax+w} ${ay}l${ddx} ${ddy}M${ax+w} ${ay+h}l${ddx} ${ddy}M${ax} ${ay+h}l${ddx} ${ddy}`,class:'tf-ax'});
+  TF.el(svg,'rect',{x:ax,y:ay,width:w,height:h,class:'tf-fill',style:'stroke:var(--acc);stroke-width:1.5'});
+  TF.el(svg,'path',{d:`M${ax+w} ${ay}l${ddx} ${ddy}v${h}l${-ddx} ${-ddy}Z`,style:'fill:var(--fig3);fill-opacity:.15;stroke:var(--fig3)'});
+  TF.el(svg,'path',{d:`M${ax} ${ay}l${ddx} ${ddy}v${h}l${-ddx} ${-ddy}Z`,style:'fill:var(--fig-neg);fill-opacity:.12;stroke:var(--fig-neg)'});
+  TF.el(svg,'path',{d:TF.arrowD(36,ay+h/2,ax+ddx/2-2,ay+h/2+ddy/2,8),class:'tf-sn','stroke-width':2.5});
+  TF.el(svg,'path',{d:TF.arrowD(ax+w+ddx/2+2,ay+h/2+ddy/2,ax+w+ddx/2+64,ay+h/2+ddy/2,8),class:'tf-s3','stroke-width':3.5});
+  TF.el(svg,'text',{x:20,y:ay+h/2-8,class:'tf-b',style:'fill:var(--fig-neg)'},'in: J_x(x)');
+  TF.el(svg,'text',{x:ax+w+ddx/2+6,y:ay+h/2+ddy/2-9,class:'tf-b',style:'fill:var(--fig3)'},'out: J_x(x+dx)');
+  TF.el(svg,'text',{x:ax+w/2,y:ay+h+14,class:'tf-m','text-anchor':'middle'},'dx');
+  TF.el(svg,'text',{x:ax-5,y:ay+h/2+4,class:'tf-m','text-anchor':'end'},'dz');
+  TF.el(svg,'text',{x:ax+w+ddx/2+8,y:ay+h+ddy/2+4,class:'tf-m'},'dy');
+  TF.el(svg,'text',{x:160,y:150,class:'tf-m','text-anchor':'middle'},'net out through the two x-faces ≈ [J_x(x+dx) − J_x(x)] dy dz');
+  TF.el(svg,'text',{x:160,y:164,class:'tf-m','text-anchor':'middle'},'≈ (∂J_x/∂x) dx dy dz; add y and z faces → (∇·J) dV');};
+
+TF_MOUNT['polarization-decomposition']=(st)=>{
+  const svg=TF.svg(st,320,150,'The elliptical polarization x̂ + 0.4iŷ equals 0.99 times a counterclockwise circle ε₊ plus 0.42 times a clockwise circle ε₋, giving weights 84% σ⁺ and 16% σ⁻.');
+  const circ=(cx,cy,rx,ry,cls,ccw)=>{TF.el(svg,'ellipse',{cx,cy,rx,ry,class:cls});const d=ccw?-1:1;TF.el(svg,'path',{d:TF.arrowD(cx-d*7,cy-ry,cx+d*7,cy-ry,7),class:cls,'stroke-width':2.5});};
+  const axes=(cx,cy,s)=>TF.el(svg,'path',{d:`M${cx-s} ${cy}H${cx+s}M${cx} ${cy-s}V${cy+s}`,class:'tf-grid'});
+  axes(50,62,44);axes(170,62,36);axes(272,62,22);
+  circ(50,62,40,16,'tf-s1',true);circ(170,62,28,28,'tf-s3',true);circ(272,62,12,12,'tf-s2',false);
+  TF.el(svg,'text',{x:50,y:104,class:'tf-b','text-anchor':'middle'},'x̂ + 0.4iŷ');
+  TF.el(svg,'text',{x:110,y:66,class:'tf-b','text-anchor':'middle'},'=');TF.el(svg,'text',{x:228,y:66,class:'tf-b','text-anchor':'middle'},'+');
+  TF.el(svg,'text',{x:170,y:104,class:'tf-b','text-anchor':'middle',style:'fill:var(--fig3)'},'(1.4/√2) ε₊');TF.el(svg,'text',{x:272,y:104,class:'tf-b','text-anchor':'middle',style:'fill:var(--fig2)'},'(0.6/√2) ε₋');
+  TF.el(svg,'text',{x:170,y:118,class:'tf-m','text-anchor':'middle'},'counterclockwise');TF.el(svg,'text',{x:272,y:118,class:'tf-m','text-anchor':'middle'},'clockwise');
+  TF.el(svg,'text',{x:160,y:142,class:'tf-m','text-anchor':'middle'},'weights 1.4² : 0.6² = 1.96 : 0.36 → 84% σ⁺ : 16% σ⁻ (ε± = (x̂ ± iŷ)/√2)');};
+
+TF_MOUNT['two-level-diagram']=(st)=>{
+  const svg=TF.svg(st,320,170,'Two-level atom: ground state 1 and excited state 2 separated by ħω₀; a laser photon ħω_L falls short of the gap by the detuning Δ; the excited state decays at rate Γ.');
+  const y1=140,y2=36,yl=52;
+  TF.el(svg,'path',{d:`M70 ${y1}H300M70 ${y2}H300`,class:'tf-ax','stroke-width':2.5});
+  TF.el(svg,'path',{d:`M140 ${yl}H210`,class:'tf-sm tf-dash'});
+  TF.el(svg,'text',{x:64,y:y1+4,class:'tf-b','text-anchor':'end'},'|1⟩');TF.el(svg,'text',{x:64,y:y2+4,class:'tf-b','text-anchor':'end'},'|2⟩');
+  TF.el(svg,'path',{d:TF.arrowD(108,y1,108,y2+2,8),class:'tf-s1','stroke-width':2.2});TF.el(svg,'text',{x:102,y:(y1+y2)/2,class:'tf-b','text-anchor':'end',style:'fill:var(--acc)'},'ħω₀');
+  const wv=[];for(let y=y1;y>=yl+8;y-=1)wv.push([168+4*Math.sin((y1-y)/4),y]);TF.el(svg,'path',{d:TF.pts(wv),class:'tf-s2'});TF.el(svg,'path',{d:TF.arrowD(168,yl+12,168,yl+1,7),class:'tf-s2'});
+  TF.el(svg,'text',{x:176,y:(y1+yl)/2+10,class:'tf-b',style:'fill:var(--fig2)'},'ħω_L (laser)');
+  TF.el(svg,'path',{d:`M205 ${y2}v${yl-y2}M201 ${y2}h8M201 ${yl}h8`,class:'tf-sm'});TF.el(svg,'text',{x:212,y:(y2+yl)/2+4,class:'tf-m'},'Δ = ω_L − ω₀');
+  const dv=[];for(let y=y2+2;y<=y1-10;y+=1)dv.push([288+4*Math.sin((y-y2)/3.5),y]);TF.el(svg,'path',{d:TF.pts(dv),class:'tf-s3'});TF.el(svg,'path',{d:TF.arrowD(288,y1-12,288,y1-1,7),class:'tf-s3'});
+  TF.el(svg,'text',{x:280,y:(y1+y2)/2+24,class:'tf-b','text-anchor':'end',style:'fill:var(--fig3)'},'Γ');TF.el(svg,'text',{x:280,y:(y1+y2)/2+38,class:'tf-m','text-anchor':'end'},'decay');
+  TF.el(svg,'text',{x:160,y:164,class:'tf-m','text-anchor':'middle'},'here Δ < 0: the laser is red-detuned (below resonance)');};
+
+const tfLive=new Set();let tfRaf=0,tfLast=0,tfIO=null;
+function tfLoop(ts){
+  tfRaf=0;const dt=tfLast?Math.min(0.05,(ts-tfLast)/1000):0;tfLast=ts;let any=false;
+  for(const f of tfLive){if(f.playing&&f.visible&&!document.hidden){try{f.tick(dt);}catch(_){f.playing=false;if(f.onPlayChange)f.onPlayChange();}any=true;}}
+  if(any)tfRaf=requestAnimationFrame(tfLoop);else tfLast=0;}
+function tfKick(){if(!tfRaf){tfLast=0;tfRaf=requestAnimationFrame(tfLoop);}}
+function tfUnmountAll(){if(tfIO){tfIO.disconnect();tfIO=null;}tfLive.clear();}
+function tfMountAll(root){
+  tfUnmountAll();
+  if(typeof IntersectionObserver!=='undefined')tfIO=new IntersectionObserver(es=>{for(const en of es){const f=en.target.__tf;if(f)f.visible=en.isIntersecting;}tfKick();});
+  root.querySelectorAll('figure.tut-fig[data-fig-kind]').forEach(figEl=>{
+    const stage=figEl.querySelector('.tut-fig-stage');
+    if(!stage)return;
+    try{
+      const spec=JSON.parse(figEl.getAttribute('data-fig-spec')||'{}');
+      const mk=Object.prototype.hasOwnProperty.call(TF_MOUNT,spec.kind)?TF_MOUNT[spec.kind]:null;
+      if(!mk)return;
+      const f={el:figEl,spec,playing:false,visible:!tfIO,animated:false,tick(){},onPlayChange:null,
+        setPlaying(v){this.playing=!!v;if(this.onPlayChange)this.onPlayChange();if(this.playing)tfKick();}};
+      mk(stage,spec,f);
+      figEl.classList.add('is-live');figEl.__tf=f;tfLive.add(f);
+      if(tfIO)tfIO.observe(figEl);
+      if(f.animated&&!TF.rm())f.setPlaying(true);
+    }catch(_){
+      figEl.classList.remove('is-live');
+      [...stage.children].forEach(c=>{if(!c.classList.contains('tut-fig-alt'))c.remove();});
+      const p=document.createElement('p');p.className='tut-fig-err';p.textContent='This figure could not be drawn; the description above summarizes it.';stage.appendChild(p);}});}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tfKick();});
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initTutorial);
 else initTutorial();
