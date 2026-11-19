@@ -2,6 +2,31 @@
 
 To understand how laser pulses and single photons drive chemical spectroscopy and electronic transitions, we first need a clear mathematical picture of the light wave itself—especially how **complex polarization vectors** encode linear, circular, and elliptical motion of the electric field **E**(*t*).
 
+> **In a Nutshell:**
+> - Light is an oscillating **electric field** (plus a weaker companion magnetic field) traveling at *c*. Its photon energy is *E* = *hν* = *hc*/λ.
+> - An atom is about a thousand times smaller than a UV or visible wavelength, so across the atom the light's field is just a **uniform field that oscillates in time**. This is the **electric dipole approximation**.
+> - **Polarization** is the direction in which the field oscillates: along a line (linear), or rotating in a circle (circular σ⁺/σ⁻). Circular light carries angular momentum and picks out which *m* the atom ends up in (Chapter 4).
+> - Brighter light means a larger field. Population moves at a rate set by the field **amplitude**, which grows only as the **square root** of intensity.
+
+---
+
+## 3.0 Electricity & Light Primer (What You Need from Physics)
+
+- **Coulomb's law and the electric field:** two charges *q*₁, *q*₂ a distance *r* apart have potential energy *U* = *q*₁*q*₂/(4πε₀*r*). For the electron and proton (*q* = −*e* and +*e*), *U* = −*e*²/(4πε₀*r*): this is hydrogen's potential from Chapter 1. An **electric field E** (units V/m) is the force per unit charge, so a charge *q* feels **F** = *q***E**.
+- **Uniform field = tilted potential:** in a uniform field *E* along *z*, a charge *q* gains potential energy *U* = −*qEz*. For the electron (*q* = −*e*) that is *U* = +*eEz*: the field tilts the energy landscape and pulls the cloud one way.
+- **Electric dipole moment:** a charge distribution with separated + and − charge has dipole moment **d** = Σ *q*<sub>*i*</sub>**r**<sub>*i*</sub> (units C·m, or debye: 1 D = 3.336 × 10⁻³⁰ C·m). In a field its energy is *U* = −**d** · **E**. The electron at position **r** relative to the proton has **d** = −*e***r**.
+- **Light is a traveling electromagnetic wave:** oscillating **E** and **B** fields, perpendicular to each other and to the direction of travel, moving at *c* = 2.998 × 10⁸ m/s. Each photon carries energy *E* = *hν* = *hc*/λ.
+- **The spectrum and the chemistry it probes:**
+
+| Region | Wavelength | Photon energy | What it does to molecules |
+| :--- | :--- | :--- | :--- |
+| Radio (NMR) | ~1 m | ~10⁻⁷ eV | Flips nuclear spins in a magnet |
+| Microwave (EPR, rotation) | ~1 cm | ~10⁻⁴ eV | Flips electron spins; rotates molecules |
+| Infrared | ~3 μm | ~0.4 eV | Excites bond vibrations |
+| Visible | 400–700 nm | 1.8–3.1 eV | Excites valence electrons (color) |
+| Ultraviolet | 10–400 nm | 3–120 eV | Excites and ionizes valence electrons (H Lyman-α at 121.6 nm) |
+| X-ray | ~0.1 nm | ~10⁴ eV | Ejects core electrons; diffraction |
+
 ---
 
 ## 3.1 Electromagnetic Waves & the Electric Dipole Approximation
@@ -11,7 +36,7 @@ Light is a coupled electromagnetic wave characterized by frequency ν (Hz), angu
 
 > **Notation & Bookkeeping Alerts:**
 > - **ω<sub>L</sub> means light/laser frequency here:** Subscript **L** stands for *light/laser* (ω<sub>L</sub> = 2πν), kept distinct from Chapter 2's Larmor precession frequency **ω<sub>Larmor</sub>** = *B*<sub>*z*</sub>/2.
-> - **Real fields vs. complex wavefunctions:** Unlike the quantum wavefunction Ψ(**r**, *t*), whose imaginary part is physically real and drives probability flow, classical **E** and **B**₁ are purely **real** physical vectors. We write complex exponentials *e*<sup>*i*(**k**·**r** − ω<sub>L</sub>*t*)</sup> only as an algebraic bookkeeping trick to bundle amplitudes and phase delays together, taking the real part `Re[...]` at the end.
+> - **Real fields vs. complex wavefunctions:** For the quantum wavefunction Ψ(**r**, *t*), the complex phase is essential physics: it is what drives probability flow (Chapter 1). Classical **E** and **B**₁, by contrast, are purely **real** physical vectors. We write complex exponentials *e*<sup>*i*(**k**·**r** − ω<sub>L</sub>*t*)</sup> only as an algebraic bookkeeping trick to bundle amplitudes and phase delays together, taking the real part `Re[...]` at the end.
 
 Before writing the wave equations, note the three symbols that describe the beam:
 - **Wavevector **k** = *k* **k̂**:** Points along the wave's unit propagation direction **k̂**, with magnitude *k* = 2π/λ.
@@ -234,7 +259,7 @@ Whereas the first five demos run in **Coherent EM wave** mode, the final demo be
 
 ## 3.4 Envelopes, Spectral Bandwidth & Intensity
 
-A finite pulse of duration *T* cannot be purely monochromatic: compressing a wave in time spreads its frequency spectrum according to the time–frequency Fourier uncertainty relation Δω · *T* ≳ 2π—equivalently Δν · *T* ≳ 1 in ordinary frequency (Hz), or Heisenberg's energy–time relation Δ*E* · Δ*t* ≳ *ħ*/2 via Δ*E* = *ħ* Δω. In both modes below, *E*₀ denotes the **peak electric-field amplitude** (reached at *t* = *T* for **Single photon**, or at *t* = *T*/2 for **Coherent EM wave**).
+A finite pulse of duration *T* cannot be purely monochromatic: the shorter the pulse, the wider its spread of frequencies. Roughly, Δν · *T* ≳ 1 (equivalently Δω · *T* ≳ 2π): a 10-cycle pulse has a spectral width of about 10% of its center frequency. Multiplying by *ħ* gives the energy–time relation Δ*E* · Δ*t* ≳ *ħ*. *(The exact constant—1, ½, 2π—depends on how "width" is defined, e.g. full width vs. standard deviation; Heisenberg's ħ/2 uses standard deviations. Read all of these as order-of-magnitude rules.)* In both modes below, *E*₀ denotes the **peak electric-field amplitude** (reached at *t* = *T* for **Single photon**, or at *t* = *T*/2 for **Coherent EM wave**).
 
 | Mode | Field envelope *E*<sub>env</sub>(*t*) on (0, *T*) | Characteristic bandwidth `bw` |
 | :--- | :--- | :--- |
@@ -252,4 +277,19 @@ A finite pulse of duration *T* cannot be purely monochromatic: compressing a wav
 ### Quick Self-Check
 1. Using *ka*₀ = 2π*a*₀/λ, explain why infrared vibrational radiation (λ ≈ 3000 nm) satisfies the electric-dipole approximation even better than UV Lyman-α (~121.5 nm), while hard X-rays (λ ~ 0.1 nm) break it.
 2. With `x = 1 at 0°` and `y = 1 at 270°`, plug φ<sub>*y*</sub> = 270° into cos(ω<sub>L</sub>*t* − φ<sub>*y*</sub>) to verify which direction **E**(*t*) points at ω<sub>L</sub>*t* = 90° and 180°. *(Recall that E<sub>env</sub>(t) > 0 throughout the pulse, so the signs of the cosines directly give the direction of **E**(t).)*
-3. If a 54-cycle coherent `1s → 2p` pulse gives Θ = π at `Power = 1`, what **Power** gives Θ = 2π in the same 54 cycles? *(Answer: Power = 4, because E₀ ∝ √Power and Θ ∝ E₀·T. Power above 1 exceeds the ionization-safe field, so the readout warns about continuum loss—alternatively keep Power = 1 and stretch the Duration.)*
+3. If a 54-cycle coherent `1s → 2p` pulse gives Θ = π at `Power = 1`, what **Power** gives Θ = 2π in the same 54 cycles?
+
+### Pen-and-Paper Practice
+- **P1.** A UV-Vis spectrometer reports an absorption at 254 nm. What is the photon energy in eV, and the wavenumber in cm⁻¹?
+- **P2.** A laser pulse lasts 10 fs at a wavelength of 800 nm. About how many optical cycles is that, and roughly what fraction of its center frequency is its spectral width?
+
+<details>
+<summary>Answers</summary>
+
+- **1.** *ka*₀ = 2π*a*₀/λ: for λ = 3000 nm, *ka*₀ ≈ 1.1 × 10⁻⁴, about 25 times smaller than for Lyman-α (2.7 × 10⁻³), so the field is even more uniform across the atom. For hard X-rays (λ ≈ 0.1 nm), *ka*₀ ≈ 3: the field changes sign *within* the atom, so it cannot be treated as uniform.
+- **2.** At ω<sub>L</sub>*t* = 90°: *E*<sub>*x*</sub> ∝ cos 90° = 0 and *E*<sub>*y*</sub> ∝ cos(90° − 270°) = cos(−180°) = −1, so **E** points along **−y**. At 180°: *E*<sub>*x*</sub> ∝ −1 and *E*<sub>*y*</sub> ∝ cos(−90°) = 0, so **E** points along **−x**. Going +*x* → −*y* → −*x* is **clockwise** viewed from +*z*: σ⁻.
+- **3.** **Power = 4.** Θ ∝ *E*₀ *T* and *E*₀ ∝ √Power, so doubling Θ at fixed duration needs twice the field, i.e. four times the power. Power above 1 exceeds the ionization-safe field, so the readout warns about continuum loss; alternatively keep Power = 1 and stretch the Duration.
+- **P1.** *E* = 1239.84/254 ≈ **4.88 eV**; ν̃ = 10⁷/254 ≈ **39,400 cm⁻¹**.
+- **P2.** One cycle at 800 nm lasts λ/*c* = 800 × 10⁻⁹ / 2.998 × 10⁸ ≈ 2.67 fs, so 10 fs is about **3.7 cycles**. Using Δν · *T* ≳ 1, the spectral width is about 1/3.7 ≈ **25–30%** of the center frequency: a very broadband pulse.
+
+</details>

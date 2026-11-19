@@ -4,7 +4,15 @@ This simulation visualizes a single hydrogen atom—starting from stationary orb
 
 Bohmian mechanics is an *interpretation* of quantum mechanics: it reproduces the exact same position statistics \|Ψ\|² as standard quantum mechanics, though its particle trajectories cannot be directly observed and are not needed for any chemistry calculation. The wavefunctions, probability densities, and probability currents in this chapter are standard quantum mechanics; the electron dots and trails are the Bohmian addition, used as a visual aid for probability flow.
 
-The key steps—separation of variables, superposition interference, the continuity equation, and the Bohmian guidance law—are derived step-by-step below so you can see *why* the electrons behave the way they do on the canvas, while a few standard results (hydrogen energy levels, the radial ODE solution, and node counts) are stated without full proof. *(In this spinless hydrogen model, eigenstates are labeled by the three spatial quantum numbers (n, l, m), where m corresponds to m<sub>l</sub> in general chemistry; intrinsic electron spin s = ½, with spin projection m<sub>s</sub> = ±½, does not alter the spatial Schrödinger wavefunctions when spin-orbit coupling is omitted.)*
+The key steps—separation of variables, superposition interference, the continuity equation, and the Bohmian guidance law—are derived step-by-step below so you can see *why* the electrons behave the way they do on the canvas, while a few standard results (hydrogen energy levels, the radial ODE solution, and node counts) are stated without full proof. *(In this spinless hydrogen model, eigenstates are labeled by the three spatial quantum numbers (n, l, m), where m corresponds to m<sub>l</sub> in general chemistry; intrinsic electron spin s = ½, with spin projection m<sub>s</sub> = ±½, does not alter the spatial Schrödinger wavefunctions when spin-orbit coupling is omitted. §1.6 explains where spin and many-electron atoms fit in.)*
+
+> **In a Nutshell (what a first-year chemist should take away):**
+> - An orbital ψ is a **wave**, not a path. \|ψ\|² gives the **probability per unit volume** of finding the electron at a point.
+> - Solving the Schrödinger equation for hydrogen gives allowed energies *E*<sub>*n*</sub> = −13.6 eV/*n*² and orbitals labeled by **n, l, m**. Nodes appear because the wave must "fit" around the nucleus.
+> - Adding orbitals of the **same energy** builds the familiar shapes (2p<sub>*x*</sub>, 3d<sub>*x*²−*y*²</sub>, sp hybrids). Adding orbitals of **different energies** makes the cloud slosh back and forth—the origin of light absorption.
+> - The moving **dots** are an optional visual aid (Bohmian mechanics) that follow the flow of probability. They are *not* classical orbits and no chemistry calculation needs them.
+>
+> **First read:** focus on §1.1 (quantum numbers and the \|ψ\|² vs. *P*(*r*) box), §1.2 (real orbitals), and §1.3 (beats). The collapsible "Optional derivation" blocks and §1.5 can wait for a second read.
 
 ---
 
@@ -34,6 +42,7 @@ Because the proton pulls symmetrically in all directions, we map Cartesian (*x*,
 - **Normalized, orthogonal & orthonormal:** ∫ \|ψ\|² *d*³*r* = 1 means 100% total probability (**normalized**); ∫ ψ<sub>*j*</sub>* ψ<sub>*k*</sub> *d*³*r* = 0 for distinct eigenstates (**orthogonal**). Together, ∫ ψ<sub>*j*</sub>* ψ<sub>*k*</sub> *d*³*r* = δ<sub>*jk*</sub> (using the **Kronecker delta** δ<sub>*jk*</sub> = 1 if *j* = *k*, else 0) is called **orthonormal**.
 - **Stationary state:** a quantum state whose probability density \|Ψ\|² does not change with time.
 - **Symbol guide:** **bold** marks 3D vectors only (**r**, **p**, **J**, **Q**, **v**, **L**, **A**). Ψ(**r**, *t*) is the full time-dependent scalar wavefunction and ψ(**r**) is its purely spatial part; ρ<sub>prob</sub> = \|Ψ\|² is probability density, whereas ρ<sub>cyl</sub> = √(*x*² + *y*²) is cylindrical radius from the *z*-axis.
+- **More terms:** Chapter 7 (§7.5) has a glossary of every specialist term used in these chapters.
 
 ---
 
@@ -92,19 +101,21 @@ The repulsive **centrifugal barrier** *l*(*l*+1)/(2*r*²) pushes *p*, *d*, and *
 
 > **Important General Chemistry Distinction — \|ψ\|² vs. Radial Distribution Function *P*(*r*):**  
 > - **Probability density per unit volume \|ψ(*r*)\|²** (shown directly when the canvas **Density overlay** selector is set to **`2D slice |ψ|²`**; the default **`Column projection ∫|ψ|² dz`** integrates \|ψ\|² along your line of sight, explained in §1.3) **peaks right at the nucleus (*r* = 0) for *s* orbitals** and vanishes at *r* = 0 for *p*, *d*, and *f* orbitals.  
-> - **Radial distribution function *P*(*r*) = *r*² \|*R*<sub>*nl*</sub>(*r*)\|²** (which equals 4π *r*² \|ψ\|² specifically for *s* orbitals, since \|*Y*₀⁰\|² = 1/(4π)) is a probability density per unit radius (units: 1/length, integrating to ∫₀<sup>∞</sup> *P*(*r*) *dr* = 1): **P(r) dr** gives the probability of finding the electron anywhere inside a thin spherical shell between *r* and *r* + *dr*. Because a sphere of radius 0 has zero surface area (*r*² → 0), **P(0) = 0** even for 1s. For **1s**, *P*(*r*) peaks at *r* = 1 *a*₀ (**most probable** radius), while **2s** has **two** peaks—a small inner core peak at *r* ≈ 0.76 *a*₀ and its main outer peak at *r* ≈ 5.24 *a*₀ (separated by the radial node at *r* = 2 *a*₀; only ≈ 5.3% of 2s probability lies inside the node)! Notice how the 3D electron dots follow *P*(*r*), not \|ψ\|²: most 1s dots cluster near 1 *a*₀ rather than sitting on the origin, and the exact **average** distance equals **⟨r⟩ = ½[3n² − l(l+1)] a₀** (so ⟨*r*⟩ = 1.5 *a*₀ for 1s).  
+> - **Radial distribution function *P*(*r*) = *r*² \|*R*<sub>*nl*</sub>(*r*)\|²** is a probability density **per unit radius** (units: 1/length; ∫₀<sup>∞</sup> *P*(*r*) *dr* = 1). **P(r) dr** is the probability of finding the electron anywhere in a thin spherical shell between *r* and *r* + *dr*. For *s* orbitals it equals 4π*r*²\|ψ\|², because \|*Y*₀⁰\|² = 1/(4π) and the shell has area 4π*r*².  
+> - **Why the two curves peak in different places:** \|ψ\|² is largest at the nucleus, but a shell of radius *r* → 0 has almost no volume. So **P(0) = 0** even for 1s. For **1s**, *P*(*r*) peaks at *r* = 1 *a*₀ (the **most probable radius**). **2s** has **two** peaks: a small inner one at *r* ≈ 0.76 *a*₀ and the main outer one at *r* ≈ 5.24 *a*₀, separated by the radial node at *r* = 2 *a*₀. Only ≈ 5.3% of 2s probability lies inside the node.  
+> - **What this means for the dots:** the dots are sampled from \|ψ\|² in 3D. So in the flat screen image, 1s dots are densest at the center, just like the glow. But if you counted dots by their **distance from the nucleus**, the histogram would follow *P*(*r*) and peak at 1 *a*₀: very few dots are *exactly* at the nucleus. The **average** distance is **⟨r⟩ = ½[3n² − l(l+1)] a₀** (⟨*r*⟩ = 1.5 *a*₀ for 1s).  
 > - **Why *E*<sub>2s</sub> < *E*<sub>2p</sub> in multi-electron atoms (vs. degeneracy in H):** In hydrogen (omitting tiny fine-structure and Lamb shifts), 2s and 2p share the exact same energy *E*₂ = −1/(2 · 2²) Ha = −1/8 Ha (≈ −3.40 eV), making the *n* = 2 superpositions below stationary. In multi-electron atoms, look at the inner bright **2s** lobe inside *r* < 2 *a*₀: because **2s** penetrates close to the nucleus whereas 2p's centrifugal barrier suppresses it near *r* = 0 (\|ψ\|² ∝ *r*²), 2s experiences less inner-shell shielding and drops below 2p in Li, C, and heavier elements.
 
 | Quantum number | Allowed values | Physical meaning & node anatomy |
 | :--- | :--- | :--- |
 | **Principal** *n* | 1, 2, 3, … *(app UI: 1–7)* | Energy *E*<sub>*n*</sub> = −13.6057/*n*² eV; exact ⟨*r*⟩ = ½[3*n*²−*l*(*l*+1)] *a*₀; total nodal surfaces (2D surfaces in 3D space) in real orbitals = *n* − 1. |
-| **Orbital (angular momentum / azimuthal)** *l* | 0, 1, …, *n* − 1 (`s, p, d, f`, then alphabetically `g, h, i` for *l* = 4, 5, 6) | Total angular momentum \|**L**\| = √(*l*(*l*+1)) *ħ*; gives *n* − *l* − 1 spherical **radial nodes** and, in real orbitals, *l* **angular nodal surfaces**. |
+| **Orbital (angular momentum / azimuthal)** *l* | 0, 1, …, *n* − 1 (`s, p, d, f`, then alphabetically `g, h, i` for *l* = 4, 5, 6) | Orbital angular-momentum magnitude \|**L**\| = √(*l*(*l*+1)) *ħ*; gives *n* − *l* − 1 spherical **radial nodes** and, in real orbitals, *l* **angular nodal surfaces**. |
 | **Magnetic** *m* (*m*<sub>*l*</sub> in gen chem) | −*l*, …, +*l* | *z*-projection *L*<sub>*z*</sub> = *mħ*; complex factor *e*<sup>*im*φ</sup>. Gives *l* − \|*m*\| **polar nodal cones/planes** (equatorial *xy*-plane θ = 90° when *l*−\|*m*\| is odd). For real textbook combinations (`cos mφ`/`sin mφ`), there are \|*m*\| **azimuthal nodal planes** alongside the *l* − \|*m*\| cones (*l* angular nodal surfaces total); for complex *m* ≠ 0 eigenstates, only those *l* − \|*m*\| cones remain, plus a **1D nodal line along the *z*-axis** (where sin θ = 0; a 1D line is not a 2D surface). |
 
 ```demo
 {
   "label": "Load 1s ground state",
-  "caption": "Real, nodeless 1s state (E = -13.61 eV). Density |ψ|² peaks at r = 0, while 3D dots peak near r = 1 a0 and sit completely still.",
+  "caption": "Real, nodeless 1s state (E = -13.61 eV). The glow and the dots are densest at the center, yet the most probable distance from the nucleus is r = 1 a0 (P(r) peak). The dots sit still because 1s has no phase gradient.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 35,
@@ -159,12 +170,16 @@ The orbitals drawn in general chemistry textbooks—**2p<sub>*x*</sub>**, **2p<s
   - **2p<sub>*x*</sub> (180° relative phase):** Subtracting ψ<sub>2p<sub>*x*</sub></sub> = (1/√2)(ψ<sub>2,1,+1</sub> − ψ<sub>2,1,−1</sub>) combines (−sin θ *e*<sup>*i*φ</sup>) − (+sin θ *e*<sup>−*i*φ</sup>) = −sin θ (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>) = −2 sin θ cos φ, giving ψ<sub>2p<sub>*x*</sub></sub> ∝ −*r* *e*<sup>−*r*/2</sup> sin θ cos φ = −*x* *e*<sup>−*r*/2</sup>—standing lobes along ±*x* with a nodal plane at *x* = 0 (and **zero** electron drift!). *(That overall minus sign is just a global 180° phase leaving \|ψ\|² and **J** = 0 unchanged; setting `180°` on `+1` and `0°` on `−1` gives the textbook +x e<sup>−r/2</sup> convention.)*
   - **2p<sub>*y*</sub> (0° relative phase):** Adding ψ<sub>2p<sub>*y*</sub></sub> = (1/√2)(ψ<sub>2,1,+1</sub> + ψ<sub>2,1,−1</sub>) combines (−sin θ *e*<sup>*i*φ</sup>) + (+sin θ *e*<sup>−*i*φ</sup>) = −sin θ (*e*<sup>*i*φ</sup> − *e*<sup>−*i*φ</sup>) = −2*i* sin θ sin φ ∝ −*i* *y* *e*<sup>−*r*/2</sup>, rotating the standing dumbbell 90° to align along ±*y* (with nodal plane *y* = 0). *Why is this still a "real orbital" despite the factor of −i?* Because −*i* = *e*<sup>−*i*π/2</sup> is just a uniform **global −90° phase** multiplying the whole orbital—it changes neither \|ψ\|² nor **J** = 0 (shifting both slider phases to `+90°` multiplies by +*i* to give pure real +*y e*<sup>−*r*/2</sup>).
 - **Real 3d<sub>*x*²−*y*²</sub> cloverleaf orbital:** Combining \|3d, +2⟩ + \|3d, −2⟩ (`0°` phase each; both carry Condon–Shortley sign `+1`) produces *e*<sup>2*i*φ</sup> + *e*<sup>−2*i*φ</sup> = 2 cos(2φ). Using the trig identity cos(2φ) = cos² φ − sin² φ with *x* = *r* sin θ cos φ and *y* = *r* sin θ sin φ gives *r*² sin² θ cos(2φ) = *x*² − *y*², carving **2** vertical nodal planes at *y* = ±*x*!
-- **sp-type hybrid orbital:** In hydrogen's exact radial wavefunctions, ψ<sub>2s</sub>(*r*) ∝ (2 − *r*) *e*<sup>−*r*/2</sup> and ψ<sub>2p₀</sub>(*r*, *z*) ∝ +*z e*<sup>−*r*/2</sup> (sharing the same normalization prefactor), so ψ<sub>2s</sub> ± ψ<sub>2p₀</sub> ∝ (2 − *r* ± *z*) *e*<sup>−*r*/2</sup>. Because ψ<sub>2s</sub> flips sign at *r* = 2 *a*₀ and is **negative** throughout the outer valence region (*r* > 2 *a*₀, containing `≈ 94.7%` of its probability), for equal amplitudes combining **(\|2s, 0⟩ + \|2p, 0⟩)/√2** (`0°` and `0°`) interferes constructively in the outer *z* < 0 half-space (an exact `7/8 = 87.5%` probability in *z* < 0, ⟨*z*⟩ = −3 *a*₀) with a small `1/8 = 12.5%` minor lobe on the +*z* side, whereas **subtracting them—(\|2s, 0⟩ − \|2p, 0⟩)/√2 (`180°` phase on `2p,0`)**—puts the large `87.5%` lobe along **+z** (⟨*z*⟩ = +3 *a*₀) and the minor `12.5%` lobe along **−z**! *(Neither combination vanishes identically on the minor side; it is strongly lopsided. Also note `sp` hybrids are stationary here only because 2s and 2p are degenerate in H—in multi-electron atoms, 2s and 2p differ in energy, making `sp` hybrids chemical bonding-model constructs rather than isolated-atom eigenstates.)*
+- **sp-type hybrid orbital:** Hydrogen's exact wavefunctions are ψ<sub>2s</sub> ∝ (2 − *r*) *e*<sup>−*r*/2</sup> and ψ<sub>2p₀</sub> ∝ +*z e*<sup>−*r*/2</sup>, with the same normalization prefactor. So ψ<sub>2s</sub> ± ψ<sub>2p₀</sub> ∝ (2 − *r* ± *z*) *e*<sup>−*r*/2</sup>.
+  - **The key sign:** ψ<sub>2s</sub> flips sign at *r* = 2 *a*₀ and is **negative** in the outer region *r* > 2 *a*₀, where ≈ 94.7% of its probability lives.
+  - **Adding, (\|2s, 0⟩ + \|2p, 0⟩)/√2** (`0°` and `0°`): the two waves reinforce where *z* < 0. Exactly `7/8 = 87.5%` of the probability ends up in *z* < 0 (⟨*z*⟩ = −3 *a*₀), with a small `12.5%` lobe on the +*z* side.
+  - **Subtracting, (\|2s, 0⟩ − \|2p, 0⟩)/√2** (`180°` on `2p,0`): the big `87.5%` lobe points along **+z** (⟨*z*⟩ = +3 *a*₀) instead.
+  - **Caveat:** the minor lobe never vanishes; the hybrid is just strongly lopsided. And sp hybrids are stationary here only because 2s and 2p have the same energy in hydrogen. In many-electron atoms they do not, so hybrids are a bonding-model construct rather than isolated-atom eigenstates.
 
 ```demo
 {
   "label": "Build real 2p_x orbital (standing lobes along ±x)",
-  "caption": "Superposing |2p,+1⟩ and |2p,-1⟩ at 180° forms static 2p_x lobes along ±x (Tilt = 90° views the xy-plane; notice electrons sit motionless!).",
+  "caption": "Superposing |2p,+1⟩ and |2p,-1⟩ at 180° forms static 2p_x lobes along ±x (Tilt = 90° views the xy-plane; notice the dots sit motionless!).",
   "states": [
     {"n": 2, "l": 1, "m": 1, "amp": 1, "phaseDeg": 0},
     {"n": 2, "l": 1, "m": -1, "amp": 1, "phaseDeg": 180}
@@ -235,7 +250,7 @@ For **1s + 2p, 0**, Δ*E* = (−1/8) − (−1/2) = 3/8 Ha ≈ 10.204 eV. The cr
 ```demo
 {
   "label": "Watch 1s + 2p,0 quantum beats (oscillating dipole)",
-  "caption": "Non-degenerate interference beats at ΔE = 10.20 eV: |Ψ|² sloshes up and down along z and Bohmian electrons shuttle with it.",
+  "caption": "Non-degenerate interference beats at ΔE = 10.20 eV: |Ψ|² sloshes up and down along z and the Bohmian dots shuttle with it.",
   "states": [
     {"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0},
     {"n": 2, "l": 1, "m": 0, "amp": 1, "phaseDeg": 0}
@@ -320,9 +335,13 @@ Remarkably, **a state can be stationary (constant \|Ψ\|²) even when *m* = 0** 
 
 ---
 
-## 1.5 The Bohmian Interpretation (Pilot-Wave Mechanics)
+## 1.5 The Bohmian Interpretation (Pilot-Wave Mechanics) — Optional on a First Read
 
-Standard textbook quantum mechanics refuses to assign the electron a trajectory between measurements. **De Broglie–Bohm (Bohmian) mechanics** is an *interpretation* that adds an actual 3D electron position **Q**(*t*), guided deterministically by Ψ(**r**, *t*) so that every statistical prediction of quantum mechanics for position measurements is preserved. Again, the trajectories themselves cannot be observed and nothing in chemistry calculations depends on them; here they serve as a visual aid for probability flow.
+> **What the dots are NOT:** They are not the electron's orbit around the nucleus (that is the Bohr model, which fails for every atom beyond hydrogen and even gets hydrogen's angular momentum wrong). A real hydrogen atom has **one** electron; the hundreds of dots are an ensemble of *possible* positions. Whenever a caption says the dots "swirl" or "spiral", read it as "probability is flowing this way".
+
+**Start with the standard view (the one used in every chemistry course):** if you measure the electron's position, you find it at one definite spot. Repeat the experiment on many identically prepared atoms and the spots pile up into the pattern \|Ψ\|² (the Born rule). Standard quantum mechanics makes no claim about where the electron "was" between measurements, and it never needs to: every energy, spectrum, and bond property follows from Ψ alone.
+
+Standard textbook quantum mechanics therefore refuses to assign the electron a trajectory between measurements. **De Broglie–Bohm (Bohmian) mechanics** is an *interpretation* that adds an actual 3D electron position **Q**(*t*), guided deterministically by Ψ(**r**, *t*) so that every statistical prediction of quantum mechanics for position measurements is preserved. Again, the trajectories themselves cannot be observed and nothing in chemistry calculations depends on them; here they serve as a visual aid for probability flow.
 
 The probability current satisfies ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0, matching the form ∂ρ<sub>prob</sub>/∂*t* + ∇ · (ρ<sub>prob</sub> **v**) = 0 from classical fluid flow. Continuity alone does not uniquely fix **v** (adding any divergence-free vector field to **J** would still satisfy it), so Bohmian mechanics *postulates* the simplest choice **v** = **J**/ρ<sub>prob</sub>—the **Bohmian guidance equation** (noting Im(Ψ* ∇Ψ)/(Ψ* Ψ) = Im(∇Ψ/Ψ)):
 
@@ -362,12 +381,12 @@ Adding the proton's Coulomb attraction *V*(*r*) = −1/*r* gives:
 
 > *V*(*r*) + *Q*<sub>quant</sub>(*r*) = −1/*r* + (−½ + 1/*r*) = **−½ = *E*₁ (constant everywhere!)** &nbsp;&nbsp; (atomic units)
 
-So ∂*S*/∂*t* + (∇*S*)²/2 + *V* + *Q*<sub>quant</sub> = +½ + 0 − ½ = 0 identically: the quantum force −∇*Q*<sub>quant</sub> **cancels the Coulomb attraction everywhere**, leaving every 1s electron in peaceful pilot-wave equilibrium! *(The same balance V + Q<sub>quant</sub> = E<sub>n</sub>—and the +1/r cancellation of the Coulomb −1/r attraction—holds away from nodes for every stationary eigenstate of Ĥ₀; what makes 1s unique is that it is the **only nodeless** bound eigenstate, so V + Q<sub>quant</sub> = E₁ holds smoothly throughout all space r > 0 without nodal-surface singularities where \|ψ\| has kinks.)*
+So ∂*S*/∂*t* + (∇*S*)²/2 + *V* + *Q*<sub>quant</sub> = +½ + 0 − ½ = 0 identically: the quantum force −∇*Q*<sub>quant</sub> **cancels the Coulomb attraction everywhere**, leaving every 1s electron in peaceful pilot-wave equilibrium! *(The same balance V + Q<sub>quant</sub> = E<sub>n</sub> holds away from nodes for every **real** stationary orbital, because there ∇S = 0. For a complex m ≠ 0 eigenstate such as \|2p, +1⟩, the phase S = mħφ varies in space, so the dots move and the balance becomes V + Q<sub>quant</sub> + m²/(2ρ<sub>cyl</sub>²) = E<sub>n</sub> (atomic units): part of the energy goes into the azimuthal flow. What makes 1s special is that it is the only bound eigenstate with no nodes at all, so V + Q<sub>quant</sub> = E₁ holds smoothly everywhere with r > 0.)*
 
 </details>
 
 ### Key Features You See on Screen
-- **Angular speed in *m* ≠ 0 states:** In atomic units (*ħ* = *m*<sub>e</sub> = 1), tangential speed *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> gives angular speed ω = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² (in SI: ω = *mħ*/(*m*<sub>e</sub> ρ<sub>cyl</sub>²)), keeping *L*<sub>*z*</sub> = ρ<sub>cyl</sub> *v*<sub>φ</sub> = *m* identical for every electron—so inner orange electrons near the *z*-axis orbit much faster than outer blue ones. *(Note: the UI status bar abbreviates cylindrical radius ρ<sub>cyl</sub> as `ρ`.)*
+- **Angular speed in *m* ≠ 0 states:** In atomic units (*ħ* = *m*<sub>e</sub> = 1), tangential speed *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> gives angular speed ω = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² (in SI: ω = *mħ*/(*m*<sub>e</sub> ρ<sub>cyl</sub>²)), keeping *L*<sub>*z*</sub> = ρ<sub>cyl</sub> *v*<sub>φ</sub> = *m* identical for every electron—so inner orange dots near the *z*-axis circulate much faster than outer blue ones. *(Note: the UI status bar abbreviates cylindrical radius ρ<sub>cyl</sub> as `ρ`.)*
 - **Equivariance (Default ensemble of 220 dots; `Electrons` slider spans 50–600):** A real hydrogen atom has **one** electron. The sampled dots show an ensemble of independent possible initial positions drawn from \|Ψ(**r**, 0)\|². Because the velocity field obeys ∂ρ<sub>prob</sub>/∂*t* + ∇·(ρ<sub>prob</sub> **v**) = 0, the underlying probability distribution matches \|Ψ(**r**, *t*)\|² exactly at every later time *t* (with 50–600 sampled dots, expect minor statistical scatter).
 - **Non-crossing trajectories:** Because **v**(**r**, *t*) has a single well-defined value everywhere Ψ ≠ 0, two Bohmian trajectories can never occupy the same 3D point **at the same instant** *t* (non-crossing in **4D spacetime** (**r**, *t*)). In stationary states or degenerate superpositions where **v**(**r**) is time-independent, their 3D paths never cross at any time; in **time-dependent non-degenerate superpositions** (such as **1s + 2p, +1** below), **v**(**r**, *t*) changes with time, so two trajectories' 3D trails *can* pass through the same 3D location at *different* times *t*₁ ≠ *t*₂ (and 2D screen projections can cross as well).
 
@@ -391,7 +410,37 @@ Combining different energies *and* nonzero *m*—such as **1s + 2p, +1**—produ
 
 ---
 
+## 1.6 Where Spin, the Pauli Principle & Many-Electron Atoms Fit
+
+This simulator models **one electron with no spin**. That is enough for orbital shapes, nodes, and spectra of hydrogen, but general chemistry needs three more ideas:
+
+- **Spin:** every electron also carries an intrinsic angular momentum, spin *s* = ½, with *z*-projection *m*<sub>*s*</sub> = +½ or −½ ("up" or "down"). A complete label for one electron in hydrogen is (*n*, *l*, *m*<sub>*l*</sub>, *m*<sub>*s*</sub>), so each orbital (*n*, *l*, *m*<sub>*l*</sub>) holds two spin states.
+- **Pauli exclusion principle:** no two electrons in an atom can share all four quantum numbers. So each orbital holds **at most two electrons, with opposite spins**. Filling orbitals in order of energy (the aufbau principle, with Hund's rule for degenerate orbitals) gives electron configurations such as C = 1s² 2s² 2p².
+- **Many-electron atoms and shielding:** with more than one electron, electrons repel each other and the energy depends on *l* as well as *n*. Inner electrons **shield** outer ones, so an outer electron feels an effective nuclear charge *Z*<sub>eff</sub> < *Z*. Orbitals that penetrate close to the nucleus (s more than p, p more than d) feel more of the nucleus and drop lower in energy. That is why 2s fills before 2p (see the box in §1.1) and why 4s fills before 3d.
+- **Hydrogen-like ions (one electron, nuclear charge *Z*):** He⁺, Li²⁺, … are solved exactly like hydrogen with −1/*r* replaced by −*Z*/*r*. Energies scale as **E<sub>n</sub> = −13.6 eV × Z²/n²** and sizes shrink as 1/*Z* (⟨*r*⟩ → ⟨*r*⟩/*Z*). For example, He⁺ has ground-state energy −54.4 eV, four times deeper than H.
+
+---
+
 ### Quick Self-Check (Try in the Controls)
-1. Load **2s**, then switch the *Density overlay* selector from `Column projection ∫|ψ|² dz_cam` to **`2D slice |ψ|²`** so the dark spherical node at *r* = 2 *a*₀ cleanly separates the inner core from the outer ring. Why does the center still look brighter than the outer ring in *2D slice |ψ|²*, while most electron dots appear in the outer shell? *(Hint: compare \|ψ\|² with P(r) = r² \|R\|², and recall only ≈ 5.3% of 2s probability lies inside the r = 2 a₀ node!)* Then toggle back to **`Column projection ∫|ψ|² dz_cam`** and see why the node gets filled in.
-2. In the **2p<sub>*x*</sub>** demo, why do the electrons stand completely still even though both \|2p, +1⟩ and \|2p, −1⟩ individually whirl? Switch the second component's phase from `180°` to `0°` to create **2p<sub>*y*</sub>**!
-3. In the **sp-type hybrid (`2s − 2p,0`)** demo, change the `2p,0` phase from `180°` to `0°`. Which way does the large lobe point now, and why? *(Hint: check the sign of ψ<sub>2s</sub> outside r = 2 a₀!)*
+1. Load **2s**, then switch the *Density overlay* selector from `Column projection ∫|ψ|² dz_cam` to **`2D slice |ψ|²`** so the dark spherical node at *r* = 2 *a*₀ cleanly separates the inner core from the outer ring. Why does the center still look brighter than the outer ring in *2D slice |ψ|²*, while most dots appear in the outer shell? Then toggle back to **`Column projection ∫|ψ|² dz_cam`** and see why the node gets filled in.
+2. In the **2p<sub>*x*</sub>** demo, why do the dots stand completely still even though both \|2p, +1⟩ and \|2p, −1⟩ individually whirl? Switch the second component's phase from `180°` to `0°` to create **2p<sub>*y*</sub>**!
+3. In the **sp-type hybrid (`2s − 2p,0`)** demo, change the `2p,0` phase from `180°` to `0°`. Which way does the large lobe point now, and why?
+4. Build **3d<sub>*xy*</sub>** yourself: which two *m* values do you need, and with what relative phase? *(Use the 3d<sub>x²−y²</sub> demo as a starting point.)*
+
+### Pen-and-Paper Practice
+- **P1.** How many radial nodes, angular nodes, and total nodes does a **4d** orbital have?
+- **P2.** Using *E*<sub>*n*</sub> = −13.6057/*n*² eV, find the energy and wavelength of the photon emitted when hydrogen drops from *n* = 3 to *n* = 2.
+- **P3.** What is the ionization energy of **He⁺** from its ground state, and how does the size of its 1s orbital compare with hydrogen's?
+
+<details>
+<summary>Answers</summary>
+
+- **1.** The slice shows \|ψ\|², which is largest at the nucleus. But the inner region is tiny in volume: only ≈ 5.3% of the probability lies inside *r* = 2 *a*₀, so most dots land in the outer shell (the *P*(*r*) picture). In column projection, each screen pixel adds up \|ψ\|² along a whole line of sight, and lines that pass through the node also pass through the bright regions in front of and behind it, so the node is partly filled in.
+- **2.** In 2p<sub>*x*</sub> the two opposite circulations (*m* = +1 and *m* = −1) are combined with equal weight. The result is a real wavefunction (up to a global phase), so the phase gradient ∇S is zero and the probability current **J** vanishes everywhere. Changing the phase to `0°` rotates the dumbbell to lie along *y*; it is still real, so the dots still stand still.
+- **3.** It points along −*z*. With both phases at `0°`, ψ ∝ (2 − *r* + *z*). Outside the node, 2 − *r* is negative, so adding *z* reinforces it where *z* is also negative.
+- **4.** Use \|3d, +2⟩ and \|3d, −2⟩ with relative phase 180° (for example `0°` and `180°`): *e*<sup>2*i*φ</sup> − *e*<sup>−2*i*φ</sup> = 2*i* sin 2φ, and *r*² sin²θ sin 2φ = 2*xy*. The overall factor *i* is just a global phase.
+- **P1.** 4d has *n* = 4, *l* = 2: radial nodes *n* − *l* − 1 = **1**, angular nodes *l* = **2**, total *n* − 1 = **3**.
+- **P2.** Δ*E* = 13.6057 × (1/4 − 1/9) = **1.89 eV**; λ = 1239.84 eV·nm / 1.89 eV ≈ **656 nm** (the red Balmer H<sub>α</sub> line).
+- **P3.** *E*₁ = −13.6 × 2² = −54.4 eV, so the ionization energy is **54.4 eV**. Its 1s orbital is **half the size** of hydrogen's (⟨*r*⟩ = 1.5 *a*₀/2 = 0.75 *a*₀).
+
+</details>

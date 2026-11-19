@@ -7,6 +7,24 @@ Turning up the **Field B<sub>z</sub>** slider applies a uniform external magneti
 > - **Spinless orbital model:** Intrinsic electron spin (*s* = ½, *g*<sub>s</sub> ≈ 2.0023) and spin–orbit coupling are omitted here, so this chapter isolates the **orbital (normal) Zeeman model** and **induced orbital diamagnetic currents**. By contrast, real **NMR** probes **nuclear spins** using radiofrequency waves, while **EPR** probes **electron spins** typically using microwaves (at ~28 GHz/T, twice the orbital step ~14 GHz/T—in atomic units, a spin flip costs ≈ *B*<sub>*z*</sub> versus *B*<sub>*z*</sub>/2 for orbital Δ*m* = ±1; in real hydrogen, 1s has zero *orbital* splitting, though its unpaired electron *spin* splits by ≈ ±*B*<sub>*z*</sub>/2).
 > - **Transition shorthand preview (§2.4):** **E1** means electric-dipole transitions driven by an oscillating electric field **E**(*t*); **M1** means magnetic-dipole transitions driven by an oscillating magnetic field **B**₁(*t*); and **σ⁺** / **σ⁻** denote counterclockwise / clockwise circular polarization in the *xy*-plane (viewed from the +*z* side; covered fully in Chapters 3–4).
 
+> **In a Nutshell:**
+> - An electron with orbital angular momentum is a tiny **current loop**, and therefore a tiny **magnet**. Because the electron is negative, its magnet points *opposite* to **L**.
+> - In a field *B*<sub>*z*</sub>, each orbital's energy shifts by *m* × μ<sub>B</sub>*B*<sub>*z*</sub>: a *p* level splits into three, a *d* level into five (the **Zeeman effect**). This is why *m* is called the "magnetic" quantum number.
+> - The field also makes probability **circulate** around the field axis at the **Larmor frequency**. Even a spherical 1s cloud carries a small current that opposes the field: **diamagnetism**, the origin of NMR shielding.
+> - The fields used in the demos (tens of thousands of tesla) are far beyond any lab magnet. They are chosen so the effects are visible on screen.
+>
+> **First read:** §2.0, the "Physical Takeaway" and "Two Striking Flow Effects" of §2.1, then §2.2–2.3. §2.4 is more advanced.
+
+---
+
+## 2.0 Magnetism Primer (What You Need from Physics)
+
+- **Magnetic field and the Lorentz force:** a magnetic field **B** (unit: tesla, T) pushes on a *moving* charge *q* with force **F** = *q* **v** × **B**. The force is perpendicular to the velocity, so it bends the path but does no work. Typical scales: Earth's field ≈ 50 μT, a fridge magnet ≈ 5 mT, an NMR magnet 1.9–23.5 T.
+- **A current loop is a magnet:** a loop carrying current *I* around area *A* has **magnetic dipole moment** μ = *IA*, pointing perpendicular to the loop by the right-hand rule (curl your fingers along the conventional current; your thumb gives **μ**). In a field, its energy is ***U* = −μ · B**: lowest when **μ** lines up with **B**, like a compass needle.
+- **An orbiting electron is a current loop:** an electron (charge −*e*) circling at speed *v* on a radius *r* makes a current of size *ev*/(2π*r*) around area π*r*². So \|μ\| = *evr*/2. Since its angular momentum is *L* = *m*<sub>e</sub>*vr*, this gives **μ = −(e/2m<sub>e</sub>) L**. The minus sign is there because the electron's charge is negative, so the magnet points *opposite* to **L**. Quantum mechanics keeps the same ratio: with *L*<sub>*z*</sub> = *mħ*, μ<sub>*z*</sub> = −*m* μ<sub>B</sub>, where the **Bohr magneton** is μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) = 5.788 × 10⁻⁵ eV/T.
+- **Preview of the Zeeman effect:** plugging μ<sub>*z*</sub> into *U* = −μ<sub>*z*</sub>*B*<sub>*z*</sub> gives *U* = +*m* μ<sub>B</sub> *B*<sub>*z*</sub>. Orbitals with different *m* now have different energies. §2.2 derives the same result from the Schrödinger equation.
+- **Lenz's law and diamagnetism:** when a magnetic field is switched on, charges respond by circulating so that the field they create *opposes* the change. In atoms this induced circulation is **diamagnetism**; it makes nuclei "see" slightly less than the applied field, which is the origin of NMR **chemical shielding**.
+
 ---
 
 ## 2.1 Minimal Coupling, Vector Potential **A** & Probability-Current Flow
@@ -18,7 +36,8 @@ Before diving into the calculus, here is what a uniform field **B** = *B*<sub>*z
   1. **Zeeman energy shift:** *E*<sub>*nlm*</sub> = *E*<sub>*n*</sub> + *m* (*B*<sub>*z*</sub> / 2) = *E*<sub>*n*</sub> + *m* ω<sub>Larmor</sub> (with the quadratic term ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² dropped by choice—discussed in §2.2).
   2. **Added Larmor flow:** The electron **probability-current flow** velocity becomes **v**(**r**, *t*) = **J**/\|ψ\|² = Im(∇ψ/ψ) + **A**(**r**), adding the rigid angular drift ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 everywhere.
 
-*(Optional Calculus & Vector-Potential Derivation — skip to **Two Striking Flow Effects** below on a first read if curl, divergence, and operator algebra are new to you.)*
+<details>
+<summary>Optional derivation: vector potential A, minimal coupling, and the probability current (skip on a first read if curl, divergence, and operator algebra are new to you)</summary>
 
 In vector calculus, the **curl** (∇ × **A**) measures how strongly a vector field swirls locally, while the **divergence** (∇ · **A**) measures net local outflow. Quantum mechanics incorporates **B** via any vector potential satisfying **B** = ∇ × **A**. Checking the **symmetric gauge**,
 
@@ -50,13 +69,18 @@ Next, how does **A** enter the **probability current J**? Physical electron velo
 
 Calling **v**(**r**, *t*) the **probability-current flow** (rather than picturing tiny classical electrons orbiting on fixed tracks) underscores that **J** is a genuine observable of standard quantum mechanics (**J**<sub>elec</sub> = −*e***J** is the physical electric current density), while the Bohmian dots simply trace its streamlines.
 
+</details>
+
 ### Two Striking Flow Effects
 In cylindrical coordinates (ρ<sub>cyl</sub>, φ, *z*), **A** = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂**. Dividing tangential speed *v*<sub>φ</sub> by ρ<sub>cyl</sub> adds a **rigid-body angular velocity** ω<sub>Larmor</sub> = *B*<sub>*z*</sub> / 2 to every point. Specifically, **for a single eigenstate** ψ<sub>*nlm*</sub> ∝ *e*<sup>*im*φ</sup> (not for superpositions like 2p<sub>*x*</sub>), Im(∇ψ/ψ)<sub>φ</sub> = *m*/ρ<sub>cyl</sub> gives:
 
 > *d*φ/*dt* = *m* / ρ<sub>cyl</sub>² + *B*<sub>*z*</sub> / 2 &nbsp;&nbsp; (single eigenstate ψ<sub>*nlm*</sub>, atomic units)
 
 Two counterintuitive physical effects appear immediately:
-1. **Even a spherically symmetric 1s electron circulates (Canonical vs. Kinetic Angular Momentum & Diamagnetic Shielding):** In **1s** (*m* = 0), ψ₁₀₀ is real so Im(∇ψ/ψ) = 0, and its *canonical* angular momentum is *L*<sub>*z*</sub> = *m* = 0. Yet its *kinetic* (physical) angular momentum **r** × (**p** + **A**) includes **A**, so **v** = **A** circulates the probability current rigidly at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 (**counterclockwise** viewed from the +*z* side when *B*<sub>*z*</sub> > 0, and **clockwise** when *B*<sub>*z*</sub> < 0) **without changing the spherical cloud shape \|ψ₁ₛ\|² at all**! Because the electron carries **negative** charge (*q* = −*e* < 0), counterclockwise electron flow for *B*<sub>*z*</sub> > 0 is **clockwise** conventional electric current (+*q* direction), which by **Lenz's law** creates a small opposing (−**ẑ**) magnetic field at the nucleus. This induced current (**J**<sub>ind</sub> = \|ψ\|²**A**, first order in *B*<sub>*z*</sub>) is the **diamagnetic** shielding current of a lone atom. *(In molecules, NMR chemical shielding σ combines this diamagnetic current with an orbital-mixing **paramagnetic (Ramsey)** term that often dominates shift differences across chemical environments; only the diamagnetic part exists in an isolated atom. Also notice the order in B<sub>z</sub>: the shielding **current** **v** = **A** is first order in B<sub>z</sub> and is kept here, whereas the omitted ⅛B<sub>z</sub>²ρ<sub>cyl</sub>² **energy** term is second order in B<sub>z</sub>.)*
+1. **Even a spherically symmetric 1s electron circulates (diamagnetic shielding):** In **1s** (*m* = 0), ψ₁₀₀ is real, so Im(∇ψ/ψ) = 0 and the *canonical* angular momentum is *L*<sub>*z*</sub> = *m* = 0. But the *physical* (kinetic) velocity also contains **A**, so the flow is **v** = **A**.
+   - **What you see:** probability circulates rigidly at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2—**counterclockwise** viewed from +*z* when *B*<sub>*z*</sub> > 0, clockwise when *B*<sub>*z*</sub> < 0—while the spherical cloud \|ψ₁ₛ\|² does not change at all.
+   - **Why it opposes the field:** the electron is negative, so counterclockwise electron flow is a **clockwise** conventional current. By the right-hand rule, that current makes a small field along −**ẑ** at the nucleus, opposing the applied field, as Lenz's law (§2.0) requires. This induced current **J**<sub>ind</sub> = \|ψ\|²**A** is the **diamagnetic shielding current** of a lone atom.
+   - **Link to NMR:** in molecules, NMR shielding σ adds an orbital-mixing **paramagnetic (Ramsey)** term to this diamagnetic part, and that term often controls differences in chemical shift. An isolated atom has only the diamagnetic part. *(The shielding **current** is first order in B<sub>z</sub> and is kept; the omitted ⅛B<sub>z</sub>²ρ<sub>cyl</sub>² **energy** term is second order.)*
 2. **Counter-rotating zones in *m* = −1:** For *m* = −1 and *B*<sub>*z*</sub> > 0, the **inner** azimuthal quantum vortex −1/ρ<sub>cyl</sub>² dominates near the *z*-axis (clockwise), while the outer magnetic drift +*B*<sub>*z*</sub>/2 wins at large radius (counterclockwise). The two flows balance along a **stationary cylinder** of radius ρ<sub>cyl</sub> = √(2/*B*<sub>*z*</sub>) in 3D (for Demo 2's *B*<sub>*z*</sub> = 0.25 a.u., ρ<sub>cyl</sub> = √8 ≈ 2.83 *a*₀), which appears as a stationary ring in the *xy*-plane when viewed from the +*z* side (`Tilt = 90°`)!
 
 ```demo
@@ -75,7 +99,7 @@ Two counterintuitive physical effects appear immediately:
 ```demo
 {
   "label": "Competing flows in |2p,-1⟩ with B_z > 0",
-  "caption": "Inner electrons (small ρ) swirl clockwise via −1/ρ², while outer electrons drift counterclockwise via +B_z/2 around the stationary cylinder ρ_cyl = √(2/B_z) ≈ 2.83 a0.",
+  "caption": "Inner dots (small ρ) swirl clockwise via −1/ρ², while outer dots drift counterclockwise via +B_z/2 around the stationary cylinder ρ_cyl = √(2/B_z) ≈ 2.83 a0.",
   "states": [{"n": 2, "l": 1, "m": -1, "amp": 1, "phaseDeg": 0}],
   "B": 0.25,
   "tilt": 90,
@@ -115,9 +139,9 @@ Every (*n*, *l*) subshell splits into **2*l* + 1** equally spaced **Zeeman suble
 >   - **¹H NMR (nuclear spin):** Proton resonance scales at γ<sub>p</sub>/(2π) ≈ 42.58 MHz/T (radiofrequency): **1.88 T** corresponds to **80 MHz**, **9.39 T** to **400 MHz**, and **14.1 T** to **600 MHz**.
 >   - **EPR (electron spin, *g*<sub>s</sub> ≈ 2.0023):** Scales at **~28 GHz/T** (microwaves, e.g., ~9.5 GHz X-band at ~0.34 T, or ~52.7 GHz at 1.88 T)—twice the orbital step!
 >   - **Orbital Zeeman (Δ*m* = ±1 in this spinless model):** Scales at μ<sub>B</sub>/*h* ≈ **14 GHz/T** = **0.0579 meV/T** (Δ*E* = *B*<sub>*z*</sub>/2 in a.u.).
-> - **Extreme demo field scale (23.5–141 kT):** Because **1 a.u. = 2.3505 × 10⁵ T**, the demo fields used in this chapter (*B*<sub>*z*</sub> = 0.1–0.6 a.u.) equal **23.5–141 kT**—hundreds to thousands of times stronger than the **~45 T** limit of the strongest steady laboratory magnets! These fields are experimentally unattainable in steady lab magnets and are chosen solely so Larmor rotation and Zeeman splitting happen on the same visual timescale as orbital motion. To keep interactive exploration safely inside the weak-field Zeeman regime, the **Field B<sub>z</sub>** slider defaults to `±0.10 a.u.` (`±23.5 kT`), expanding automatically only when Chapter 2 presets load larger demo fields (with an inline warning above `|B_z| > 0.12 a.u.`).
+> - **Extreme demo field scale (23.5–141 kT):** Because **1 a.u. = 2.3505 × 10⁵ T**, the demo fields used in this chapter (*B*<sub>*z*</sub> = 0.1–0.6 a.u.) equal **23.5–141 kT**—hundreds to thousands of times stronger than the **~45 T** limit of the strongest steady laboratory magnets! These fields are experimentally unattainable in steady lab magnets and are chosen solely so Larmor rotation and Zeeman splitting happen on the same visual timescale as orbital motion. The **Field B<sub>z</sub>** slider spans `±0.10 a.u.` (`±23.5 kT`) by default and expands automatically only when Chapter 2 presets load larger demo fields, with an inline warning above `|B_z| > 0.12 a.u.`. Even ±0.10 a.u. is **not** a weak field for *n* = 2 orbitals (see the next bullet), so treat every demo here as a **qualitative linear-Zeeman model**, not a quantitative prediction.
 > - **Why ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² is dropped by choice (qualitative model):** For *n* = 2 orbitals at *B*<sub>*z*</sub> = 0.1–0.25 a.u., the omitted quadratic diamagnetic term is *not* small! For \|2p, ±1⟩, ⟨ρ<sub>cyl</sub>²⟩ = 24 *a*₀², giving a quadratic shift of ⟨⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>²⟩ = 3*B*<sub>*z*</sub>²: at *B*<sub>*z*</sub> = 0.1 a.u., that is **0.03 Ha** (~60% of the 0.05 Ha linear shift), and at *B*<sub>*z*</sub> = 0.25 a.u. (the \|2p, −1⟩ demo), 3*B*<sub>*z*</sub>² = **0.1875 Ha** (5.10 eV) exceeds both the linear shift (0.125 Ha) and the zero-field binding energy \|*E*₂\| = 0.125 Ha (3.40 eV). Meanwhile for \|2s, 0⟩, ⟨ρ<sub>cyl</sub>²⟩ = 28 *a*₀² gives 3.5*B*<sub>*z*</sub>², shifting 2s relative to 2p, ±1 by ~10% of the *B*<sub>*z*</sub>/2 spacing already at *B*<sub>*z*</sub> = 0.1 a.u. This simulation therefore uses an **intentional qualitative simplification**—dropping ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² by choice so you can cleanly isolate Larmor rotation and linear Zeeman splitting.
-> - **Spin & spin–orbit note:** Intrinsic electron spin adds *g*<sub>s</sub>*m*<sub>s</sub>μ<sub>B</sub>*B*<sub>*z*</sub> ≈ ±*B*<sub>*z*</sub>/2 at *all* magnetic fields. In real hydrogen, internal spin–orbit coupling (~4.5 × 10⁻⁵ eV in *n* = 2) dominates at weak laboratory fields (*B*<sub>*z*</sub> ≪ 0.3 T, the *anomalous* Zeeman regime) and decouples at strong fields (*B*<sub>*z*</sub> ≫ 0.3 T, the *Paschen–Back* regime); both spin and spin–orbit effects are omitted here.
+> - **Spin & spin–orbit note:** Intrinsic electron spin adds *g*<sub>s</sub>*m*<sub>s</sub>μ<sub>B</sub>*B*<sub>*z*</sub> ≈ ±*B*<sub>*z*</sub>/2 at *all* magnetic fields. In real hydrogen, internal spin–orbit coupling (~4.5 × 10⁻⁵ eV in *n* = 2) dominates at weak laboratory fields (*B*<sub>*z*</sub> ≪ 1 T, the *anomalous* Zeeman regime) and decouples at strong fields (*B*<sub>*z*</sub> ≫ 1 T, the *Paschen–Back* regime; the crossover is where μ<sub>B</sub>*B* ≈ 4.5 × 10⁻⁵ eV, i.e. *B* ≈ 0.8 T); both spin and spin–orbit effects are omitted here.
 
 ---
 
@@ -244,3 +268,17 @@ Just as an NMR or EPR spectrometer flips spins inside a static *B*<sub>*z*</sub>
 ### Quick Self-Check (Try in the Controls)
 1. Start in **\|2p, +1⟩** with `B_z = 0.1 a.u.` (for example, right from the **Zeeman M1** demo setup) and target **`2p → 2p (m: 1→0, Zeeman M1)`** in the transition dropdown, then switch polarization from **σ⁺** to **σ⁻**. Why does the simulator disable the pulse trigger with zero *resonant* M1 coupling—and physically, why is **σ⁻** strongly suppressed rather than truly zero in exact dynamics? *(Hint: for `B_z > 0`, Larmor precession is counterclockwise; compare the rotation direction of `σ⁺` vs. `σ⁻` relative to that precession and note the `2ω_Larmor` frequency mismatch!)*
 2. Starting from **\|2p, +1⟩** with `B_z = 0.1 a.u.` and the **Zeeman intra-shell E1** demo settings (`2p → 2s (Δm=-1, Zeeman E1)`, `σ⁺`, `13 cyc`), increase **Power** from `0.5` to `2` before firing. Just like the M1 spin-1 flip, what state takes nearly 100% of the population at `Power = 2`?
+
+### Pen-and-Paper Practice
+- **P1.** A 2p level sits in a 1.00 T field. Using μ<sub>B</sub> = 5.788 × 10⁻⁵ eV/T, how far apart in energy are neighboring Zeeman sublevels, and what frequency (in GHz) of radiation matches that spacing? Into how many levels does a 3d level split?
+- **P2.** Why does a 2s orbital show **no** orbital Zeeman splitting at all?
+
+<details>
+<summary>Answers</summary>
+
+- **1.** For *B*<sub>*z*</sub> > 0 the Larmor precession is counterclockwise, the same sense as σ⁺. A magnetic field rotating *with* the precession looks stationary in the rotating frame and can tip **L** steadily: that is resonance. A σ⁻ field rotates the *opposite* way, so in the rotating frame it spins at 2ω<sub>Larmor</sub> and its push averages out. The rotating-wave approximation therefore sets the resonant coupling to zero and the app disables the trigger. In exact dynamics only a tiny off-resonant wobble remains.
+- **2.** **\|2p, −1⟩**. At `Power = 2` the pulse area is Θ = √2 π, which is exactly the full π rotation of the three-level ladder (rotation angle Θ/√2 = π), so the population passes through \|2s, 0⟩ and ends 100% in \|2p, −1⟩.
+- **P1.** Δ*E* = μ<sub>B</sub>*B* = **5.79 × 10⁻⁵ eV**; ν = Δ*E*/*h* ≈ **14.0 GHz** (microwaves). A 3d level (*l* = 2) splits into 2*l* + 1 = **5** sublevels.
+- **P2.** 2s has *l* = 0, so *m* = 0 is its only value and *L*<sub>*z*</sub> = 0. With no orbital angular momentum there is no orbital magnetic moment to interact with the field. (Real hydrogen 2s still splits through its electron **spin**, which this model leaves out.)
+
+</details>

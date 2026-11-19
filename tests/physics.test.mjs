@@ -105,7 +105,7 @@ function createCoreContext() {
       getTransitionList, buildCoupledSystem, computeBrightDipole, resolvePhotonPolarization, getPulseConfig,
       buildPhotonSim, evalPhotonVel, advancePhotonRK4, photonOutcome, hydDecayChannels,
       fieldVecAt, stepTdseC, weisskopfWigner,
-      buildGridSystem, stepGridDipole, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
+      buildGridSystem, stepGridDipole, advanceGridHalf, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
       photoIonCoef, ionSafety, safeTrefCyc, onePiSetting, getRadTable, gauntCoeff,
       startPulse, stepPulseCore, finishPulse, getPulse: () => pulse,
       ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel,
@@ -821,7 +821,27 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
   // Verify Ch 5 red-detuned demo (actual app calibration) stays predominantly in |1s,0> with zero 3p leak and no ionization
   api.setBau(0);
   api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
-  const { tr, d } = ch5RedDemo;
+  const { tr, sys, np, d } = ch5RedDemo;
+  // Drive the full radial-grid TDSE with the same Strang half-step (advanceGridHalf) used by stepPulseCore
+  const runDetuned = (omegaL, T, E0, pol) => {
+    const grid = api.buildGridSystem(tr, sys);
+    const pObj = { kind: 'E1', trSpec: tr, omegaL, T, gamma: 0, E0, pol };
+    const c = new Float64Array(grid.projStates.length * 2);
+    const pop = (n, l, m) => {
+      const i = grid.projStates.findIndex((st) => st.n === n && st.l === l && st.m === m);
+      return i >= 0 ? c[i * 2] ** 2 + c[i * 2 + 1] ** 2 : 0;
+    };
+    const nSteps = Math.ceil(T / 0.1);
+    const h = T / nSteps;
+    let peak2p = 0;
+    for (let s = 0; s < nSteps; s++) {
+      api.advanceGridHalf(grid, pObj, h, (s + 0.5) * h);
+      if (s % 100 === 99) { api.projectGridStates(grid, c); peak2p = Math.max(peak2p, pop(2, 1, 1)); }
+    }
+    const info = api.projectGridStates(grid, c);
+    return { info, p1s: pop(1, 0, 0), p3p: pop(3, 1, 1), peak2p };
+  };
+  // The demo exactly as the app fires it (ionization-safe calibration at its Duration / Power / Detuning)
   api.setMode('wave');
   const redPol = typeof d.interaction.pol === 'string' ? presets[d.interaction.pol] : d.interaction.pol;
   api.setPol(redPol[0], redPol[1], redPol[2]);
@@ -831,25 +851,18 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
   api.setEl('pdet', d.interaction.detuning);
   const cfgRed = api.getPulseConfig();
   assert.ok(cfgRed.ok && cfgRed.detAu < 0 && cfgRed.E0 > 0);
-  const grid = api.buildGridSystem(cfgRed.trSpec, cfgRed.sys);
-  api.setP([]);
-  const pRed = { kind: 'E1', trSpec: cfgRed.trSpec, omegaL: cfgRed.omegaL, T: cfgRed.T, gamma: 0, E0: cfgRed.E0, pol: cfgRed.polInt };
-  const nSteps = Math.ceil(cfgRed.T / 0.25);
-  const h = cfgRed.T / nSteps;
-  for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(grid, pRed, s * h, h);
-  const c = new Float64Array(grid.projStates.length * 2);
-  const redInfo = api.projectGridStates(grid, c);
-  assert.ok(redInfo.boundNorm > 0.99, `Expected Ch5 red-detuned pulse to stay >99% bound, got ${redInfo.boundNorm}`);
-  const p1s = (() => {
-    const i = grid.projStates.findIndex((s) => s.n === 1 && s.l === 0 && s.m === 0);
-    return c[i * 2] ** 2 + c[i * 2 + 1] ** 2;
-  })();
-  const p3p = (() => {
-    const i = grid.projStates.findIndex((s) => s.n === 3 && s.l === 1 && s.m === 1);
-    return i >= 0 ? c[i * 2] ** 2 + c[i * 2 + 1] ** 2 : 0;
-  })();
-  assert.ok(p1s > 0.85, `Expected Ch5 red-detuned pulse to return >0.85 to |1s,0>, got ${p1s}`);
-  assert.ok(p3p < 0.02, `Expected Ch5 red-detuned pulse to avoid |3p,+1> (<0.02), got ${p3p}`);
+  const red = runDetuned(cfgRed.omegaL, cfgRed.T, cfgRed.E0, cfgRed.polInt);
+  assert.ok(red.info.boundNorm > 0.99, `Expected Ch5 red-detuned pulse to stay >99% bound, got ${red.info.boundNorm}`);
+  // Tutorial Ch5 quotes ~99% back in |1s,0>; the mid-pulse 2p excursion proves the pulse actually evolved the state
+  assert.ok(red.p1s > 0.97, `Expected Ch5 red-detuned pulse to return ~99% to |1s,0>, got ${red.p1s}`);
+  assert.ok(red.peak2p > 0.1, `Expected a real off-resonant flop into |2p,+1> mid-pulse (>0.1), got ${red.peak2p}`);
+  assert.ok(red.p3p < 0.02, `Expected Ch5 red-detuned pulse to avoid |3p,+1> (<0.02), got ${red.p3p}`);
+  // Mirror-image blue detuning on a short 10-cycle pi-pulse (bw ~ 1 eV) sits near 1s -> 3p and must leak substantially (tutorial quotes ~23%)
+  const T10 = (10 * 2 * Math.PI) / tr.omega0;
+  const { muRabi } = api.computeBrightDipole(sys, tr, np);
+  const blue = runDetuned(tr.omega0 - d.interaction.detuning * ((2 * Math.PI) / T10), T10, (2 * Math.PI) / (muRabi * T10), np);
+  assert.ok(blue.p3p > 0.12, `Expected 10-cycle blue-detuned pi-pulse to leak into |3p,+1> (>0.12), got ${blue.p3p}`);
+  console.log(`[ch5] red: 1s ${red.p1s.toFixed(3)}, peak 2p ${red.peak2p.toFixed(3)}, bound ${red.info.boundNorm.toFixed(4)}; blue 10-cyc: 3p ${blue.p3p.toFixed(3)}`);
 });
 
 test('Direct-density overlay alpha curve, 2D column-projection vs sampled histogram, and superposition projection', () => {
