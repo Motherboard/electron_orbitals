@@ -193,7 +193,7 @@ Look closely at those two terms: the joint superposition contains **two compleme
 
 In **Coherent EM wave** mode, why does cranking **Power** up—or squeezing a pulse into too few optical cycles—literally tear the electron out of the atom? Because squeezing a π-pulse into a short time *T* demands a strong peak field *E*₀, and above a sharp threshold the field pulls the top of the Coulomb barrier down below the orbital's energy, so the electron can simply roll out!
 
-We can derive that exact threshold with **first-year calculus**. Along the electric-field axis (*z* > 0 when −*qE*₀*z* pulls the electron toward +*z*, in atomic units), the total potential energy is Coulomb attraction minus the linear field ramp:
+We can derive that exact threshold with **first-year calculus**. Let the field point along **−*z***. The electron's charge is negative, so the force on it points along **+*z***, and its potential energy in the field is *U*<sub>field</sub> = −*E*₀*z* (Chapter 3 writes *U* = +*e*ℰ*z* for a field along +*z*; flipping the field flips the sign). Along the +*z* axis (*z* > 0, atomic units), the total potential energy is Coulomb attraction plus this downhill ramp:
 
 > *U*(*z*) = −1/*z* − *E*₀ *z* &nbsp;&nbsp; (*z* > 0)
 

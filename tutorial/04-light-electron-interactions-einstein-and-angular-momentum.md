@@ -38,11 +38,11 @@ Because hydrogen orbital energies follow *E*<sub>*n*</sub> = −13.6057/*n*² eV
 
 > 1/λ = *R*<sub>H</sub> (1/*n*<sub>lower</sub>² − 1/*n*<sub>upper</sub>²), &nbsp;&nbsp; *R*<sub>H</sub> = 13.6057 eV / *hc* ≈ 1.097 × 10⁷ m⁻¹ = 109,737 cm⁻¹
 
-*(Worked example, H<sub>α</sub>: 1/λ = 109,737 × (1/4 − 1/9) ≈ 15,241 cm⁻¹, so λ ≈ 656 nm. With the proton's finite mass, R<sub>H</sub> = 109,678 cm⁻¹ and λ = 656.3 nm. This simulator uses the clamped-nucleus value, §7.3.)*
+*(Worked example, H<sub>α</sub>: 1/λ = 109,737 × (1/4 − 1/9) ≈ 15,241 cm⁻¹, so λ ≈ 656 nm. With the proton's finite mass, R<sub>H</sub> = 109,678 cm⁻¹ and λ = 656.47 nm in vacuum (656.28 nm in air, the "656.3 nm" of most tables). This simulator uses the clamped-nucleus value, §7.3.)*
 
 E1-allowed lines group into the famous named spectral series seen in hydrogen discharge lamps:
-- **Lyman series** (*n* ↔ 1, ultraviolet): **Ly-α** (2p → 1s, 10.204 eV, 121.6 nm), **Ly-β** (3p → 1s, 12.088 eV, 102.6 nm).
-- **Balmer series** (*n* ↔ 2, visible): **H<sub>α</sub>** (3 → 2, 1.889 eV, **656.3 nm bright red**), **H<sub>β</sub>** (4 → 2, 2.551 eV, **486.1 nm blue-green**).
+- **Lyman series** (*n* ↔ 1, ultraviolet): **Ly-α** (2p → 1s, 10.204 eV ↔ 121.50 nm with clamped-nucleus levels; real atom 121.57 nm), **Ly-β** (3p → 1s, 12.094 eV ↔ 102.52 nm clamped; real atom 102.57 nm).
+- **Balmer series** (*n* ↔ 2, visible): **H<sub>α</sub>** (3 → 2, 1.890 eV, **bright red**: 656.11 nm clamped; real atom 656.47 nm in vacuum = 656.28 nm in air), **H<sub>β</sub>** (4 → 2, 2.551 eV, **blue-green**: 486.01 nm clamped; real atom 486.27 nm in vacuum = 486.13 nm in air). *(Wavelength tables for visible lines usually quote **air** values; 656.3 nm and 486.1 nm are air wavelengths.)*
 - **Paschen series** (*n* ↔ 3, near-infrared): e.g., **Pa-α** (4 → 3, 0.661 eV, 1875 nm).
 
 Unlike molecular vibrational IR spectroscopy (where a harmonic potential restricts Δ*v* = ±1), **Δ*n* is unrestricted** in electronic transitions (0, 1, 2, 3, … are all allowed whenever Δ*l* = ±1) because the anharmonic −1/*r* Coulomb potential bends radial wavefunctions so *R*<sub>*nl*</sub> overlaps across all shells. However, higher overtones grow weaker as radial overlap shrinks: ⟨1s\|*r*\|2p⟩ = **1.2903 *a*₀**, ⟨1s\|*r*\|3p⟩ = **0.5167 *a*₀**, and ⟨1s\|*r*\|4p⟩ = **0.3046 *a*₀**.
