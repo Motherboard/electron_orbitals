@@ -1714,3 +1714,59 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   }
   console.log(`[figures] ${figures} figure blocks across ${bundle.length} chapters`);
 });
+
+test('Bohmian equivariance through a long 2pi m-flip: electrons follow |psi|^2 into 1s and back out to |2p,-1>', () => {
+  // 2p,+1 -> 1s -> 2p,-1 (x-polarized, 397 cycles at Power 1, Theta = 2pi). The flow is optically driven for ~20k particle steps; the
+  // adaptive substeps must see psi at their own times (evalGridVelT), else the half-step lag rectifies into a radial drift (KS ~0.35).
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  api.setMode('wave');
+  api.setPol([1, 0], [0, 0], [0, 0]);
+  api.setEl('cnt', 0);
+  api.setEl('pdur', 397);
+  api.setEl('ppow', 1);
+  api.setEl('pdet', 0);
+  api.setEl('tr-sel', '2|1|1|0');
+  const rand = Math.random;
+  let seed = 12345;
+  Math.random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const b = api.getBasis(2, 1, 1), N = 60, parts = [];
+  try { for (let i = 0; i < N; i++) parts.push(api.sampSingle(b)); } finally { Math.random = rand; }
+  api.setP(parts);
+  api.startPulse();
+  const p = api.getPulse(), g = p.grid;
+  assert.ok(g, 'wave pulse must run on the radial grid');
+  const check = (label) => {
+    const { Nr, Mch, URe, UIm, dr } = g, pr = new Float64Array(Nr);
+    let tot = 0;
+    for (let j = 0; j < Nr; j++) { let s = 0; for (let c = 0; c < Mch; c++) { const o = j * Mch + c; s += URe[o] ** 2 + UIm[o] ** 2; } pr[j] = s; tot += s; }
+    const rs = api.getP().map((q) => Math.hypot(q.x, q.y, q.z)).sort((x, y) => x - y);
+    let cdf = 0, ks = 0, k = 0, medGrid = 0;
+    for (let j = 0; j < Nr; j++) {
+      const r = (j + 1) * dr;
+      cdf += pr[j] / tot;
+      if (!medGrid && cdf >= 0.5) medGrid = r;
+      while (k < N && rs[k] <= r + 0.5 * dr) k++;
+      ks = Math.max(ks, Math.abs(k / N - cdf));
+    }
+    const medP = rs[N >> 1];
+    assert.ok(ks < 0.22, `${label}: electron radii drifted off P(r) of the grid (KS=${ks.toFixed(3)}, median ${medP.toFixed(2)} vs ${medGrid.toFixed(2)})`);
+    return { ks, medP, medGrid };
+  };
+  const rec = { nSnap: 1, record() {} };
+  const span = 3 * 0.7 * p.T / 36;
+  let mid = null;
+  for (;;) {
+    const res = api.stepPulseCore(1 / 30, 3, span, null, rec);
+    if (!mid && p.t >= 0.5 * p.T) mid = check('mid-flip (|1s> dominant)');
+    if (res.finished) break;
+  }
+  assert.ok(mid && mid.medGrid < 3, `Expected the cloud to contract into 1s mid-flip, grid median ${mid?.medGrid}`);
+  const end = check('after the flip');
+  const c = new Float64Array(g.projStates.length * 2);
+  api.projectGridStates(g, c);
+  const i2 = g.projStates.findIndex((s) => s.n === 2 && s.l === 1 && s.m === -1);
+  assert.ok(c[2 * i2] ** 2 + c[2 * i2 + 1] ** 2 > 0.99, 'Expected ~|2p,-1> after the 2pi flip');
+  assert.ok(end.medP >= 3.8, `Expected electrons back at the |2p> radius, median ${end.medP.toFixed(2)}`);
+  api.finishPulse(false);
+});
