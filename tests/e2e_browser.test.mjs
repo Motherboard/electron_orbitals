@@ -960,3 +960,80 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     fs.rmSync(userDataDir, { recursive: true, force: true });
   }
 });
+
+test('E2E tutorial figures: toolkit widgets mount, animate only while visible, honour reduced motion, fit 320px', async () => {
+  const browserBin = findBrowser();
+  assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
+  const port = await getFreePort();
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-e2e-fig-'));
+  const chrome = spawn(browserBin, ['--headless=new', '--disable-gpu', '--no-sandbox', `--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`, '--window-size=1200,1000', HTML_URL], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let cdp;
+  try {
+    cdp = createCDP(await waitForWs(port));
+    await cdp.ready;
+    await cdp.call('Runtime.enable');
+    await cdp.call('Page.enable');
+    await new Promise((r) => setTimeout(r, 600));
+    const evalJS = async (expression) => {
+      const res = await cdp.call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+      if (res.exceptionDetails) throw new Error(`Page JS exception: ${JSON.stringify(res.exceptionDetails)}`);
+      return res.result.value;
+    };
+    // Instrument every live figure's tick() so we can count animation frames per figure
+    const probe = `(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const b = document.getElementById('tut-body');
+      if (document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      const sel = document.getElementById('tut-sel');
+      sel.value = String([...sel.options].findIndex((o) => o.textContent.startsWith('8.'))); sel.dispatchEvent(new Event('change'));
+      await wait(300);
+      const figs = b.querySelectorAll('figure.tut-fig').length, live = b.querySelectorAll('figure.tut-fig.is-live').length, errs = b.querySelectorAll('.tut-fig-err').length;
+      const kinds = new Set([...b.querySelectorAll('figure.tut-fig')].map((f) => f.dataset.figKind));
+      let ticks = 0; for (const f of tfLive) { const t = f.tick.bind(f); f.tick = (dt) => { ticks++; t(dt); }; }
+      const phasor = b.querySelector('figure[data-fig-kind="euler-phasor"]');
+      phasor.closest('details')?.removeAttribute('open');
+      b.scrollTop = 0; await wait(500);
+      const t0 = ticks; await wait(500); const idleTicks = ticks - t0;           // nothing animated is on screen at the top
+      b.scrollTop += phasor.getBoundingClientRect().top - b.getBoundingClientRect().top; await wait(400);
+      const t1 = ticks; await wait(500); const visibleTicks = ticks - t1;        // phasor on screen: animating
+      document.getElementById('tut-toggle').click(); await wait(400);
+      const t2 = ticks; await wait(500); const hiddenTicks = ticks - t2;         // panel hidden: paused
+      document.getElementById('tut-toggle').click(); await wait(300);
+      const playing = [...tfLive].filter((f) => f.playing).length;
+      return { figs, live, errs, kinds: kinds.size, idleTicks, visibleTicks, hiddenTicks, playing };
+    })()`;
+    const normal = await evalJS(probe);
+    assert.ok(normal.figs >= 20 && normal.live === normal.figs && normal.errs === 0, `Expected all toolkit figures to mount, got ${JSON.stringify(normal)}`);
+    assert.ok(normal.kinds >= 16, `Expected every figure kind in the toolkit, got ${normal.kinds}`);
+    assert.equal(normal.idleTicks, 0, 'Expected no animation ticks while no animated figure is visible');
+    assert.ok(normal.visibleTicks > 5, `Expected the visible phasor to animate, got ${normal.visibleTicks} ticks`);
+    assert.equal(normal.hiddenTicks, 0, 'Expected animations to pause while the tutorial panel is hidden');
+
+    await cdp.call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }, { name: 'prefers-color-scheme', value: 'dark' }] });
+    await cdp.call('Page.reload');
+    await new Promise((r) => setTimeout(r, 900));
+    const reduced = await evalJS(probe);
+    assert.equal(reduced.playing, 0, 'Expected reduced motion to start every animation paused');
+    assert.equal(reduced.visibleTicks, 0, 'Expected no animation ticks under prefers-reduced-motion');
+
+    await cdp.call('Emulation.setDeviceMetricsOverride', { width: 320, height: 760, deviceScaleFactor: 1, mobile: true });
+    await new Promise((r) => setTimeout(r, 400));
+    const narrow = await evalJS(`(async () => {
+      const b = document.getElementById('tut-body');
+      b.querySelectorAll('details').forEach((d) => { d.open = true; });
+      await new Promise((r) => setTimeout(r, 300));
+      const br = b.getBoundingClientRect();
+      const wide = [...b.querySelectorAll('figure.tut-fig, figure.tut-fig *')].filter((e) => e.getBoundingClientRect().right > br.right + 1).length;
+      return { docOverflow: document.documentElement.scrollWidth > window.innerWidth, wide };
+    })()`);
+    assert.deepEqual(narrow, { docOverflow: false, wide: 0 });
+
+    const errors = cdp.events.filter((e) => e.method === 'Runtime.exceptionThrown' || (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error'));
+    assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
+  } finally {
+    try { cdp?.ws?.close(); } catch { /* ignore */ }
+    chrome.kill('SIGKILL');
+    await new Promise((r) => setTimeout(r, 300));
+    fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  }
+});
