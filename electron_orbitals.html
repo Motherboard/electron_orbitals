@@ -36,9 +36,12 @@ select,button{font:inherit;font-size:max(1rem,1em);color:var(--fg);background:va
 button{cursor:pointer}
 button:disabled,select:disabled,input:disabled{opacity:.5;cursor:default}
 select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-canvas{width:100%;height:min(54vh,480px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
-canvas.dragging{cursor:grabbing}
-canvas:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.stage{position:relative;width:100%;height:min(54vh,480px);border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg)}
+#c-gl,#c{width:100%;height:100%;display:block;border:0;border-radius:11px;background:transparent}
+#c-gl{position:absolute;inset:0;pointer-events:none}
+#c{position:relative;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+#c.dragging{cursor:grabbing}
+#c:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 #info{font-size:13px;color:var(--mut);margin:8px 0 6px;min-height:2.8em}
 #info b{color:var(--fg);font-weight:600}
 input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accent-color:var(--acc)}
@@ -212,7 +215,10 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <button type="button" id="tut-toggle" aria-controls="tut-panel" aria-expanded="false">Tutorial</button>
 </header>
 
+<div class="stage">
+<canvas id="c-gl" aria-hidden="true"></canvas>
 <canvas id="c" tabindex="0" aria-label="Animated Bohmian electron trajectories. Drag or use arrow keys to rotate the 3D view; press 0 to reset."></canvas>
+</div>
 <div id="view-live" class="sr-only" aria-live="polite"></div>
 <div id="info"></div>
 
@@ -327,9 +333,9 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const cv=$('c'),ctx=cv.getContext('2d');
-let W=0,H=0,key='';
-function resize(){const d=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);key='';}
+const cv=$('c'),ctx=cv.getContext('2d'),glCv=$('c-gl');
+let W=0,H=0,key='',onStageResize=null;
+function resize(){const rawD=window.devicePixelRatio,d=Number.isFinite(rawD)&&rawD>0?rawD:1;W=cv.clientWidth||0;H=cv.clientHeight||0;const pw=Math.max(0,Math.round(W*d)),ph=Math.max(0,Math.round(H*d));cv.width=pw;cv.height=ph;if(glCv){glCv.width=pw;glCv.height=ph;}ctx.setTransform(d,0,0,d,0,0);key='';if(typeof onStageResize==='function')onStageResize(W,H,d);}
 const _selfScriptEl=typeof document!=='undefined'?document.currentScript:null;
 /* === WORKER_CORE_START === */
 let workerActive=false;
@@ -3738,18 +3744,109 @@ $('ov').onchange=()=>{$('ov-mode').disabled=!$('ov').checked;overlayDirty=true;i
 $('ov-mode').onchange=()=>setOvMode($('ov-mode').value);
 setOvMode($('ov-mode').value);
 
-let theme={line:'#d9d9dc',panel:'#f0f0ee',acc:'#534ab7',mut:'#6b6b70',grid:'rgba(110,110,115,.55)',ovR:83,ovG:74,ovB:183};
+/* === RENDERER_HELPERS_START === */
+function parseCssColor(str,fallbackRgb){
+const fb=Array.isArray(fallbackRgb)&&fallbackRgb.length>=3
+?[Number.isFinite(fallbackRgb[0])?fallbackRgb[0]:0,Number.isFinite(fallbackRgb[1])?fallbackRgb[1]:0,Number.isFinite(fallbackRgb[2])?fallbackRgb[2]:0,fallbackRgb.length>=4&&Number.isFinite(fallbackRgb[3])?fallbackRgb[3]:1]
+:[0,0,0,1];
+if(typeof str!=='string')return fb;
+const s=str.trim();
+if(!s)return fb;
+if(s[0]==='#'){
+const hex=s.slice(1);
+if(!/^[0-9a-fA-F]+$/.test(hex))return fb;
+if(hex.length===3||hex.length===4){
+const r=parseInt(hex[0]+hex[0],16)/255,g=parseInt(hex[1]+hex[1],16)/255,b=parseInt(hex[2]+hex[2],16)/255;
+const a=hex.length===4?parseInt(hex[3]+hex[3],16)/255:1;
+return[r,g,b,a];}
+if(hex.length===6||hex.length===8){
+const r=parseInt(hex.slice(0,2),16)/255,g=parseInt(hex.slice(2,4),16)/255,b=parseInt(hex.slice(4,6),16)/255;
+const a=hex.length===8?parseInt(hex.slice(6,8),16)/255:1;
+return[r,g,b,a];}
+return fb;}
+const m=s.match(/^rgba?\(\s*([^)]+)\s*\)$/i);
+if(!m)return fb;
+const body=m[1].trim();
+let parts,aStr=null;
+if(body.includes(',')){
+if(body.includes('/'))return fb;
+parts=body.split(/\s*,\s*/);
+if(parts.length!==3&&parts.length!==4)return fb;
+if(parts.length===4)aStr=parts[3];
+}else{
+const slash=body.split(/\s*\/\s*/);
+if(slash.length>2)return fb;
+parts=slash[0].trim().split(/\s+/);
+if(parts.length!==3)return fb;
+if(slash.length===2)aStr=slash[1].trim();}
+const numRe=/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?%?$/i;
+const parseChan=tok=>{
+if(!numRe.test(tok))return NaN;
+const v=tok.endsWith('%')?parseFloat(tok)/100:parseFloat(tok)/255;
+return Math.max(0,Math.min(1,v));};
+const r=parseChan(parts[0]),g=parseChan(parts[1]),b=parseChan(parts[2]);
+if(!Number.isFinite(r)||!Number.isFinite(g)||!Number.isFinite(b))return fb;
+let a=1;
+if(aStr!==null){
+if(!numRe.test(aStr))return fb;
+a=aStr.endsWith('%')?parseFloat(aStr)/100:parseFloat(aStr);
+if(!Number.isFinite(a))return fb;
+a=Math.max(0,Math.min(1,a));}
+return[r,g,b,a];}
+
+function hslRhoToRgb(rho,E,out,off=0){
+let t=E>0?rho/(0.8*E):0;
+if(!(t>0))t=0;else if(t>1)t=1;
+const hp=(15+t*250)/60;
+const c=0.616,m=0.252;
+const x=c*(1-Math.abs((hp%2)-1));
+const hi=c+m,mid=x+m;
+let r,g,b;
+if(hp<1){r=hi;g=mid;b=m;}
+else if(hp<2){r=mid;g=hi;b=m;}
+else if(hp<3){r=m;g=hi;b=mid;}
+else if(hp<4){r=m;g=mid;b=hi;}
+else if(hp<5){r=mid;g=m;b=hi;}
+else{r=hi;g=m;b=mid;}
+out[off]=r;out[off+1]=g;out[off+2]=b;}
+
+function sortParticleOrder(order,depths,n){
+if(!order||!depths||!(n>0))return;
+if(n>order.length)n=order.length;
+if(n>depths.length)n=depths.length;
+if(n===1){if(order[0]!==0)order[0]=0;return;}
+let needInit=false,zeroCount=0,sum=0,xor=0,expectedXor=0;
+for(let i=0;i<n;i++){
+const idx=order[i];
+if(idx<0||idx>=n){needInit=true;break;}
+if(idx===0)zeroCount++;
+sum+=idx;xor^=idx;expectedXor^=i;}
+if(zeroCount!==1||sum!==(n*(n-1))/2||xor!==expectedXor)needInit=true;
+if(needInit){for(let i=0;i<n;i++)order[i]=i;}
+for(let i=1;i<n;i++){
+const idx=order[i],d=depths[idx];
+let j=i-1;
+while(j>=0&&depths[order[j]]<d){order[j+1]=order[j];j--;}
+order[j+1]=idx;}}
+
+let theme={bg:'#fbfbfa',bgR:251/255,bgG:251/255,bgB:250/255,line:'#d9d9dc',panel:'#f0f0ee',acc:'#534ab7',mut:'#6b6b70',grid:'rgba(110,110,115,.55)',gridR:110/255,gridG:110/255,gridB:115/255,gridA:0.55,ovR:83,ovG:74,ovB:183};
 function refreshTheme(){
 if(typeof getComputedStyle!=='function')return;
 const cs=getComputedStyle(document.documentElement);
+theme.bg=cs.getPropertyValue('--bg').trim()||theme.bg;
 theme.line=cs.getPropertyValue('--line').trim()||theme.line;
 theme.panel=cs.getPropertyValue('--panel').trim()||theme.panel;
 theme.acc=cs.getPropertyValue('--acc').trim()||theme.acc;
 theme.mut=cs.getPropertyValue('--mut').trim()||theme.mut;
 theme.grid=cs.getPropertyValue('--grid').trim()||theme.grid;
+const bgC=parseCssColor(theme.bg,[theme.bgR,theme.bgG,theme.bgB,1]);
+theme.bgR=bgC[0];theme.bgG=bgC[1];theme.bgB=bgC[2];
+const grC=parseCssColor(theme.grid,[theme.gridR,theme.gridG,theme.gridB,theme.gridA]);
+theme.gridR=grC[0];theme.gridG=grC[1];theme.gridB=grC[2];theme.gridA=grC[3];
 const ov=cs.getPropertyValue('--ov').split(',');
-if(ov.length===3){theme.ovR=+ov[0];theme.ovG=+ov[1];theme.ovB=+ov[2];}}
+if(ov.length===3){const r=+ov[0],g=+ov[1],b=+ov[2];if(Number.isFinite(r)&&Number.isFinite(g)&&Number.isFinite(b)){theme.ovR=r;theme.ovG=g;theme.ovB=b;}}}
 refreshTheme();
+/* === RENDERER_HELPERS_END === */
 
 function packMainCoords(){
 const n=P.length,arr=new Float32Array(n*3);
