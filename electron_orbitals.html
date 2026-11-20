@@ -1683,8 +1683,15 @@ if(l===0&&Nr>=2){const u1=arr[c],u2=arr[Mch+c];return -u1-(2*dr/Math.max(1,6-4*d
 return((l&1)?1:-1)*arr[c];}
 return 0;}
 
-function evalGridPsiGrad(g,x,y,z,out){
-const{Lmax,Nr,dr,Mch,chans,URe,UIm,actChans,nActCh,scratch}=g;
+function gridUMix(A,M,U,m0,m1,m2,idx,c,Mch,Nr,dr,l){
+return m0*evalGridGhostU(A,idx,c,Mch,Nr,dr,l)+m1*evalGridGhostU(M,idx,c,Mch,Nr,dr,l)+m2*evalGridGhostU(U,idx,c,Mch,Nr,dr,l);}
+
+/** psi and grad psi of the grid wavefunction at (x,y,z). uRe/uIm select a snapshot (default: the live grid); with mix set, the radial
+ *  values are the time blend m0*snapshot0 + m1*snapshot1 + m2*live (weights in scratch.mixW, see evalGridVelT), read in one pass. */
+function evalGridPsiGrad(g,x,y,z,out,uRe,uIm,mix){
+const{Lmax,Nr,dr,Mch,chans,actChans,nActCh,scratch}=g,URe=uRe||g.URe,UIm=uIm||g.UIm;
+let AR=null,AI=null,MR=null,MI=null,m0=0,m1=0,m2=1;
+if(mix){AR=scratch.snapR[0];AI=scratch.snapI[0];MR=scratch.snapR[1];MI=scratch.snapI[1];m0=scratch.mixW[0];m1=scratch.mixW[1];m2=scratch.mixW[2];}
 const{invP,pxR,pxI}=scratch;
 let r=Math.hypot(x,y,z);if(r<1e-8)r=1e-8;
 const invR=1/r,u=z*invR,s=r/dr-1,j1=Math.floor(s),t=s-j1,t2=t*t,t3=t2*t;
@@ -1705,11 +1712,15 @@ const c=actChans[ai],ch=chans[c],{l,a,sigma,norm}=ch;
 let r0,r1,r2,r3,i0,i1,i2,i3,uRv,uIv,duR,duI;
 if(q5){
 let sR=0,sI=0,dR=0,dI=0;
-for(let k=0;k<6;k++){const off=oq+k*Mch+c,vr=URe[off],vi=UIm[off];sR+=qW[k]*vr;sI+=qW[k]*vi;dR+=qD[k]*vr;dI+=qD[k]*vi;}
+if(mix){for(let k=0;k<6;k++){const off=oq+k*Mch+c,vr=m0*AR[off]+m1*MR[off]+m2*URe[off],vi=m0*AI[off]+m1*MI[off]+m2*UIm[off];sR+=qW[k]*vr;sI+=qW[k]*vi;dR+=qD[k]*vr;dI+=qD[k]*vi;}}
+else for(let k=0;k<6;k++){const off=oq+k*Mch+c,vr=URe[off],vi=UIm[off];sR+=qW[k]*vr;sI+=qW[k]*vi;dR+=qD[k]*vr;dI+=qD[k]*vi;}
 if(sR===0&&sI===0&&dR===0&&dI===0)continue;
 uRv=sR;uIv=sI;duR=dR;duI=dI;
 }else{
-if(inB){
+if(mix){
+r0=gridUMix(AR,MR,URe,m0,m1,m2,j0,c,Mch,Nr,dr,l);r1=gridUMix(AR,MR,URe,m0,m1,m2,j1,c,Mch,Nr,dr,l);r2=gridUMix(AR,MR,URe,m0,m1,m2,j2,c,Mch,Nr,dr,l);r3=gridUMix(AR,MR,URe,m0,m1,m2,j3,c,Mch,Nr,dr,l);
+i0=gridUMix(AI,MI,UIm,m0,m1,m2,j0,c,Mch,Nr,dr,l);i1=gridUMix(AI,MI,UIm,m0,m1,m2,j1,c,Mch,Nr,dr,l);i2=gridUMix(AI,MI,UIm,m0,m1,m2,j2,c,Mch,Nr,dr,l);i3=gridUMix(AI,MI,UIm,m0,m1,m2,j3,c,Mch,Nr,dr,l);
+}else if(inB){
 r0=URe[o0+c];r1=URe[o1+c];r2=URe[o2+c];r3=URe[o3+c];
 i0=UIm[o0+c];i1=UIm[o1+c];i2=UIm[o2+c];i3=UIm[o3+c];
 }else{
@@ -1737,6 +1748,30 @@ out[0]=psiR;out[1]=psiI;out[2]=gxR;out[3]=gxI;out[4]=gyR;out[5]=gyI;out[6]=gzR;o
 function evalGridVel(g,x,y,z,vOut){
 const gb=g.scratch.gbuf;
 evalGridPsiGrad(g,x,y,z,gb);
+gridVelFromPsi(g,x,y,z,gb,vOut);}
+
+/** Copy the live grid wavefunction into snapshot slot k (0: particle-step start, 1: mid-step) for evalGridVelT. */
+function snapGrid(g,k){
+const sc=g.scratch;
+if(!sc.snapR){const n=g.URe.length;sc.snapR=[new Float64Array(n),new Float64Array(n)];sc.snapI=[new Float64Array(n),new Float64Array(n)];}
+sc.snapR[k].set(g.URe);sc.snapI[k].set(g.UIm);}
+
+/** Bohmian velocity at time t0+tau inside a particle step [t0, t0+h]: psi and grad psi are interpolated quadratically in time through
+ *  the snapshots at t0, t0+h/2 (snapGrid slots 0, 1) and the live grid at t0+h. The adaptive integrator needs the field at arbitrary
+ *  intermediate times; a field frozen at one end of the step lags the optical-frequency flow by h/2 and rectifies into a radial drift. */
+function evalGridVelT(g,x,y,z,tau,h,vOut){
+const sc=g.scratch,gb=sc.gbuf,s=tau/h;
+if(s<=1e-9){evalGridPsiGrad(g,x,y,z,gb,sc.snapR[0],sc.snapI[0]);}
+else if(Math.abs(s-0.5)<=1e-9){evalGridPsiGrad(g,x,y,z,gb,sc.snapR[1],sc.snapI[1]);}
+else if(s>=1-1e-9){evalGridPsiGrad(g,x,y,z,gb);}
+else{
+// psi is linear in the grid values, so blend the three time levels per stencil point (one pass) instead of evaluating each
+const w=sc.mixW||(sc.mixW=new Float64Array(3));
+w[0]=2*(s-0.5)*(s-1);w[1]=-4*s*(s-1);w[2]=2*s*(s-0.5);
+evalGridPsiGrad(g,x,y,z,gb,null,null,true);}
+gridVelFromPsi(g,x,y,z,gb,vOut);}
+
+function gridVelFromPsi(g,x,y,z,gb,vOut){
 const pR=gb[0],pI=gb[1],prob=pR*pR+pI*pI,om=0.5*Bau,ax=-om*y,ay=om*x;
 if(prob<1e-26){vOut[0]=ax;vOut[1]=ay;vOut[2]=0;return;}
 const invP=1/prob;
@@ -1753,7 +1788,8 @@ const damp=1-Math.max(0,1-(r-g.rCap)/Math.max(rStop-g.rCap,1e-6));
 vx-=damp*vr*(x/r);vy-=damp*vr*(y/r);vz-=damp*vr*(z/r);}}
 vOut[0]=vx;vOut[1]=vy;vOut[2]=vz;}
 
-/** Error-controlled RK4 over duration H in a frozen velocity field. Bohmian flows have vortex lines wherever |psi| -> 0, and a fixed
+/** Error-controlled RK4 over duration H in the velocity field vel(x,y,z,out,tau), tau = time since the step start (a frozen field
+ *  may ignore tau; the grid flow interpolates psi in time with evalGridVelT). Bohmian flows have vortex lines wherever |psi| -> 0, and a fixed
  *  displacement-based substep jumps electrons across them, diffusing them into the low-density tail (non-equivariant "runaway").
  *  The step halves whenever the RK4 stage velocities disagree by more than ADAPT_TOL*max(r,0.15E) of displacement, and grows again. */
 const ADAPT_TOL=0.004,ADAPT_MAX=256;
@@ -1762,10 +1798,10 @@ let t=0,h=H,n=0;
 while(t<H*(1-1e-12)&&n<ADAPT_MAX){
 h=Math.min(h,H-t);
 const x0=q.x,y0=q.y,z0=q.z;
-vel(x0,y0,z0,k1v);
-vel(x0+0.5*h*k1v[0],y0+0.5*h*k1v[1],z0+0.5*h*k1v[2],k2v);
-vel(x0+0.5*h*k2v[0],y0+0.5*h*k2v[1],z0+0.5*h*k2v[2],k3v);
-vel(x0+h*k3v[0],y0+h*k3v[1],z0+h*k3v[2],k4v);
+vel(x0,y0,z0,k1v,t);
+vel(x0+0.5*h*k1v[0],y0+0.5*h*k1v[1],z0+0.5*h*k1v[2],k2v,t+0.5*h);
+vel(x0+0.5*h*k2v[0],y0+0.5*h*k2v[1],z0+0.5*h*k2v[2],k3v,t+0.5*h);
+vel(x0+h*k3v[0],y0+h*k3v[1],z0+h*k3v[2],k4v,t+h);
 const dv=Math.max(Math.hypot(k2v[0]-k1v[0],k2v[1]-k1v[1],k2v[2]-k1v[2]),Math.hypot(k3v[0]-k2v[0],k3v[1]-k2v[1],k3v[2]-k2v[2]),Math.hypot(k4v[0]-k3v[0],k4v[1]-k3v[1],k4v[2]-k3v[2]));
 const tol=ADAPT_TOL*Math.max(Math.hypot(x0,y0,z0),0.15*E);
 n++;
@@ -1783,25 +1819,33 @@ const dv=Math.max(Math.hypot(b1-a1,b2-a2,b3-a3),Math.hypot(c1-b1,c2-b2,c3-b3),Ma
 return h*dv<=ADAPT_TOL*Math.max(Math.hypot(x0,y0,z0),0.15*E);}
 
 function advanceGridParticlesRK4(g,pObj,t0,h){
-const half=0.5*h,maxStep=0.14*E,velG=(x,y,z,o)=>evalGridVel(g,x,y,z,o);
+gridParticleStep(g,h,(w)=>advanceGridHalf(g,pObj,0.5*h,t0+(w?0.75:0.25)*h));}
+
+/** One Bohmian step of length h for every electron while the grid advances over the same interval: advHalf(0) and advHalf(1) each
+ *  move the grid by h/2. Slow electrons take a plain RK4 step whose stages see the grid at t0, t0+h/2 and t0+h; fast electrons and
+ *  steps that fail the stage-agreement test are redone by adaptiveRK4 in the time-interpolated flow (evalGridVelT), so every
+ *  substep sees the field at its own time rather than a field frozen at one end of the step. */
+function gridParticleStep(g,h,advHalf){
+const half=0.5*h,maxStep=0.14*E,velT=(x,y,z,o,tau)=>evalGridVelT(g,x,y,z,tau,h,o);
+snapGrid(g,0);
 for(const q of P){
 evalGridVel(g,q.x,q.y,q.z,k1v);
 const vMag=Math.hypot(k1v[0],k1v[1],k1v[2]),r=Math.hypot(q.x,q.y,q.z);
 const safeDisp=0.06*Math.max(r,0.15*E);
-q._sub=vMag*h>safeDisp?Math.min(6,Math.ceil(vMag*half/safeDisp)):0;
-if(q._sub>0){adaptiveRK4(q,half,velG,maxStep);
-}else{q._x0=q.x;q._y0=q.y;q._z0=q.z;q._k1x=k1v[0];q._k1y=k1v[1];q._k1z=k1v[2];}}
-advanceGridHalf(g,pObj,half,t0+0.25*h);
+q._sub=vMag*h>safeDisp?1:0;
+q._x0=q.x;q._y0=q.y;q._z0=q.z;q._k1x=k1v[0];q._k1y=k1v[1];q._k1z=k1v[2];}
+advHalf(0);
+snapGrid(g,1);
 for(const q of P){
 if(q._sub>0)continue;
 evalGridVel(g,q._x0+half*q._k1x,q._y0+half*q._k1y,q._z0+half*q._k1z,k2v);
 evalGridVel(g,q._x0+half*k2v[0],q._y0+half*k2v[1],q._z0+half*k2v[2],k3v);
 q._k2x=k2v[0];q._k2y=k2v[1];q._k2z=k2v[2];q._k3x=k3v[0];q._k3y=k3v[1];q._k3z=k3v[2];}
-advanceGridHalf(g,pObj,half,t0+0.75*h);
+advHalf(1);
 for(const q of P){
-if(q._sub>0){adaptiveRK4(q,half,velG,maxStep);continue;}
+if(q._sub>0){adaptiveRK4(q,h,velT,maxStep);continue;}
 evalGridVel(g,q._x0+h*q._k3x,q._y0+h*q._k3y,q._z0+h*q._k3z,k4v);
-if(!rk4StageOk(h,q._x0,q._y0,q._z0,q._k1x,q._k1y,q._k1z,q._k2x,q._k2y,q._k2z,q._k3x,q._k3y,q._k3z,k4v[0],k4v[1],k4v[2])){q.x=q._x0;q.y=q._y0;q.z=q._z0;adaptiveRK4(q,h,velG,maxStep);continue;}
+if(!rk4StageOk(h,q._x0,q._y0,q._z0,q._k1x,q._k1y,q._k1z,q._k2x,q._k2y,q._k2z,q._k3x,q._k3y,q._k3z,k4v[0],k4v[1],k4v[2])){adaptiveRK4(q,h,velT,maxStep);continue;}
 let dx=(h/6)*(q._k1x+2*q._k2x+2*q._k3x+k4v[0]);
 let dy=(h/6)*(q._k1y+2*q._k2y+2*q._k3y+k4v[1]);
 let dz=(h/6)*(q._k1z+2*q._k2z+2*q._k3z+k4v[2]);
@@ -2627,34 +2671,14 @@ const dtTarget=simStepScale*Math.min(isM1?Math.min(0.8,0.18/Math.max(pulse.omega
 const pTarget=simStepScale*Math.min(10,Math.max(0.20,0.08*nLow*nLow,nLow>=4?0.2*nLow*nLow:0));
 const pStepTarget=Math.min(pTarget,simStepScale*0.12/Math.max(pulse.omegaL,Math.abs(Bau),0.004));
 const nPartSteps=Math.max(nSnap||1,Math.min(64,Math.ceil(dtSim/pStepTarget)));
-const hP=dtSim/nPartSteps,half=0.5*hP,maxStep=0.14*E,velG=(x,y,z,o)=>evalGridVel(g,x,y,z,o);
+const hP=dtSim/nPartSteps,half=0.5*hP;
 const maxSubHalf=Math.max(1,Math.floor((g.dia?512:128)/nPartSteps));
 const nHalf=Math.max(1,Math.min(maxSubHalf,Math.ceil(Math.max(half/dtTarget,maxFreq*half/(0.1*simStepScale))))),hh=half/nHalf;
 const stride=Math.max(1,Math.ceil(minStep/hP)),fastWin=!snapRec&&dtSim>22*stride*hP,firstS=fastWin?(nPartSteps-1-21*stride):-1;
 if(fastWin){if(trailRec)trailReset=true;else for(const q of P)q.hist.length=0;}
 for(let ps=0;ps<nPartSteps;ps++){
 const tStep=tStart+ps*hP,tEnd=tStep+hP;
-for(const q of P){
-evalGridVel(g,q.x,q.y,q.z,k1v);
-const vMag=Math.hypot(k1v[0],k1v[1],k1v[2]),r=Math.hypot(q.x,q.y,q.z),safeDisp=0.06*Math.max(r,0.15*E);
-q._sub=vMag*hP>safeDisp?Math.min(6,Math.ceil(vMag*half/safeDisp)):0;
-if(q._sub>0)adaptiveRK4(q,half,velG,maxStep);
-else{q._x0=q.x;q._y0=q.y;q._z0=q.z;q._k1x=k1v[0];q._k1y=k1v[1];q._k1z=k1v[2];}}
-for(let w=0;w<nHalf;w++)advanceGridHalf(g,pulse,hh,tStep+(w+0.5)*hh);
-for(const q of P){
-if(q._sub>0)continue;
-evalGridVel(g,q._x0+half*q._k1x,q._y0+half*q._k1y,q._z0+half*q._k1z,k2v);
-evalGridVel(g,q._x0+half*k2v[0],q._y0+half*k2v[1],q._z0+half*k2v[2],k3v);
-q._k2x=k2v[0];q._k2y=k2v[1];q._k2z=k2v[2];q._k3x=k3v[0];q._k3y=k3v[1];q._k3z=k3v[2];}
-for(let w=0;w<nHalf;w++)advanceGridHalf(g,pulse,hh,tStep+half+(w+0.5)*hh);
-for(const q of P){
-if(q._sub>0){adaptiveRK4(q,half,velG,maxStep);continue;}
-evalGridVel(g,q._x0+hP*q._k3x,q._y0+hP*q._k3y,q._z0+hP*q._k3z,k4v);
-if(!rk4StageOk(hP,q._x0,q._y0,q._z0,q._k1x,q._k1y,q._k1z,q._k2x,q._k2y,q._k2z,q._k3x,q._k3y,q._k3z,k4v[0],k4v[1],k4v[2])){q.x=q._x0;q.y=q._y0;q.z=q._z0;adaptiveRK4(q,hP,velG,maxStep);continue;}
-let dx=(hP/6)*(q._k1x+2*q._k2x+2*q._k3x+k4v[0]),dy=(hP/6)*(q._k1y+2*q._k2y+2*q._k3y+k4v[1]),dz=(hP/6)*(q._k1z+2*q._k2z+2*q._k3z+k4v[2]);
-const disp=Math.hypot(dx,dy,dz);if(!Number.isFinite(disp))continue;
-if(disp>maxStep){const sc=maxStep/disp;dx*=sc;dy*=sc;dz*=sc;}
-q.x=q._x0+dx;q.y=q._y0+dy;q.z=q._z0+dz;}
+gridParticleStep(g,hP,(w)=>{const tw=tStep+w*half;for(let k=0;k<nHalf;k++)advanceGridHalf(g,pulse,hh,tw+(k+0.5)*hh);});
 if(snapRec&&(tEnd>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12||ps===nPartSteps-1))recordSnap(tEnd,true);
 else if(!snapRec){
 const push=fastWin?(ps>=firstS&&(nPartSteps-1-ps)%stride===0):((tEnd-pulse.lastHistT)>=minStep);
