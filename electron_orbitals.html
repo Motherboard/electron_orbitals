@@ -3726,7 +3726,7 @@ if(locked)$('fire').disabled=true;}
 /* ---------- density overlay: column projection or mid-plane slice + inline Blob Worker ---------- */
 const off=document.createElement('canvas'),offCtx=off.getContext('2d');
 let offW=0,offH=0,offIm=null,overlayDirty=true,cellSz=3,ovMode='proj';
-let ovHasImage=false,ovPaintedKey='';
+let ovHasImage=false,ovPaintedKey='',ovPaintedVersion=0;
 let simWorker=null,simWorkerUrl='',simEpoch=0,simBusy=false,simInFlight=0,lastSimDispatch=0;
 let simQueue=[],simQueueHasEnd=false,simQueuedEndT=0,playSimT=0,emaWorkRatio=0.35,lastOvReqT=0;
 let ovBusy=false,ovJobId=0,ovInFlightJobId=0,ovInFlightKey='',ovMinValidJobId=1,ovDesiredReq=null;
@@ -3991,7 +3991,7 @@ cellSz=res.cellSz;
 if(res.w!==offW||res.h!==offH){offW=res.w;offH=res.h;off.width=res.w;off.height=res.h;}
 offIm=new ImageData(res.rgba,res.w,res.h);
 offCtx.putImageData(offIm,0,0);
-ovHasImage=true;ovPaintedKey=ovKey;
+ovHasImage=true;ovPaintedKey=ovKey;ovPaintedVersion++;
 return true;}
 
 function requestOverlayNow(){
@@ -4396,7 +4396,7 @@ if(q.hist)drawParticleTrail(q.hist,q.x,q.y,q.z,cx,cy,S,cp,sp,ca,sa);}}}
 ctx.globalAlpha=1;
 const atlas=getSphereAtlas();
 const invE=E_val>0?1/E_val:0;
-let nucDrawn=false;
+let nucDrawn=false,drawnSpheres=1;
 if(atlas){
 const aCv=atlas.canvas,tp=atlas.tilePx,ts=atlas.tileScale,bMax=atlas.buckets-1;
 for(let k=0;k<n;k++){
@@ -4410,7 +4410,7 @@ const ht=partHueT[i];
 const bi=ht>0?Math.min(bMax,Math.round(ht*bMax)):0;
 const db=dn<1/3?0:(dn<2/3?1:2);
 const half=rad*ts,sz=half*2;
-ctx.drawImage(aCv,bi*tp,db*tp,tp,tp,sx-half,sy-half,sz,sz);}
+ctx.drawImage(aCv,bi*tp,db*tp,tp,tp,sx-half,sy-half,sz,sz);drawnSpheres++;}
 }else{
 for(let k=0;k<n;k++){
 const i=partOrder[k],depth=partDepth[i];
@@ -4419,13 +4419,432 @@ const sx=partSX[i],sy=partSY[i];
 if(!Number.isFinite(sx)||!Number.isFinite(sy)||!Number.isFinite(depth))continue;
 const dn=Math.max(0,Math.min(1,(depth*invE+1)*0.5));
 ctx.globalAlpha=0.76-0.36*dn;ctx.fillStyle=P[i].col;
-ctx.beginPath();ctx.arc(sx,sy,4.8-2.4*dn,0,TAU);ctx.fill();}
+ctx.beginPath();ctx.arc(sx,sy,4.8-2.4*dn,0,TAU);ctx.fill();drawnSpheres++;}
 ctx.globalAlpha=1;}
 if(!nucDrawn)drawNucleus2D(atlas,grid,cx,cy);
 ctx.restore();
-drawHud2D(cp,sp,ca,sa,cx,cy,S,E_val);}
+drawHud2D(cp,sp,ca,sa,cx,cy,S,E_val);
+return drawnSpheres;}
 /* === RENDERER_2D_END === */
 
+/* === RENDERER_GL_START === */
+const _renderStats={backend:'2d',lastDrawMs:0,drawCalls:0,sphereCount:0,lineVerts:0};
+if(typeof window!=='undefined'&&!Object.getOwnPropertyDescriptor(window,'__renderInfo')){
+Object.defineProperty(window,'__renderInfo',{
+enumerable:true,
+configurable:true,
+get(){
+return Object.freeze({
+backend:_renderStats.backend,
+lastDrawMs:_renderStats.lastDrawMs,
+drawCalls:_renderStats.drawCalls,
+sphereCount:_renderStats.sphereCount,
+lineVerts:_renderStats.lineVerts});}});}
+
+const _glRgb=new Float32Array(3);
+const GL_OV_VS=`#version 300 es
+layout(location=0) in vec2 a_uv;
+uniform vec2 u_viewport;
+uniform vec2 u_ovSize;
+out vec2 v_uv;
+void main(){
+  vec2 pos=a_uv*u_ovSize;
+  vec2 ndc=vec2(pos.x/u_viewport.x*2.0-1.0,1.0-pos.y/u_viewport.y*2.0);
+  gl_Position=vec4(ndc,0.0,1.0);
+  v_uv=a_uv;
+}`;
+const GL_OV_FS=`#version 300 es
+precision mediump float;
+uniform sampler2D u_tex;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec4 c=texture(u_tex,v_uv);
+  if(c.a<=0.001)discard;
+  fragColor=vec4(c.rgb*c.a,c.a);
+}`;
+const GL_LINE_VS=`#version 300 es
+layout(location=0) in vec2 a_pos;
+layout(location=1) in vec4 a_col;
+uniform vec2 u_viewport;
+out vec4 v_col;
+void main(){
+  vec2 ndc=vec2(a_pos.x/u_viewport.x*2.0-1.0,1.0-a_pos.y/u_viewport.y*2.0);
+  gl_Position=vec4(ndc,0.0,1.0);
+  v_col=a_col;
+}`;
+const GL_LINE_FS=`#version 300 es
+precision mediump float;
+in vec4 v_col;
+out vec4 fragColor;
+void main(){
+  fragColor=vec4(v_col.rgb*v_col.a,v_col.a);
+}`;
+const GL_SPHERE_VS=`#version 300 es
+layout(location=0) in vec2 a_corner;
+layout(location=1) in vec4 a_geom;
+layout(location=2) in vec4 a_colAlpha;
+uniform vec2 u_viewport;
+uniform float u_dpr;
+out vec2 v_uv;
+out float v_dn;
+out float v_radPx;
+out vec3 v_rgb;
+out float v_baseAlpha;
+void main(){
+  float rad=a_geom.z;
+  float halfCss=rad+1.5;
+  vec2 pos=a_geom.xy+a_corner*halfCss;
+  vec2 ndc=vec2(pos.x/u_viewport.x*2.0-1.0,1.0-pos.y/u_viewport.y*2.0);
+  gl_Position=vec4(ndc,0.0,1.0);
+  v_uv=a_corner*(halfCss/max(0.001,rad));
+  v_dn=clamp(a_geom.w,0.0,1.0);
+  v_radPx=rad*max(1.0,u_dpr);
+  v_rgb=a_colAlpha.rgb;
+  v_baseAlpha=a_colAlpha.a;
+}`;
+const GL_SPHERE_FS=`#version 300 es
+precision highp float;
+uniform vec3 u_bgColor;
+in vec2 v_uv;
+in float v_dn;
+in float v_radPx;
+in vec3 v_rgb;
+in float v_baseAlpha;
+out vec4 fragColor;
+void main(){
+  float r2=dot(v_uv,v_uv);
+  if(r2>=1.0)discard;
+  float dist=sqrt(r2);
+  float aa=clamp(1.5/max(1.5,v_radPx),0.01,0.45);
+  float edge=1.0-smoothstep(1.0-aa,1.0,dist);
+  if(edge<=0.0)discard;
+  float nz=sqrt(max(0.0,1.0-r2));
+  float diff=0.24+0.76*nz;
+  float n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8;
+  float spec=n16*n8*n4*n2*mix(0.62,0.25,v_dn);
+  vec3 lit=clamp(v_rgb*diff+vec3(spec),0.0,1.0);
+  vec3 col=clamp(mix(lit,u_bgColor,0.22*v_dn),0.0,1.0);
+  float a=clamp(v_baseAlpha*edge*(0.72+0.28*nz),0.0,1.0);
+  fragColor=vec4(col*a,a);
+}`;
+
+function compileGLShader(gl,type,src){
+const sh=gl.createShader(type);
+if(!sh)return null;
+gl.shaderSource(sh,src);
+gl.compileShader(sh);
+if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){gl.deleteShader(sh);return null;}
+return sh;}
+
+function linkGLProgram(gl,vsSrc,fsSrc){
+const vs=compileGLShader(gl,gl.VERTEX_SHADER,vsSrc);
+if(!vs)return null;
+const fs=compileGLShader(gl,gl.FRAGMENT_SHADER,fsSrc);
+if(!fs){gl.deleteShader(vs);return null;}
+const prog=gl.createProgram();
+if(!prog){gl.deleteShader(vs);gl.deleteShader(fs);return null;}
+gl.attachShader(prog,vs);
+gl.attachShader(prog,fs);
+gl.linkProgram(prog);
+gl.deleteShader(vs);
+gl.deleteShader(fs);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){gl.deleteProgram(prog);return null;}
+return prog;}
+
+function disposeGLResources(s){
+const gl=s.gl;
+if(!gl)return;
+if(s.ovVao){gl.deleteVertexArray(s.ovVao);s.ovVao=null;}
+if(s.ovVbo){gl.deleteBuffer(s.ovVbo);s.ovVbo=null;}
+if(s.ovTex){gl.deleteTexture(s.ovTex);s.ovTex=null;}
+if(s.ovProg){gl.deleteProgram(s.ovProg);s.ovProg=null;}
+if(s.lineVao){gl.deleteVertexArray(s.lineVao);s.lineVao=null;}
+if(s.lineVbo){gl.deleteBuffer(s.lineVbo);s.lineVbo=null;}
+if(s.lineProg){gl.deleteProgram(s.lineProg);s.lineProg=null;}
+if(s.sphereVao){gl.deleteVertexArray(s.sphereVao);s.sphereVao=null;}
+if(s.quadVbo){gl.deleteBuffer(s.quadVbo);s.quadVbo=null;}
+if(s.instVbo){gl.deleteBuffer(s.instVbo);s.instVbo=null;}
+if(s.sphereProg){gl.deleteProgram(s.sphereProg);s.sphereProg=null;}}
+
+function buildGLResources(s){
+const gl=s.gl;
+if(!gl||gl.isContextLost())return false;
+disposeGLResources(s);
+const ovProg=linkGLProgram(gl,GL_OV_VS,GL_OV_FS);
+const lineProg=linkGLProgram(gl,GL_LINE_VS,GL_LINE_FS);
+const sphereProg=linkGLProgram(gl,GL_SPHERE_VS,GL_SPHERE_FS);
+if(!ovProg||!lineProg||!sphereProg){
+if(ovProg)gl.deleteProgram(ovProg);
+if(lineProg)gl.deleteProgram(lineProg);
+if(sphereProg)gl.deleteProgram(sphereProg);
+return false;}
+s.ovProg=ovProg;
+s.lineProg=lineProg;
+s.sphereProg=sphereProg;
+
+s.uOvViewport=gl.getUniformLocation(ovProg,'u_viewport');
+s.uOvSize=gl.getUniformLocation(ovProg,'u_ovSize');
+s.uOvTex=gl.getUniformLocation(ovProg,'u_tex');
+s.uLineViewport=gl.getUniformLocation(lineProg,'u_viewport');
+s.uSphereViewport=gl.getUniformLocation(sphereProg,'u_viewport');
+s.uSphereDpr=gl.getUniformLocation(sphereProg,'u_dpr');
+s.uSphereBg=gl.getUniformLocation(sphereProg,'u_bgColor');
+
+const ovVao=gl.createVertexArray(),ovVbo=gl.createBuffer(),ovTex=gl.createTexture();
+const lineVao=gl.createVertexArray(),lineVbo=gl.createBuffer();
+const sphereVao=gl.createVertexArray(),quadVbo=gl.createBuffer(),instVbo=gl.createBuffer();
+if(!ovVao||!ovVbo||!ovTex||!lineVao||!lineVbo||!sphereVao||!quadVbo||!instVbo){
+s.ovVao=ovVao;s.ovVbo=ovVbo;s.ovTex=ovTex;
+s.lineVao=lineVao;s.lineVbo=lineVbo;
+s.sphereVao=sphereVao;s.quadVbo=quadVbo;s.instVbo=instVbo;
+disposeGLResources(s);
+return false;}
+
+s.ovVao=ovVao;s.ovVbo=ovVbo;s.ovTex=ovTex;
+s.lineVao=lineVao;s.lineVbo=lineVbo;
+s.sphereVao=sphereVao;s.quadVbo=quadVbo;s.instVbo=instVbo;
+
+gl.bindVertexArray(ovVao);
+gl.bindBuffer(gl.ARRAY_BUFFER,ovVbo);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0,1,0,0,1,1,1]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+
+gl.bindTexture(gl.TEXTURE_2D,ovTex);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+
+gl.bindVertexArray(lineVao);
+gl.bindBuffer(gl.ARRAY_BUFFER,lineVbo);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0,2,gl.FLOAT,false,24,0);
+gl.enableVertexAttribArray(1);
+gl.vertexAttribPointer(1,4,gl.FLOAT,false,24,8);
+
+gl.bindVertexArray(sphereVao);
+gl.bindBuffer(gl.ARRAY_BUFFER,quadVbo);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+gl.bindBuffer(gl.ARRAY_BUFFER,instVbo);
+gl.enableVertexAttribArray(1);
+gl.vertexAttribPointer(1,4,gl.FLOAT,false,32,0);
+gl.vertexAttribDivisor(1,1);
+gl.enableVertexAttribArray(2);
+gl.vertexAttribPointer(2,4,gl.FLOAT,false,32,16);
+gl.vertexAttribDivisor(2,1);
+
+gl.bindVertexArray(null);
+gl.bindBuffer(gl.ARRAY_BUFFER,null);
+gl.bindTexture(gl.TEXTURE_2D,null);
+
+s.ovTexVersion=-1;
+s.lineGpuCapFloats=0;
+s.instGpuCapFloats=0;
+return true;}
+
+function initWebGLRenderer(canvas){
+if(!canvas||typeof canvas.getContext!=='function')return null;
+const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false,depth:false,preserveDrawingBuffer:false});
+if(!gl)return null;
+const state={
+canvas,gl,lost:false,
+ovProg:null,ovVao:null,ovVbo:null,ovTex:null,ovTexVersion:-1,uOvViewport:null,uOvSize:null,uOvTex:null,
+lineProg:null,lineVao:null,lineVbo:null,uLineViewport:null,lineBuf:new Float32Array(16384*6),lineFloats:0,lineGpuCapFloats:0,
+sphereProg:null,sphereVao:null,quadVbo:null,instVbo:null,uSphereViewport:null,uSphereDpr:null,uSphereBg:null,
+instBuf:new Float32Array(1024*8),instGpuCapFloats:0};
+if(!buildGLResources(state))return null;
+canvas._glState=state;
+if(!canvas._glListenersAttached){
+canvas._glListenersAttached=true;
+canvas.addEventListener('webglcontextlost',e=>{
+e.preventDefault();
+if(canvas._glState)canvas._glState.lost=true;});
+canvas.addEventListener('webglcontextrestored',()=>{
+const s=canvas._glState;
+if(!s)return;
+s.ovTexVersion=-1;
+s.lineGpuCapFloats=0;
+s.instGpuCapFloats=0;
+s.lost=!buildGLResources(s);});}
+return state;}
+
+function ensureLineFloats(s,need){
+if(need<=s.lineBuf.length)return;
+let cap=s.lineBuf.length||1536;
+while(cap<need)cap*=2;
+const next=new Float32Array(cap);
+next.set(s.lineBuf);
+s.lineBuf=next;}
+
+function pushLineSegGL(s,x0,y0,x1,y1,r,g,b,a){
+if(!Number.isFinite(x0)||!Number.isFinite(y0)||!Number.isFinite(x1)||!Number.isFinite(y1))return;
+const f=s.lineFloats,need=f+12;
+if(need>s.lineBuf.length)ensureLineFloats(s,need);
+const buf=s.lineBuf;
+buf[f]=x0;buf[f+1]=y0;buf[f+2]=r;buf[f+3]=g;buf[f+4]=b;buf[f+5]=a;
+buf[f+6]=x1;buf[f+7]=y1;buf[f+8]=r;buf[f+9]=g;buf[f+10]=b;buf[f+11]=a;
+s.lineFloats=need;}
+
+function drawSceneGL(glState,st){
+if(!glState||glState.lost)return false;
+const gl=glState.gl;
+if(!gl||gl.isContextLost()){glState.lost=true;return false;}
+const cvEl=glState.canvas;
+if(!cvEl||cvEl.width<=0||cvEl.height<=0||!(W>0&&H>0))return false;
+
+const {n,singleMode,showOverlay,showTr,cp,sp,ca,sa,az,cx,cy,S,E:E_val,Om,span}=st;
+gl.viewport(0,0,cvEl.width,cvEl.height);
+gl.disable(gl.DEPTH_TEST);
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+gl.clearColor(0,0,0,0);
+gl.clear(gl.COLOR_BUFFER_BIT);
+
+let drawCalls=0;
+if(showOverlay&&offW>0&&offH>0){
+gl.useProgram(glState.ovProg);
+gl.bindVertexArray(glState.ovVao);
+gl.activeTexture(gl.TEXTURE0);
+gl.bindTexture(gl.TEXTURE_2D,glState.ovTex);
+if(glState.ovTexVersion!==ovPaintedVersion){
+if(offIm&&offIm.width===offW&&offIm.height===offH){
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,offW,offH,0,gl.RGBA,gl.UNSIGNED_BYTE,offIm.data);
+}else{
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,off);}
+glState.ovTexVersion=ovPaintedVersion;}
+gl.uniform2f(glState.uOvViewport,W,H);
+gl.uniform2f(glState.uOvSize,offW*cellSz,offH*cellSz);
+gl.uniform1i(glState.uOvTex,0);
+gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+drawCalls++;}
+
+glState.lineFloats=0;
+const yAxis0=cy+E_val*cp*S,yAxis1=cy-E_val*cp*S;
+const axisDy=yAxis1-yAxis0,axisLen=Math.abs(axisDy);
+if(axisLen>=0.5&&Number.isFinite(cx)&&Number.isFinite(axisLen)){
+const dirY=axisDy>=0?1:-1;
+const gr=theme.gridR,gg=theme.gridG,gb=theme.gridB,ga=theme.gridA;
+for(let pos=0;pos<axisLen;pos+=8){
+const segEnd=pos+4<axisLen?pos+4:axisLen;
+pushLineSegGL(glState,cx,yAxis0+dirY*pos,cx,yAxis0+dirY*segEnd,gr,gg,gb,ga);}}
+
+if(showTr&&n>0){
+if(singleMode){
+for(let i=0;i<n;i++){
+const q=P[i],wt=q.w+Om;
+hslRhoToRgb(partHueT[i]*0.8,1,_glRgb,0);
+const trR=_glRgb[0],trG=_glRgb[1],trB=_glRgb[2];
+if(q.hist&&q.hist.length>1){
+const hh=q.hist,len=hh.length;
+const hx=q.rho*Math.cos(q.ph),hy=q.rho*Math.sin(q.ph);
+const rx0=hx*ca-hy*sa,ry0=hx*sa+hy*ca;
+let px=cx+rx0*S,py=cy-(ry0*sp+q.z*cp)*S;
+for(let j=0;j<len;j++){
+const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
+const nx=cx+rx*S,ny=cy-(ry*sp+pt[2]*cp)*S;
+const al=0.55*(1-(j+0.5)/(len+1));
+pushLineSegGL(glState,px,py,nx,ny,trR,trG,trB,al);
+px=nx;py=ny;}
+}else if(Math.abs(wt)>1e-9){
+const phV=q.ph+az,rx=q.rho*Math.cos(phV),ry=q.rho*Math.sin(phV);
+const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
+const qzS=q.z*cp,rhoS=q.rho*S;
+let lx=cx+rx*S,ly=cy-(ry*sp+qzS)*S;
+for(let k=1;k<=N;k++){
+const ph=phV-dir*arc*(k/N);
+const nx=cx+rhoS*Math.cos(ph),ny=cy-(q.rho*Math.sin(ph)*sp+qzS)*S;
+const al=0.55*(1-(k-1)/N);
+pushLineSegGL(glState,lx,ly,nx,ny,trR,trG,trB,al);
+lx=nx;ly=ny;}}}
+}else{
+for(let i=0;i<n;i++){
+const q=P[i],hh=q.hist;
+if(!hh||!hh.length)continue;
+hslRhoToRgb(partHueT[i]*0.8,1,_glRgb,0);
+const trR=_glRgb[0],trG=_glRgb[1],trB=_glRgb[2];
+const len=hh.length,rx0=q.x*ca-q.y*sa,ry0=q.x*sa+q.y*ca;
+let px=cx+rx0*S,py=cy-(ry0*sp+q.z*cp)*S;
+for(let j=0;j<len;j++){
+const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
+const nx=cx+rx*S,ny=cy-(ry*sp+pt[2]*cp)*S;
+const al=0.55*(1-(j+0.5)/(len+1));
+pushLineSegGL(glState,px,py,nx,ny,trR,trG,trB,al);
+px=nx;py=ny;}}}}
+
+const lineVerts=(glState.lineFloats/6)|0;
+if(lineVerts>0){
+gl.useProgram(glState.lineProg);
+gl.bindVertexArray(glState.lineVao);
+gl.uniform2f(glState.uLineViewport,W,H);
+gl.bindBuffer(gl.ARRAY_BUFFER,glState.lineVbo);
+if(glState.lineFloats>glState.lineGpuCapFloats){
+glState.lineGpuCapFloats=glState.lineBuf.length;
+gl.bufferData(gl.ARRAY_BUFFER,glState.lineBuf,gl.DYNAMIC_DRAW);
+}else{
+gl.bufferSubData(gl.ARRAY_BUFFER,0,glState.lineBuf,0,glState.lineFloats);}
+gl.drawArrays(gl.LINES,0,lineVerts);
+drawCalls++;}
+
+const needInstFloats=(n+1)*8;
+if(needInstFloats>glState.instBuf.length){
+let cap=glState.instBuf.length||2048;
+while(cap<needInstFloats)cap*=2;
+glState.instBuf=new Float32Array(cap);}
+const instBuf=glState.instBuf;
+const invE=E_val>0?1/E_val:0;
+const nucAlpha=Math.max(0.75,Number.isFinite(theme.gridA)?theme.gridA:0.55);
+let instCount=0,nucDrawn=false;
+for(let k=0;k<n;k++){
+const i=partOrder[k],depth=partDepth[i];
+if(!nucDrawn&&!(depth>0)){
+const o=instCount*8;
+instBuf[o]=cx;instBuf[o+1]=cy;instBuf[o+2]=3.2;instBuf[o+3]=0.5;
+instBuf[o+4]=theme.gridR;instBuf[o+5]=theme.gridG;instBuf[o+6]=theme.gridB;instBuf[o+7]=nucAlpha;
+instCount++;nucDrawn=true;}
+const sx=partSX[i],sy=partSY[i];
+if(!Number.isFinite(sx)||!Number.isFinite(sy)||!Number.isFinite(depth))continue;
+let dn=(depth*invE+1)*0.5;
+if(dn<0)dn=0;else if(dn>1)dn=1;
+hslRhoToRgb(partHueT[i]*0.8,1,_glRgb,0);
+const o=instCount*8;
+instBuf[o]=sx;instBuf[o+1]=sy;instBuf[o+2]=4.8-2.4*dn;instBuf[o+3]=dn;
+instBuf[o+4]=_glRgb[0];instBuf[o+5]=_glRgb[1];instBuf[o+6]=_glRgb[2];instBuf[o+7]=0.76-0.36*dn;
+instCount++;}
+if(!nucDrawn){
+const o=instCount*8;
+instBuf[o]=cx;instBuf[o+1]=cy;instBuf[o+2]=3.2;instBuf[o+3]=0.5;
+instBuf[o+4]=theme.gridR;instBuf[o+5]=theme.gridG;instBuf[o+6]=theme.gridB;instBuf[o+7]=nucAlpha;
+instCount++;}
+
+if(instCount>0){
+const instFloats=instCount*8;
+const glDpr=W>0?cvEl.width/W:(_stageDpr||1);
+gl.useProgram(glState.sphereProg);
+gl.bindVertexArray(glState.sphereVao);
+gl.uniform2f(glState.uSphereViewport,W,H);
+gl.uniform1f(glState.uSphereDpr,glDpr);
+gl.uniform3f(glState.uSphereBg,theme.bgR,theme.bgG,theme.bgB);
+gl.bindBuffer(gl.ARRAY_BUFFER,glState.instVbo);
+if(instFloats>glState.instGpuCapFloats){
+glState.instGpuCapFloats=glState.instBuf.length;
+gl.bufferData(gl.ARRAY_BUFFER,glState.instBuf,gl.DYNAMIC_DRAW);
+}else{
+gl.bufferSubData(gl.ARRAY_BUFFER,0,glState.instBuf,0,instFloats);}
+gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,instCount);
+drawCalls++;}
+
+_renderStats.drawCalls=drawCalls;
+_renderStats.sphereCount=instCount;
+_renderStats.lineVerts=lineVerts;
+return true;}
+/* === RENDERER_GL_END === */
+
+let glState=null;
+let _hudDirty=true,_hudStageVer=-1,_hudW=0,_hudH=0,_hudThemeVer=-1,_hudCp=2,_hudSp=2,_hudCa=2,_hudSa=2,_hudE=-1,_hudPulse=false;
 function frame(now){
 const curDpr=window.devicePixelRatio;
 if(Number.isFinite(curDpr)&&curDpr>0&&curDpr!==_stageDpr)resize();
@@ -4480,13 +4899,31 @@ sortParticleOrder(partOrder,partDepth,n);
 const st=_frameState;
 st.n=n;st.singleMode=singleMode;st.showOverlay=showOverlay;st.showTr=showTr;
 st.cp=cp;st.sp=sp;st.ca=ca;st.sa=sa;st.az=az;st.cx=cx;st.cy=cy;st.S=S;st.E=E;st.Om=Om;st.span=span;
-drawScene2D(st);}
+const force=typeof window!=='undefined'?(window.__forceRenderer||null):null;
+const tDraw0=performance.now();
+if(force!=='2d'&&glState&&drawSceneGL(glState,st)){
+if(glCv){if(glCv.hidden)glCv.hidden=false;if(glCv.style.visibility==='hidden')glCv.style.visibility='';}
+const hasPulse=!!pulse;
+if(_hudDirty||hasPulse||_hudPulse!==hasPulse||_hudStageVer!==stageVersion||_hudW!==W||_hudH!==H||_hudThemeVer!==themeVersion||_hudCp!==cp||_hudSp!==sp||_hudCa!==ca||_hudSa!==sa||_hudE!==E){
+ctx.clearRect(0,0,W,H);
+drawHud2D(cp,sp,ca,sa,cx,cy,S,E);
+_hudDirty=false;_hudStageVer=stageVersion;_hudW=W;_hudH=H;_hudThemeVer=themeVersion;_hudCp=cp;_hudSp=sp;_hudCa=ca;_hudSa=sa;_hudE=E;_hudPulse=hasPulse;}
+_renderStats.backend='webgl2';
+_renderStats.lastDrawMs=performance.now()-tDraw0;
+}else{
+_hudDirty=true;
+if(glCv&&glCv.style.visibility!=='hidden')glCv.style.visibility='hidden';
+_renderStats.sphereCount=drawScene2D(st);
+_renderStats.backend='2d';
+_renderStats.drawCalls=0;
+_renderStats.lineVerts=0;
+_renderStats.lastDrawMs=performance.now()-tDraw0;}}
 requestAnimationFrame(frame);}
 
 window.addEventListener('resize',()=>{resize();overlayDirty=true;requestOverlayNow();});
 window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{refreshTheme();key='';ovPaintedKey='';overlayDirty=true;requestOverlayNow();});
 initSimWorker();
-resize();refresh(false,true);
+resize();glState=initWebGLRenderer(glCv);refresh(false,true);
 requestAnimationFrame(frame);
 
 /* ---------- interactive tutorial sidepanel ---------- */

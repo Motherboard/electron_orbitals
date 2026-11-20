@@ -14,6 +14,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import zlib from 'node:zlib';
 
 const HTML_URL = pathToFileURL(path.resolve(import.meta.dirname, '..', 'electron_orbitals.html')).href;
 
@@ -1205,6 +1206,477 @@ test('E2E tutorial figures: toolkit widgets mount, animate only while visible, h
     assert.deepEqual(narrow, { docOverflow: false, wide: 0 });
 
     const errors = cdp.events.filter((e) => e.method === 'Runtime.exceptionThrown' || (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error'));
+    assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
+  } finally {
+    try { cdp?.ws?.close(); } catch { /* ignore */ }
+    chrome.kill('SIGKILL');
+    await new Promise((r) => setTimeout(r, 300));
+    fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  }
+});
+
+function decodePngRgba(base64Png) {
+  const buf = Buffer.from(base64Png, 'base64');
+  const sig = [137, 80, 78, 71, 13, 10, 26, 10];
+  for (let i = 0; i < 8; i++) {
+    assert.equal(buf[i], sig[i], 'Invalid PNG signature');
+  }
+  let pos = 8;
+  let width = 0;
+  let height = 0;
+  let bitDepth = 0;
+  let colorType = 0;
+  const idatChunks = [];
+  while (pos < buf.length) {
+    const len = buf.readUInt32BE(pos);
+    const type = buf.subarray(pos + 4, pos + 8).toString('ascii');
+    const data = buf.subarray(pos + 8, pos + 8 + len);
+    pos += 12 + len;
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      bitDepth = data[8];
+      colorType = data[9];
+      assert.equal(bitDepth, 8, `Expected 8-bit PNG, got ${bitDepth}`);
+      assert.ok(colorType === 2 || colorType === 6, `Expected RGB/RGBA PNG, got colorType=${colorType}`);
+    } else if (type === 'IDAT') {
+      idatChunks.push(data);
+    } else if (type === 'IEND') {
+      break;
+    }
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idatChunks));
+  const bpp = colorType === 6 ? 4 : 3;
+  const stride = width * bpp;
+  const rgba = new Uint8Array(width * height * 4);
+  let prev = new Uint8Array(stride);
+  const paeth = (a, b, c) => {
+    const p = a + b - c;
+    const pa = Math.abs(p - a);
+    const pb = Math.abs(p - b);
+    const pc = Math.abs(p - c);
+    return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+  };
+  for (let y = 0; y < height; y++) {
+    const rowStart = y * (stride + 1);
+    const filter = raw[rowStart];
+    const row = new Uint8Array(stride);
+    for (let x = 0; x < stride; x++) {
+      const v = raw[rowStart + 1 + x];
+      const a = x >= bpp ? row[x - bpp] : 0;
+      const b = prev[x];
+      const c = x >= bpp ? prev[x - bpp] : 0;
+      if (filter === 0) row[x] = v;
+      else if (filter === 1) row[x] = (v + a) & 0xff;
+      else if (filter === 2) row[x] = (v + b) & 0xff;
+      else if (filter === 3) row[x] = (v + ((a + b) >> 1)) & 0xff;
+      else if (filter === 4) row[x] = (v + paeth(a, b, c)) & 0xff;
+      else throw new Error(`Unsupported PNG filter ${filter}`);
+    }
+    prev = row;
+    for (let x = 0; x < width; x++) {
+      const si = x * bpp;
+      const di = (y * width + x) * 4;
+      rgba[di] = row[si];
+      rgba[di + 1] = row[si + 1];
+      rgba[di + 2] = row[si + 2];
+      rgba[di + 3] = bpp === 4 ? row[si + 3] : 255;
+    }
+  }
+  return { width, height, data: rgba };
+}
+
+test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallback parity', async () => {
+  const browserBin = findBrowser();
+  assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
+
+  const port = await getFreePort();
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-e2e-gl-'));
+  const chrome = spawn(
+    browserBin,
+    [
+      '--headless=new',
+      '--use-gl=angle',
+      '--use-angle=swiftshader',
+      '--enable-unsafe-swiftshader',
+      '--no-sandbox',
+      `--remote-debugging-port=${port}`,
+      `--user-data-dir=${userDataDir}`,
+      '--window-size=1000,1200',
+      HTML_URL,
+    ],
+    { stdio: ['ignore', 'pipe', 'pipe'] }
+  );
+
+  let cdp;
+  try {
+    const wsUrl = await waitForWs(port);
+    cdp = createCDP(wsUrl);
+    await cdp.ready;
+    await cdp.call('Runtime.enable');
+    await cdp.call('Page.enable');
+    await cdp.call('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-color-scheme', value: 'light' }],
+    });
+    await new Promise((r) => setTimeout(r, 600));
+
+    const evalJS = async (expression) => {
+      const res = await cdp.call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+      if (res.exceptionDetails) {
+        throw new Error(`Page JS exception: ${JSON.stringify(res.exceptionDetails)}`);
+      }
+      return res.result.value;
+    };
+
+    const waitFrames = async (count = 3) => {
+      await evalJS(`new Promise((resolve) => {
+        let left = ${count};
+        const step = () => { if (--left <= 0) resolve(true); else requestAnimationFrame(step); };
+        requestAnimationFrame(step);
+      })`);
+    };
+
+    const waitUntil = async (predicateExpr, timeoutMs = 8000) => {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (await evalJS(predicateExpr)) return;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error(`Timed out waiting for condition: ${predicateExpr}`);
+    };
+
+    const captureCanvasPng = async () => {
+      const rect = await evalJS(`(() => {
+        const r = document.getElementById('c').getBoundingClientRect();
+        return { left: r.left, top: r.top, width: r.width, height: r.height, vw: window.innerWidth, vh: window.innerHeight };
+      })()`);
+      const { data } = await cdp.call('Page.captureScreenshot', { format: 'png' });
+      const png = decodePngRgba(data);
+      return { png, rect, scaleX: png.width / rect.vw, scaleY: png.height / rect.vh };
+    };
+
+    const sampleCssPixel = (shot, cssX, cssY) => {
+      const px = Math.max(0, Math.min(shot.png.width - 1, Math.round((shot.rect.left + cssX) * shot.scaleX)));
+      const py = Math.max(0, Math.min(shot.png.height - 1, Math.round((shot.rect.top + cssY) * shot.scaleY)));
+      const idx = (py * shot.png.width + px) * 4;
+      const d = shot.png.data;
+      return [d[idx], d[idx + 1], d[idx + 2]];
+    };
+
+    const lumOf = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    // 1. Verify WebGL2 is genuinely active and telemetry matches initial state
+    await waitUntil('Boolean(window.__renderInfo && window.__renderInfo.backend === "webgl2")', 6000);
+    await waitFrames(3);
+    const initInfo = await evalJS(`({
+      info: window.__renderInfo,
+      pLen: P.length,
+      glHidden: document.getElementById('c-gl').hidden,
+      glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+    })`);
+    assert.equal(initInfo.info.backend, 'webgl2', 'Expected WebGL2 backend under SwiftShader');
+    assert.equal(initInfo.info.sphereCount, initInfo.pLen + 1, 'sphereCount must equal P.length + nucleus');
+    assert.ok(initInfo.info.drawCalls >= 1 && initInfo.info.drawCalls <= 3, `Expected drawCalls <= 3, got ${initInfo.info.drawCalls}`);
+    assert.ok(Number.isFinite(initInfo.info.lastDrawMs) && initInfo.info.lastDrawMs >= 0, 'lastDrawMs must be finite >= 0');
+    assert.ok(Number.isInteger(initInfo.info.lineVerts) && initInfo.info.lineVerts >= 2, 'lineVerts must include z-axis');
+    assert.equal(initInfo.glHidden, false);
+    assert.equal(initInfo.glVis, 'visible');
+
+    // Verify __renderInfo is read-only / cannot corrupt internal renderer telemetry
+    await evalJS(`(() => {
+      try { window.__renderInfo.backend = 'corrupted'; } catch (_) {}
+      try { window.__renderInfo = { backend: 'corrupted' }; } catch (_) {}
+    })()`);
+    await waitFrames(1);
+    assert.equal(await evalJS('window.__renderInfo.backend'), 'webgl2', '__renderInfo must remain read-only');
+
+    // 2. Zero electrons (#cnt = 0 -> nucleus only) and raise to #cnt = 600 without errors
+    await evalJS(`(() => {
+      const cnt = document.getElementById('cnt');
+      cnt.min = '0';
+      cnt.value = '0';
+      cnt.dispatchEvent(new Event('input'));
+    })()`);
+    await waitFrames(4);
+    const zeroInfo = await evalJS('({ info: window.__renderInfo, pLen: P.length })');
+    assert.equal(zeroInfo.pLen, 0);
+    assert.equal(zeroInfo.info.backend, 'webgl2');
+    assert.equal(zeroInfo.info.sphereCount, 1, 'With 0 electrons, sphereCount must be 1 (nucleus only)');
+    assert.ok(zeroInfo.info.drawCalls <= 3);
+
+    await evalJS(`(() => {
+      const cnt = document.getElementById('cnt');
+      cnt.min = '50';
+      cnt.value = '600';
+      cnt.dispatchEvent(new Event('input'));
+    })()`);
+    await waitFrames(4);
+    const maxInfo = await evalJS('({ info: window.__renderInfo, pLen: P.length })');
+    assert.equal(maxInfo.pLen, 600);
+    assert.equal(maxInfo.info.backend, 'webgl2');
+    assert.equal(maxInfo.info.sphereCount, 601, 'With 600 electrons, sphereCount must be 601');
+    assert.ok(maxInfo.info.drawCalls <= 3);
+
+    // 3. Density overlay toggle (#ov) and mode switch (proj <-> slice)
+    await evalJS(`(() => {
+      const cnt = document.getElementById('cnt');
+      cnt.min = '0';
+      cnt.value = '0';
+      cnt.dispatchEvent(new Event('input'));
+      document.getElementById('tr').checked = false;
+      const ov = document.getElementById('ov');
+      if (!ov.checked) { ov.checked = true; ov.dispatchEvent(new Event('change')); }
+      setOvMode('proj');
+      refresh(false, true);
+    })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq && offW > 0 && offH > 0', 5000);
+    await waitFrames(3);
+    const ovOnInfo = await evalJS('window.__renderInfo');
+    assert.equal(ovOnInfo.drawCalls, 3, 'Expected 3 draw calls (overlay + lines + nucleus) when #ov is checked');
+    const ovOnShot = await captureCanvasPng();
+    const ovGeom = await evalJS('({ cx: W / 2, cy: H / 2 })');
+    const ovOnPx = sampleCssPixel(ovOnShot, ovGeom.cx + 22, ovGeom.cy);
+
+    // Uncheck #ov -> overlay hides immediately and drawCalls drops
+    await evalJS(`(() => {
+      const ov = document.getElementById('ov');
+      ov.checked = false;
+      ov.dispatchEvent(new Event('change'));
+    })()`);
+    await waitFrames(3);
+    const ovOffInfo = await evalJS('window.__renderInfo');
+    assert.equal(ovOffInfo.drawCalls, 2, 'Expected drawCalls to drop to 2 when #ov is unchecked');
+    const ovOffShot = await captureCanvasPng();
+    const ovOffPx = sampleCssPixel(ovOffShot, ovGeom.cx + 22, ovGeom.cy);
+    const ovDeltaOff = Math.max(
+      Math.abs(ovOffPx[0] - ovOnPx[0]),
+      Math.abs(ovOffPx[1] - ovOnPx[1]),
+      Math.abs(ovOffPx[2] - ovOnPx[2])
+    );
+    assert.ok(ovDeltaOff >= 15, `Unchecking #ov must clear overlay tint (${ovOnPx} -> ${ovOffPx})`);
+    assert.ok(lumOf(ovOffPx) > 240, `Expected clean light background after hiding overlay, got ${ovOffPx}`);
+
+    // Switch #ov-mode to slice, check #ov back on -> restores cleanly
+    await evalJS(`(() => {
+      setOvMode('slice');
+      const ov = document.getElementById('ov');
+      ov.checked = true;
+      ov.dispatchEvent(new Event('change'));
+    })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq && offW > 0 && offH > 0', 5000);
+    await waitFrames(3);
+    assert.equal(await evalJS('window.__renderInfo.drawCalls'), 3, 'Expected overlay draw call restored in slice mode');
+    const ovSliceShot = await captureCanvasPng();
+    const ovSlicePx = sampleCssPixel(ovSliceShot, ovGeom.cx + 22, ovGeom.cy);
+    const ovDeltaSlice = Math.max(
+      Math.abs(ovSlicePx[0] - ovOffPx[0]),
+      Math.abs(ovSlicePx[1] - ovOffPx[1]),
+      Math.abs(ovSlicePx[2] - ovOffPx[2])
+    );
+    assert.ok(ovDeltaSlice >= 15, `Checking #ov in slice mode must restore visible overlay (${ovOffPx} -> ${ovSlicePx})`);
+
+    // Switch #ov-mode back to proj -> restores cleanly
+    await evalJS(`(() => { setOvMode('proj'); })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq && offW > 0 && offH > 0', 5000);
+    await waitFrames(3);
+    assert.equal(await evalJS('window.__renderInfo.drawCalls'), 3);
+    const ovProjShot = await captureCanvasPng();
+    const ovProjPx = sampleCssPixel(ovProjShot, ovGeom.cx + 22, ovGeom.cy);
+    const ovDeltaProj = Math.max(
+      Math.abs(ovProjPx[0] - ovOffPx[0]),
+      Math.abs(ovProjPx[1] - ovOffPx[1]),
+      Math.abs(ovProjPx[2] - ovOffPx[2])
+    );
+    assert.ok(ovDeltaProj >= 15, `Switching #ov-mode back to proj must restore visible overlay (${ovOffPx} -> ${ovProjPx})`);
+
+    // 4. Pixel-level shading & semi-transparency verification on BOTH WebGL2 and forced '2d'
+    await evalJS(`(() => {
+      if (run) document.getElementById('pp').click();
+      Bau = 0; bDia = false;
+      components = [
+        { id: nextId++, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 },
+        { id: nextId++, n: 2, l: 1, m: 0, amp: 0.5, phaseDeg: 0 },
+      ];
+      rebuildComponentList();
+      refresh(false, true);
+      setViewAngles(0, 0);
+      document.getElementById('tr').checked = false;
+      const ov = document.getElementById('ov');
+      if (ov.checked) { ov.checked = false; ov.dispatchEvent(new Event('change')); }
+    })()`);
+    await waitFrames(3);
+
+    const verifyShadingAndTransparency = async (expectedBackend) => {
+      await waitUntil(`window.__renderInfo && window.__renderInfo.backend === "${expectedBackend}"`, 4000);
+      // Place 1 front violet sphere at (x = 0.18*E, y = -0.8*E, z = 0.25*E)
+      // At tilt=0, az=0: sx = cx + x*S, sy = cy - z*S, depth = y = -0.8*E (dn=0.1, rad=4.56px, hueT=1.0)
+      const geom = await evalJS(`(() => {
+        P = [{ x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, -0.8 * E)), hist: [] }];
+        const S = Math.min(W, H * 1.15) / (2 * E);
+        return { sx: W / 2 + 0.18 * E * S, sy: H / 2 - 0.25 * E * S, bgX: W / 2 + 0.18 * E * S + 30, bgY: H / 2 - 0.25 * E * S };
+      })()`);
+      await waitFrames(4);
+      const frontShot = await captureCanvasPng();
+      const bgPx = sampleCssPixel(frontShot, geom.bgX, geom.bgY);
+
+      // Peak luminance near center (within 1.0 CSS px) vs limb samples at 2.8 CSS px (~0.62*rad)
+      let centerPeak = -1;
+      for (const [dx, dy] of [[0, 0], [0.6, 0], [-0.6, 0], [0, 0.6], [0, -0.6]]) {
+        centerPeak = Math.max(centerPeak, lumOf(sampleCssPixel(frontShot, geom.sx + dx, geom.sy + dy)));
+      }
+      const limbLums = [
+        lumOf(sampleCssPixel(frontShot, geom.sx + 2.8, geom.sy)),
+        lumOf(sampleCssPixel(frontShot, geom.sx - 2.8, geom.sy)),
+        lumOf(sampleCssPixel(frontShot, geom.sx, geom.sy + 2.8)),
+        lumOf(sampleCssPixel(frontShot, geom.sx, geom.sy - 2.8)),
+      ];
+      const avgLimbLum = limbLums.reduce((a, b) => a + b, 0) / limbLums.length;
+      const bgLum = lumOf(bgPx);
+
+      assert.ok(
+        bgLum - avgLimbLum > 35,
+        `[${expectedBackend}] Limb must be clearly darker than light background (bg=${bgLum.toFixed(1)}, limb=${avgLimbLum.toFixed(1)})`
+      );
+      assert.ok(
+        centerPeak > avgLimbLum + 30,
+        `[${expectedBackend}] Center peak (${centerPeak.toFixed(1)}) must be brighter than outer limb (${avgLimbLum.toFixed(1)}) due to camera-direction diffuse + specular shading`
+      );
+
+      // Now place a yellow-orange sphere directly behind the front violet sphere at (x = 0.18*E, y = +0.05*E, z = 0.25*E)
+      // If the front sphere is semi-transparent, the back sphere's yellow-orange hue must bleed through!
+      await evalJS(`(() => {
+        P = [
+          { x: 0.18 * E, y: 0.05 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, 0.05 * E)), hist: [] },
+          { x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, -0.8 * E)), hist: [] },
+        ];
+      })()`);
+      await waitFrames(4);
+      const overlapShot = await captureCanvasPng();
+
+      let maxBehindDiff = 0;
+      for (const [dx, dy] of [[0, 0], [1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5], [2.2, 0], [-2.2, 0]]) {
+        const p1 = sampleCssPixel(frontShot, geom.sx + dx, geom.sy + dy);
+        const p2 = sampleCssPixel(overlapShot, geom.sx + dx, geom.sy + dy);
+        const diff = Math.max(Math.abs(p1[0] - p2[0]), Math.abs(p1[1] - p2[1]), Math.abs(p1[2] - p2[2]));
+        if (diff > maxBehindDiff) maxBehindDiff = diff;
+      }
+      assert.ok(
+        maxBehindDiff >= 10,
+        `[${expectedBackend}] Underlying sphere must show through semi-transparent front sphere (maxDiff=${maxBehindDiff})`
+      );
+    };
+
+    // Run pixel check on WebGL2
+    await verifyShadingAndTransparency('webgl2');
+
+    // Run pixel check on forced '2d' fallback, verify #c-gl hidden, then restore WebGL2
+    await evalJS("window.__forceRenderer = '2d';");
+    await waitFrames(4);
+    const forced2dState = await evalJS(`({
+      info: window.__renderInfo,
+      glHidden: document.getElementById('c-gl').hidden,
+      glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+    })`);
+    assert.equal(forced2dState.info.backend, '2d');
+    assert.ok(forced2dState.glHidden || forced2dState.glVis === 'hidden', '#c-gl must be hidden when forced 2D is active');
+    await verifyShadingAndTransparency('2d');
+
+    await evalJS('window.__forceRenderer = null;');
+    await waitFrames(4);
+    const restoredGlState = await evalJS(`({
+      info: window.__renderInfo,
+      glHidden: document.getElementById('c-gl').hidden,
+      glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+    })`);
+    assert.equal(restoredGlState.info.backend, 'webgl2', 'Clearing __forceRenderer must restore WebGL2');
+    assert.equal(restoredGlState.glHidden, false);
+    assert.equal(restoredGlState.glVis, 'visible');
+
+    // 5. WebGL context loss & restoration recovery
+    await evalJS(`(() => {
+      const cnt = document.getElementById('cnt');
+      cnt.min = '50';
+      cnt.value = '120';
+      cnt.dispatchEvent(new Event('input'));
+      document.getElementById('tr').checked = true;
+      const ov = document.getElementById('ov');
+      if (!ov.checked) { ov.checked = true; ov.dispatchEvent(new Event('change')); }
+      if (!run) document.getElementById('pp').click();
+    })()`);
+    await waitFrames(3);
+
+    const hasLoseExt = await evalJS(`(() => {
+      const gl = document.getElementById('c-gl').getContext('webgl2');
+      const ext = gl && gl.getExtension('WEBGL_lose_context');
+      window.__e2eLoseExt = ext || null;
+      if (ext) ext.loseContext();
+      return Boolean(ext);
+    })()`);
+    assert.equal(hasLoseExt, true, 'Expected WEBGL_lose_context extension in SwiftShader WebGL2');
+
+    await waitUntil('window.__renderInfo && window.__renderInfo.backend === "2d"', 5000);
+    await waitFrames(4);
+    const lostState = await evalJS(`({
+      info: window.__renderInfo,
+      pLen: P.length,
+      glHidden: document.getElementById('c-gl').hidden,
+      glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+    })`);
+    assert.equal(lostState.info.backend, '2d');
+    assert.equal(lostState.info.sphereCount, lostState.pLen + 1);
+    assert.ok(lostState.glHidden || lostState.glVis === 'hidden', '#c-gl must be hidden during webglcontextlost');
+
+    await evalJS('window.__e2eLoseExt.restoreContext();');
+    await waitUntil('window.__renderInfo && window.__renderInfo.backend === "webgl2"', 5000);
+    await waitFrames(4);
+    const recState = await evalJS(`({
+      info: window.__renderInfo,
+      pLen: P.length,
+      glHidden: document.getElementById('c-gl').hidden,
+      glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+    })`);
+    assert.equal(recState.info.backend, 'webgl2');
+    assert.equal(recState.info.sphereCount, recState.pLen + 1);
+    assert.ok(recState.info.drawCalls >= 1 && recState.info.drawCalls <= 3);
+    assert.equal(recState.glHidden, false);
+    assert.equal(recState.glVis, 'visible');
+
+    // 5b. Batched trails (single-mode circular arcs) & dark theme switch under WebGL2
+    await evalJS(`(() => {
+      components = [{ id: nextId++, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }];
+      rebuildComponentList();
+      refresh(false, true);
+      setViewAngles(35 * Math.PI / 180, 0);
+      document.getElementById('tr').checked = true;
+      if (!run) document.getElementById('pp').click();
+    })()`);
+    await waitFrames(4);
+    const trailsOnInfo = await evalJS('window.__renderInfo');
+    assert.equal(trailsOnInfo.backend, 'webgl2');
+    assert.ok(trailsOnInfo.drawCalls <= 3);
+    assert.ok(trailsOnInfo.lineVerts > 500, `Expected batched trail vertices > 500 for 120 circulating electrons, got ${trailsOnInfo.lineVerts}`);
+
+    await evalJS("document.getElementById('tr').checked = false;");
+    await waitFrames(3);
+    const trailsOffInfo = await evalJS('window.__renderInfo');
+    assert.ok(trailsOffInfo.lineVerts > 0 && trailsOffInfo.lineVerts < 200, `Expected z-axis only (<200 verts) when trails off, got ${trailsOffInfo.lineVerts}`);
+
+    await cdp.call('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-color-scheme', value: 'dark' }],
+    });
+    await waitUntil('theme.bgR < 0.2 && ovHasImage && !ovBusy && !overlayDirty', 5000);
+    await waitFrames(4);
+    const darkState = await evalJS('({ info: window.__renderInfo, bgR: theme.bgR })');
+    assert.equal(darkState.info.backend, 'webgl2');
+    assert.ok(darkState.bgR < 0.2, `Expected dark theme bgR < 0.2, got ${darkState.bgR}`);
+    assert.ok(darkState.info.drawCalls <= 3);
+
+    // 6. Verify zero console/page runtime exceptions across the entire WebGL2/2D session
+    const errors = cdp.events.filter(
+      (e) =>
+        e.method === 'Runtime.exceptionThrown' ||
+        (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error')
+    );
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
   } finally {
     try { cdp?.ws?.close(); } catch { /* ignore */ }
