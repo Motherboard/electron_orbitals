@@ -572,7 +572,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       document.getElementById('ov-mode').value = 'proj';
       document.getElementById('ov-mode').dispatchEvent(new Event('change'));
     })()`);
-    await new Promise((r) => setTimeout(r, 100));
+    await waitUntil('ovHasImage && ovMode === "proj" && !ovBusy', 2000);
     const projAlphaStats = await evalJS(`(() => {
       const img = offCtx.getImageData(0, 0, offW, offH).data;
       let maxA = 0;
@@ -966,6 +966,156 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.ok(Math.max(...tiltInputTimes) < 16, `Expected #tilt input dispatch < 16 ms, got ${Math.max(...tiltInputTimes).toFixed(2)} ms`);
     assert.ok(workerLive.medRaf < 25, `Expected smooth ~60 Hz rAF cadence during 4f->5g, got median ${workerLive.medRaf.toFixed(2)} ms`);
     assert.equal(workerLive.ovHasImage, true);
+
+    // 5h. Mouse drag & keyboard 3D view rotation on #c (azimuth sign + negative tilt + rotated 2p_x overlay + modifier guard + single-state skip + reset)
+    await evalJS(`(() => {
+      Bau = 0; bDia = false;
+      components = [
+        { id: nextId++, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+        { id: nextId++, n: 2, l: 1, m: -1, amp: 1, phaseDeg: 180 },
+      ];
+      rebuildComponentList();
+      setViewAngles(Math.PI / 2, 0);
+      setOvMode('proj');
+      refresh(false, true);
+    })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq', 4000);
+
+    const dragStep1 = await evalJS(`(() => {
+      const sampleDirs = () => {
+        const img = offCtx.getImageData(0, 0, offW, offH).data;
+        const cxI = Math.floor(offW / 2), cyI = Math.floor(offH / 2);
+        const rPx = Math.max(2, Math.round(Math.min(offW, offH) * 0.14));
+        const dPx = Math.max(2, Math.round(rPx * Math.SQRT1_2));
+        const aAt = (x, y) => img[(Math.max(0, Math.min(offH - 1, y)) * offW + Math.max(0, Math.min(offW - 1, x))) * 4 + 3];
+        return {
+          h: aAt(cxI + rPx, cyI) + aAt(cxI - rPx, cyI),
+          v: aAt(cxI, cyI + rPx) + aAt(cxI, cyI - rPx),
+          // +45° CCW rotates (+x, 0) to top-right (cx+d, cy-d) and (-x, 0) to bottom-left (cx-d, cy+d)
+          d1: aAt(cxI + dPx, cyI - dPx) + aAt(cxI - dPx, cyI + dPx),
+          d2: aAt(cxI - dPx, cyI - dPx) + aAt(cxI + dPx, cyI + dPx),
+        };
+      };
+      window.__e2eSampleDirs = sampleDirs;
+      const beforeProj = sampleDirs();
+
+      const c = document.getElementById('c');
+      const rect = c.getBoundingClientRect();
+      const x0 = rect.left + rect.width / 2, y0 = rect.top + rect.height / 2;
+
+      // Secondary mouse button must not start drag
+      c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, pointerType: 'mouse', button: 2, clientX: x0, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, pointerType: 'mouse', clientX: x0 + 60, clientY: y0 - 60, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, pointerType: 'mouse', button: 2, clientX: x0 + 60, clientY: y0 - 60, bubbles: true }));
+      const afterRightClickAz = +document.getElementById('azim').value;
+
+      // Horizontal drag right by ~45° (verifies exact rotation sign, not just 90° magnitude)
+      const dx45 = Math.max(220, Math.min(W, H) * 0.9) / 4;
+      c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, pointerType: 'mouse', button: 0, clientX: x0, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: x0 + dx45, clientY: y0, bubbles: true }));
+      const draggingDuring = c.classList.contains('dragging');
+      c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', button: 0, clientX: x0 + dx45, clientY: y0, bubbles: true }));
+      const draggingAfter = c.classList.contains('dragging');
+      const azAfter45 = +document.getElementById('azim').value;
+      return { beforeProj, afterRightClickAz, draggingDuring, draggingAfter, azAfter45 };
+    })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq', 4000);
+    const afterProj45 = await evalJS('window.__e2eSampleDirs()');
+
+    // Drag another +45° to reach ~90°
+    const azAfter90 = await evalJS(`(() => {
+      const c = document.getElementById('c');
+      const rect = c.getBoundingClientRect();
+      const x0 = rect.left + rect.width / 2, y0 = rect.top + rect.height / 2;
+      const dx45 = Math.max(220, Math.min(W, H) * 0.9) / 4;
+      c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 3, pointerType: 'mouse', button: 0, clientX: x0, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, pointerType: 'mouse', clientX: x0 + dx45, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, pointerType: 'mouse', button: 0, clientX: x0 + dx45, clientY: y0, bubbles: true }));
+      return +document.getElementById('azim').value;
+    })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq', 4000);
+    const afterProj90 = await evalJS('window.__e2eSampleDirs()');
+
+    await evalJS(`setOvMode('slice')`);
+    await waitUntil('ovHasImage && ovMode === "slice" && !ovBusy && !overlayDirty && !ovDesiredReq', 4000);
+    const dragStep2 = await evalJS(`(() => {
+      const afterSlice90 = window.__e2eSampleDirs();
+      const c = document.getElementById('c');
+      const rect = c.getBoundingClientRect();
+      const x0 = rect.left + rect.width / 2, y0 = rect.top + rect.height / 2;
+
+      // Drag vertically upward past equator into negative tilt
+      setViewAngles(10 * Math.PI / 180, 0);
+      c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 2, pointerType: 'mouse', button: 0, clientX: x0, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 2, pointerType: 'mouse', clientX: x0, clientY: y0 - 140, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 2, pointerType: 'mouse', button: 0, clientX: x0, clientY: y0 - 140, bubbles: true }));
+      const negTilt = +document.getElementById('tilt').value;
+
+      // Keyboard arrow rotation, modifier-key pass-through (Ctrl+R / Meta+R / Ctrl+0 / Alt+Arrow), and double-click reset
+      c.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      const keyAz = +document.getElementById('azim').value;
+      const evCtrlR = new KeyboardEvent('keydown', { key: 'r', ctrlKey: true, cancelable: true, bubbles: true });
+      c.dispatchEvent(evCtrlR);
+      const evMetaR = new KeyboardEvent('keydown', { key: 'r', metaKey: true, cancelable: true, bubbles: true });
+      c.dispatchEvent(evMetaR);
+      const evCtrl0 = new KeyboardEvent('keydown', { key: '0', ctrlKey: true, cancelable: true, bubbles: true });
+      c.dispatchEvent(evCtrl0);
+      const evAltArrow = new KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, cancelable: true, bubbles: true });
+      c.dispatchEvent(evAltArrow);
+      const azAfterModKeys = +document.getElementById('azim').value;
+      const tiltAfterModKeys = +document.getElementById('tilt').value;
+      const modPrevented = evCtrlR.defaultPrevented || evMetaR.defaultPrevented || evCtrl0.defaultPrevented || evAltArrow.defaultPrevented;
+
+      c.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      const resetTilt = +document.getElementById('tilt').value;
+      const resetAz = +document.getElementById('azim').value;
+      delete window.__e2eSampleDirs;
+      return { afterSlice90, negTilt, keyAz, azAfterModKeys, tiltAfterModKeys, modPrevented, resetTilt, resetAz };
+    })()`);
+
+    // Single eigenstate horizontal drag must not trigger redundant overlay worker jobs
+    await evalJS(`(() => {
+      components = [{ id: nextId++, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }];
+      rebuildComponentList();
+      setOvMode('proj');
+      refresh(false, true);
+    })()`);
+    await waitUntil('ovHasImage && !ovBusy && !overlayDirty && !ovDesiredReq', 4000);
+    const singleAzCheck = await evalJS(`(() => {
+      const beforeJobId = ovJobId;
+      const c = document.getElementById('c');
+      const rect = c.getBoundingClientRect();
+      const x0 = rect.left + rect.width / 2, y0 = rect.top + rect.height / 2;
+      c.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 4, pointerType: 'mouse', button: 0, clientX: x0, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointermove', { pointerId: 4, pointerType: 'mouse', clientX: x0 + 60, clientY: y0, bubbles: true }));
+      c.dispatchEvent(new PointerEvent('pointerup', { pointerId: 4, pointerType: 'mouse', button: 0, clientX: x0 + 60, clientY: y0, bubbles: true }));
+      const azMoved = +document.getElementById('azim').value;
+      const afterJobId = ovJobId;
+      document.getElementById('view-rst').click();
+      const rstAz = +document.getElementById('azim').value;
+      return { beforeJobId, afterJobId, azMoved, rstAz };
+    })()`);
+
+    const dragCheck = { ...dragStep1, afterProj45, azAfter90, afterProj90, ...dragStep2, singleAzCheck };
+    assert.equal(dragCheck.afterRightClickAz, 0, 'Right-click drag must not rotate view');
+    assert.equal(dragCheck.draggingDuring, true, 'Expected .dragging class during pointer drag');
+    assert.equal(dragCheck.draggingAfter, false, 'Expected .dragging class cleared on pointerup');
+    assert.ok(Math.abs(dragCheck.azAfter45 - 45) <= 2, `Expected ~45° azimuth after horizontal drag, got ${dragCheck.azAfter45}°`);
+    assert.ok(Math.abs(dragCheck.azAfter90 - 90) <= 2, `Expected ~90° azimuth after second drag, got ${dragCheck.azAfter90}°`);
+    assert.ok(dragCheck.beforeProj.h > dragCheck.beforeProj.v * 3, `Expected 2p_x lobes horizontal at az=0° (h=${dragCheck.beforeProj.h}, v=${dragCheck.beforeProj.v})`);
+    assert.ok(dragCheck.afterProj45.d1 > dragCheck.afterProj45.d2 * 3, `Expected 2p_x lobes along top-right/bottom-left diagonal after +45° drag (d1=${dragCheck.afterProj45.d1}, d2=${dragCheck.afterProj45.d2})`);
+    assert.ok(dragCheck.afterProj90.v > dragCheck.afterProj90.h * 3, `Expected 2p_x lobes vertical after +90° drag in proj mode (h=${dragCheck.afterProj90.h}, v=${dragCheck.afterProj90.v})`);
+    assert.ok(dragCheck.afterSlice90.v > dragCheck.afterSlice90.h * 3, `Expected 2p_x lobes vertical after +90° drag in slice mode (h=${dragCheck.afterSlice90.h}, v=${dragCheck.afterSlice90.v})`);
+    assert.ok(dragCheck.negTilt < -10, `Expected upward drag to tilt below equator (< -10°), got ${dragCheck.negTilt}°`);
+    assert.equal(dragCheck.keyAz, 5, `Expected ArrowRight key to rotate azimuth by +5°, got ${dragCheck.keyAz}°`);
+    assert.equal(dragCheck.modPrevented, false, 'Modifier shortcuts (Ctrl/Meta+R, Ctrl+0, Alt+Arrow) must not be prevented on canvas');
+    assert.equal(dragCheck.azAfterModKeys, 5, 'Modifier shortcuts must not alter azimuth');
+    assert.equal(dragCheck.tiltAfterModKeys, dragCheck.negTilt, 'Modifier shortcuts must not reset tilt');
+    assert.equal(dragCheck.resetTilt, 35, 'Expected dblclick to reset tilt to 35°');
+    assert.equal(dragCheck.resetAz, 0, 'Expected dblclick to reset azimuth to 0°');
+    assert.ok(dragCheck.singleAzCheck.azMoved > 10, `Expected horizontal drag on 1s to update azimuth, got ${dragCheck.singleAzCheck.azMoved}°`);
+    assert.equal(dragCheck.singleAzCheck.afterJobId, dragCheck.singleAzCheck.beforeJobId, 'Horizontal drag on single eigenstate must not trigger redundant overlay worker jobs');
+    assert.equal(dragCheck.singleAzCheck.rstAz, 0, 'Expected Reset view button to reset azimuth to 0°');
 
     // 6. Verify zero runtime or console errors across the session
     const errors = cdp.events.filter(

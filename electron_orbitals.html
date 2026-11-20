@@ -22,7 +22,9 @@ select,button{font:inherit;font-size:max(1rem,1em);color:var(--fg);background:va
 button{cursor:pointer}
 button:disabled,select:disabled,input:disabled{opacity:.5;cursor:default}
 select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-canvas{width:100%;height:min(54vh,480px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg)}
+canvas{width:100%;height:min(54vh,480px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas.dragging{cursor:grabbing}
+canvas:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 #info{font-size:13px;color:var(--mut);margin:8px 0 6px;min-height:2.8em}
 #info b{color:var(--fg);font-weight:600}
 input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accent-color:var(--acc)}
@@ -193,7 +195,8 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <button type="button" id="tut-toggle" aria-controls="tut-panel" aria-expanded="false">Tutorial</button>
 </header>
 
-<canvas id="c" aria-label="Animated Bohmian electron trajectories"></canvas>
+<canvas id="c" tabindex="0" aria-label="Animated Bohmian electron trajectories. Drag or use arrow keys to rotate the 3D view; press 0 to reset."></canvas>
+<div id="view-live" class="sr-only" aria-live="polite"></div>
 <div id="info"></div>
 
 <section id="sup" aria-labelledby="sup-title">
@@ -268,7 +271,10 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <label class="lab" for="spd" style="min-width:44px">Speed</label><input type="range" id="spd" min="0.1" max="3" step="0.1" value="0.8"><span class="val" id="sv" style="min-width:34px">0.8×</span>
 </div>
 <div class="row">
-<label class="lab" for="tilt">Tilt</label><input type="range" id="tilt" min="0" max="90" step="1" value="35"><span class="val" id="tv">35°</span>
+<label class="lab" for="tilt">Tilt</label><input type="range" id="tilt" min="-90" max="90" step="1" value="35"><span class="val" id="tv">35°</span>
+</div>
+<div class="row">
+<label class="lab" for="azim">Rotate</label><input type="range" id="azim" min="-180" max="180" step="1" value="0"><span class="val" id="av">0°</span><button type="button" class="chip" id="view-rst" title="Reset view angle (double-click canvas)">Reset view</button>
 </div>
 <div class="row">
 <label class="lab" for="cnt">Electrons</label><input type="range" id="cnt" min="50" max="600" step="10" value="220"><span class="val" id="cv">220</span>
@@ -2893,7 +2899,7 @@ sum+=2*((ar*br+ai*bi)*gRe[m][idx]-(ar*bi-ai*br)*gIm[m][idx]);
 m++;}}
 return sum>0?sum:0;}
 
-let ovCacheKey='',ovVals=new Float32Array(0),ovAlphas=new Float64Array(32);
+let ovCacheKey='',ovVals=new Float32Array(0),ovAlphas=new Float64Array(32),ovRotAlphas=new Float64Array(32),ovGridPhR=new Float64Array(32),ovGridPhI=new Float64Array(32);
 let ovSliceBasis=[],ovSliceGrid=null,ovProjGrid=null,ovProjPair=null,ovProjPairRadKey='',ovProjPairRef=1;
 function getOvVals(len){if(ovVals.length!==len)ovVals=new Float32Array(len);else ovVals.fill(0);return ovVals;}
 
@@ -2969,7 +2975,7 @@ const al=ovAlpha(vals[idx]*invRef,isSlice),q=idx*4;
 rgba[q]=ovR;rgba[q+1]=ovG;rgba[q+2]=ovB;rgba[q+3]=Math.round(al*255);}
 return rgba;}
 
-function renderAnalyticOverlayData(bases,mags,alphas,sigKey,radKey,isSlice,fixedSliceRef,vw,vh,p,S,cx,cy,isDrag,ovR,ovG,ovB,animate){
+function renderAnalyticOverlayData(bases,mags,alphas,sigKey,radKey,isSlice,fixedSliceRef,vw,vh,p,S,cx,cy,isDrag,ovR,ovG,ovB,animate,az=0){
 const K=bases.length,csz=isSlice?(isDrag?6:(animate?(K>8?5:4):(K>8?4:3))):(isDrag?8:(animate?6:4));
 const w=Math.ceil(vw/csz),h=Math.ceil(vh/csz),len=w*h;
 const k=(isSlice?'slice':'proj')+':'+vw+'x'+vh+':'+p+':'+sigKey+':'+E+(isDrag?':D':(animate?':A':':F'));
@@ -2978,23 +2984,30 @@ ovCacheKey=k;
 if(isSlice)buildSliceBasisData(bases,w,h,csz,cx,cy,p,S);
 else{ovProjPair=computeProjPairData(bases,mags,w,h,csz,cx,cy,S,Math.cos(p),Math.sin(p),E,isDrag?10:(animate?14:22));ovProjPairRef=ovProjPair.pRef;ovProjPairRadKey=k+':'+radKey;}}
 if(!isSlice&&ovProjPairRadKey!==k+':'+radKey){ovProjPairRef=computeProjPairRef(ovProjPair,mags);ovProjPairRadKey=k+':'+radKey;}
+let useAlphas=alphas;
+if(az){
+if(ovRotAlphas.length<K*2)ovRotAlphas=new Float64Array(K*2);
+for(let m=0;m<K;m++){
+const mAz=bases[m].m*az,phR=Math.cos(mAz),phI=-Math.sin(mAz),aRe=alphas[m*2],aIm=alphas[m*2+1];
+ovRotAlphas[m*2]=aRe*phR-aIm*phI;ovRotAlphas[m*2+1]=aRe*phI+aIm*phR;}
+useAlphas=ovRotAlphas;}
 const vals=getOvVals(len);
 let frameMax=0;
 if(isSlice){
 for(let idx=0;idx<len;idx++){
 let re=0,im=0;
 for(let m=0;m<K;m++){
-const aRe=alphas[m*2],aIm=alphas[m*2+1],sb=ovSliceBasis[m],pr=sb.re[idx],pi=sb.im[idx];
+const aRe=useAlphas[m*2],aIm=useAlphas[m*2+1],sb=ovSliceBasis[m],pr=sb.re[idx],pi=sb.im[idx];
 re+=aRe*pr-aIm*pi;im+=aRe*pi+aIm*pr;}
 const v=re*re+im*im;vals[idx]=v;if(v>frameMax)frameMax=v;}
 const den=fixedSliceRef!==null?fixedSliceRef:Math.max(frameMax,1e-30);
 return{rgba:fillOverlayRGBA(vals,1/Math.max(den,1e-30),true,w,h,ovR,ovG,ovB),w,h,cellSz:csz};}
-for(let idx=0;idx<len;idx++){const v=evalPairProjPixel(ovProjPair,idx,alphas);vals[idx]=v;if(v>frameMax)frameMax=v;}
+for(let idx=0;idx<len;idx++){const v=evalPairProjPixel(ovProjPair,idx,useAlphas);vals[idx]=v;if(v>frameMax)frameMax=v;}
 const den=fixedSliceRef!==null?ovProjPairRef:Math.max(frameMax,1e-30);
 return{rgba:fillOverlayRGBA(vals,1/Math.max(den,1e-30),false,w,h,ovR,ovG,ovB),w,h,cellSz:csz};}
 
 function computeOverlayRGBA(req){
-const{ovMode:mode,W:vw,H:vh,p,S,cx,cy,tiltDragging:isDrag,animate,ovR,ovG,ovB}=req;
+const{ovMode:mode,W:vw,H:vh,p,az=0,S,cx,cy,tiltDragging:isDrag,animate,ovR,ovG,ovB}=req;
 if(!(vw>0&&vh>0))return null;
 const isSlice=mode==='slice',cp=Math.cos(p),sp=Math.sin(p);
 if(pulse){
@@ -3002,7 +3015,7 @@ if(pulse.photonSim){
 const bs=pulse.photonSim.bases,c=pulse.photonSim.c1v;
 if(!pulse.stateMags||pulse.stateMags.length!==bs.length)pulse.stateMags=new Array(bs.length);
 for(let i=0;i<bs.length;i++)pulse.stateMags[i]=Math.hypot(c[i*2],c[i*2+1]);
-return renderAnalyticOverlayData(bs,pulse.stateMags,c,'PHOTON:'+pulse.basesSig,'dyn',isSlice,null,vw,vh,p,S,cx,cy,isDrag,ovR,ovG,ovB,animate);}
+return renderAnalyticOverlayData(bs,pulse.stateMags,c,'PHOTON:'+pulse.basesSig,'dyn',isSlice,null,vw,vh,p,S,cx,cy,isDrag,ovR,ovG,ovB,animate,az);}
 const g=pulse.grid;if(!g)return null;
 const csz=isSlice?4:8,w=Math.ceil(vw/csz),h=Math.ceil(vh/csz),len=w*h;
 const k=mode+':'+vw+'x'+vh+':'+p+':GRID:'+g.Lmax+':'+g.Nr+':'+E;
@@ -3011,6 +3024,9 @@ const vals=getOvVals(len),{Nr,Mch,URe,UIm,chans,actChans,nActCh,scratch}=g;
 let frameMax=0;
 if(isSlice){
 const{j1Arr,w0Arr,w1Arr,w2Arr,w3Arr,FRe,FIm}=ovSliceGrid,gDr=g.dr;
+if(az){
+if(ovGridPhR.length<nActCh){ovGridPhR=new Float64Array(nActCh);ovGridPhI=new Float64Array(nActCh);}
+for(let ai=0;ai<nActCh;ai++){const mAz=chans[actChans[ai]].m*az;ovGridPhR[ai]=Math.cos(mAz);ovGridPhI[ai]=-Math.sin(mAz);}}
 for(let idx=0;idx<len;idx++){
 const j1=j1Arr[idx],j0=j1-1,j2=j1+1,j3=j1+2,inB=j0>=0&&j3<Nr;
 const w0=w0Arr[idx],w1=w1Arr[idx],w2=w2Arr[idx],w3=w3Arr[idx];
@@ -3020,7 +3036,8 @@ for(let ai=0;ai<nActCh;ai++){
 const c=actChans[ai],l=chans[c].l;
 const r0=inB?URe[o0+c]:evalGridGhostU(URe,j0,c,Mch,Nr,gDr,l),r1=inB?URe[o1+c]:evalGridGhostU(URe,j1,c,Mch,Nr,gDr,l),r2=inB?URe[o2+c]:evalGridGhostU(URe,j2,c,Mch,Nr,gDr,l),r3=inB?URe[o3+c]:evalGridGhostU(URe,j3,c,Mch,Nr,gDr,l);
 const i0=inB?UIm[o0+c]:evalGridGhostU(UIm,j0,c,Mch,Nr,gDr,l),i1=inB?UIm[o1+c]:evalGridGhostU(UIm,j1,c,Mch,Nr,gDr,l),i2=inB?UIm[o2+c]:evalGridGhostU(UIm,j2,c,Mch,Nr,gDr,l),i3=inB?UIm[o3+c]:evalGridGhostU(UIm,j3,c,Mch,Nr,gDr,l);
-const uvR=w0*r0+w1*r1+w2*r2+w3*r3,uvI=w0*i0+w1*i1+w2*i2+w3*i3;
+let uvR=w0*r0+w1*r1+w2*r2+w3*r3,uvI=w0*i0+w1*i1+w2*i2+w3*i3;
+if(az){const pr=ovGridPhR[ai],pi=ovGridPhI[ai],nr=uvR*pr-uvI*pi,ni=uvR*pi+uvI*pr;uvR=nr;uvI=ni;}
 const fR=FRe[c][idx],fI=FIm[c][idx];
 re+=uvR*fR-uvI*fI;im+=uvR*fI+uvI*fR;}
 const v=re*re+im*im;vals[idx]=v;if(v>frameMax)frameMax=v;}
@@ -3031,7 +3048,11 @@ sampRe.fill(0);sampIm.fill(0);
 for(let ai=0;ai<nActCh;ai++){
 const c=actChans[ai];
 ensureProjChanBuilt(pg,g,c);
-for(let j=0;j<Nr;j++){const off=j*Mch+c;uTmpR[j]=URe[off];uTmpI[j]=UIm[off];}
+if(az){
+const mAz=chans[c].m*az,pr=Math.cos(mAz),pi=-Math.sin(mAz);
+for(let j=0;j<Nr;j++){const off=j*Mch+c,ur=URe[off],ui=UIm[off];uTmpR[j]=ur*pr-ui*pi;uTmpI[j]=ur*pi+ui*pr;}
+}else{
+for(let j=0;j<Nr;j++){const off=j*Mch+c;uTmpR[j]=URe[off];uTmpI[j]=UIm[off];}}
 const fR=FRe[c],fI=FIm[c];
 for(let s=0;s<nSamp;s++){
 const j0=j0Arr[s],t=tArr[s];
@@ -3064,7 +3085,7 @@ return{rgba:fillOverlayRGBA(vals,1/Math.max(pMax,1e-30),false,w,h,ovR,ovG,ovB),w
 
 if(ovAlphas.length<eff.length*2)ovAlphas=new Float64Array(eff.length*2);
 evalAlphas(tSim,ovAlphas);
-return renderAnalyticOverlayData(eff.map(x=>x.b),eff.map(x=>x.mag),ovAlphas,stateSig,radSig,isSlice,refDens,vw,vh,p,S,cx,cy,isDrag,ovR,ovG,ovB,animate);}
+return renderAnalyticOverlayData(eff.map(x=>x.b),eff.map(x=>x.mag),ovAlphas,stateSig,radSig,isSlice,refDens,vw,vh,p,S,cx,cy,isDrag,ovR,ovG,ovB,animate,az);}
 /* === WORKER_CORE_END === */
 
 /* ---------- UI ---------- */
@@ -3542,19 +3563,114 @@ const capAu=B_PHYS_MAX_T/AUT,clamp=!bToy&&Math.abs(Bau)>capAu;
 if(clamp)Bau=Math.sign(Bau)*capAu;
 rescaleB();
 if(clamp)applyBauChange();};
-let tiltDragging=false,tiltTimer=0;
-const endTiltDrag=()=>{if(tiltTimer){clearTimeout(tiltTimer);tiltTimer=0;}if(tiltDragging){tiltDragging=false;key='';overlayDirty=true;requestOverlayNow();}};
+const DEFAULT_TILT_DEG=35;
+let viewTiltRad=DEFAULT_TILT_DEG*Math.PI/180,viewAzRad=0,lastTiltElVal=String(DEFAULT_TILT_DEG),lastAzElVal='0';
+let tiltDragging=false,tiltTimer=0,viewLiveTimer=0;
+function wrapAzRad(a){const r=((a+Math.PI)%TAU+TAU)%TAU-Math.PI;return Math.abs(r)<1e-6?0:r;}
+function getTiltRad(){
+const v=$('tilt').value;
+if(v!==lastTiltElVal){lastTiltElVal=v;viewTiltRad=(+v)*Math.PI/180;}
+return viewTiltRad;}
+function getAzRad(){
+const el=$('azim');
+if(el){const v=el.value;if(v!==lastAzElVal){lastAzElVal=v;viewAzRad=wrapAzRad((+v)*Math.PI/180);}}
+return viewAzRad;}
+function announceView(msg){
+const el=$('view-live');if(!el)return;
+if(viewLiveTimer)clearTimeout(viewLiveTimer);
+el.textContent='';
+viewLiveTimer=setTimeout(()=>{el.textContent=msg;viewLiveTimer=setTimeout(()=>{el.textContent='';viewLiveTimer=0;},1200);},80);}
+function setViewAngles(tiltRad,azRad){
+viewTiltRad=Math.max(-Math.PI/2,Math.min(Math.PI/2,tiltRad));
+const tDeg=Math.round(viewTiltRad*180/Math.PI)||0;
+lastTiltElVal=String(tDeg);
+$('tilt').value=lastTiltElVal;
+$('tv').textContent=tDeg+'°';
+viewAzRad=wrapAzRad(azRad);
+const aDeg=Math.round(viewAzRad*180/Math.PI)||0;
+lastAzElVal=String(aDeg);
+const azEl=$('azim');
+if(azEl){azEl.value=lastAzElVal;$('av').textContent=aDeg+'°';}}
+const endTiltDrag=()=>{if(tiltTimer){clearTimeout(tiltTimer);tiltTimer=0;}if(tiltDragging){tiltDragging=false;key='';requestOverlayNow();}};
 $('tilt').onpointerdown=()=>{tiltDragging=true;};
 $('tilt').onpointerup=endTiltDrag;
 $('tilt').onpointercancel=endTiltDrag;
 $('tilt').onchange=endTiltDrag;
 $('tilt').oninput=e=>{
+lastTiltElVal=e.target.value;
+viewTiltRad=(+e.target.value)*Math.PI/180;
 $('tv').textContent=e.target.value+'°';
-overlayDirty=true;
 requestOverlayNow();
 if(!tiltDragging)return;
 if(tiltTimer)clearTimeout(tiltTimer);
 tiltTimer=setTimeout(endTiltDrag,160);};
+$('azim').oninput=e=>{
+lastAzElVal=e.target.value;
+viewAzRad=wrapAzRad((+e.target.value)*Math.PI/180);
+$('av').textContent=e.target.value+'°';
+requestOverlayNow();};
+function resetViewAngles(){
+endTiltDrag();
+setViewAngles(DEFAULT_TILT_DEG*Math.PI/180,0);
+requestOverlayNow();
+announceView('View reset to default angle');}
+$('view-rst').onclick=resetViewAngles;
+
+/* ---------- canvas pointer drag & keyboard 3D orbit ---------- */
+let dragPid=null,dragStartX=0,dragStartY=0,dragLastX=0,dragLastY=0,dragMoved=false,dragTiltMoved=false;
+cv.addEventListener('pointerdown',e=>{
+if(e.pointerType==='mouse'&&e.button!==0)return;
+if(dragPid!==null)return;
+dragPid=e.pointerId;
+dragStartX=dragLastX=e.clientX;
+dragStartY=dragLastY=e.clientY;
+dragMoved=false;dragTiltMoved=false;
+try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+cv.addEventListener('pointermove',e=>{
+if(e.pointerId!==dragPid)return;
+if(e.isTrusted&&e.pointerType==='mouse'&&(e.buttons&1)===0){endCanvasDrag(e);return;}
+if(!dragMoved){
+if(Math.hypot(e.clientX-dragStartX,e.clientY-dragStartY)<3)return;
+dragMoved=true;cv.classList.add('dragging');}
+const dx=e.clientX-dragLastX,dy=e.clientY-dragLastY;
+dragLastX=e.clientX;dragLastY=e.clientY;
+const sens=Math.PI/Math.max(220,Math.min(W||320,H||320)*0.9);
+const curTilt=getTiltRad(),curAz=getAzRad();
+const nextTilt=Math.max(-Math.PI/2,Math.min(Math.PI/2,curTilt+dy*sens));
+const nextAz=curAz+dx*sens;
+if(Math.abs(nextTilt-curTilt)>1e-6){tiltDragging=true;dragTiltMoved=true;}
+setViewAngles(nextTilt,nextAz);
+requestOverlayNow();});
+const endCanvasDrag=e=>{
+if(dragPid===null)return;
+if(e&&e.pointerId!==undefined&&e.pointerId!==dragPid)return;
+const pid=dragPid,wasTilt=dragTiltMoved,wasMoved=dragMoved;
+dragPid=null;dragMoved=false;dragTiltMoved=false;
+try{if(cv.hasPointerCapture(pid))cv.releasePointerCapture(pid);}catch(_){}
+cv.classList.remove('dragging');
+if(wasTilt)endTiltDrag();
+else if(wasMoved)requestOverlayNow();};
+cv.addEventListener('lostpointercapture',endCanvasDrag);
+cv.addEventListener('pointerup',endCanvasDrag);
+cv.addEventListener('pointercancel',endCanvasDrag);
+cv.addEventListener('dblclick',resetViewAngles);
+cv.addEventListener('keydown',e=>{
+if(e.ctrlKey||e.metaKey||e.altKey)return;
+const step=(e.shiftKey?15:5)*Math.PI/180;
+if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
+e.preventDefault();
+const curTilt=getTiltRad(),curAz=getAzRad();
+let nextTilt=curTilt,nextAz=curAz;
+if(e.key==='ArrowLeft')nextAz-=step;
+else if(e.key==='ArrowRight')nextAz+=step;
+else if(e.key==='ArrowUp')nextTilt-=step;
+else nextTilt+=step;
+setViewAngles(nextTilt,nextAz);
+requestOverlayNow();
+const tDeg=Math.round(getTiltRad()*180/Math.PI)||0,aDeg=Math.round(getAzRad()*180/Math.PI)||0;
+announceView('View rotated: tilt '+tDeg+' degrees, rotation '+aDeg+' degrees');
+}else if(e.key==='0'||e.key==='r'||e.key==='R'){
+e.preventDefault();resetViewAngles();}});
 $('spd').oninput=e=>{$('sv').textContent=(+e.target.value).toFixed(1)+'×';};
 $('cnt').oninput=e=>{$('cv').textContent=e.target.value;reseed();};
 let run=true;
@@ -3587,7 +3703,7 @@ let offW=0,offH=0,offIm=null,overlayDirty=true,cellSz=3,ovMode='proj';
 let ovHasImage=false,ovPaintedKey='';
 let simWorker=null,simWorkerUrl='',simEpoch=0,simBusy=false,simInFlight=0,lastSimDispatch=0;
 let simQueue=[],simQueueHasEnd=false,simQueuedEndT=0,playSimT=0,emaWorkRatio=0.35,lastOvReqT=0;
-let ovBusy=false,ovJobId=0,ovInFlightJobId=0,ovMinValidJobId=1,ovDesiredReq=null;
+let ovBusy=false,ovJobId=0,ovInFlightJobId=0,ovInFlightKey='',ovMinValidJobId=1,ovDesiredReq=null;
 
 function resetSimPipeline(baseT){
 const t0=baseT!==undefined?baseT:(pulse?pulse.t:tSim);
@@ -3598,9 +3714,9 @@ ovMode=mode==='slice'?'slice':'proj';
 const el=$('ov-mode');
 if(el&&el.value!==ovMode)el.value=ovMode;
 key='';ovPaintedKey='';ovHasImage=false;overlayDirty=true;
-ovDesiredReq=null;ovMinValidJobId=ovJobId+1;
+ovDesiredReq=null;ovInFlightKey='';ovMinValidJobId=ovJobId+1;
 requestOverlayNow();}
-$('ov').onchange=()=>{$('ov-mode').disabled=!$('ov').checked;overlayDirty=true;if(!$('ov').checked){ovDesiredReq=null;ovMinValidJobId=ovJobId+1;}else requestOverlayNow();};
+$('ov').onchange=()=>{$('ov-mode').disabled=!$('ov').checked;overlayDirty=true;if(!$('ov').checked){ovDesiredReq=null;ovInFlightKey='';ovMinValidJobId=ovJobId+1;}else requestOverlayNow();};
 $('ov-mode').onchange=()=>setOvMode($('ov-mode').value);
 setOvMode($('ov-mode').value);
 
@@ -3631,7 +3747,7 @@ simEpoch++;
 resetSimPipeline(pulse?pulse.t:tSim);
 emaWorkRatio=0.35;
 ovMinValidJobId=ovJobId+1;
-ovDesiredReq=null;ovPaintedKey='';ovHasImage=false;overlayDirty=true;lastOvReqT=0;
+ovDesiredReq=null;ovInFlightKey='';ovPaintedKey='';ovHasImage=false;overlayDirty=true;lastOvReqT=0;
 const coords=packMainCoords();
 simWorker.postMessage({
 type:'syncState',epoch:simEpoch,Bau,bDia,
@@ -3645,14 +3761,15 @@ if(!workerActive||!simWorker||!ovDesiredReq||ovBusy)return;
 if(simBusy&&simQueue.length===0&&ovHasImage&&!tiltDragging&&run)return;
 const req=ovDesiredReq;
 ovDesiredReq=null;overlayDirty=false;lastOvReqT=performance.now();
-ovBusy=true;ovJobId++;ovInFlightJobId=ovJobId;
+ovBusy=true;ovJobId++;ovInFlightJobId=ovJobId;ovInFlightKey=req.ovKey;
 simWorker.postMessage({type:'renderOverlay',jobId:ovJobId,...req});}
 
-function getTargetOverlayKey(p){
+function getTargetOverlayKey(p,az=0){
 const base=ovMode+':'+W+'x'+H+':'+p+':'+E+':'+(tiltDragging?'D':'F')+':'+theme.ovR+','+theme.ovG+','+theme.ovB;
-if(pulse)return(pulse.photonSim?'PH:'+pulse.basesSig:'GR')+':'+base+':T'+pulse.t;
-if(eff.length===1)return'ONE:'+eff[0].b.key+':'+base;
-return'SUP:'+stateSig+':'+radSig+':'+base+(omegaMax>1e-12?':T'+tSim:'');}
+if(!pulse&&eff.length===1)return'ONE:'+eff[0].b.key+':'+base;
+const azTag=az?':AZ'+az.toFixed(5):'';
+if(pulse)return(pulse.photonSim?'PH:'+pulse.basesSig:'GR')+':'+base+azTag+':T'+pulse.t;
+return'SUP:'+stateSig+':'+radSig+':'+base+azTag+(omegaMax>1e-12?':T'+tSim:'');}
 
 function applyOverlayRGBA(res,ovKey){
 if(!res)return false;
@@ -3666,8 +3783,8 @@ return true;}
 function requestOverlayNow(){
 if(!(W>0&&H>0)||!$('ov').checked)return;
 if(!pulse&&!eff.length)return;
-const p=$('tilt').value*Math.PI/180,S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
-renderOverlay(p,S,cx,cy);}
+const p=getTiltRad(),az=getAzRad(),S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
+renderOverlay(p,az,S,cx,cy);}
 
 function chooseChunkPlan(){
 if(emaWorkRatio<0.85)return{dtSec:1/60,nSnap:2};
@@ -3832,7 +3949,7 @@ _onStateSync=syncWorkerState;
 _onPulseStart=(cfg,pObj)=>{
 if(!workerActive||!simWorker)return;
 simEpoch++;resetSimPipeline(0);emaWorkRatio=0.35;
-ovMinValidJobId=ovJobId+1;ovDesiredReq=null;ovPaintedKey='';ovHasImage=false;overlayDirty=true;lastOvReqT=0;
+ovMinValidJobId=ovJobId+1;ovDesiredReq=null;ovInFlightKey='';ovPaintedKey='';ovHasImage=false;overlayDirty=true;lastOvReqT=0;
 const coords=packMainCoords();
 const wireCfg={
 mode:pObj.mode,trSpec:cfg.trSpec,polInt:cfg.polInt,
@@ -3851,7 +3968,7 @@ simWorker.onmessage=(ev)=>{
 const m=ev.data;
 if(m.type==='ready'){if(simWorkerUrl){URL.revokeObjectURL(simWorkerUrl);simWorkerUrl='';}return;}
 if(m.type==='overlay'){
-if(m.jobId===ovInFlightJobId)ovBusy=false;
+if(m.jobId===ovInFlightJobId){ovBusy=false;ovInFlightKey='';}
 if(!m.empty&&m.jobId>=ovMinValidJobId){
 applyOverlayRGBA({rgba:new Uint8ClampedArray(m.rgba),w:m.w,h:m.h,cellSz:m.cellSz},m.ovKey);}
 dispatchOverlayIfReady();
@@ -3877,39 +3994,40 @@ if(ch.finished)simQueueHasEnd=true;
 dispatchNextSim();
 requestOverlayNow();}};
 simWorker.onerror=()=>{
-workerActive=false;ovBusy=false;resetSimPipeline();
+workerActive=false;ovBusy=false;ovInFlightKey='';resetSimPipeline();
 _onStateSync=()=>{};_onPulseStart=()=>{};_onPulseFinish=()=>{};
 if(simWorkerUrl){URL.revokeObjectURL(simWorkerUrl);simWorkerUrl='';}};
 }catch(_){
 workerActive=false;
 if(simWorkerUrl){URL.revokeObjectURL(simWorkerUrl);simWorkerUrl='';}}}
 
-function renderOverlay(p,S,cx,cy){
+function renderOverlay(p,az,S,cx,cy){
 if(!(W>0&&H>0))return false;
 if(!pulse&&!eff.length)return false;
-const targetKey=getTargetOverlayKey(p);
+const targetKey=getTargetOverlayKey(p,az);
 const isLocalSingleSlice=!pulse&&eff.length===1&&ovMode==='slice';
 const useSync=!workerActive||(pulse&&pulse._localSim)||isLocalSingleSlice;
 const animate=!!pulse?run:(eff.length>=2&&omegaMax>1e-12&&run);
 if(useSync){
 if(targetKey===ovPaintedKey&&!overlayDirty&&!animate)return ovHasImage;
 overlayDirty=false;
-const res=computeOverlayRGBA({ovMode,W,H,p,S,cx,cy,tiltDragging,animate,ovR:theme.ovR,ovG:theme.ovG,ovB:theme.ovB});
+const res=computeOverlayRGBA({ovMode,W,H,p,az,S,cx,cy,tiltDragging,animate,ovR:theme.ovR,ovG:theme.ovG,ovB:theme.ovB});
 return applyOverlayRGBA(res,targetKey);}
-if(targetKey!==ovPaintedKey||overlayDirty){
+if((targetKey!==ovPaintedKey||overlayDirty)&&!(ovBusy&&ovInFlightKey===targetKey&&!overlayDirty)){
 const due=!ovHasImage||tiltDragging||!animate||(performance.now()-lastOvReqT>=45);
 if(due||!ovDesiredReq){
-ovDesiredReq={ovKey:targetKey,ovMode,W,H,p,S,cx,cy,tiltDragging,animate,ovR:theme.ovR,ovG:theme.ovG,ovB:theme.ovB};}
+ovDesiredReq={ovKey:targetKey,ovMode,W,H,p,az,S,cx,cy,tiltDragging,animate,ovR:theme.ovR,ovG:theme.ovG,ovB:theme.ovB};}
 if(due)dispatchOverlayIfReady();}
 return ovHasImage&&offW>0&&offH>0;}
 
 /* ---------- animation ---------- */
 let last=performance.now();
-function drawFieldGizmo(cp,sp){
+function drawFieldGizmo(cp,sp,ca,sa){
 if(!pulse)return;
 const [ex,ey,ez]=fieldVecAt(pulse,pulse.t);
 const Escale=pulse.E0>0?1/pulse.E0:0;
 const nx=ex*Escale,ny=ey*Escale,nz=ez*Escale;
+const rx=nx*ca-ny*sa,ry=nx*sa+ny*ca;
 const ox=38,oy=H-38,R=24;
 ctx.save();
 ctx.strokeStyle=theme.line;
@@ -3917,7 +4035,7 @@ ctx.fillStyle=theme.panel;
 ctx.globalAlpha=0.88;
 ctx.beginPath();ctx.arc(ox,oy,R+4,0,TAU);ctx.fill();ctx.stroke();
 ctx.globalAlpha=1;
-const dx=nx*R,dy=-(ny*sp+nz*cp)*R;
+const dx=rx*R,dy=-(ry*sp+nz*cp)*R;
 ctx.strokeStyle=theme.acc;ctx.fillStyle=theme.acc;ctx.lineWidth=2;
 ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+dx,oy+dy);ctx.stroke();
 ctx.beginPath();ctx.arc(ox+dx,oy+dy,3,0,TAU);ctx.fill();
@@ -3935,16 +4053,48 @@ const lbl=pulse.gamma>0?'photon ':'pulse ';
 ctx.fillText(lbl+Math.round(frac*100)+'%',bx,by-6);
 ctx.restore();}
 
-function drawParticleTrail(hh,x,y,z,cx,cy,S,cp,sp){
+function drawAxisTriad(cp,sp,ca,sa){
+if(W<160||H<120)return;
+const ox=W-36,oy=H-36,R=18;
+const axes=[
+{lbl:'x',X:ca,V:sa*sp,D:sa*cp,col:theme.mut},
+{lbl:'y',X:-sa,V:ca*sp,D:ca*cp,col:theme.mut},
+{lbl:'z',X:0,V:cp,D:-sp,col:theme.acc}];
+axes.sort((a,b)=>b.D-a.D);
+const placed=[];
+for(let i=axes.length-1;i>=0;i--){
+const a=axes[i],ex=ox+a.X*R,ey=oy-a.V*R,len=Math.hypot(a.X,a.V);
+let lx=len>0.12?ex+(a.X/len)*8:ox+8,ly=len>0.12?ey-(a.V/len)*8:oy-8;
+for(const p of placed){
+const dx=lx-p[0],dy=ly-p[1],d=Math.hypot(dx,dy);
+if(d<11){const nx=len>0.12?-a.V/len:-1,ny=len>0.12?-a.X/len:0;lx+=nx*11;ly+=ny*11;}}
+lx=Math.max(8,Math.min(W-8,lx));ly=Math.max(8,Math.min(H-8,ly));
+a.ex=ex;a.ey=ey;a.lx=lx;a.ly=ly;
+placed.push([lx,ly]);}
+ctx.save();
+ctx.lineWidth=1.5;
+ctx.font='11px system-ui,sans-serif';
+ctx.textAlign='center';ctx.textBaseline='middle';
+for(const a of axes){
+ctx.globalAlpha=a.D>0.2?0.42:0.88;
+ctx.strokeStyle=a.col;ctx.fillStyle=a.col;
+ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(a.ex,a.ey);ctx.stroke();
+ctx.beginPath();ctx.arc(a.ex,a.ey,2,0,TAU);ctx.fill();
+ctx.fillText(a.lbl,a.lx,a.ly);}
+ctx.restore();}
+
+function drawParticleTrail(hh,x,y,z,cx,cy,S,cp,sp,ca,sa){
 const len=hh.length;if(!len)return;
-let px=cx+x*S,py=cy-(y*sp+z*cp)*S;
+const rx0=x*ca-y*sa,ry0=x*sa+y*ca;
+let px=cx+rx0*S,py=cy-(ry0*sp+z*cp)*S;
 const band=Math.max(1,Math.ceil(len/5));
 for(let j=0;j<len;){
 const end=Math.min(len,j+band),mid=0.5*(j+end-1);
 ctx.globalAlpha=.55*(1-(mid+1)/(len+1));
 ctx.beginPath();ctx.moveTo(px,py);
 for(;j<end;j++){
-const pt=hh[len-1-j],nx=cx+pt[0]*S,ny=cy-(pt[1]*sp+pt[2]*cp)*S;
+const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
+const nx=cx+rx*S,ny=cy-(ry*sp+pt[2]*cp)*S;
 ctx.lineTo(nx,ny);px=nx;py=ny;}
 ctx.stroke();}}
 
@@ -3960,10 +4110,11 @@ if(!workerActive){resetSimPipeline(tSim);stepSuperposition(dts,span);}
 else{dispatchNextSim();applyPlaybackStep(dts,span);dispatchNextSim();}
 }else if(eff.length===1){
 tSim+=dts;}}
-const p=$('tilt').value*Math.PI/180,cp=Math.cos(p),sp=Math.sin(p);
+const p=getTiltRad(),cp=Math.cos(p),sp=Math.sin(p);
+const az=getAzRad(),ca=Math.cos(az),sa=Math.sin(az);
 const S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
 ctx.clearRect(0,0,W,H);
-if($('ov').checked&&renderOverlay(p,S,cx,cy))ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
+if($('ov').checked&&renderOverlay(p,az,S,cx,cy))ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
 const grid=theme.grid;
 ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
 const ax=cx,ay=cy+E*cp*S,bx=cx,by=cy-E*cp*S;
@@ -3981,6 +4132,7 @@ ctx.strokeStyle=q.col;
 const wt=q.w+Om;
 if(run)q.ph=(q.ph+wt*dts)%TAU;
 const px=q.rho*Math.cos(q.ph),py=q.rho*Math.sin(q.ph);
+const phV=q.ph+az,rx=q.rho*Math.cos(phV),ry=q.rho*Math.sin(phV);
 if(run&&q.hist){
 const hh=q.hist;
 if((tSim-hh[hh.length-1][3])>=minStep){
@@ -3993,35 +4145,37 @@ hh[hh.length-1][3]=tSim;hh.shift();
 if(hh.length<=1)delete q.hist;}}}
 if(showTr){
 if(q.hist&&q.hist.length>1){
-drawParticleTrail(q.hist,px,py,q.z,cx,cy,S,cp,sp);
+drawParticleTrail(q.hist,px,py,q.z,cx,cy,S,cp,sp,ca,sa);
 }else if(Math.abs(wt)>1e-9){
 const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
 const band=Math.max(1,Math.ceil(N/4)),qzS=q.z*cp,rhoS=q.rho*S;
-let lx=cx+px*S,ly=cy-(py*sp+q.z*cp)*S;
+let lx=cx+rx*S,ly=cy-(ry*sp+q.z*cp)*S;
 for(let k=1;k<=N;){
 const end=Math.min(N,k+band-1),mid=0.5*(k+end);
 ctx.globalAlpha=.55*(1-mid/N);
 ctx.beginPath();ctx.moveTo(lx,ly);
 for(;k<=end;k++){
-const ph=q.ph-dir*arc*(k/N);
+const ph=phV-dir*arc*(k/N);
 lx=cx+rhoS*Math.cos(ph);ly=cy-(q.rho*Math.sin(ph)*sp+qzS)*S;
 ctx.lineTo(lx,ly);}
 ctx.stroke();}}}
-const sx=cx+px*S,sy=cy-(py*sp+q.z*cp)*S,depth=py*cp-q.z*sp;
+const sx=cx+rx*S,sy=cy-(ry*sp+q.z*cp)*S,depth=ry*cp-q.z*sp;
 const dn=Math.max(0,Math.min(1,(depth/E+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
 ctx.beginPath();ctx.arc(sx,sy,2.6-.8*dn,0,TAU);ctx.fill();}
 }else if(pulse||eff.length>=2){
 for(const q of P){
 ctx.strokeStyle=q.col;
-if(showTr)drawParticleTrail(q.hist,q.x,q.y,q.z,cx,cy,S,cp,sp);
-const sx=cx+q.x*S,sy=cy-(q.y*sp+q.z*cp)*S,depth=q.y*cp-q.z*sp;
+if(showTr)drawParticleTrail(q.hist,q.x,q.y,q.z,cx,cy,S,cp,sp,ca,sa);
+const rx=q.x*ca-q.y*sa,ry=q.x*sa+q.y*ca;
+const sx=cx+rx*S,sy=cy-(ry*sp+q.z*cp)*S,depth=ry*cp-q.z*sp;
 const dn=Math.max(0,Math.min(1,(depth/E+1)/2));
 ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
 ctx.beginPath();ctx.arc(sx,sy,2.6-.8*dn,0,TAU);ctx.fill();}}
 ctx.globalAlpha=1;
 ctx.fillStyle=grid;ctx.beginPath();ctx.arc(cx,cy,3,0,TAU);ctx.fill();
-drawFieldGizmo(cp,sp);
+drawFieldGizmo(cp,sp,ca,sa);
+drawAxisTriad(cp,sp,ca,sa);
 requestAnimationFrame(frame);}
 
 window.addEventListener('resize',()=>{resize();overlayDirty=true;requestOverlayNow();});
@@ -4247,7 +4401,7 @@ function initTutorial(){
     syncDiaModeUI();
     components=(d.states&&d.states.length?d.states:[{n:1,l:0,m:0,amp:1,phaseDeg:0}]).map(s=>({id:nextId++,n:s.n,l:s.l,m:s.m,amp:s.amp??1,phaseDeg:s.phaseDeg??0}));
     rebuildComponentList();
-    if(d.tilt!==undefined){$('tilt').value=String(d.tilt);$('tv').textContent=d.tilt+'°';}
+    setViewAngles(d.tilt!==undefined?d.tilt*Math.PI/180:getTiltRad(),(d.azimuth||0)*Math.PI/180);
     if(d.speed!==undefined){$('spd').value=String(d.speed);$('sv').textContent=(+d.speed).toFixed(1)+'×';}
     if(d.trails!==undefined)$('tr').checked=!!d.trails;
     if(d.overlay!==undefined)$('ov').checked=!!d.overlay;
