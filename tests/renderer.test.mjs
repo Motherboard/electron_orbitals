@@ -777,3 +777,190 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   assert.equal(arcs[1].r, 3.2);
   assert.equal(arcs[1].alpha, 1, 'Nucleus in !atlas fallback must have globalAlpha === 1');
 });
+
+test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 interleaving, cleanup, and context restore', () => {
+  const helpersSrc = extractRendererHelpersSource();
+  const s2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_START === */');
+  const e2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_END === */');
+  const sg = SCRIPT_SRC.indexOf('/* === RENDERER_GL_START === */');
+  const eg = SCRIPT_SRC.indexOf('/* === RENDERER_GL_END === */');
+  assert.ok(sg >= 0 && eg > sg, 'Expected RENDERER_GL_START..END markers');
+  const r2dSrc = SCRIPT_SRC.slice(s2, e2);
+  const rglSrc = SCRIPT_SRC.slice(sg, eg);
+
+  const createMockGLContext = ({ failLinkAt = -1, failBufAt = -1, startLost = false } = {}) => {
+    const calls = [];
+    const deleted = { prog: 0, vao: 0, buf: 0, tex: 0, sh: 0 };
+    let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost;
+    const gl = {
+      VERTEX_SHADER: 0x8b31, FRAGMENT_SHADER: 0x8b30, COMPILE_STATUS: 0x8b81, LINK_STATUS: 0x8b82,
+      ARRAY_BUFFER: 0x8892, STATIC_DRAW: 0x88e4, DYNAMIC_DRAW: 0x88e8, FLOAT: 0x1406,
+      TEXTURE_2D: 0x0de1, TEXTURE0: 0x84c0, TEXTURE_MIN_FILTER: 0x2801, TEXTURE_MAG_FILTER: 0x2800,
+      TEXTURE_WRAP_S: 0x2802, TEXTURE_WRAP_T: 0x2803, LINEAR: 0x2601, CLAMP_TO_EDGE: 0x812f,
+      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401, COLOR_BUFFER_BIT: 0x4000,
+      DEPTH_TEST: 0x0b71, BLEND: 0x0be2, ONE: 1, ONE_MINUS_SRC_ALPHA: 0x0303,
+      LINES: 1, TRIANGLE_STRIP: 5,
+      isContextLost: () => ctxLost,
+      createShader: () => ({ id: nextId++ }),
+      shaderSource: () => {},
+      compileShader: () => {},
+      getShaderParameter: () => true,
+      deleteShader: () => { deleted.sh++; },
+      createProgram: () => ({ id: nextId++ }),
+      attachShader: () => {},
+      linkProgram: () => { linkCount++; },
+      getProgramParameter: () => linkCount !== failLinkAt,
+      deleteProgram: () => { deleted.prog++; },
+      getUniformLocation: (_p, name) => ({ name }),
+      createVertexArray: () => ({ id: nextId++ }),
+      bindVertexArray: () => {},
+      deleteVertexArray: () => { deleted.vao++; },
+      createBuffer: () => (++bufCount === failBufAt ? null : { id: nextId++ }),
+      bindBuffer: () => {},
+      deleteBuffer: () => { deleted.buf++; },
+      bufferData: (_t, data) => calls.push({ op: 'bufferData', len: data?.length ?? data }),
+      bufferSubData: (_t, _off, _buf, _so, len) => calls.push({ op: 'bufferSubData', len }),
+      enableVertexAttribArray: () => {},
+      vertexAttribPointer: () => {},
+      vertexAttribDivisor: () => {},
+      createTexture: () => ({ id: nextId++ }),
+      bindTexture: () => {},
+      deleteTexture: () => { deleted.tex++; },
+      texParameteri: () => {},
+      texImage2D: () => calls.push({ op: 'texImage2D' }),
+      activeTexture: () => {},
+      viewport: () => {},
+      clearColor: () => {},
+      clear: () => {},
+      disable: () => {},
+      enable: () => {},
+      blendFunc: () => {},
+      useProgram: () => {},
+      uniform1i: () => {},
+      uniform1f: () => {},
+      uniform2f: () => {},
+      uniform3f: () => {},
+      drawArrays: (mode, first, count) => calls.push({ op: 'drawArrays', mode, first, count }),
+      drawArraysInstanced: (mode, first, count, primCount) => calls.push({ op: 'drawArraysInstanced', mode, first, count, primCount }),
+    };
+    const listeners = {};
+    const canvas = {
+      width: 600, height: 400,
+      getContext: (kind) => (kind === 'webgl2' ? gl : null),
+      addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
+    };
+    return { gl, canvas, calls, deleted, listeners, setLost: (v) => { ctxLost = v; } };
+  };
+
+  const runGLHarness = (mock) => {
+    const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)', '--ov': '83,74,183' };
+    const sandbox = {
+      Math, Number, String, Array, ArrayBuffer, Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray, Object, RegExp,
+      TAU: Math.PI * 2,
+      W: 600, H: 400, _stageDpr: 1,
+      glCv: mock.canvas,
+      ctx: { save: () => {}, restore: () => {}, clearRect: () => {}, setLineDash: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {}, fillText: () => {}, drawImage: () => {} },
+      off: { width: 100, height: 80 },
+      offIm: { width: 100, height: 80, data: new Uint8ClampedArray(100 * 80 * 4) },
+      offW: 100, offH: 80, cellSz: 3, ovPaintedVersion: 1,
+      P: [],
+      window: {},
+      addStageResizeListener: () => {},
+      drawFieldGizmo: () => {},
+      drawAxisTriad: () => {},
+      drawParticleTrail: () => {},
+      document: { documentElement: {}, createElement: () => ({ getContext: () => null }) },
+      getComputedStyle: () => ({ getPropertyValue: (n) => cssVars[n] ?? '' }),
+    };
+    const tail = `
+      globalThis.__gl = {
+        initWebGLRenderer, drawSceneGL, ensurePartBuffers, sortParticleOrder,
+        getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, hueT: partHueT }),
+        setP: (a) => { P = a; },
+        bumpOv: () => { ovPaintedVersion++; },
+        getRenderInfo: () => window.__renderInfo,
+      };
+    `;
+    vm.runInNewContext(helpersSrc + '\n' + r2dSrc + '\n' + rglSrc + '\n' + tail, sandbox);
+    return sandbox.__gl;
+  };
+
+  // 1a. Partial shader link failure cleans up compiled programs/shaders and returns null
+  const failMock = createMockGLContext({ failLinkAt: 2 });
+  const failHarness = runGLHarness(failMock);
+  assert.equal(failHarness.initWebGLRenderer(failMock.canvas), null);
+  assert.ok(failMock.deleted.prog >= 2 && failMock.deleted.sh >= 6, 'Failed shader link must dispose created programs and shaders');
+
+  // 1b. Partial VBO creation failure disposes all programs, VAOs, buffers, and texture
+  const failBufMock = createMockGLContext({ failBufAt: 4 });
+  const failBufHarness = runGLHarness(failBufMock);
+  assert.equal(failBufHarness.initWebGLRenderer(failBufMock.canvas), null);
+  assert.equal(failBufMock.deleted.prog, 3);
+  assert.equal(failBufMock.deleted.vao, 3);
+  assert.equal(failBufMock.deleted.buf, 3);
+  assert.equal(failBufMock.deleted.tex, 1);
+
+  // 2. Normal init, zero-line guard (cp=0, trails off), NaN/E<=0 interleaving, buffer growth, and context lost/restored
+  const mock = createMockGLContext();
+  const h = runGLHarness(mock);
+  const st = h.initWebGLRenderer(mock.canvas);
+  assert.ok(st, 'Expected valid glState');
+
+  // cp = 0 => zero-length z-axis and trails off => lineVerts === 0 and NO drawArrays(LINES) call!
+  h.ensurePartBuffers(3);
+  const pb = h.getPartBuffers();
+  pb.depth[0] = 5; pb.sx[0] = 280; pb.sy[0] = 200; pb.hueT[0] = 0.2;
+  pb.depth[1] = -5; pb.sx[1] = 320; pb.sy[1] = 200; pb.hueT[1] = 0.8;
+  pb.depth[2] = NaN; pb.sx[2] = 300; pb.sy[2] = 200; pb.hueT[2] = 0.5;
+  h.sortParticleOrder(pb.order, pb.depth, 3);
+  mock.calls.length = 0;
+  const frameSt = { n: 3, singleMode: true, showOverlay: true, showTr: false, cp: 0, sp: 1, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 0, Om: 0, span: 1 };
+  assert.equal(h.drawSceneGL(st, frameSt), true);
+  assert.equal(mock.calls.filter((c) => c.op === 'drawArrays' && c.mode === mock.gl.LINES).length, 0, 'Must never call drawArrays(LINES) when lineVerts === 0');
+  const instDraw = mock.calls.find((c) => c.op === 'drawArraysInstanced');
+  assert.equal(instDraw?.primCount, 3, 'Must draw 2 finite particles + interleaved nucleus (skipping NaN)');
+  // Verify nucleus interleaved between index 0 (depth +5) and index 1 (depth -5) in instBuf (stride 8: rad at +2)
+  assert.equal(st.instBuf[1 * 8 + 2], Math.fround(3.2), 'Nucleus (rad=3.2) must be interleaved at slot 1 between back (+5) and front (-5)');
+  assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 1, 'Initial frame must upload overlay texture once');
+
+  // Second steady frame must use bufferSubData (not bufferData) and NOT re-upload unchanged overlay texture
+  mock.calls.length = 0;
+  assert.equal(h.drawSceneGL(st, frameSt), true);
+  assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 0, 'Unchanged overlay must not re-upload');
+  assert.equal(mock.calls.filter((c) => c.op === 'bufferData').length, 0, 'Steady frame must not reallocate GPU VBO');
+  assert.ok(mock.calls.some((c) => c.op === 'bufferSubData'), 'Steady frame must upload instances via bufferSubData');
+
+  // Growing beyond initial 1024 instBuf cap must reallocate via bufferData
+  const nBig = 1300;
+  h.ensurePartBuffers(nBig);
+  const pbBig = h.getPartBuffers();
+  for (let i = 0; i < nBig; i++) { pbBig.depth[i] = i - 650; pbBig.sx[i] = 300; pbBig.sy[i] = 200; pbBig.hueT[i] = 0.5; }
+  h.sortParticleOrder(pbBig.order, pbBig.depth, nBig);
+  mock.calls.length = 0;
+  assert.equal(h.drawSceneGL(st, { ...frameSt, n: nBig, E: 20 }), true);
+  assert.ok(mock.calls.some((c) => c.op === 'bufferData'), 'Exceeding GPU VBO capacity must grow via bufferData');
+  assert.equal(mock.calls.find((c) => c.op === 'drawArraysInstanced')?.primCount, nBig + 1);
+
+  // Context loss -> drawSceneGL returns false; restore resets GPU caps & ovTexVersion so next frame uses bufferData & texImage2D
+  let prevented = false;
+  mock.setLost(true);
+  mock.listeners.webglcontextlost[0]({ preventDefault: () => { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(h.drawSceneGL(st, frameSt), false);
+
+  mock.setLost(false);
+  const delBeforeRestore = { ...mock.deleted };
+  mock.listeners.webglcontextrestored[0]();
+  assert.equal(mock.deleted.prog, delBeforeRestore.prog, 'Context restore must not call deleteProgram on dead pre-loss handles');
+  assert.equal(mock.deleted.vao, delBeforeRestore.vao, 'Context restore must not call deleteVertexArray on dead pre-loss handles');
+  assert.equal(mock.deleted.buf, delBeforeRestore.buf, 'Context restore must not call deleteBuffer on dead pre-loss handles');
+  assert.equal(mock.deleted.tex, delBeforeRestore.tex, 'Context restore must not call deleteTexture on dead pre-loss handles');
+  assert.equal(st.lost, false);
+  assert.equal(st.ovTexVersion, -1);
+  assert.equal(st.instGpuCapFloats, 0);
+  assert.equal(st.lineGpuCapFloats, 0);
+  mock.calls.length = 0;
+  assert.equal(h.drawSceneGL(st, frameSt), true);
+  assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 1, 'Restored context must re-upload overlay texture');
+  assert.ok(mock.calls.some((c) => c.op === 'bufferData'), 'Restored context must allocate fresh VBO via bufferData');
+});

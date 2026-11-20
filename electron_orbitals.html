@@ -4432,7 +4432,7 @@ const _renderStats={backend:'2d',lastDrawMs:0,drawCalls:0,sphereCount:0,lineVert
 if(typeof window!=='undefined'&&!Object.getOwnPropertyDescriptor(window,'__renderInfo')){
 Object.defineProperty(window,'__renderInfo',{
 enumerable:true,
-configurable:true,
+configurable:false,
 get(){
 return Object.freeze({
 backend:_renderStats.backend,
@@ -4552,9 +4552,14 @@ gl.deleteShader(fs);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){gl.deleteProgram(prog);return null;}
 return prog;}
 
+function clearGLHandles(s){
+s.ovVao=null;s.ovVbo=null;s.ovTex=null;s.ovProg=null;
+s.lineVao=null;s.lineVbo=null;s.lineProg=null;
+s.sphereVao=null;s.quadVbo=null;s.instVbo=null;s.sphereProg=null;}
+
 function disposeGLResources(s){
 const gl=s.gl;
-if(!gl)return;
+if(!gl||gl.isContextLost()){clearGLHandles(s);return;}
 if(s.ovVao){gl.deleteVertexArray(s.ovVao);s.ovVao=null;}
 if(s.ovVbo){gl.deleteBuffer(s.ovVbo);s.ovVbo=null;}
 if(s.ovTex){gl.deleteTexture(s.ovTex);s.ovTex=null;}
@@ -4648,6 +4653,8 @@ return true;}
 
 function initWebGLRenderer(canvas){
 if(!canvas||typeof canvas.getContext!=='function')return null;
+if(canvas._glState){disposeGLResources(canvas._glState);canvas._glState=null;}
+// Spheres apply analytical per-pixel SDF edge AA and overlay uses LINEAR; antialias:false avoids 4x CPU MSAA resolve under software ANGLE/SwiftShader.
 const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false,depth:false,preserveDrawingBuffer:false});
 if(!gl)return null;
 const state={
@@ -4656,7 +4663,11 @@ ovProg:null,ovVao:null,ovVbo:null,ovTex:null,ovTexVersion:-1,uOvViewport:null,uO
 lineProg:null,lineVao:null,lineVbo:null,uLineViewport:null,lineBuf:new Float32Array(16384*6),lineFloats:0,lineGpuCapFloats:0,
 sphereProg:null,sphereVao:null,quadVbo:null,instVbo:null,uSphereViewport:null,uSphereDpr:null,uSphereBg:null,
 instBuf:new Float32Array(1024*8),instGpuCapFloats:0};
-if(!buildGLResources(state))return null;
+const ctxLost=typeof gl.isContextLost==='function'&&gl.isContextLost();
+if(ctxLost){
+state.lost=true;
+}else if(!buildGLResources(state)){
+return null;}
 canvas._glState=state;
 if(!canvas._glListenersAttached){
 canvas._glListenersAttached=true;
@@ -4666,6 +4677,7 @@ if(canvas._glState)canvas._glState.lost=true;});
 canvas.addEventListener('webglcontextrestored',()=>{
 const s=canvas._glState;
 if(!s)return;
+clearGLHandles(s);
 s.ovTexVersion=-1;
 s.lineGpuCapFloats=0;
 s.instGpuCapFloats=0;

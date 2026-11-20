@@ -1239,6 +1239,7 @@ function decodePngRgba(base64Png) {
       colorType = data[9];
       assert.equal(bitDepth, 8, `Expected 8-bit PNG, got ${bitDepth}`);
       assert.ok(colorType === 2 || colorType === 6, `Expected RGB/RGBA PNG, got colorType=${colorType}`);
+      assert.equal(data[12], 0, `Expected non-interlaced PNG, got interlace=${data[12]}`);
     } else if (type === 'IDAT') {
       idatChunks.push(data);
     } else if (type === 'IEND') {
@@ -1315,6 +1316,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     await cdp.ready;
     await cdp.call('Runtime.enable');
     await cdp.call('Page.enable');
+    await cdp.call('Log.enable');
     await cdp.call('Emulation.setEmulatedMedia', {
       features: [{ name: 'prefers-color-scheme', value: 'light' }],
     });
@@ -1542,16 +1544,25 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
         `[${expectedBackend}] Center peak (${centerPeak.toFixed(1)}) must be brighter than outer limb (${avgLimbLum.toFixed(1)}) due to camera-direction diffuse + specular shading`
       );
 
-      // Now place a yellow-orange sphere directly behind the front violet sphere at (x = 0.18*E, y = +0.05*E, z = 0.25*E)
-      // If the front sphere is semi-transparent, the back sphere's yellow-orange hue must bleed through!
+      // Now place a yellow-orange sphere directly behind the front violet sphere at (x = 0.18*E, y = +0.05*E, z = 0.25*E).
+      // Intentionally put frontViolet FIRST in P so back-to-front depth sorting must reorder them!
+      // Verify BOTH: (1) front violet still dominates center hue (blue > red), proving depth sort worked,
+      // and (2) the back yellow-orange sphere visibly bleeds through the semi-transparent front sphere!
       await evalJS(`(() => {
         P = [
-          { x: 0.18 * E, y: 0.05 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, 0.05 * E)), hist: [] },
           { x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, -0.8 * E)), hist: [] },
+          { x: 0.18 * E, y: 0.05 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, 0.05 * E)), hist: [] },
         ];
       })()`);
       await waitFrames(4);
       const overlapShot = await captureCanvasPng();
+
+      // Verify front violet sphere is composited ON TOP of back orange sphere (blue > red at limb/mid-body)
+      const midViolet = sampleCssPixel(overlapShot, geom.sx + 2.0, geom.sy);
+      assert.ok(
+        midViolet[2] > midViolet[0],
+        `[${expectedBackend}] Front violet sphere must composite in front of back orange sphere even when listed first in P (rgb=${midViolet.join(',')})`
+      );
 
       let maxBehindDiff = 0;
       for (const [dx, dy] of [[0, 0], [1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5], [2.2, 0], [-2.2, 0]]) {
@@ -1634,18 +1645,75 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       pLen: P.length,
       glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+      glErr: document.getElementById('c-gl').getContext('webgl2').getError(),
     })`);
     assert.equal(recState.info.backend, 'webgl2');
     assert.equal(recState.info.sphereCount, recState.pLen + 1);
     assert.ok(recState.info.drawCalls >= 1 && recState.info.drawCalls <= 3);
     assert.equal(recState.glHidden, false);
     assert.equal(recState.glVis, 'visible');
+    assert.equal(recState.glErr, 0, `Expected gl.NO_ERROR after context restore, got ${recState.glErr}`);
 
-    // 5b. Batched trails (single-mode circular arcs) & dark theme switch under WebGL2
+    // Verify #c-gl actually renders pixels after restore AND #c cleared stale 2D sprites
+    await evalJS(`(() => {
+      if (run) document.getElementById('pp').click();
+      document.getElementById('tr').checked = false;
+      const ov = document.getElementById('ov');
+      if (ov.checked) { ov.checked = false; ov.dispatchEvent(new Event('change')); }
+      components = [
+        { id: nextId++, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 },
+        { id: nextId++, n: 2, l: 1, m: 0, amp: 1, phaseDeg: 0 },
+      ];
+      rebuildComponentList();
+      refresh(false, true);
+      setViewAngles(0, 0);
+      P = [{ x: -0.25 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(-0.25 * E, -0.8 * E)), hist: [] }];
+    })()`);
+    await waitFrames(4);
+    const postRestoreGeom = await evalJS(`(() => {
+      const S = Math.min(W, H * 1.15) / (2 * E);
+      return { sx: W / 2 + (-0.25 * E) * S, sy: H / 2 - (0.25 * E) * S };
+    })()`);
+    const postRestoreShot = await captureCanvasPng();
+    const postRestoreBg = lumOf(sampleCssPixel(postRestoreShot, 18, 18));
+    const postRestoreBall = lumOf(sampleCssPixel(postRestoreShot, postRestoreGeom.sx + 2.5, postRestoreGeom.sy));
+    assert.ok(
+      postRestoreBg - postRestoreBall > 30,
+      `WebGL2 must actively draw spheres after context restore (bg=${postRestoreBg.toFixed(1)}, ball=${postRestoreBall.toFixed(1)})`
+    );
+
+    // 5b. High-count GPU buffer growth (N = 2000 > initial 1024 instBuf cap) + multi-state q.hist polylines
+    await evalJS(`(() => {
+      const arr = [];
+      for (let i = 0; i < 2000; i++) {
+        const ang = (i / 2000) * Math.PI * 2;
+        const r = (0.15 + 0.65 * ((i * 37) % 100) / 100) * E;
+        const x = r * Math.cos(ang), y = r * Math.sin(ang), z = (((i * 19) % 100) / 50 - 1) * 0.4 * E;
+        arr.push({ x, y, z, col: colr(r), hist: [[x * 0.9, y * 0.9, z, 0], [x * 0.95, y * 0.95, z, 0.5], [x, y, z, 1]] });
+      }
+      P = arr;
+      document.getElementById('tr').checked = true;
+    })()`);
+    await waitFrames(4);
+    const growState = await evalJS(`({
+      info: window.__renderInfo,
+      glErr: document.getElementById('c-gl').getContext('webgl2').getError(),
+    })`);
+    assert.equal(growState.info.backend, 'webgl2');
+    assert.equal(growState.info.sphereCount, 2001, 'N=2000 + nucleus must render cleanly after instBuf growth');
+    assert.ok(growState.info.lineVerts >= 12000, `Expected multi-state q.hist trail verts >= 12000, got ${growState.info.lineVerts}`);
+    assert.equal(growState.glErr, 0, `Expected gl.NO_ERROR after N=2000 buffer growth, got ${growState.glErr}`);
+
+    // 5c. Batched trails (single-mode circular arcs) & dark theme pixel check under WebGL2
     await evalJS(`(() => {
       components = [{ id: nextId++, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }];
       rebuildComponentList();
       refresh(false, true);
+      const cnt = document.getElementById('cnt');
+      cnt.value = '120';
+      cnt.dispatchEvent(new Event('input'));
+      const ov = document.getElementById('ov');
+      if (!ov.checked) { ov.checked = true; ov.dispatchEvent(new Event('change')); }
       setViewAngles(35 * Math.PI / 180, 0);
       document.getElementById('tr').checked = true;
       if (!run) document.getElementById('pp').click();
@@ -1666,18 +1734,28 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     });
     await waitUntil('theme.bgR < 0.2 && ovHasImage && !ovBusy && !overlayDirty', 5000);
     await waitFrames(4);
-    const darkState = await evalJS('({ info: window.__renderInfo, bgR: theme.bgR })');
+    const darkState = await evalJS('({ info: window.__renderInfo, bgR: theme.bgR, glErr: document.getElementById("c-gl").getContext("webgl2").getError() })');
     assert.equal(darkState.info.backend, 'webgl2');
     assert.ok(darkState.bgR < 0.2, `Expected dark theme bgR < 0.2, got ${darkState.bgR}`);
     assert.ok(darkState.info.drawCalls <= 3);
+    assert.equal(darkState.glErr, 0, `Expected gl.NO_ERROR after dark switch, got ${darkState.glErr}`);
+    const darkShot = await captureCanvasPng();
+    const darkBgLum = lumOf(sampleCssPixel(darkShot, 18, 18));
+    assert.ok(darkBgLum < 45, `Expected dark rendered canvas background (<45 lum), got ${darkBgLum.toFixed(1)}`);
 
-    // 6. Verify zero console/page runtime exceptions across the entire WebGL2/2D session
+    // 6. Verify zero console/page runtime exceptions and zero WebGL warnings across the entire session
     const errors = cdp.events.filter(
       (e) =>
         e.method === 'Runtime.exceptionThrown' ||
-        (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error')
+        (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error') ||
+        (e.method === 'Runtime.consoleAPICalled' &&
+          e.params?.type === 'warning' &&
+          JSON.stringify(e.params.args || []).match(/webgl|gl_invalid/i)) ||
+        (e.method === 'Log.entryAdded' &&
+          (e.params?.entry?.level === 'error' ||
+            /webgl|gl_invalid/i.test(e.params?.entry?.text || '')))
     );
-    assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
+    assert.deepEqual(errors, [], `Expected 0 console/runtime errors or WebGL warnings, got: ${JSON.stringify(errors)}`);
   } finally {
     try { cdp?.ws?.close(); } catch { /* ignore */ }
     chrome.kill('SIGKILL');
