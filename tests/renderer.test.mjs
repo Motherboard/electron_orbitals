@@ -928,16 +928,14 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   mock.calls.length = 0;
   assert.equal(h.drawSceneGL(st, frameSt), true);
   assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 0, 'Unchanged overlay must not re-upload');
-  assert.equal(mock.calls.filter((c) => c.op === 'texSubImage2D').length, 0, 'Unchanged overlay must not sub-upload');
   assert.equal(mock.calls.filter((c) => c.op === 'bufferData').length, 0, 'Steady frame must not reallocate GPU VBO');
   assert.ok(mock.calls.some((c) => c.op === 'bufferSubData'), 'Steady frame must upload instances via bufferSubData');
 
-  // Animated overlay with unchanged dimensions uses texSubImage2D instead of reallocating texImage2D
+  // Updated overlay version re-uploads cleanly via texImage2D (orphans texture cleanly on ANGLE Vulkan)
   h.bumpOv();
   mock.calls.length = 0;
   assert.equal(h.drawSceneGL(st, frameSt), true);
-  assert.equal(mock.calls.filter((c) => c.op === 'texSubImage2D').length, 1, 'Same-dimension overlay update must reuse storage via texSubImage2D');
-  assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 0);
+  assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 1, 'Bumped overlay version must re-upload via texImage2D');
 
   // Incremental single-mode circular arc trail stays on exact circle radius and respects lineVerts
   h.setP([{ rho: 5, z: 0, ph: 0, w: 2 }]);

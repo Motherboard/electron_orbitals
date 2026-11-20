@@ -4670,7 +4670,7 @@ gl.clearColor(0,0,0,0);
 gl.useProgram(ovProg);
 gl.uniform1i(s.uOvTex,0);
 
-s.ovTexVersion=-1;s.ovTexW=0;s.ovTexH=0;
+s.ovTexVersion=-1;
 s.lineGpuCapFloats=0;
 s.instGpuCapFloats=0;
 return true;}
@@ -4683,7 +4683,7 @@ const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialia
 if(!gl)return null;
 const state={
 canvas,gl,lost:false,
-ovProg:null,ovVao:null,ovVbo:null,ovTex:null,ovTexVersion:-1,ovTexW:0,ovTexH:0,uOvViewport:null,uOvSize:null,uOvTex:null,
+ovProg:null,ovVao:null,ovVbo:null,ovTex:null,ovTexVersion:-1,uOvViewport:null,uOvSize:null,uOvTex:null,
 lineProg:null,lineVao:null,lineVbo:null,uLineViewport:null,lineBuf:new Float32Array(16384*6),lineFloats:0,lineGpuCapFloats:0,
 sphereProg:null,sphereVao:null,quadVbo:null,instVbo:null,uSphereViewport:null,uSphereDpr:null,uSphereBg:null,
 instBuf:new Float32Array(1024*8),instGpuCapFloats:0};
@@ -4702,7 +4702,7 @@ canvas.addEventListener('webglcontextrestored',()=>{
 const s=canvas._glState;
 if(!s)return;
 clearGLHandles(s);
-s.ovTexVersion=-1;s.ovTexW=0;s.ovTexH=0;
+s.ovTexVersion=-1;
 s.lineGpuCapFloats=0;
 s.instGpuCapFloats=0;
 s.lost=!buildGLResources(s);});}
@@ -4751,14 +4751,10 @@ gl.bindVertexArray(glState.ovVao);
 gl.activeTexture(gl.TEXTURE0);
 gl.bindTexture(gl.TEXTURE_2D,glState.ovTex);
 if(glState.ovTexVersion!==ovPaintedVersion){
-const sameDim=glState.ovTexW===offW&&glState.ovTexH===offH;
 if(offIm&&offIm.width===offW&&offIm.height===offH){
-if(sameDim&&typeof gl.texSubImage2D==='function')gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,offW,offH,gl.RGBA,gl.UNSIGNED_BYTE,offIm.data);
-else gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,offW,offH,0,gl.RGBA,gl.UNSIGNED_BYTE,offIm.data);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,offW,offH,0,gl.RGBA,gl.UNSIGNED_BYTE,offIm.data);
 }else{
-if(sameDim&&typeof gl.texSubImage2D==='function')gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,off);
-else gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,off);}
-glState.ovTexW=offW;glState.ovTexH=offH;
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,off);}
 glState.ovTexVersion=ovPaintedVersion;}
 gl.uniform2f(glState.uOvViewport,W,H);
 gl.uniform2f(glState.uOvSize,offW*cellSz,offH*cellSz);
