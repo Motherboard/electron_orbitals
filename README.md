@@ -27,19 +27,7 @@ Open [`electron_orbitals.html`](electron_orbitals.html) directly, or visit the [
 
 ## Run locally
 
-No dependencies or build step are required.
-
-```bash
-git clone https://github.com/Motherboard/electron_orbitals.git
-cd electron_orbitals
-python3 -m http.server 8000
-```
-
-Then open:
-
-```text
-http://localhost:8000/electron_orbitals.html
-```
+No installation, build step, or local web server is required. Open `electron_orbitals.html` in a current desktop browser—for example, double-click the file or open it from your browser. The app's HTML, CSS, JavaScript, and worker code are embedded in the page.
 
 ## Tutorial chapters
 
@@ -70,7 +58,7 @@ A keyboard-accessible canvas supports arrow-key view changes, and double-clickin
 
 ## Tests
 
-The test suite is written in JavaScript module format and contains physics and browser-oriented checks.
+The test suite is written in JavaScript module format and contains physics and browser-oriented checks. Run with Node.js:
 
 ```bash
 node --test tests/physics.test.mjs
