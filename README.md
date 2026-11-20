@@ -1,7 +1,7 @@
 # Electron Orbitals
 
 [![Live demo](https://img.shields.io/badge/live-GitHub%20Pages-blue)](https://motherboard.github.io/electron_orbitals/electron_orbitals.html)
-[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
 **Electron Orbitals** is an interactive, browser-based tutorial on hydrogen atom orbitals. It combines physics explanations with animated orbital visualizations, configurable quantum states, magnetic fields, light-polarization controls, and a guided nine-chapter tutorial.
 
@@ -85,7 +85,7 @@ node --test tests/*.test.mjs
 ├── index.html              # Redirect page
 ├── tutorial/               # Nine tutorial chapters
 ├── tests/                  # Physics and browser tests
-├── LICENSE                 # GNU GPL v3
+├── LICENSE                 # GNU AGPL v3
 └── .nojekyll               # Prevents Jekyll processing on GitHub Pages
 ```
 
