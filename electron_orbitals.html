@@ -3591,7 +3591,7 @@ const aDeg=Math.round(viewAzRad*180/Math.PI)||0;
 lastAzElVal=String(aDeg);
 const azEl=$('azim');
 if(azEl){azEl.value=lastAzElVal;$('av').textContent=aDeg+'°';}}
-const endTiltDrag=()=>{if(tiltTimer){clearTimeout(tiltTimer);tiltTimer=0;}if(tiltDragging){tiltDragging=false;key='';overlayDirty=true;requestOverlayNow();}};
+const endTiltDrag=()=>{if(tiltTimer){clearTimeout(tiltTimer);tiltTimer=0;}if(tiltDragging){tiltDragging=false;key='';requestOverlayNow();}};
 $('tilt').onpointerdown=()=>{tiltDragging=true;};
 $('tilt').onpointerup=endTiltDrag;
 $('tilt').onpointercancel=endTiltDrag;
@@ -3600,7 +3600,6 @@ $('tilt').oninput=e=>{
 lastTiltElVal=e.target.value;
 viewTiltRad=(+e.target.value)*Math.PI/180;
 $('tv').textContent=e.target.value+'°';
-overlayDirty=true;
 requestOverlayNow();
 if(!tiltDragging)return;
 if(tiltTimer)clearTimeout(tiltTimer);
@@ -3609,12 +3608,10 @@ $('azim').oninput=e=>{
 lastAzElVal=e.target.value;
 viewAzRad=wrapAzRad((+e.target.value)*Math.PI/180);
 $('av').textContent=e.target.value+'°';
-overlayDirty=true;
 requestOverlayNow();};
 function resetViewAngles(){
 endTiltDrag();
 setViewAngles(DEFAULT_TILT_DEG*Math.PI/180,0);
-overlayDirty=true;
 requestOverlayNow();
 announceView('View reset to default angle');}
 $('view-rst').onclick=resetViewAngles;
@@ -3631,6 +3628,7 @@ dragMoved=false;dragTiltMoved=false;
 try{cv.setPointerCapture(e.pointerId);}catch(_){}});
 cv.addEventListener('pointermove',e=>{
 if(e.pointerId!==dragPid)return;
+if(e.isTrusted&&e.pointerType==='mouse'&&(e.buttons&1)===0){endCanvasDrag(e);return;}
 if(!dragMoved){
 if(Math.hypot(e.clientX-dragStartX,e.clientY-dragStartY)<3)return;
 dragMoved=true;cv.classList.add('dragging');}
@@ -3642,7 +3640,6 @@ const nextTilt=Math.max(-Math.PI/2,Math.min(Math.PI/2,curTilt+dy*sens));
 const nextAz=curAz+dx*sens;
 if(Math.abs(nextTilt-curTilt)>1e-6){tiltDragging=true;dragTiltMoved=true;}
 setViewAngles(nextTilt,nextAz);
-overlayDirty=true;
 requestOverlayNow();});
 const endCanvasDrag=e=>{
 if(dragPid===null)return;
@@ -3652,12 +3649,13 @@ dragPid=null;dragMoved=false;dragTiltMoved=false;
 try{if(cv.hasPointerCapture(pid))cv.releasePointerCapture(pid);}catch(_){}
 cv.classList.remove('dragging');
 if(wasTilt)endTiltDrag();
-else if(wasMoved){overlayDirty=true;requestOverlayNow();}};
+else if(wasMoved)requestOverlayNow();};
 cv.addEventListener('lostpointercapture',endCanvasDrag);
 cv.addEventListener('pointerup',endCanvasDrag);
 cv.addEventListener('pointercancel',endCanvasDrag);
 cv.addEventListener('dblclick',resetViewAngles);
 cv.addEventListener('keydown',e=>{
+if(e.ctrlKey||e.metaKey||e.altKey)return;
 const step=(e.shiftKey?15:5)*Math.PI/180;
 if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
 e.preventDefault();
@@ -3668,7 +3666,7 @@ else if(e.key==='ArrowRight')nextAz+=step;
 else if(e.key==='ArrowUp')nextTilt-=step;
 else nextTilt+=step;
 setViewAngles(nextTilt,nextAz);
-overlayDirty=true;requestOverlayNow();
+requestOverlayNow();
 const tDeg=Math.round(getTiltRad()*180/Math.PI)||0,aDeg=Math.round(getAzRad()*180/Math.PI)||0;
 announceView('View rotated: tilt '+tDeg+' degrees, rotation '+aDeg+' degrees');
 }else if(e.key==='0'||e.key==='r'||e.key==='R'){
@@ -4063,6 +4061,16 @@ const axes=[
 {lbl:'y',X:-sa,V:ca*sp,D:ca*cp,col:theme.mut},
 {lbl:'z',X:0,V:cp,D:-sp,col:theme.acc}];
 axes.sort((a,b)=>b.D-a.D);
+const placed=[];
+for(let i=axes.length-1;i>=0;i--){
+const a=axes[i],ex=ox+a.X*R,ey=oy-a.V*R,len=Math.hypot(a.X,a.V);
+let lx=len>0.12?ex+(a.X/len)*8:ox+8,ly=len>0.12?ey-(a.V/len)*8:oy-8;
+for(const p of placed){
+const dx=lx-p[0],dy=ly-p[1],d=Math.hypot(dx,dy);
+if(d<11){const nx=len>0.12?-a.V/len:-1,ny=len>0.12?-a.X/len:0;lx+=nx*11;ly+=ny*11;}}
+lx=Math.max(8,Math.min(W-8,lx));ly=Math.max(8,Math.min(H-8,ly));
+a.ex=ex;a.ey=ey;a.lx=lx;a.ly=ly;
+placed.push([lx,ly]);}
 ctx.save();
 ctx.lineWidth=1.5;
 ctx.font='11px system-ui,sans-serif';
@@ -4070,12 +4078,9 @@ ctx.textAlign='center';ctx.textBaseline='middle';
 for(const a of axes){
 ctx.globalAlpha=a.D>0.2?0.42:0.88;
 ctx.strokeStyle=a.col;ctx.fillStyle=a.col;
-const ex=ox+a.X*R,ey=oy-a.V*R;
-ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ex,ey);ctx.stroke();
-ctx.beginPath();ctx.arc(ex,ey,2,0,TAU);ctx.fill();
-const len=Math.hypot(a.X,a.V);
-const lx=len>0.12?ox+a.X*(R+9):ox+8,ly=len>0.12?oy-a.V*(R+9):oy-8;
-ctx.fillText(a.lbl,lx,ly);}
+ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(a.ex,a.ey);ctx.stroke();
+ctx.beginPath();ctx.arc(a.ex,a.ey,2,0,TAU);ctx.fill();
+ctx.fillText(a.lbl,a.lx,a.ly);}
 ctx.restore();}
 
 function drawParticleTrail(hh,x,y,z,cx,cy,S,cp,sp,ca,sa){
@@ -4396,7 +4401,7 @@ function initTutorial(){
     syncDiaModeUI();
     components=(d.states&&d.states.length?d.states:[{n:1,l:0,m:0,amp:1,phaseDeg:0}]).map(s=>({id:nextId++,n:s.n,l:s.l,m:s.m,amp:s.amp??1,phaseDeg:s.phaseDeg??0}));
     rebuildComponentList();
-    setViewAngles((d.tilt!==undefined?d.tilt:getTiltRad()*180/Math.PI)*Math.PI/180,(d.azimuth||0)*Math.PI/180);
+    setViewAngles(d.tilt!==undefined?d.tilt*Math.PI/180:getTiltRad(),(d.azimuth||0)*Math.PI/180);
     if(d.speed!==undefined){$('spd').value=String(d.speed);$('sv').textContent=(+d.speed).toFixed(1)+'×';}
     if(d.trails!==undefined)$('tr').checked=!!d.trails;
     if(d.overlay!==undefined)$('ov').checked=!!d.overlay;
