@@ -334,8 +334,10 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 "use strict";
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d'),glCv=$('c-gl');
-let W=0,H=0,key='',onStageResize=null;
-function resize(){const rawD=window.devicePixelRatio,d=Number.isFinite(rawD)&&rawD>0?rawD:1;W=cv.clientWidth||0;H=cv.clientHeight||0;const pw=Math.max(0,Math.round(W*d)),ph=Math.max(0,Math.round(H*d));cv.width=pw;cv.height=ph;if(glCv){glCv.width=pw;glCv.height=ph;}ctx.setTransform(d,0,0,d,0,0);key='';if(typeof onStageResize==='function')onStageResize(W,H,d);}
+let W=0,H=0,key='',stageVersion=0,_stageDpr=1;
+const _stageResizeListeners=[];
+function addStageResizeListener(fn){if(typeof fn==='function'&&!_stageResizeListeners.includes(fn))_stageResizeListeners.push(fn);}
+function resize(){const rawD=window.devicePixelRatio,d=Number.isFinite(rawD)&&rawD>0?rawD:1;const nw=cv.clientWidth||0,nh=cv.clientHeight||0;const pw=Math.max(0,Math.round(nw*d)),ph=Math.max(0,Math.round(nh*d));const changed=nw!==W||nh!==H||d!==_stageDpr||cv.width!==pw||cv.height!==ph||(glCv&&(glCv.width!==pw||glCv.height!==ph));W=nw;H=nh;_stageDpr=d;if(cv.width!==pw||cv.height!==ph){cv.width=pw;cv.height=ph;}if(glCv&&(glCv.width!==pw||glCv.height!==ph)){glCv.width=pw;glCv.height=ph;}const sx=W>0?pw/W:d,sy=H>0?ph/H:d;ctx.setTransform(sx,0,0,sy,0,0);if(changed){key='';stageVersion++;for(let i=0;i<_stageResizeListeners.length;i++)_stageResizeListeners[i](W,H,d,pw,ph);}}
 const _selfScriptEl=typeof document!=='undefined'?document.currentScript:null;
 /* === WORKER_CORE_START === */
 let workerActive=false;
@@ -3746,8 +3748,10 @@ setOvMode($('ov-mode').value);
 
 /* === RENDERER_HELPERS_START === */
 function parseCssColor(str,fallbackRgb){
-const fb=Array.isArray(fallbackRgb)&&fallbackRgb.length>=3
-?[Number.isFinite(fallbackRgb[0])?fallbackRgb[0]:0,Number.isFinite(fallbackRgb[1])?fallbackRgb[1]:0,Number.isFinite(fallbackRgb[2])?fallbackRgb[2]:0,fallbackRgb.length>=4&&Number.isFinite(fallbackRgb[3])?fallbackRgb[3]:1]
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const isArr=(Array.isArray(fallbackRgb)||ArrayBuffer.isView(fallbackRgb))&&fallbackRgb.length>=3;
+const fb=isArr
+?[Number.isFinite(fallbackRgb[0])?clamp01(fallbackRgb[0]):0,Number.isFinite(fallbackRgb[1])?clamp01(fallbackRgb[1]):0,Number.isFinite(fallbackRgb[2])?clamp01(fallbackRgb[2]):0,fallbackRgb.length>=4&&Number.isFinite(fallbackRgb[3])?clamp01(fallbackRgb[3]):1]
 :[0,0,0,1];
 if(typeof str!=='string')return fb;
 const s=str.trim();
@@ -3783,7 +3787,7 @@ const numRe=/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?%?$/i;
 const parseChan=tok=>{
 if(!numRe.test(tok))return NaN;
 const v=tok.endsWith('%')?parseFloat(tok)/100:parseFloat(tok)/255;
-return Math.max(0,Math.min(1,v));};
+return Number.isFinite(v)?clamp01(v):NaN;};
 const r=parseChan(parts[0]),g=parseChan(parts[1]),b=parseChan(parts[2]);
 if(!Number.isFinite(r)||!Number.isFinite(g)||!Number.isFinite(b))return fb;
 let a=1;
@@ -3791,7 +3795,7 @@ if(aStr!==null){
 if(!numRe.test(aStr))return fb;
 a=aStr.endsWith('%')?parseFloat(aStr)/100:parseFloat(aStr);
 if(!Number.isFinite(a))return fb;
-a=Math.max(0,Math.min(1,a));}
+a=clamp01(a);}
 return[r,g,b,a];}
 
 function hslRhoToRgb(rho,E,out,off=0){
@@ -3810,25 +3814,28 @@ else if(hp<5){r=mid;g=m;b=hi;}
 else{r=hi;g=m;b=mid;}
 out[off]=r;out[off+1]=g;out[off+2]=b;}
 
+let _sortSeen=new Uint8Array(0);
 function sortParticleOrder(order,depths,n){
 if(!order||!depths||!(n>0))return;
-if(n>order.length)n=order.length;
-if(n>depths.length)n=depths.length;
+n=Math.floor(Math.min(n,order.length,depths.length));
+if(!(n>0))return;
 if(n===1){if(order[0]!==0)order[0]=0;return;}
-let needInit=false,zeroCount=0,sum=0,xor=0,expectedXor=0;
+if(_sortSeen.length<n)_sortSeen=new Uint8Array(n);
+_sortSeen.fill(0,0,n);
+let needInit=false;
 for(let i=0;i<n;i++){
 const idx=order[i];
-if(idx<0||idx>=n){needInit=true;break;}
-if(idx===0)zeroCount++;
-sum+=idx;xor^=idx;expectedXor^=i;}
-if(zeroCount!==1||sum!==(n*(n-1))/2||xor!==expectedXor)needInit=true;
+if(!Number.isInteger(idx)||idx<0||idx>=n||_sortSeen[idx]){needInit=true;break;}
+_sortSeen[idx]=1;}
 if(needInit){for(let i=0;i<n;i++)order[i]=i;}
 for(let i=1;i<n;i++){
 const idx=order[i],d=depths[idx];
+if(d===d){
 let j=i-1;
-while(j>=0&&depths[order[j]]<d){order[j+1]=order[j];j--;}
-order[j+1]=idx;}}
+while(j>=0&&!(depths[order[j]]>=d)){order[j+1]=order[j];j--;}
+order[j+1]=idx;}}}
 
+let themeVersion=0;
 let theme={bg:'#fbfbfa',bgR:251/255,bgG:251/255,bgB:250/255,line:'#d9d9dc',panel:'#f0f0ee',acc:'#534ab7',mut:'#6b6b70',grid:'rgba(110,110,115,.55)',gridR:110/255,gridG:110/255,gridB:115/255,gridA:0.55,ovR:83,ovG:74,ovB:183};
 function refreshTheme(){
 if(typeof getComputedStyle!=='function')return;
@@ -3844,7 +3851,11 @@ theme.bgR=bgC[0];theme.bgG=bgC[1];theme.bgB=bgC[2];
 const grC=parseCssColor(theme.grid,[theme.gridR,theme.gridG,theme.gridB,theme.gridA]);
 theme.gridR=grC[0];theme.gridG=grC[1];theme.gridB=grC[2];theme.gridA=grC[3];
 const ov=cs.getPropertyValue('--ov').split(',');
-if(ov.length===3){const r=+ov[0],g=+ov[1],b=+ov[2];if(Number.isFinite(r)&&Number.isFinite(g)&&Number.isFinite(b)){theme.ovR=r;theme.ovG=g;theme.ovB=b;}}}
+if(ov.length===3&&ov[0].trim()!==''&&ov[1].trim()!==''&&ov[2].trim()!==''){
+const r=+ov[0],g=+ov[1],b=+ov[2];
+if(Number.isFinite(r)&&Number.isFinite(g)&&Number.isFinite(b)){
+theme.ovR=Math.max(0,Math.min(255,r));theme.ovG=Math.max(0,Math.min(255,g));theme.ovB=Math.max(0,Math.min(255,b));}}
+themeVersion++;}
 refreshTheme();
 /* === RENDERER_HELPERS_END === */
 
