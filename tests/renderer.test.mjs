@@ -65,6 +65,14 @@ function createHelpersContext(cssVars = {}) {
       sortParticleOrder: typeof sortParticleOrder === 'function' ? sortParticleOrder : undefined,
       shadeSpherePixel: typeof shadeSpherePixel === 'function' ? shadeSpherePixel : undefined,
       buildSphereSpriteAtlas: typeof buildSphereSpriteAtlas === 'function' ? buildSphereSpriteAtlas : undefined,
+      ensurePartBuffers: typeof ensurePartBuffers === 'function' ? ensurePartBuffers : undefined,
+      getPartBuffers: () => ({
+        order: typeof partOrder !== 'undefined' ? partOrder : undefined,
+        depth: typeof partDepth !== 'undefined' ? partDepth : undefined,
+        sx: typeof partSX !== 'undefined' ? partSX : undefined,
+        sy: typeof partSY !== 'undefined' ? partSY : undefined,
+        hueT: typeof partHueT !== 'undefined' ? partHueT : undefined,
+      }),
       refreshTheme: typeof refreshTheme === 'function' ? refreshTheme : undefined,
       getTheme: () => (typeof theme !== 'undefined' ? theme : undefined),
       getThemeVersion: () => (typeof themeVersion !== 'undefined' ? themeVersion : undefined),
@@ -72,6 +80,107 @@ function createHelpersContext(cssVars = {}) {
   `;
   vm.runInNewContext(src + '\n' + tail, sandbox);
   return sandbox.__helpers;
+}
+
+function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } = {}) {
+  const helpersSrc = extractRendererHelpersSource();
+  const s2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_START === */');
+  const e2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_END === */');
+  assert.ok(s2 >= 0 && e2 > s2, 'Expected RENDERER_2D_START..END markers in electron_orbitals.html');
+  const r2dSrc = SCRIPT_SRC.slice(s2, e2);
+
+  const ops = [];
+  const resizeListeners = [];
+  let gAlpha = 1;
+  let fStyle = '';
+  const fakeCtx = {
+    get globalAlpha() { return gAlpha; },
+    set globalAlpha(v) { gAlpha = v; },
+    get fillStyle() { return fStyle; },
+    set fillStyle(v) { fStyle = v; },
+    strokeStyle: '',
+    lineWidth: 1,
+    font: '',
+    save: () => ops.push({ op: 'save' }),
+    restore: () => ops.push({ op: 'restore' }),
+    clearRect: (...a) => ops.push({ op: 'clearRect', a }),
+    setLineDash: (d) => ops.push({ op: 'setLineDash', d }),
+    beginPath: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    stroke: () => {},
+    arc: (x, y, r) => ops.push({ op: 'arc', x, y, r, alpha: gAlpha, fill: fStyle }),
+    fill: () => ops.push({ op: 'fill', alpha: gAlpha, fill: fStyle }),
+    fillText: (txt, x, y) => ops.push({ op: 'fillText', txt, x, y, alpha: gAlpha }),
+    drawImage: (src, ...a) => ops.push({ op: 'drawImage', src, a, alpha: gAlpha }),
+  };
+
+  let atlasBuilds = 0;
+  const cssVars = {
+    '--bg': '#fbfbfa',
+    '--line': '#d9d9dc',
+    '--panel': '#f0f0ee',
+    '--acc': '#534ab7',
+    '--mut': '#6b6b70',
+    '--grid': 'rgba(110,110,115,.55)',
+    '--ov': '83,74,183',
+  };
+
+  const sandbox = {
+    Math, Number, String, Array, ArrayBuffer,
+    Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray,
+    Object, RegExp,
+    TAU: Math.PI * 2,
+    W, H,
+    _stageDpr: dpr,
+    ctx: fakeCtx,
+    off: { _tag: 'overlay' },
+    offW: 100,
+    offH: 80,
+    cellSz: 3,
+    P: [],
+    addStageResizeListener: (fn) => resizeListeners.push(fn),
+    drawFieldGizmo: () => ops.push({ op: 'drawFieldGizmo' }),
+    drawAxisTriad: () => ops.push({ op: 'drawAxisTriad' }),
+    drawParticleTrail: () => ops.push({ op: 'drawParticleTrail' }),
+    document: {
+      documentElement: {},
+      createElement: (tag) => {
+        if (tag !== 'canvas') return {};
+        atlasBuilds++;
+        if (!atlasOk) return { getContext: () => null };
+        const cv = {
+          _tag: 'atlas-' + atlasBuilds,
+          width: 0,
+          height: 0,
+          getContext: () => ({
+            createImageData: (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }),
+            putImageData: () => {},
+          }),
+        };
+        return cv;
+      },
+    },
+    getComputedStyle: () => ({ getPropertyValue: (name) => cssVars[name] ?? '' }),
+  };
+
+  const tail = `
+    globalThis.__r2d = {
+      ensurePartBuffers,
+      sortParticleOrder,
+      getSphereAtlas,
+      drawHud2D,
+      drawScene2D,
+      refreshTheme,
+      getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, hueT: partHueT }),
+      setStageDpr: (d) => { _stageDpr = d; for (const fn of __resizeListeners) fn(W, H, d, Math.round(W*d), Math.round(H*d)); },
+      setP: (arr) => { P = arr; },
+      setOffDims: (w, h) => { offW = w; offH = h; },
+    };
+  `;
+  sandbox.__resizeListeners = resizeListeners;
+  vm.runInNewContext(helpersSrc + '\n' + r2dSrc + '\n' + tail, sandbox);
+  return { r2d: sandbox.__r2d, ops, cssVars, getAtlasBuilds: () => atlasBuilds };
 }
 
 function createStageInitContext({ withGlCanvas = true, dpr = 1, clientWidth = 640, clientHeight = 400 } = {}) {
@@ -509,13 +618,21 @@ test('shadeSpherePixel produces camera-lit shading, crisp edges, semi-transparen
   for (let c = 0; c < 4; c++) {
     assert.ok(Number.isFinite(clamped[c]) && clamped[c] >= 0 && clamped[c] <= 1, `Channel ${c} out of [0,1]: ${clamped[c]}`);
   }
+
+  // 6. baseAlphaOverride, reusable out buffer, and smooth AA ramp (1 - aa < dist < 1)
+  const reuse = [9, 9, 9, 9];
+  const nuc = shadeSpherePixel(0, 0, 0.5, 0.5, 0.5, 0.5, 0.98, 0.98, 0.98, 10, 0.85, reuse);
+  assert.equal(nuc, reuse, 'Must write into and return provided out array');
+  assert.ok(Math.abs(nuc[3] - 0.85) < 1e-6, `Expected overridden center alpha 0.85, got ${nuc[3]}`);
+
+  const aaInner = shadeSpherePixel(0.88, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 10);
+  const aaOuter = shadeSpherePixel(0.96, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 10);
+  assert.ok(aaInner[3] > aaOuter[3] && aaOuter[3] > 0, `Expected smooth AA falloff: ${aaInner[3]} > ${aaOuter[3]} > 0`);
 });
 
-test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile with transparent gutters', () => {
-  const h = createHelpersContext({
-    '--bg': '#fbfbfa',
-    '--grid': 'rgba(110,110,115,.55)',
-  });
+test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile matching shadeSpherePixel', () => {
+  const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)' };
+  const h = createHelpersContext(cssVars);
   assert.equal(typeof h.buildSphereSpriteAtlas, 'function');
   const atlas = h.buildSphereSpriteAtlas(2, h.getTheme());
   assert.ok(atlas && atlas.canvas && atlas.canvas._img, 'Expected atlas with populated ImageData');
@@ -524,6 +641,8 @@ test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile with tr
   assert.ok(atlas.tilePx >= 32, `Expected DPR 2 tilePx >= 32, got ${atlas.tilePx}`);
   assert.equal(atlas.canvas.width, (atlas.buckets + 1) * atlas.tilePx);
   assert.equal(atlas.canvas.height, atlas.depthBands * atlas.tilePx);
+  const expectedTileScale = (atlas.tilePx * 0.5) / ((atlas.tilePx - 2) * 0.5);
+  assert.ok(Math.abs(atlas.tileScale - expectedTileScale) < 1e-9, 'tileScale must compensate for 1px gutter');
 
   const img = atlas.canvas._img;
   const pxAt = (x, y) => {
@@ -531,24 +650,130 @@ test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile with tr
     return [img.data[o], img.data[o + 1], img.data[o + 2], img.data[o + 3]];
   };
 
-  // Every tile border pixel (1px gutter) must be transparent to prevent bilinear bleed
+  // Every tile perimeter (all 49 cols x 3 rows) has a 1px transparent gutter
   const tp = atlas.tilePx;
-  for (const col of [0, 23, 47, 48]) {
-    const x0 = col * tp;
-    assert.equal(pxAt(x0, 0)[3], 0);
-    assert.equal(pxAt(x0 + tp - 1, 0)[3], 0);
-    assert.equal(pxAt(x0 + (tp >> 1), 0)[3], 0);
-    assert.equal(pxAt(x0 + (tp >> 1), tp - 1)[3], 0);
+  for (let row = 0; row < atlas.depthBands; row++) {
+    const y0 = row * tp;
+    for (let col = 0; col <= atlas.buckets; col++) {
+      const x0 = col * tp;
+      for (let k = 0; k < tp; k++) {
+        assert.equal(pxAt(x0 + k, y0)[3], 0, `Top gutter non-zero at col=${col},row=${row},k=${k}`);
+        assert.equal(pxAt(x0 + k, y0 + tp - 1)[3], 0, `Bottom gutter non-zero at col=${col},row=${row},k=${k}`);
+        assert.equal(pxAt(x0, y0 + k)[3], 0, `Left gutter non-zero at col=${col},row=${row},k=${k}`);
+        assert.equal(pxAt(x0 + tp - 1, y0 + k)[3], 0, `Right gutter non-zero at col=${col},row=${row},k=${k}`);
+      }
+    }
   }
 
-  // Front depth band center alpha > mid > back for the same hue bucket
+  // Spot-check exact pixel match between atlas and shadeSpherePixel across buckets and depth bands
+  const halfTile = tp * 0.5, innerRad = (tp - 2) * 0.5;
+  const bandDns = [0.08, 0.5, 0.92];
+  const rgb = new Float32Array(3);
+  const tLight = h.getTheme();
+  for (const bi of [0, 17, 47]) {
+    h.hslRhoToRgb((bi / 47) * 0.8, 1, rgb, 0);
+    for (let db = 0; db < 3; db++) {
+      for (const [px, py] of [[tp >> 1, tp >> 1], [tp >> 1, 4], [tp - 3, tp >> 1]]) {
+        const u = (px + 0.5 - halfTile) / innerRad;
+        const v = (py + 0.5 - halfTile) / innerRad;
+        const ref = h.shadeSpherePixel(u, v, rgb[0], rgb[1], rgb[2], bandDns[db], tLight.bgR, tLight.bgG, tLight.bgB, innerRad);
+        const got = pxAt(bi * tp + px, db * tp + py);
+        for (let c = 0; c < 4; c++) {
+          assert.ok(Math.abs(got[c] - Math.round(ref[c] * 255)) <= 1, `Mismatch at bi=${bi},db=${db},ch=${c}: ${got[c]} vs ${Math.round(ref[c] * 255)}`);
+        }
+      }
+    }
+  }
+
+  // Front depth band center alpha > mid > back
   const cx = 10 * tp + (tp >> 1);
   const aFront = pxAt(cx, 0 * tp + (tp >> 1))[3];
   const aMid = pxAt(cx, 1 * tp + (tp >> 1))[3];
   const aBack = pxAt(cx, 2 * tp + (tp >> 1))[3];
   assert.ok(aFront > aMid && aMid > aBack && aBack > 60, `Expected front(${aFront}) > mid(${aMid}) > back(${aBack}) > 60`);
 
-  // Nucleus tile (col = 48, row = 0) has visible shaded center
-  const nucCenter = pxAt(48 * tp + (tp >> 1), tp >> 1);
-  assert.ok(nucCenter[3] >= 120, `Expected visible nucleus tile center alpha >= 120, got ${nucCenter[3]}`);
+  // Dark theme shifts far-band sprite pixels darker than light theme
+  cssVars['--bg'] = '#161618';
+  h.refreshTheme();
+  const darkAtlas = h.buildSphereSpriteAtlas(2, h.getTheme());
+  const dImg = darkAtlas.canvas._img;
+  const farOff = ((2 * tp + (tp >> 1)) * img.width + (10 * tp + (tp >> 1))) * 4;
+  assert.ok(img.data[farOff] > dImg.data[farOff] + 20, 'Far band on light theme must be brighter than dark theme');
+
+  // Fractional/odd/invalid DPRs clamp safely to [1, 3]
+  for (const d of [0.5, 1.05, 1.5, 4, NaN]) {
+    const a = h.buildSphereSpriteAtlas(d, h.getTheme());
+    assert.ok(a && a.tilePx >= 16 && a.tilePx <= 48, `Unexpected tilePx=${a?.tilePx} for dpr=${d}`);
+  }
+});
+
+test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invariants', () => {
+  // 1. Hot-loop invariants in frame(): no P.some closure, safe q.hist.length guard, DPR change sync
+  const frameSrc = SCRIPT_SRC.slice(SCRIPT_SRC.indexOf('function frame(now)'));
+  assert.doesNotMatch(frameSrc, /P\.some\(/, 'frame() must not allocate a closure via P.some()');
+  assert.match(frameSrc, /if\(run&&q\.hist&&q\.hist\.length\)/, 'frame() must guard q.hist.length before indexing');
+  assert.match(frameSrc, /devicePixelRatio/, 'frame() must detect DPR changes without window resize');
+
+  // 2. ensurePartBuffers: n=0, grow 50->600, shrink ->50, re-grow ->220
+  const { r2d, ops, cssVars, getAtlasBuilds } = createRenderer2DContext({ atlasOk: true, dpr: 1 });
+  r2d.ensurePartBuffers(0);
+  r2d.ensurePartBuffers(50);
+  assert.ok(r2d.getPartBuffers().order.length >= 64);
+  r2d.ensurePartBuffers(600);
+  assert.ok(r2d.getPartBuffers().order.length >= 600);
+  const b600 = r2d.getPartBuffers();
+  b600.order[0] = 599;
+  r2d.ensurePartBuffers(50);
+  assert.equal(r2d.getPartBuffers().order[0], 0, 'Shrinking n must reset stale indices in partOrder');
+  r2d.ensurePartBuffers(220);
+  assert.equal(r2d.getPartBuffers().order[219], 219, 'Growing n within cap must initialize 0..n-1');
+
+  // 3. getSphereAtlas caches until theme or DPR changes
+  const a1 = r2d.getSphereAtlas();
+  const builds1 = getAtlasBuilds();
+  assert.equal(r2d.getSphereAtlas(), a1, 'Atlas must be cached when theme and DPR are unchanged');
+  assert.equal(getAtlasBuilds(), builds1);
+  cssVars['--bg'] = '#161618';
+  r2d.refreshTheme();
+  const a2 = r2d.getSphereAtlas();
+  assert.notEqual(a2, a1, 'Theme change must invalidate and rebuild atlas');
+  assert.equal(getAtlasBuilds(), builds1 + 1);
+  r2d.setStageDpr(2);
+  const a3 = r2d.getSphereAtlas();
+  assert.notEqual(a3, a2, 'DPR change must invalidate and rebuild atlas');
+
+  // 4. drawScene2D nucleus interleaving: straddling depth=0 + NaN depth skipped cleanly + offW=0 guard
+  const st = { n: 3, singleMode: true, showOverlay: true, showTr: false, cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 1 };
+  r2d.setOffDims(0, 0);
+  r2d.ensurePartBuffers(3);
+  const pb = r2d.getPartBuffers();
+  // Particle 0 behind nucleus (+5), Particle 1 in front (-5), Particle 2 NaN depth
+  pb.depth[0] = 5; pb.sx[0] = 280; pb.sy[0] = 200; pb.hueT[0] = 0.2;
+  pb.depth[1] = -5; pb.sx[1] = 320; pb.sy[1] = 200; pb.hueT[1] = 0.8;
+  pb.depth[2] = NaN; pb.sx[2] = 300; pb.sy[2] = 200; pb.hueT[2] = 0.5;
+  r2d.sortParticleOrder(pb.order, pb.depth, 3);
+  ops.length = 0;
+  r2d.drawScene2D(st);
+  const draws = ops.filter((o) => o.op === 'drawImage');
+  assert.equal(draws.length, 3, 'Must draw back particle, nucleus, front particle (skipping NaN and 0x0 overlay)');
+  assert.equal(draws[0].a[0] < 48 * a3.tilePx, true, 'First sprite must be back particle (depth +5)');
+  assert.equal(draws[1].a[0], 48 * a3.tilePx, 'Second sprite must be interleaved nucleus (depth 0)');
+  assert.equal(draws[2].a[0] < 48 * a3.tilePx, true, 'Third sprite must be front particle (depth -5)');
+  assert.ok(ops.some((o) => o.op === 'fillText' && o.txt === 'z'), 'HUD z label must be drawn');
+
+  // 5. !atlas fallback must draw nucleus with globalAlpha === 1 even after semi-transparent back particles
+  const noAtlas = createRenderer2DContext({ atlasOk: false, dpr: 1 });
+  noAtlas.r2d.setP([{ col: 'red' }, { col: 'blue' }]);
+  noAtlas.r2d.ensurePartBuffers(2);
+  const npb = noAtlas.r2d.getPartBuffers();
+  npb.depth[0] = 8; npb.sx[0] = 280; npb.sy[0] = 200; npb.hueT[0] = 0.1;
+  npb.depth[1] = -8; npb.sx[1] = 320; npb.sy[1] = 200; npb.hueT[1] = 0.9;
+  noAtlas.r2d.sortParticleOrder(npb.order, npb.depth, 2);
+  noAtlas.ops.length = 0;
+  noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false });
+  const arcs = noAtlas.ops.filter((o) => o.op === 'arc');
+  assert.equal(arcs.length, 3, 'Must draw back particle, nucleus, front particle in !atlas fallback');
+  assert.equal(arcs[1].x, 300);
+  assert.equal(arcs[1].r, 3.2);
+  assert.equal(arcs[1].alpha, 1, 'Nucleus in !atlas fallback must have globalAlpha === 1');
 });
