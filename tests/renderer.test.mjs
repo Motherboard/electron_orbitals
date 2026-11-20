@@ -828,6 +828,7 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       deleteTexture: () => { deleted.tex++; },
       texParameteri: () => {},
       texImage2D: () => calls.push({ op: 'texImage2D' }),
+      texSubImage2D: () => calls.push({ op: 'texSubImage2D' }),
       activeTexture: () => {},
       viewport: () => {},
       clearColor: () => {},
@@ -875,7 +876,7 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
     const tail = `
       globalThis.__gl = {
         initWebGLRenderer, drawSceneGL, ensurePartBuffers, sortParticleOrder,
-        getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, hueT: partHueT }),
+        getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
         setP: (a) => { P = a; },
         bumpOv: () => { ovPaintedVersion++; },
         getRenderInfo: () => window.__renderInfo,
@@ -927,8 +928,30 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   mock.calls.length = 0;
   assert.equal(h.drawSceneGL(st, frameSt), true);
   assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 0, 'Unchanged overlay must not re-upload');
+  assert.equal(mock.calls.filter((c) => c.op === 'texSubImage2D').length, 0, 'Unchanged overlay must not sub-upload');
   assert.equal(mock.calls.filter((c) => c.op === 'bufferData').length, 0, 'Steady frame must not reallocate GPU VBO');
   assert.ok(mock.calls.some((c) => c.op === 'bufferSubData'), 'Steady frame must upload instances via bufferSubData');
+
+  // Animated overlay with unchanged dimensions uses texSubImage2D instead of reallocating texImage2D
+  h.bumpOv();
+  mock.calls.length = 0;
+  assert.equal(h.drawSceneGL(st, frameSt), true);
+  assert.equal(mock.calls.filter((c) => c.op === 'texSubImage2D').length, 1, 'Same-dimension overlay update must reuse storage via texSubImage2D');
+  assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 0);
+
+  // Incremental single-mode circular arc trail stays on exact circle radius and respects lineVerts
+  h.setP([{ rho: 5, z: 0, ph: 0, w: 2 }]);
+  h.ensurePartBuffers(1);
+  const pbArc = h.getPartBuffers();
+  pbArc.rx[0] = 5; pbArc.ry[0] = 0; pbArc.sx[0] = 350; pbArc.sy[0] = 200; pbArc.depth[0] = 0; pbArc.hueT[0] = 0.5;
+  mock.calls.length = 0;
+  assert.equal(h.drawSceneGL(st, { ...frameSt, n: 1, showOverlay: false, showTr: true, cp: 0, sp: 1, E: 20, span: 1 }), true);
+  const arcDraw = mock.calls.find((c) => c.op === 'drawArrays' && c.mode === mock.gl.LINES);
+  assert.ok(arcDraw && arcDraw.count >= 16, `Expected >= 16 arc trail vertices, got ${arcDraw?.count}`);
+  // Check final vertex lies at distance rho*S = 50 from (300, 200) within float32 tolerance
+  const lastOff = st.lineFloats - 6;
+  const endR = Math.hypot(st.lineBuf[lastOff] - 300, st.lineBuf[lastOff + 1] - 200);
+  assert.ok(Math.abs(endR - 50) < 1e-3, `Incremental arc endpoint drifted from radius 50: got ${endR}`);
 
   // Growing beyond initial 1024 instBuf cap must reallocate via bufferData
   const nBig = 1300;
