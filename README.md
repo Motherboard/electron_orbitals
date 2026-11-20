@@ -11,9 +11,9 @@ The project is primarily a self-contained HTML, CSS, and JavaScript visualizatio
 
 - Interactive 3D orbital and trajectory visualization
 - Hydrogen orbital states selected by principal quantum number, orbital angular momentum, and magnetic quantum number
-- Superposition controls for comparing multiple electron states
+- Superposition controls for building multi-state quantum superpositions with configurable amplitudes and phases
 - Density overlays and optional particle trails
-- Magnetic-field, polarization, Rabi-oscillation, detuning, and pulse-duration controls
+- Magnetic-field (including optional diamagnetic B² term), polarization, detuning, pulse-duration, and power / 1π Rabi-pulse controls
 - Coherent and single-photon interaction modes
 - Nine guided tutorial chapters with linked demonstrations
 - Atomic-unit and laboratory-scale readouts
@@ -21,44 +21,50 @@ The project is primarily a self-contained HTML, CSS, and JavaScript visualizatio
 
 ## Live demo
 
-Open [`electron_orbitals.html`](electron_orbitals.html) directly, or visit the [GitHub Pages site](https://motherboard.github.io/electron_orbitals/electron_orbitals.html).
+Visit the [GitHub Pages site](https://motherboard.github.io/electron_orbitals/electron_orbitals.html).
 
-> The repository also contains `index.html`, which redirects to the main visualization page.
+> The repository also contains `index.html`, which redirects the site root (`https://motherboard.github.io/electron_orbitals/`) to `electron_orbitals.html`.
 
 ## Run locally
 
-No installation, build step, or local web server is required. Open `electron_orbitals.html` in a current desktop browser—for example, double-click the file or open it from your browser. The app's HTML, CSS, JavaScript, and worker code are embedded in the page.
+No installation, build step, or local web server is required. Open `electron_orbitals.html` in a modern browser—for example, double-click the file or open it from your browser. The app's HTML, CSS, JavaScript, embedded tutorial chapters, and worker code are all self-contained in the page.
 
 ## Tutorial chapters
 
 The tutorial is available from the **Tutorial** panel in the application and in the [`tutorial/`](tutorial/) directory:
 
-1. [Schrodinger superposition and Bohmian mechanics](tutorial/01-schrodinger-superposition-and-bohmian-mechanics.md)
-2. [Magnetic field, Zeeman effect and precession](tutorial/02-magnetic-field-zeeman-and-precession.md)
-3. [Light and polarization](tutorial/03-light-and-polarization.md)
-4. [Light-electron interactions, Einstein coefficients and angular momentum](tutorial/04-light-electron-interactions-einstein-and-angular-momentum.md)
-5. [Rabi oscillations, detuning and bright/dark states](tutorial/05-rabi-oscillations-detuning-and-bright-dark-states.md)
-6. [Single-photon wave packets, ionization and the TDSE solver](tutorial/06-single-photon-wavepackets-ionization-and-tdse-solver.md)
-7. [Atomic units, canvas guide and model scope](tutorial/07-atomic-units-canvas-guide-and-model-scope.md)
-8. [Math toolkit](tutorial/08-math-toolkit.md)
-9. [Strong magnetic fields and the diamagnetic term](tutorial/09-strong-magnetic-fields-and-the-diamagnetic-term.md)
+1. [Bound Electrons, Superposition, Probability Flow & Bohmian Trajectories](tutorial/01-schrodinger-superposition-and-bohmian-mechanics.md)
+2. [Magnetic Fields, the Zeeman Effect & Larmor Precession](tutorial/02-magnetic-field-zeeman-and-precession.md)
+3. [Light, Polarization & Time-Dependent Fields](tutorial/03-light-and-polarization.md)
+4. [Light–Electron Interactions, Einstein Coefficients & Angular Momentum Conservation](tutorial/04-light-electron-interactions-einstein-and-angular-momentum.md)
+5. [Coherent EM Pulses: Rabi Oscillations, Detuning & Bright/Dark States](tutorial/05-rabi-oscillations-detuning-and-bright-dark-states.md)
+6. [Single-Photon Wavepackets, Entanglement, Ionization & the TDSE Solver](tutorial/06-single-photon-wavepackets-ionization-and-tdse-solver.md)
+7. [Atomic Units, Visualization Geometry & Model Scope](tutorial/07-atomic-units-canvas-guide-and-model-scope.md)
+8. [Math Toolkit: Complex Numbers, Vector Calculus, ODEs & Fourier Ideas](tutorial/08-math-toolkit.md)
+9. [Strong Magnetic Fields: The Diamagnetic B² Term](tutorial/09-strong-magnetic-fields-and-the-diamagnetic-term.md)
 
 ## Controls
 
 The interface provides controls for:
 
 - changing electron count and orbital superpositions;
-- selecting the simulated magnetic field and density behavior;
-- switching between two-dimensional slices and three-dimensional projection overlays;
-- adjusting tilt, rotation, simulation speed, and visible trails;
+- selecting the simulated magnetic field (including Toy range and the optional B² diamagnetic term) and density behavior;
+- switching density overlays between 2D slices (`|ψ|²`) and column projections (`∫|ψ|² dz_cam`);
+- adjusting tilt, rotation, simulation speed, playback (pause/play and restart), and visible trails;
 - choosing coherent EM-wave or single-photon interaction modes;
 - opening tutorial chapters and guided demonstrations.
 
-A keyboard-accessible canvas supports arrow-key view changes, and double-clicking the canvas restores the default view.
+Drag directly on the canvas—or focus it and use the arrow keys (hold `Shift` for larger steps)—to rotate the 3D view. Double-click the canvas, press `0` or `R`, or click **Reset view** to restore the default angle.
 
 ## Tests
 
-The test suite is written in JavaScript module format and contains physics and browser-oriented checks. Run with Node.js:
+The test suite is written in JavaScript module format and contains physics and browser-oriented checks.
+
+**Prerequisites:**
+- **Node.js 22+** (used for `node:test`, `import.meta.dirname`, and built-in `WebSocket`).
+- A local **Chromium or Chrome** binary on `PATH` (`chromium`, `chromium-browser`, or `google-chrome`) for the E2E browser test, or a custom path passed via `CHROMIUM_BIN`.
+
+Run each suite individually:
 
 ```bash
 node --test tests/physics.test.mjs
@@ -85,7 +91,7 @@ node --test tests/*.test.mjs
 
 ## Browser support
 
-Use a current desktop browser with JavaScript and Canvas support enabled. The interface includes a responsive layout and dark/light system-theme support.
+Use a modern browser with JavaScript and Canvas support enabled. The interface includes a responsive layout and dark/light system-theme support.
 
 ## Model scope
 
