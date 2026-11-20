@@ -1,6 +1,6 @@
 # 5. Coherent EM Pulses: Rabi Oscillations, Detuning & Bright/Dark States
 
-Einstein's *A*<sub>21</sub> and *B*<sub>21</sub> rate equations apply when an atom sits in **broadband, incoherent** thermal light. When you switch the simulator to **Coherent EM wave**, the atom interacts with a **phase-coherent laser or RF pulse** of duration *T*, shaped by a smooth sin²(π*t*/*T*) envelope. Instead of irreversible exponential relaxation, coherent light drives reversible **Rabi oscillations**, prepares exact superpositions, and flips quantum states by interference.
+Einstein's rate equations (coefficients *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub>; Chapter 4) apply when an atom sits in **broadband, incoherent** thermal light. When you switch the simulator to **Coherent EM wave**, the atom interacts with a **phase-coherent laser or RF pulse** of duration *T*, shaped by a smooth sin²(π*t*/*T*) envelope. Instead of irreversible exponential relaxation, coherent light drives reversible **Rabi oscillations**, prepares exact superpositions, and flips quantum states by interference.
 
 > **In a Nutshell:**
 > - A steady, coherent laser does not just "excite" an atom. It pushes population **up and back down** in a smooth cycle called **Rabi oscillation**.
@@ -22,11 +22,11 @@ The populations are *P*₁ = \|*c*₁\|² and *P*₂ = \|*c*₂\|². On resonanc
 
 > *ċ*₁(*t*) = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₂(*t*), &nbsp;&nbsp; *ċ*₂(*t*) = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₁(*t*)
 
-Here the dot means *d*/*dt*, and the **Rabi frequency** Ω<sub>R</sub>(*t*) = *d* ℰ(*t*) is the transition dipole along the polarization, *d* = \|⟨ψ₂\| **r**·**ε** \|ψ₁⟩\| (Chapter 4), times the field. Define the **pulse area** Θ(*t*) = ∫₀<sup>*t*</sup> Ω<sub>R</sub>(*t*′) *dt*′. Starting from *c*₁(0) = 1, *c*₂(0) = 0:
+Here the dot means *d*/*dt*. The **Rabi frequency** Ω<sub>R</sub>(*t*) = *d* ℰ(*t*) is the transition dipole along the polarization, *d* = \|⟨ψ₂\| **r**·**ε** \|ψ₁⟩\| (Chapter 4), times the field envelope. Define the **pulse area** Θ(*t*) = ∫₀<sup>*t*</sup> Ω<sub>R</sub>(*t*′) *dt*′. Starting from *c*₁(0) = 1, *c*₂(0) = 0:
 
 > *c*₁(*t*) = cos(Θ(*t*) / 2), &nbsp;&nbsp; *c*₂(*t*) = −*i* sin(Θ(*t*) / 2), &nbsp;&nbsp; *P*₂ = sin²(Θ / 2)
 
-**Meaning:** population swings smoothly between the two levels, and only the accumulated area Θ matters, not the detailed pulse shape. For the sin²(π*t*/*T*) envelope, whose average over [0, *T*] is ½, the total area at a **fixed** peak field ℰ₀ is Θ = ½ *d* ℰ₀ *T* (how the app chooses ℰ₀ for each Duration is explained below the Bloch sphere).
+**Meaning:** population swings smoothly between the two levels, and only the accumulated area Θ matters, not the detailed pulse shape. For the sin²(π*t*/*T*) envelope, whose average over [0, *T*] is ½, the total area at a **fixed** peak field ℰ₀ is Θ = ½ *d* ℰ₀ *T* (how the app chooses ℰ₀ for each Duration is explained in "How the App Sets Θ" below).
 
 > **The Bloch Sphere Picture (NMR & Quantum Optics Intuition):** Imagine the two-level quantum state as a unit arrow pointing **North** (\|1⟩) on a sphere. A resonant pulse rotates that arrow continuously downward by angle Θ: **Θ = π/2** stops on the equator (maximum coherence between \|1⟩ and \|2⟩, just like an NMR 90° RF pulse creating free-induction decay), **Θ = π** flips to the South Pole (\|2⟩), and **Θ = 2π** completes a full 360° turn back North—where spin-½ geometry attaches a minus sign cos(π) = **−1**!
 
@@ -128,10 +128,14 @@ More on this: [T4 · Coupled 2×2 ODEs and 3×3 eigenvalues](tut:08#T4). The pha
 
 </details>
 
-Three milestone pulse areas stand out. The UI reports Θ = π √Power · (Duration / *T*<sub>ref</sub>) · (ℰ<sub>unit</sub> / ℰ<sub>π,ref</sub>). Here ℰ<sub>π,ref</sub> is the peak field of a resonant π-pulse lasting exactly *T*<sub>ref</sub>, and ℰ<sub>unit</sub> = min(ℰ<sub>π,ref</sub>, ℰ<sub>safe</sub>(Duration)) is the peak field the app uses at Power = 1; the reference *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** for the selected line: the Duration at which a resonant π-pulse's peak field drops to the level that keeps the estimated continuum loss below ~0.6% (one-photon ionization of every populated shell, computed from exact Coulomb continuum waves, plus a multiphoton guard). For `1s → 2p`, *T*<sub>ref</sub> = 54 cycles; weak or Rydberg lines need longer (the Duration slider reaches 400 cycles), M1 Zeeman lines use 10. Up to *T*<sub>ref</sub> the last factor is 1, so Θ grows **linearly** with Duration. Longer than *T*<sub>ref</sub>, the field is clamped to the ionization-safe level ℰ<sub>safe</sub>, and that safe level itself **falls** (roughly as 1/√Duration, because a longer pulse has more time to ionize), so Θ ∝ field × Duration grows only about as √Duration: doubling Θ at fixed Power then takes about **4×** the Duration (2π near 4 *T*<sub>ref</sub>, ≈ 216 cycles for `1s → 2p`); Power > 1 exceeds that level and the readout warns about continuum loss. The **1π** button always picks Power ≤ 1 and stretches the Duration when needed:
+### How the App Sets Θ
+
+The UI reports Θ = π √Power · (Duration / *T*<sub>ref</sub>) · (ℰ<sub>unit</sub> / ℰ<sub>π,ref</sub>). Here ℰ<sub>π,ref</sub> is the peak field of a resonant π-pulse lasting exactly *T*<sub>ref</sub>, and ℰ<sub>unit</sub> = min(ℰ<sub>π,ref</sub>, ℰ<sub>safe</sub>(Duration)) is the peak field the app uses at Power = 1; the reference *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** for the selected line: the Duration at which a resonant π-pulse's peak field drops to the level that keeps the estimated continuum loss below ~0.6% (one-photon ionization of every populated shell, computed from exact Coulomb continuum waves, plus a multiphoton guard). For `1s → 2p`, *T*<sub>ref</sub> = 54 cycles; weak or Rydberg lines need longer (the Duration slider reaches 400 cycles), M1 Zeeman lines use 10. Up to *T*<sub>ref</sub> the last factor is 1, so Θ grows **linearly** with Duration. Longer than *T*<sub>ref</sub>, the field is clamped to the ionization-safe level ℰ<sub>safe</sub>, and that safe level itself **falls** (roughly as 1/√Duration, because a longer pulse has more time to ionize), so Θ ∝ field × Duration grows only about as √Duration: doubling Θ at fixed Power then takes about **4×** the Duration (2π near 4 *T*<sub>ref</sub>, ≈ 216 cycles for `1s → 2p`); Power > 1 exceeds that level and the readout warns about continuum loss. The **1π** button always picks Power ≤ 1 and stretches the Duration when needed.
+
+Three milestone pulse areas stand out:
 - **Θ = π/2** (`Duration = 27 cyc, Power = 1` on `1s → 2p`): *P*₁ = ½, *P*₂ = ½ — creates an exact **50/50 coherent superposition** that keeps beating after the pulse ends!
 - **Θ = π** (`Duration = 54 cyc, Power = 1`): *P*₂ = 1 — **complete population inversion** (or complete stimulated de-excitation).
-- **Θ = 2π** (`Duration = 216 cyc, Power = 1`, since Θ ∝ √Duration beyond *T*<sub>ref</sub>; or `Duration = 54, Power = 4` with a ~2% continuum-loss warning): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever a dark state stands alongside it.
+- **Θ = 2π** (`Duration = 216 cyc, Power = 1`, since Θ ∝ √Duration beyond *T*<sub>ref</sub>; or `Duration = 54, Power = 4` with a ~2% continuum-loss warning): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever an uncoupled **dark state** stands alongside it (§5.2).
 
 ```demo
 {
@@ -183,7 +187,7 @@ Three milestone pulse areas stand out. The UI reports Θ = π √Power · (Durat
 
 The note beneath the Coherent EM controls mentions: *"2π flips phase/m across dark & bright states."* Our exact formula *c*₁ = cos(Θ/2) = −1 at Θ = 2π explains why!
 
-Suppose the atom begins in **\|2p, +1⟩**, and we shine **x-polarized** light resonant with **2p ↔ 1s**. Because an *x*-polarized dipole connects \|1s, 0⟩ exclusively to the *x*-aligned orbital **\|bright⟩ = \|2p<sub>*x*</sub>⟩ = (1/√2)(\|2p, +1⟩ − \|2p, −1⟩)**, we call \|bright⟩ the **bright state**. Meanwhile, the perpendicular orbital **\|dark⟩ = \|2p<sub>*y*</sub>⟩ = (1/√2)(\|2p, +1⟩ + \|2p, −1⟩)** has zero overlap with *x*-polarized light—it is a **dark state**! (Each is written up to an overall phase factor, which never changes any probability.)
+Suppose the atom begins in **\|2p, +1⟩**, and we shine **x-polarized** light resonant with **2p ↔ 1s**. Because *x*-polarized light connects \|1s, 0⟩ only to the *x*-aligned orbital **\|bright⟩ = \|2p<sub>*x*</sub>⟩ = (1/√2)(\|2p, +1⟩ − \|2p, −1⟩)**, we call \|bright⟩ the **bright state**. Meanwhile, the perpendicular orbital **\|dark⟩ = \|2p<sub>*y*</sub>⟩ = (1/√2)(\|2p, +1⟩ + \|2p, −1⟩)** has a zero *x*-dipole matrix element with \|1s, 0⟩, so *x*-polarized light cannot touch it—it is a **dark state**! (Each is written up to an overall phase factor, which never changes any probability.)
 
 Decompose the initial state \|2p, +1⟩ in terms of \|bright⟩ and \|dark⟩ (add the two definitions and divide by √2):
 
@@ -197,7 +201,7 @@ Recombine them at *t* = *T*:
 
 > (1/√2)( −\|bright⟩ + \|dark⟩ ) = ½(−\|2p, +1⟩ + \|2p, −1⟩ + \|2p, +1⟩ + \|2p, −1⟩) = **\|2p, −1⟩** !
 
-Without any magnetic field, a 2π linear pulse flips the electron's orbital angular momentum by −2*ħ* by routing the bright half of the wavefunction down through \|1s, 0⟩ and back with a −1 phase flip!
+Without any magnetic field, a 2π linear pulse changes the electron's *L*<sub>*z*</sub> by −2*ħ* (from +*ħ* to −*ħ*) by routing the bright half of the wavefunction down through \|1s, 0⟩ and back with a −1 phase flip!
 
 **Where does the −2*ħ* go?** Recall from [Chapter 3](tut:03) and §4.4 that *x*-polarized light is an equal mix of σ⁺ and σ⁻. Going down, \|2p, +1⟩ → \|1s, 0⟩ is stimulated emission of a σ⁺ photon (Δ*m* = −1). Coming back up, \|1s, 0⟩ → \|2p, −1⟩ is absorption of a σ⁻ photon (Δ*m* = −1 again). The light field gains one σ⁺ photon and loses one σ⁻ photon, carrying away +2*ħ* in total, so angular momentum is conserved.
 
@@ -227,7 +231,7 @@ Without any magnetic field, a 2π linear pulse flips the electron's orbital angu
 
 ## 5.3 Detuning & Off-Resonant Rabi Suppression
 
-When the laser frequency is detuned from resonance by Δω = ω<sub>L</sub> − ω₀ ≠ 0, the RWA equations keep their oscillating phases *e*<sup>±*i*Δω*t*</sup> (step 10 of the Level 2 box in §5.1). For a constant-amplitude pulse starting in \|1⟩ they give the **generalized Rabi formula** (quoted here; the optional box below derives it):
+When the laser frequency is detuned from resonance by Δω = ω<sub>L</sub> − ω₀ ≠ 0, the RWA equations keep their oscillating phases *e*<sup>±*i*Δω*t*</sup> (step 10 of the Level 2 box in §5.1). For a constant-amplitude pulse starting in \|1⟩ they give the **generalized Rabi formula** (quoted here; the Level 2 box below derives it):
 
 > *P*₂(*t*) = [ Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²) ] sin²( ½ √(Ω<sub>R</sub>² + Δω²) *t* )
 
@@ -235,12 +239,12 @@ When the laser frequency is detuned from resonance by Δω = ω<sub>L</sub> − 
 
 Notice two effects of detuning:
 1. The oscillation speeds up to **Ω̃ = √(Ω<sub>R</sub>² + Δω²)**.
-2. The peak transfer probability shrinks by the **Lorentzian envelope** Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²): because the driving field drifts out of phase with the atom's natural Bohr beat ω₀, it pulls probability partway up and then stimulates it right back down before reaching 100%.
+2. The peak transfer probability shrinks by the **Lorentzian factor** Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²): because the driving field drifts out of phase with the atom's natural Bohr beat ω₀, it pulls probability partway up and then stimulates it right back down before reaching 100%.
 
 <details>
 <summary>Level 1 · Picture: pushing a swing slightly out of rhythm</summary>
 
-If you push a swing a little faster or slower than its natural rhythm, your pushes start in step but soon arrive at the wrong moment and take energy back out. The swing never gets as high, and the build-up and give-back cycle repeats faster. On the Bloch sphere, detuning tilts the rotation axis away from the equator, so the arrow sweeps a smaller cone and never reaches the South Pole.
+If you push a swing a little faster or slower than its natural rhythm, your pushes start in step but soon arrive at the wrong moment and take energy back out. The swing never gets as high, and the build-up and give-back cycle repeats faster. On the Bloch sphere, detuning tilts the rotation axis away from the equator, so the arrow sweeps a smaller cone and never reaches the South Pole. (The figure's detuning Δ is the Δω of the text, in the same units as its Rabi Ω.)
 
 ```figure
 {"kind": "rabi-bloch", "caption": "Move the detuning slider away from zero: the P₂ curve oscillates faster but never reaches 1, and the readout shows the generalized Rabi frequency.", "detuning": 0}
@@ -306,7 +310,7 @@ Steps 2–3 are the same "differentiate once more to get *ẍ* = −ω²*x*" tri
 
 ## 5.4 Spin-1 SU(2) Magnetic Resonance (Zeeman M1 Flips)
 
-When *B*<sub>*z*</sub> ≠ 0, the three Zeeman levels **\|2p, +1⟩, \|2p, 0⟩, \|2p, −1⟩** form an equally spaced 3-level **spin-1 (*l* = 1)** ladder coupled by ½ **B**₁(*t*) · **L**.
+When *B*<sub>*z*</sub> ≠ 0, the three Zeeman levels **\|2p, +1⟩, \|2p, 0⟩, \|2p, −1⟩** form an equally spaced 3-level **spin-1 (*l* = 1)** ladder coupled by ½ **B**₁(*t*) · **L**, where **B**₁(*t*) is the oscillating magnetic field of the RF wave (the M1 coupling of Chapter 4).
 
 In the ordered basis {\|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩}, the *x*-component of the Zeeman interaction matrix ½ *L*<sub>*x*</sub> is an explicit 3×3 tridiagonal matrix:
 
@@ -317,7 +321,7 @@ In the ordered basis {\|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩}, the *x*-component of
 <details>
 <summary>Level 1 · Picture: a ladder turns more slowly than a single rung</summary>
 
-In a two-level pair, the drive moves amplitude along one rung. In the ladder, the middle level \|2p, 0⟩ is coupled to **both** neighbours, so amplitude passes through it on the way from top to bottom. The natural "speeds" of the ladder are its eigenvalues: 0 and ±√2 in units of the single-rung coupling. The whole state turns like an arrow at an angle β = Θ/√2, and the top-to-bottom flip needs the arrow turned by β = π.
+In a two-level pair, the drive moves amplitude along one rung. In the ladder, the middle level \|2p, 0⟩ is coupled to **both** neighbours, so amplitude passes through it on the way from top to bottom. The natural "speeds" of the ladder are its eigenvalues: 0 and ±√2 in units of the single-rung coupling. The whole state turns like an arrow by an angle β = Θ/√2, and the top-to-bottom flip needs the arrow turned by β = π.
 
 <details>
 <summary>Level 2 · Full derivation: eigenvalues of the ladder matrix M</summary>
@@ -337,6 +341,24 @@ Eigenvalues λ solve det(*M* − λ*I*) = 0, where *I* is the 3×3 identity matr
 **Step 4 · Roots:** λ = 0 or λ² = 2, so **λ = 0, +√2, −√2**. Check: *M* (1, √2, 1) = (√2, 2, √2) = √2 · (1, √2, 1). ✓
 
 **Step 5 · Meaning.** Since ½ *L*<sub>*x*</sub> = *M*/(2√2), the eigenvalues of *L*<sub>*x*</sub> = *M*/√2 are 0 and ±1: the three possible values of *m* along *x*, just as they must be for *l* = 1. Writing the drive as (single-rung coupling) × *M* = (single-rung coupling) × √2 *L*<sub>*x*</sub> shows that the ladder rotates about *x* at a rate set by the single-rung Rabi frequency divided by √2, hence β = Θ/√2.
+
+**Step 6 · The populations during the flip.** Call the single-rung coupling *g*, so the drive is *g M*, the isolated-pair Rabi frequency is 2*g*, Θ = ∫ 2*g* *dt* and β = √2 ∫ *g* *dt* = Θ/√2. Normalized eigenvectors of *M*, written as (amplitude in \|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩):
+
+> **v**<sub>+</sub> = ½(1, √2, 1) for λ = √2, &nbsp;&nbsp; **v**<sub>0</sub> = (1/√2)(1, 0, −1) for λ = 0, &nbsp;&nbsp; **v**<sub>−</sub> = ½(1, −√2, 1) for λ = −√2
+
+The start state \|2p,+1⟩ = (1, 0, 0) equals ½**v**<sub>+</sub> + (1/√2)**v**<sub>0</sub> + ½**v**<sub>−</sub> (add them up to check). Each eigenvector only picks up a phase, just like *e*<sup>−*iEt*</sup> for a stationary state: **v**<sub>±</sub> gets *e*<sup>∓*i*β</sup> and **v**<sub>0</sub> gets 1. Adding the three pieces component by component, with *e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β:
+
+> amplitude in \|2p,+1⟩ = ¼ *e*<sup>−*i*β</sup> + ½ + ¼ *e*<sup>*i*β</sup> = ½(1 + cos β) = cos²(β/2)
+
+> amplitude in \|2p,0⟩ = (√2/4)(*e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup>) = −(*i*/√2) sin β
+
+> amplitude in \|2p,−1⟩ = ¼ *e*<sup>−*i*β</sup> − ½ + ¼ *e*<sup>*i*β</sup> = −½(1 − cos β) = −sin²(β/2)
+
+(using 1 ± cos β = 2 cos²(β/2) or 2 sin²(β/2)). Squaring gives the spin-1 rotation populations quoted in Chapter 2 (§2.4):
+
+> *P*<sub>+1</sub> = cos⁴(β/2), &nbsp;&nbsp; *P*<sub>0</sub> = ½ sin²β, &nbsp;&nbsp; *P*<sub>−1</sub> = sin⁴(β/2)
+
+They add to 1: with sin β = 2 sin(β/2) cos(β/2), the sum is cos⁴ + 2 sin² cos² + sin⁴ = (cos² + sin²)² = 1, every function taken at β/2. At β = π/2 (mid-flip) the middle level peaks at *P*<sub>0</sub> = ½; at β = π everything sits in \|2p,−1⟩.
 
 <details>
 <summary>Level 3 · Toolkit: 3×3 determinants and eigenvalues</summary>
@@ -375,7 +397,7 @@ Expanding a 3×3 determinant along a row, and finding eigenvalues from det(*M* �
 
 ### Quick Self-Check
 1. Check directly from *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2) that \|*c*₁\|² + \|*c*₂\|² = 1 holds at *every* time *t* (unitarity / probability conservation).
-2. In the **2π *m*-flip**, what happens if you accidentally drive **\|2p, +1⟩** with **z-polarized** light at the `2p ↔ 1s` frequency instead of **x-polarized** light? Why does *m* = +1 stay completely untouched? *(Hint: check the Δm = 0 selection rule!)*
+2. In the **2π *m*-flip**, what happens if you accidentally drive **\|2p, +1⟩** with **z-polarized** light at the `2p ↔ 1s` frequency instead of **x-polarized** light? Why does *m* = +1 stay completely untouched? (Hint: check the Δ*m* = 0 selection rule!)
 3. Why did `+1.5 bw` blue detuning on `1s → 2p` fail to stay two-level while `-1.5 bw` red detuning worked cleanly?
 
 ### Pen-and-Paper Practice

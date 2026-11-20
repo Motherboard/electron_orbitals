@@ -18,14 +18,14 @@ You do **not** need to read this chapter from start to finish. The other chapter
 | Section | Tool | Where the tutorial uses it |
 | :--- | :--- | :--- |
 | T1 | Complex numbers, Euler's formula | Ch1 (phase factors, real orbitals, beats), Ch3 (polarization), Ch4 (selection rules), Ch5 (Rabi amplitudes) |
-| T2 | Partial derivatives, ∇, ∇·, ∇×, ∇², product rules | Ch1 §1.1 (kinetic energy), §1.4 (probability current), Ch2 §2.1 (vector potential) |
+| T2 | Partial derivatives, ∇, ∇·, ∇×, ∇², product rules | Ch1 §1.1 (kinetic energy), §1.4 (probability current), §1.5 (quantum potential), Ch2 §2.1 (vector potential), §2.2 (∂/∂φ) |
 | T3 | First-order linear ODEs, integrating factor | Ch1 §1.1 (stationary states), Ch4 §4.2 (decay), Ch6 §6.1 (photon absorption) |
-| T4 | Coupled 2×2 equations, eigenvalues | Ch5 §5.1 (Rabi oscillations), §5.4 (three-level ladder), Ch2 §2.4 |
+| T4 | Coupled 2×2 equations, eigenvalues | Ch5 §5.1 (Rabi oscillations), §5.3 (detuning), §5.4 (three-level ladder), Ch2 §2.4 |
 | T5 | Spherical and cylindrical coordinates, radial Laplacian | Ch1 §1.1, §1.4, §1.5, Ch2 §2.2, Ch4 §4.1 |
-| T6 | Radial integrals, odd and even functions | Ch1 §1.1 (normalization, ⟨*r*⟩), Ch4 §4.3 (parity rule), Ch5 §5.1 |
+| T6 | Radial integrals, odd and even functions | Ch1 §1.1 (normalization, ⟨*r*⟩), §1.2 (sp hybrid), Ch4 §4.1 (radial integrals), §4.3 (parity rule), Ch5 §5.1 |
 | T7 | Operators, eigenvalues, Dirac notation | Every chapter |
 | T8 | Fourier ideas, time–bandwidth, Lorentzian | Ch3 §3.4 (bandwidth), Ch5 §5.3 (detuning), Ch6 §6.2 (linewidth) |
-| T9 | Cross product, angular momentum | Ch2 (Lorentz force, magnetic moment, Zeeman effect), Ch4 §4.4 |
+| T9 | Cross product, angular momentum | Ch1 §1.1, Ch2 §2.0–2.3 (Lorentz force, magnetic moment, Zeeman effect, Larmor precession), Ch4 §4.3–4.4 |
 | T10 | Field-tilted potentials (bonus) | Ch6 §6.4 (over-the-barrier ionization) |
 
 ---
@@ -60,7 +60,7 @@ and, for dividing, 1/*z* = *z*\* / \|*z*\|² (multiply top and bottom by *z*\*).
 
 **Worked example 1 (polar form).** *z* = 1 + *i*. Length \|*z*\| = √(1² + 1²) = √2. Angle: cos θ = sin θ = 1/√2, so θ = 45° = π/4. Hence *z* = √2 *e*<sup>*i*π/4</sup>. Squaring in polar form: *z*² = (√2)² *e*<sup>*i*π/2</sup> = 2*i*. Check the slow way: (1 + *i*)² = 1 + 2*i* + *i*² = 2*i*. ✓
 
-**Worked example 2 (interference).** Add two equal arrows with relative phase χ: \|1 + *e*<sup>*i*χ</sup>\|² = (1 + *e*<sup>−*i*χ</sup>)(1 + *e*<sup>*i*χ</sup>) = 1 + *e*<sup>*i*χ</sup> + *e*<sup>−*i*χ</sup> + 1 = **2 + 2 cos χ**. At χ = 0° the result is 4 (constructive: double the amplitude, four times the probability). At χ = 180° it is 0 (destructive: the arrows cancel). This is exactly why two copies of the same orbital at `0°` and `180°` cancel in Chapter 1, and why the 2p<sub>*x*</sub> and 2p<sub>*y*</sub> lobes appear.
+**Worked example 2 (interference).** Add two equal arrows with relative phase χ: \|1 + *e*<sup>*i*χ</sup>\|² = (1 + *e*<sup>−*i*χ</sup>)(1 + *e*<sup>*i*χ</sup>) = 1 + *e*<sup>*i*χ</sup> + *e*<sup>−*i*χ</sup> + 1 = **2 + 2 cos χ**. At χ = 0° the result is 4 (constructive: double the amplitude, four times the probability). At χ = 180° it is 0 (destructive: the arrows cancel). The same arithmetic decides, in Chapter 1 §1.2, where two superposed orbitals reinforce and where they cancel: \|2p, +1⟩ and \|2p, −1⟩ at a relative phase of `180°` give the 2p<sub>*x*</sub> lobes, at `0°` the 2p<sub>*y*</sub> lobes.
 
 ```figure
 {"kind": "euler-phasor", "caption": "Watch the arrow e^(iθ) go round the unit circle: its horizontal shadow is cos θ and its vertical shadow is sin θ. Pause at θ = 90° and read off e^(iπ/2) = i.", "omega": 1}
@@ -90,7 +90,7 @@ The last term is the **quantum beat**: it oscillates at the angular frequency *E
 - *g*(0) = cos 0 + *i* sin 0 = 1. ✓
 - *g*′(θ) = −sin θ + *i* cos θ. And *i g*(θ) = *i* cos θ + *i*² sin θ = *i* cos θ − sin θ (using *i*² = −1). These are equal. ✓
 
-Both functions obey the same rule and start at the same value, so they are the same function (Level 3 of [T3](tut:08#T3) shows that such a solution is unique). Hence *e*<sup>*i*θ</sup> = cos θ + *i* sin θ.
+Both functions obey the same rule and start at the same value, so they are the same function (the Level 2 box of [T3](tut:08#T3) shows that such a solution is unique). Hence *e*<sup>*i*θ</sup> = cos θ + *i* sin θ.
 
 **Step 3 (multiplication adds angles).** Multiply out and use the trig addition formulas:
 
@@ -242,7 +242,7 @@ The dot-product terms are equal and cancel. This turns the Laplacians in the Sch
 
 > (average of the 6 neighbours) − *f* ≈ (*h*²/6) ∇²*f*
 
-So ∇²*f* is proportional to how far the neighbours' average sits above *f*. This is also how computers evaluate ∇² on a grid (the app's TDSE solver in [Chapter 6](tut:06) §6.5 uses this idea along the radial direction).
+So ∇²*f* is proportional to how far the neighbours' average sits above *f*. This is also how computers evaluate ∇² on a grid (the app's radial TDSE solver, [Chapter 6](tut:06) §6.5, uses a refined three-point version of this neighbour difference, the Numerov stencil, along the radial direction).
 
 **The Coulomb field has zero divergence (away from the nucleus).** Take **E** = **r**/*r*³ = (*x*, *y*, *z*)/*r*³ with *r* = √(*x*² + *y*² + *z*²). Using ∂*r*/∂*x* = *x*/*r* ([T5](tut:08#T5)) and the quotient rule, ∂(*x*/*r*³)/∂*x* = 1/*r*³ − 3*x*²/*r*⁵. Adding the *y* and *z* versions: 3/*r*³ − 3(*x*² + *y*² + *z*²)/*r*⁵ = 3/*r*³ − 3/*r*³ = 0. All the "source" is concentrated at *r* = 0, where the charge sits (Gauss's law).
 
@@ -280,7 +280,7 @@ So ∇²*f* is proportional to how far the neighbours' average sits above *f*. T
 > *dy*/*dt* = *k y* &nbsp;&nbsp; ⇒ &nbsp;&nbsp; *y*(*t*) = *y*(0) *e*<sup>*kt*</sup>
 
 - Real *k* < 0: **decay**. An excited population obeys *dN*/*dt* = −Γ*N*, so *N*(*t*) = *N*(0) *e*<sup>−Γ*t*</sup> with lifetime τ = 1/Γ. Since a probability is the square of an amplitude, the amplitude itself decays half as fast, as *e*<sup>−Γ*t*/2</sup>.
-- Imaginary *k* = −*iE*: **rotation**. *df*/*dt* = −*iEf* gives *f*(*t*) = *e*<sup>−*iEt*</sup>, an arrow of fixed length 1 turning clockwise at angular frequency *E* ([T1](tut:08#T1)). This is the stationary-state phase: \|*f*\|² = 1 for all time.
+- Imaginary *k* = −*iE*: **rotation**. *df*/*dt* = −*iEf* gives *f*(*t*) = *e*<sup>−*iEt*</sup>, an arrow of fixed length 1 turning at angular frequency *E* (clockwise when *E* > 0; [T1](tut:08#T1)). This is the stationary-state phase: \|*f*\|² = 1 for all time.
 - Complex *k* = −*iE* − Γ/2: **both at once**. *f*(*t*) = *e*<sup>−*iEt*</sup> *e*<sup>−Γ*t*/2</sup> spirals inward. This is a decaying, oscillating amplitude, the starting point of the Lorentzian line shape in [T8](tut:08#T8).
 
 **Shape 2: filling while leaking.** A bucket filled at constant rate *R* leaks through a hole at a rate proportional to its contents:
@@ -291,7 +291,7 @@ The level rises toward the steady value *R*/Γ (where filling and leaking balanc
 
 **Worked example.** How full is the bucket after Γ*t* = 1, and after Γ*t* = 5?
 - Γ*t* = 1: 1 − *e*<sup>−1</sup> = 1 − 0.368 = 0.632, so **63.2%** of the steady level (one "time constant").
-- Γ*t* = 5: 1 − *e*<sup>−5</sup> = 1 − 0.00674 = 0.99326, so **99.33%**. The same number 1 − *e*<sup>−5</sup> is the absorption probability for the ideal single photon in Chapter 6, which uses Γ*T* = 5 (the Level 3 box shows why).
+- Γ*t* = 5: 1 − *e*<sup>−5</sup> = 1 − 0.00674 = 0.99326, so **99.33%**. The same number 1 − *e*<sup>−5</sup> is the absorption probability for the ideal single photon in Chapter 6, which uses Γ*T* = 5 (the Level 3 box derives this).
 
 ```figure
 {"kind": "leaky-bucket", "caption": "Fill mode: the hose adds water at rate R while the hole leaks at rate ΓN. The level climbs to 63% of R/Γ at Γt = 1 and 99.33% at Γt = 5.", "mode": "fill"}
@@ -340,7 +340,7 @@ Chapter 6 writes the excited-state amplitude of a two-level atom hit by one phot
 
 > *dc*<sub>*e*</sub>/*dt* = −(Γ/2) *c*<sub>*e*</sub> − √Γ ξ(*t*), &nbsp;&nbsp; *c*<sub>*e*</sub>(0) = 0
 
-(for a two-level atom Γ<sub>*b*</sub> = Γ<sub>tot</sub> = Γ). This is the general recipe with *p* = Γ/2 and *q* = −√Γ ξ(*t*). Take the ideal "time-reversed" photon on 0 < *t* < *T*, normalized so that ∫₀<sup>*T*</sup> ξ² *dt* = 1:
+(Chapter 6's general equation has the total decay rate Γ<sub>tot</sub> in the first term and Γ<sub>*b*</sub>, the decay rate back to the starting level, in the second; for a two-level atom both equal Γ). This is the general recipe with *p* = Γ/2 and *q* = −√Γ ξ(*t*). Take the ideal "time-reversed" photon on 0 < *t* < *T*, normalized so that ∫₀<sup>*T*</sup> ξ² *dt* = 1:
 
 > ξ(*t*) = *N* √Γ *e*<sup>Γ(*t*−*T*)/2</sup>, &nbsp;&nbsp; *N* = 1/√(1 − *e*<sup>−Γ*T*</sup>)
 
@@ -375,7 +375,7 @@ so the absorption probability is \|*c*<sub>*e*</sub>(*T*)\|² = 1 − *e*<sup>�
 
 *Used in:* [Chapter 5](tut:05) §5.1 (Rabi oscillations *P*₂ = sin²(Θ/2)), §5.3 (detuning), §5.4 (the three-level ladder and why the full flip needs Θ = √2 π); [Chapter 2](tut:02) §2.4 (the same √2 for the E1 ladder).
 
-**The idea.** When light drives a transition between two levels \|1⟩ and \|2⟩, each amplitude feeds the other. At exact resonance, and in the rotating-wave approximation of Chapter 5, with a constant **Rabi frequency** Ω:
+**The idea.** When light drives a transition between two levels \|1⟩ and \|2⟩, each amplitude feeds the other. At exact resonance, and in the rotating-wave approximation of Chapter 5, with a constant **Rabi frequency** Ω (written Ω<sub>R</sub> in Chapter 5):
 
 > *ċ*₁ = −*i* (Ω/2) *c*₂, &nbsp;&nbsp; *ċ*₂ = −*i* (Ω/2) *c*₁ &nbsp;&nbsp; (a dot means *d*/*dt*)
 
@@ -464,7 +464,7 @@ Total: −λ³ + 2λ, so λ = 0 or λ² = 2. The eigenvectors (check each by mul
 
 Full transfer (\|*c*₋₁\|² = 1) needs β = π, i.e. **Θ = √2 π**, exactly as stated in Chapter 5 §5.4. The middle amplitude works out to *c*₀ = −(*i*/√2) sin β, whose population ½ sin² β peaks at 50% half-way through (β = π/2), which is the mid-pulse bump of \|2p, 0⟩ you see in that demo.
 
-**Detuning.** If the laser is detuned by Δ from resonance, the 2×2 matrix (in a suitable rotating frame) becomes [[−Δ/2, Ω/2], [Ω/2, Δ/2]]. Its eigenvalues solve λ² − Δ²/4 − Ω²/4 = 0, so λ = ±½√(Ω² + Δ²). The populations now oscillate at the **generalized Rabi frequency** √(Ω² + Δ²) (faster), and the largest population reached in \|2⟩ is Ω²/(Ω² + Δ²) (less than 1). This is the formula of Chapter 5 §5.3, quoted here without the remaining algebra.
+**Detuning.** If the laser is detuned by Δ from resonance, the 2×2 matrix (in a suitable rotating frame) becomes [[−Δ/2, Ω/2], [Ω/2, Δ/2]]. Its eigenvalues solve λ² − Δ²/4 − Ω²/4 = 0, so λ = ±½√(Ω² + Δ²). The populations now oscillate at the **generalized Rabi frequency** √(Ω² + Δ²) (faster), and the largest population reached in \|2⟩ is Ω²/(Ω² + Δ²) (less than 1). This is the formula of Chapter 5 §5.3 (which writes the detuning as Δω), quoted here without the remaining algebra.
 
 </details>
 
@@ -583,7 +583,7 @@ The extra *l*(*l* + 1)/(2*r*²) acts like an additional repulsive potential, the
 <details>
 <summary>Answer</summary>
 
-1. sin 90° = 1, cos 90° = 0: *x* = 2 · 1 · 0 = 0, *y* = 2 · 1 · 1 = 2, *z* = 2 · 0 = 0, so the point is (0, 2, 0) on the +*y* axis. For (1, 1, √2): *r* = √(1 + 1 + 2) = 2; cos θ = *z*/*r* = √2/2, so θ = 45°; the point lies above the line *y* = *x*, so φ = 45°.
+1. sin 90° = 1, cos 90° = 0: *x* = 2 · 1 · 0 = 0, *y* = 2 · 1 · 1 = 2, *z* = 2 · 0 = 0, so the point is (0, 2, 0) on the +*y* axis. For (1, 1, √2): *r* = √(1 + 1 + 2) = 2; cos θ = *z*/*r* = √2/2, so θ = 45°; its shadow on the *xy*-plane, (1, 1), lies on the line *y* = *x* with *x*, *y* > 0, so φ = 45°.
 2. *f* = 1/*r*: *f*′ = −1/*r*², *f*″ = 2/*r*³. Then *f*″ + (2/*r*)*f*′ = 2/*r*³ − 2/*r*³ = 0. (Or: *r f* = 1, whose second derivative is 0.)
 
 </details>
@@ -717,7 +717,7 @@ Parity predicted it could be nonzero (2s even, *z* odd, 2p₀ odd: even overall)
 
 > ⟨*Ĥ*₀⟩ = Σ<sub>*k*</sub> \|*c*<sub>*k*</sub>\|² *E*<sub>*k*</sub> = ½(−½) + ½(−⅛) = −¼ − 1/16 = **−5/16 Ha**
 
-**Change of basis.** The same recipe *c*<sub>*k*</sub> = ⟨basis vector\|state⟩ works for ordinary complex vectors. Chapter 3's elliptical polarization **ε** = **x̂** + 0.4*i* **ŷ** can be written in the circular basis **ε**<sub>±</sub> = (**x̂** ± *i* **ŷ**)/√2: ⟨**ε**<sub>+</sub>\|**ε**⟩ = (1 − *i* · 0.4*i*)/√2 = 1.4/√2 and ⟨**ε**<sub>−</sub>\|**ε**⟩ = (1 + *i* · 0.4*i*)/√2 = 0.6/√2. The weights are 1.4² : 0.6² = 1.96 : 0.36, i.e. **84% : 16%**.
+**Change of basis.** The same recipe *c*<sub>*k*</sub> = ⟨basis vector\|state⟩ works for ordinary complex vectors. Chapter 3's elliptical polarization **ε** = **x̂** + 0.4*i* **ŷ** can be written in the circular basis **ε**<sub>±</sub> = (**x̂** ± *i* **ŷ**)/√2: ⟨**ε**<sub>+</sub>\|**ε**⟩ = (1 − *i* · 0.4*i*)/√2 = 1.4/√2 and ⟨**ε**<sub>−</sub>\|**ε**⟩ = (1 + *i* · 0.4*i*)/√2 = 0.6/√2. The weights are 1.4² : 0.6² = 1.96 : 0.36, i.e. **84.5% : 15.5%** (about 84 : 16).
 
 ```figure
 {"kind": "polarization-decomposition", "caption": "The ellipse x̂ + 0.4iŷ is the sum of a big counterclockwise circle (weight 1.4) and a small clockwise one (weight 0.6): squared, 84% to 16%. Taking inner products with basis vectors is how every such split is found."}
@@ -878,7 +878,7 @@ To find how much of frequency ω a signal *f*(*t*) contains, multiply it by *e*<
 
 ## T9. The cross product and angular momentum {#T9}
 
-*Used in:* [Chapter 1](tut:01) §1.1 (\|**L**\| and *L*<sub>*z*</sub> = *m*), [Chapter 2](tut:02) §2.0–2.3 (Lorentz force *q***v** × **B**, magnetic moment μ = −**L**/2, Zeeman energies, Larmor precession), [Chapter 4](tut:04) §4.3–4.4 (parity of **L**, angular momentum carried by circular light).
+*Used in:* [Chapter 1](tut:01) §1.1 (\|**L**\| and *L*<sub>*z*</sub> = *m*), [Chapter 2](tut:02) §2.0–2.3 (Lorentz force *q***v** × **B**, magnetic moment **μ** = −**L**/2, Zeeman energies, Larmor precession), [Chapter 4](tut:04) §4.3–4.4 (parity of **L**, angular momentum carried by circular light).
 
 **The idea.** The cross product takes two vectors and returns a third one **perpendicular to both**, whose length is the **area** of the parallelogram they span. Anything that turns or circulates (angular momentum, magnetic forces, torques) is naturally described by it.
 
@@ -893,7 +893,7 @@ To find how much of frequency ω a signal *f*(*t*) contains, multiply it by *e*<
 
 > **L** = **r** × **p**, &nbsp;&nbsp; *L*<sub>*z*</sub> = *x p*<sub>*y*</sub> − *y p*<sub>*x*</sub>
 
-For a circular orbit of radius *r* at speed *v*, **r** ⊥ **p**, so \|**L**\| = *r m v*. In quantum mechanics *L̂*<sub>*z*</sub> = −*i* ∂/∂φ ([T5](tut:08#T5)) with eigenvalues *m* (in units of *ħ*), and \|**L**\| = √(*l*(*l* + 1)).
+For a circular orbit of radius *r* at speed *v*, **r** ⊥ **p**, so \|**L**\| = *r m*<sub>e</sub> *v*. In quantum mechanics *L̂*<sub>*z*</sub> = −*i* ∂/∂φ ([T5](tut:08#T5)) with eigenvalues *m* (in units of *ħ*), and \|**L**\| = √(*l*(*l* + 1)).
 
 **Magnetic force and magnetic moment.**
 - A charge *q* moving with velocity **v** through a magnetic field **B** feels the **Lorentz force** **F** = *q* **v** × **B**. It is perpendicular to **v**, so it bends the path but does no work.
@@ -994,7 +994,7 @@ When the barrier top drops to the level's energy *E*<sub>*n*</sub> = −1/(2*n*�
 **Worked example.** For 1s (*n* = 1), ℰ<sub>OBI</sub> = 1/16 = 0.0625 a.u., and the barrier then sits at *z*<sub>max</sub> = 1/√(1/16) = 4 *a*₀ with height −2 · ¼ = −½ Ha = *E*₁. ✓ For *n* = 2 the threshold is 1/256 ≈ 0.0039 a.u., sixteen times lower: outer electrons are far easier to pull off.
 
 ```figure
-{"kind": "tilted-coulomb", "caption": "Raise the field and watch the right-hand wall of the Coulomb well tilt down. The curve turns red when the barrier top falls below the energy level, at field 1/(16n⁴).", "n": 1, "field": 0.04}
+{"kind": "tilted-coulomb", "caption": "Raise the field and watch the right-hand wall of the Coulomb well tilt down. The slider reads the field in units of the threshold 1/(16n⁴), so the curve turns red, with the barrier top below the energy level, once the slider passes 1.", "n": 1, "field": 0.04}
 ```
 
 <details>

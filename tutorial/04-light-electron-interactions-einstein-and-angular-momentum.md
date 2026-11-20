@@ -18,7 +18,7 @@ In an oscillating electric field **ℰ**(*t*), an electron of charge *q* = −*e
 
 > *i* ∂ψ/∂*t* = [ *Ĥ*₀ + **r** · **ℰ**(*t*) ] ψ &nbsp;&nbsp; (Electric dipole, E1)
 
-And when *B*<sub>*z*</sub> ≠ 0 unlocks intra-orbital transitions (Δ*n* = 0, Δ*l* = 0), an oscillating magnetic field **B**₁(*t*) couples to the orbit's magnetic moment. [Chapter 2](tut:02) (§2.0 and §2.2) showed that the orbiting electron is a tiny magnet with **μ** = −**L**/2 in atomic units (−(*e*/2*m*<sub>e</sub>)**L** in SI). Its energy in the field is *U* = −**μ** · **B**₁ = +½ **B**₁ · **L**, so:
+When *B*<sub>*z*</sub> ≠ 0 unlocks intra-orbital transitions (Δ*n* = 0, Δ*l* = 0), an oscillating magnetic field **B**₁(*t*) couples to the orbit's magnetic moment. [Chapter 2](tut:02) (§2.0 and §2.2) showed that the orbiting electron is a tiny magnet with **μ** = −**L**/2 in atomic units (−(*e*/2*m*<sub>e</sub>)**L** in SI). Its energy in the field is *U* = −**μ** · **B**₁ = +½ **B**₁ · **L**, so:
 
 > *i* ∂ψ/∂*t* = [ *Ĥ*₀ + ½ **B**₁(*t*) · **L** ] ψ &nbsp;&nbsp; (Magnetic dipole, M1)
 
@@ -106,7 +106,7 @@ E1-allowed lines group into the famous named spectral series seen in hydrogen di
 - **Balmer series** (*n* ↔ 2, visible): **H<sub>α</sub>** (3 → 2, 1.890 eV, **bright red**: 656.11 nm clamped; real atom 656.47 nm in vacuum = 656.28 nm in air), **H<sub>β</sub>** (4 → 2, 2.551 eV, **blue-green**: 486.01 nm clamped; real atom 486.27 nm in vacuum = 486.13 nm in air). *(Wavelength tables for visible lines usually quote **air** values; 656.3 nm and 486.1 nm are air wavelengths.)*
 - **Paschen series** (*n* ↔ 3, near-infrared): e.g., **Pa-α** (4 → 3, 0.661 eV, 1875 nm).
 
-Unlike molecular vibrational IR spectroscopy (where a harmonic potential restricts Δ*v* = ±1), **Δ*n* is unrestricted** in electronic transitions (0, 1, 2, 3, … are all allowed whenever Δ*l* = ±1) because the anharmonic −1/*r* Coulomb potential bends radial wavefunctions so *R*<sub>*nl*</sub> overlaps across all shells. However, higher overtones grow weaker as radial overlap shrinks: ⟨1s\|*r*\|2p⟩ = **1.2903 *a*₀**, ⟨1s\|*r*\|3p⟩ = **0.5167 *a*₀**, and ⟨1s\|*r*\|4p⟩ = **0.3046 *a*₀** (radial integrals).
+Unlike molecular vibrational IR spectroscopy (where a harmonic potential restricts Δ*v* = ±1), **Δ*n* is unrestricted** in electronic transitions: 0, 1, 2, 3, … are all allowed whenever Δ*l* = ±1. The reason is that the −1/*r* Coulomb potential is not harmonic, so the radial functions *R*<sub>*nl*</sub> of all shells overlap with each other. The lines still grow weaker as Δ*n* grows, because that radial overlap shrinks: ⟨1s\|*r*\|2p⟩ = **1.2903 *a*₀**, ⟨1s\|*r*\|3p⟩ = **0.5167 *a*₀**, and ⟨1s\|*r*\|4p⟩ = **0.3046 *a*₀** (radial integrals).
 
 ---
 
@@ -116,8 +116,8 @@ In 1917, before Schrödinger's equation even existed, Albert Einstein analyzed a
 
 He showed that **three** radiative processes must operate simultaneously:
 1. **Absorption** (1 → 2): upward transition rate = *N*₁ *B*<sub>12</sub> ρ(ω₀) (in chemistry, *B*<sub>12</sub> sets the integrated UV-Vis molar absorptivity / oscillator strength; see the box below).
-2. **Stimulated emission** (2 → 1): downward rate = *N*₂ *B*<sub>21</sub> ρ(ω₀), triggered by an incoming photon to emit a clone photon with the same frequency, phase, direction, and polarization.
-3. **Spontaneous emission** (2 → 1): downward rate = *N*₂ *A*<sub>21</sub>, occurring even in dark vacuum (ρ = 0) and determining the natural **fluorescence lifetime** τ = 1/*A*<sub>21</sub>!
+2. **Stimulated emission** (2 → 1): downward rate = *N*₂ *B*<sub>21</sub> ρ(ω₀); an incoming photon triggers the atom to emit a clone photon with the same frequency, phase, direction, and polarization.
+3. **Spontaneous emission** (2 → 1): downward rate = *N*₂ *A*<sub>21</sub>, occurring even in dark vacuum (ρ = 0); it sets the natural **fluorescence lifetime** τ = 1/*A*<sub>21</sub>.
 
 ### Einstein's Relations
 The three coefficients are not independent. Requiring that the atoms and the blackbody light stay in thermal equilibrium at every temperature forces **Einstein's two laws**:
@@ -184,30 +184,36 @@ Physically: at huge light intensity the stimulated terms dominate, and they must
 
 > **Connecting to a UV-Vis Spectrum: Oscillator Strength *f* and Beer–Lambert:**
 > - Chemists summarize a line's strength by the dimensionless **oscillator strength**. For absorption from a non-degenerate lower level such as 1s (atomic units): *f* = ⅔ Δ*E* \|**d**<sub>21</sub>\|², summed over the upper level's *m* states. For hydrogen Lyman-α (1s → 2p) the angular parts sum to 1, Δ*E* = 3/8 Ha, and *f* = ⅔ × (3/8) × 1.2903² ≈ **0.416**: a strong, fully allowed line. Forbidden transitions have *f* ≈ 0; weak, "partly forbidden" bands have *f* ~ 10⁻³–10⁻⁵.
-> - In solution, **Beer–Lambert** absorbance is Abs = ε *c* ℓ (molar absorptivity ε in L mol⁻¹ cm⁻¹, concentration *c*, path length ℓ). The area under an absorption band measures *f* directly: *f* ≈ 4.32 × 10⁻⁹ ∫ ε(ν̃) *d*ν̃ (ν̃ in cm⁻¹). So a large transition dipole means a large ε and a strong band.
+> - In solution, **Beer–Lambert** absorbance is Abs = ε *c* ℓ (molar absorptivity ε in L mol⁻¹ cm⁻¹, not to be confused with the polarization vector **ε**; concentration *c*, path length ℓ). The area under an absorption band measures *f* directly: *f* ≈ 4.32 × 10⁻⁹ ∫ ε(ν̃) *d*ν̃ (ν̃ in cm⁻¹). So a large transition dipole means a large ε and a strong band.
 
 ### Exact Weisskopf–Wigner Spontaneous Decay Rate Γ = *A*<sub>21</sub>
 Quantum electrodynamics (**Weisskopf–Wigner theory**) evaluates *A*<sub>21</sub> directly from the atom's dipole coupling to vacuum electromagnetic modes. In `electron_orbitals.html`, the **Single photon** panel calculates and displays the upper level's exact spontaneous decay rate (summed over its channels, Γ<sub>tot</sub>), natural lifetime τ = 1/Γ<sub>tot</sub>, linewidth Δν = Γ<sub>tot</sub>/2π, natural optical cycles *N* = ω₀/(2πΓ<sub>tot</sub>), and the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel. Each channel's rate is (quoted result):
 
 > *A*<sub>21</sub> = Γ = ω₀³ \|*d*\|² / (3π ε₀ *ħ* *c*³) = (4/3) α³ ω₀³ [ max(*l*<sub>u</sub>, *l*<sub>l</sub>) / (2*l*<sub>u</sub> + 1) ] \|⟨*n*<sub>l</sub>*l*<sub>l</sub> \|*r*\| *n*<sub>u</sub>*l*<sub>u</sub>⟩\|² &nbsp;&nbsp; *(atomic units)*
 
-Here \|*d*\|² is \|**d**<sub>21</sub>\|² summed over all final *m* sublevels, the subscripts u and l mean upper and lower level, the last factor is the squared radial integral of §4.1, and α ≈ 1/137.036 is the fine-structure constant (1/*c* in atomic units, where also 4πε₀ = 1 and *ħ* = 1). The angular factor max(*l*<sub>u</sub>, *l*<sub>l</sub>)/(2*l*<sub>u</sub> + 1) is also a quoted result. **Intuition:** the total angular coupling between the two levels, summed over all their sublevels, is max(*l*<sub>u</sub>, *l*<sub>l</sub>) (in units of the squared radial integral), and it is shared equally among the 2*l*<sub>u</sub> + 1 upper sublevels. So it is the fraction of the upper level's angular structure that can couple down. For 2p → 1s the factor is 1/3: a 2p<sub>*z*</sub> electron, for example, can reach 1s only through the *z* component of **r**, one direction out of three. For 3d → 2p it is 2/5.
+Here \|*d*\|² is *e*²\|**d**<sub>21</sub>\|² summed over all final *m* sublevels (*e* = 1 in atomic units), the subscripts u and l mean upper and lower level, the last factor is the squared radial integral of §4.1, and α ≈ 1/137.036 is the fine-structure constant (1/*c* in atomic units, where also 4πε₀ = 1 and *ħ* = 1). The angular factor max(*l*<sub>u</sub>, *l*<sub>l</sub>)/(2*l*<sub>u</sub> + 1) is also a quoted result. **Intuition:** the total angular coupling between the two levels, summed over all their sublevels, is max(*l*<sub>u</sub>, *l*<sub>l</sub>) (in units of the squared radial integral), and it is shared equally among the 2*l*<sub>u</sub> + 1 upper sublevels. So it is the fraction of the upper level's angular structure that can couple down. For 2p → 1s the factor is 1/3: a 2p<sub>*z*</sub> electron, for example, can reach 1s only through the *z* component of **r**, one direction out of three. For 3d → 2p it is 2/5.
 
 Plugging in **Lyman-α (2p → 1s)** (ω₀ = 3/8 Ha, factor 1/3, radial integral 1.2903) gives:
 - Γ = 6.268 × 10⁸ s⁻¹ (natural linewidth 99.76 MHz)
 - Lifetime τ = 1.595 ns
 - Natural oscillations *N* ≈ 3.94 × 10⁶ cycles!
 
-> **Partial vs. Total Excited-State Lifetime:** For **2p**, **1s** is the *only* lower E1-allowed level, so the single channel rate *A*<sub>2p→1s</sub> equals the total decay rate and τ<sub>2p</sub> = 1.595 ns. Above *n* = 2, multiple downward channels compete (for example, **3p** decays mainly to **1s** in the UV at 102.6 nm and more slowly to **2s** at Balmer H<sub>α</sub> 656.3 nm); total decay rate sums all lower channels, Γ<sub>tot</sub> = ∑<sub>*f*<*i*</sub> *A*<sub>*i*→*f*</sub>. **Single photon** mode reports Γ<sub>tot</sub> and τ = 1/Γ<sub>tot</sub>, because the ideal photon is the time-reversed emission of the whole upper level, plus the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel, which caps how often that photon can be absorbed. Even within the same Balmer H<sub>α</sub> energy (656.3 nm), the **3s → 2p** channel (*A* = 6.317 × 10⁶ s⁻¹, partial lifetime 1/*A* = 158.3 ns) is ~3.5× slower than the **3p → 2s** channel (*A* = 2.246 × 10⁷ s⁻¹, partial lifetime 44.5 ns). Be careful which number is the real lifetime:
+> **Partial vs. Total Excited-State Lifetime:** For **2p**, **1s** is the *only* lower E1-allowed level, so the single channel rate *A*<sub>2p→1s</sub> equals the total decay rate and τ<sub>2p</sub> = 1.595 ns. Above *n* = 2, multiple downward channels compete (for example, **3p** decays mainly to **1s** in the UV at Ly-β, ≈ 102.6 nm, and more slowly to **2s** at Balmer H<sub>α</sub>, 656.3 nm in air); the total decay rate sums all lower channels, Γ<sub>tot</sub> = ∑<sub>*f*<*i*</sub> *A*<sub>*i*→*f*</sub>. **Single photon** mode reports Γ<sub>tot</sub> and τ = 1/Γ<sub>tot</sub>, because the ideal photon is the time-reversed emission of the whole upper level. It also reports the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel, which caps how often that photon can be absorbed. Even within the same Balmer H<sub>α</sub> energy (656.3 nm), the **3s → 2p** channel (*A* = 6.317 × 10⁶ s⁻¹, partial lifetime 1/*A* = 158.3 ns) is ~3.5× slower than the **3p → 2s** channel (*A* = 2.246 × 10⁷ s⁻¹, partial lifetime 44.5 ns). Be careful which number is the real lifetime:
 > - **3s** can only decay to 2p, so its partial lifetime *is* its true lifetime: **τ(3s) = 158 ns**.
-> - **3p** decays mostly to 1s (*A* = 1.67 × 10⁸ s⁻¹) and only sometimes to 2s, so Γ<sub>tot</sub> = 1.67 × 10⁸ + 0.22 × 10⁸ ≈ 1.90 × 10⁸ s⁻¹ and **τ(3p) ≈ 5.3 ns**—much shorter than the 44.5 ns partial value. About 12% of 3p atoms emit the red H<sub>α</sub> photon (the **branching ratio** 0.22/1.90).
+> - **3p** decays mostly to 1s (*A* = 1.67 × 10⁸ s⁻¹) and only sometimes to 2s, so Γ<sub>tot</sub> = 1.673 × 10⁸ + 0.225 × 10⁸ ≈ 1.90 × 10⁸ s⁻¹ and **τ(3p) ≈ 5.3 ns**—much shorter than the 44.5 ns partial value. About 12% of 3p atoms emit the red H<sub>α</sub> photon (the **branching ratio** 0.225/1.90 ≈ 0.12).
 
 *(For Zeeman M1 transitions, the rate carries α⁵ instead of α³. That extra α² ≈ 5 × 10⁻⁵, together with differences in the matrix elements, makes spontaneous M1 decay typically 10⁴–10⁶ times slower than an E1 transition of the same energy.)*
 
 <details>
 <summary>How the app handles stimulated vs. spontaneous emission (app details)</summary>
 
-Both **`Coherent EM wave`** and **`Single photon`** configure an **incoming** radiation field hitting the atom (`stim. emit` in the transition menu drives stimulated downward emission, never spontaneous emission of a coherent EM wave—true spontaneous decay requires vacuum QED fluctuations). Instead, **Single photon** mode displays the exact QED spontaneous rate *A*<sub>21</sub> = Γ (for the selected *m*₁ → *m*₂ Zeeman channel when *B*<sub>*z*</sub> ≠ 0, or summed over final *m* when *B*<sub>*z*</sub> = 0), enforces a 1-quantum excitation cap, reports **Branch match** (projecting both uncoupled initial electron spectators and arbitrary **ε** onto the interacting dipole channel **ε**<sub>int</sub>, while blocking wrong-spin emission at `0%`—click **Match** to auto-select the valid polarization), and sends in its time-reversed wavepacket. The animation shows the branch where the photon is absorbed (or stimulates emission), ending 100% in the target, while the note reports how likely that absorption really is (Chapter 6, §§6.1–6.3).
+Both **`Coherent EM wave`** and **`Single photon`** set up an **incoming** radiation field hitting the atom. `stim. emit` in the transition menu therefore drives stimulated downward emission, never spontaneous emission: true spontaneous decay needs the vacuum fluctuations of quantum electrodynamics (QED), which the simulation does not contain. What **Single photon** mode does instead:
+- it displays the exact QED spontaneous rate *A*<sub>21</sub> = Γ (for the selected *m*₁ → *m*₂ Zeeman channel when *B*<sub>*z*</sub> ≠ 0, or summed over final *m* when *B*<sub>*z*</sub> = 0);
+- it caps the excitation at one quantum;
+- it reports **Branch match**: how much of the initial state and of your polarization **ε** projects onto the one dipole channel **ε**<sub>int</sub> that drives the selected transition. Polarization with the wrong handedness gives `0%`; click **Match** to auto-select the valid polarization;
+- it sends in the time-reversed emission wavepacket.
+
+The animation shows the branch where the photon is absorbed (or stimulates emission), ending 100% in the target, while the note reports how likely that absorption really is (Chapter 6, §§6.1–6.3).
 
 </details>
 
@@ -222,7 +228,7 @@ Why are some transitions bright and others strictly forbidden? The angular integ
 **Meaning:** a photon carries one unit of angular momentum and is "odd" under turning space inside out, so it can only connect orbitals whose *l* differ by one and whose *m* differ by the photon's own *m*.
 
 ### 1. Parity (Laporte) Rule: Why Δ*l* = ±1
-Every hydrogen orbital is either **even** or **odd** when you turn space inside out (**r** → −**r**): ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). The position vector **r** itself is odd. An integrand that is odd overall integrates to zero over all space, so ψ₁ and ψ₂ must have **opposite parity** (*l*₁ + *l*₂ odd). Combined with the triangle rule below, only **Δ*l* = ±1** is electric-dipole allowed (so **1s → 2s** and **1s → 3d** are E1-forbidden!).
+Every hydrogen orbital is either **even** or **odd** when you turn space inside out (**r** → −**r**): ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). The position vector **r** itself is odd. An integrand that is odd overall integrates to zero over all space, so ψ₁ and ψ₂ must have **opposite parity** (*l*₁ + *l*₂ odd). Combined with the triangle rule (step 7 of the Level 2 box below), only **Δ*l* = ±1** is electric-dipole allowed (so **1s → 2s** and **1s → 3d** are E1-forbidden!).
 
 <details>
 <summary>Level 1 · Picture: odd integrands cancel</summary>
@@ -272,7 +278,7 @@ One-dimensional version of step 5: if *g*(−*x*) = −*g*(*x*), substitute *x* 
 
 </details>
 
-*(By contrast, **L** = **r** × **p** flips sign twice under **r** → −**r**, so **L** has even parity and M1 transitions obey Δn = 0, Δl = 0 for l ≥ 1.)*
+*(By contrast, in **L** = **r** × **p** both **r** and **p** flip sign under **r** → −**r**, so **L** has even parity and M1 transitions never change parity. In fact **L** only reshuffles the m-components of one orbital, so M1 transitions obey Δn = 0, Δl = 0 with l ≥ 1.)*
 
 > **Chemistry connection — Laporte and spin rules in molecules:**
 > - **Laporte rule:** in molecules and complexes with a center of symmetry, transitions between orbitals of the same parity (g → g or u → u) are forbidden. That is why d → d bands of octahedral transition-metal complexes are weak (ε ~ 1–100 L mol⁻¹ cm⁻¹); they only appear because vibrations briefly break the symmetry.
@@ -289,7 +295,7 @@ Each orbital carries a factor *e*<sup>*im*φ</sup>, and the φ-integral is zero 
 <details>
 <summary>Level 1 · Picture: the φ-integral as a spinning clock hand</summary>
 
-As φ runs from 0 to 2π, *e*<sup>*ik*φ</sup> is a clock hand that goes around the unit circle *k* times. Adding up the hand's position all the way around, it points every direction equally often, so the sum is zero. Only when *k* = 0 does the hand stand still and the integral survive (it then equals 2π).
+As φ runs from 0 to 2π, *e*<sup>*ik*φ</sup> is a clock hand that goes around the unit circle *k* times. Added up all the way around, the hand points in every direction equally often, so the sum is zero. Only when *k* = 0 does the hand stand still and the integral survive (it then equals 2π).
 
 ```figure
 {"kind": "euler-phasor", "caption": "As the angle runs once around the circle, the cosine and sine shadows spend equal time positive and negative, so each averages to zero.", "omega": 1}
@@ -321,11 +327,11 @@ By Euler's formula, *e*<sup>*i*2π*k*</sup> = cos 2π*k* + *i* sin 2π*k* = 1 fo
 Those azimuthal integrals express a deep physical conservation law: **every photon carries intrinsic spin angular momentum of magnitude 1*ħ***!
 
 - **σ⁺ light** carries **+*ħ*** along the +*z*-axis:
-  - **Absorption (1s → 2p):** Atom absorbs the +*ħ* photon, so *L*<sub>*z*</sub> rises by +1*ħ* (**Δ*m* = +1**).
+  - **Absorption (1s → 2p):** The atom absorbs the +*ħ* photon, so *L*<sub>*z*</sub> rises by +1*ħ* (**Δ*m* = +1**).
   - **Stimulated emission (2p → 1s):** Remember what stimulated emission means! An incoming σ⁺ photon (+*ħ*) stimulates the atom to emit a **second identical σ⁺ photon** carrying +*ħ* away. By conservation of angular momentum (*L*<sub>*z*,before</sub> = *L*<sub>*z*,after</sub> + *ħ*), the atom's *L*<sub>*z*</sub> must **drop by 1*ħ*** (**Δ*m* = −1**)! That is why σ⁺ stimulates emission from **\|2p, +1⟩ → \|1s, 0⟩**, whereas **σ⁻ cannot stimulate emission from \|2p, +1⟩ → \|1s, 0⟩** (it would require *m*<sub>f</sub> = +2, which does not exist in *s* orbitals!).
 - **σ⁻ light** carries **−*ħ*** along +*z*: **Δ*m* = −1** in absorption and **Δ*m* = +1** in stimulated emission.
-- **z (π) light** carries **0** angular momentum along *z* (*m*<sub>*z*</sub> = 0—an equal 50/50 superposition of `+ħ` and `−ħ` intrinsic spin helicities along its transverse propagation direction **k** in the *xy*-plane, or equivalently a *j* = 1, *m* = 0 dipole photon): **Δ*m* = 0**, transferring transverse angular impulse to change *l* = 0 → 1 while keeping ⟨*L*<sub>*z*</sub>⟩ = 0.
-- **x or y linear light** is a 50/50 superposition (**ε**<sub>+</sub> + **ε**<sub>−</sub>)/√2, exciting both *m* = +1 and *m* = −1 equally into a standing orbital with ⟨*L*<sub>*z*</sub>⟩ = 0!
+- **z (π) light** carries **0** angular momentum along *z*. It travels along some direction **k** in the *xy*-plane, and its spin along **k** is an equal 50/50 superposition of +*ħ* and −*ħ* (equivalently, it is a *j* = 1, *m* = 0 dipole photon). So **Δ*m* = 0**: the photon still brings one unit of angular momentum (it raises *l* from 0 to 1), but its *z*-component is zero, so ⟨*L*<sub>*z*</sub>⟩ stays 0.
+- **x or y linear light** is a 50/50 superposition of σ⁺ and σ⁻: x̂ = (**ε**<sub>+</sub> + **ε**<sub>−</sub>)/√2 and ŷ = (**ε**<sub>+</sub> − **ε**<sub>−</sub>)/(*i*√2), exciting both *m* = +1 and *m* = −1 equally into a standing orbital with ⟨*L*<sub>*z*</sub>⟩ = 0!
 
 Watch conservation of angular momentum literally spin up—and spin down—the Bohmian electrons in real time:
 
@@ -351,8 +357,8 @@ Watch conservation of angular momentum literally spin up—and spin down—the B
 
 ```demo
 {
-  "label": "σ⁻ absorption: 1s,0 → 2p,-1 (atom gains −ħ)",
-  "caption": "Opposite circular helicity spins the initially motionless 1s dots clockwise into |2p, -1⟩.",
+  "label": "σ⁻ absorption: 1s,0 → 2p,−1 (atom gains −ħ)",
+  "caption": "Opposite circular helicity spins the initially motionless 1s dots clockwise into |2p, −1⟩.",
   "states": [{"n": 1, "l": 0, "m": 0, "amp": 1, "phaseDeg": 0}],
   "B": 0,
   "tilt": 70,
@@ -472,9 +478,9 @@ Watch conservation of angular momentum literally spin up—and spin down—the B
 ---
 
 ### Quick Self-Check
-1. Using parity (**r** → −**r**) and Δ*l* = ±1, explain why both **1s → 2s** and **2s → 3d** are E1-forbidden even though hydrogen energy levels allow them cleanly by Δ*E*.
-2. Why can **σ⁻** light drive **|2p, +1⟩ → |3d, 0⟩** (and **|3s, 0⟩**) upward in absorption, yet cannot trigger stimulated emission **|2p, +1⟩ → |1s, 0⟩** downward?
-3. Switch to **Coherent EM wave** mode at *B* = 0 (`2p → 3d` at H<sub>α</sub>, `30 cyc`, `Power = 1`): why does driving **2p,+1 + σ⁻** populate **both** *3d,0* and *3s,0* (unlike **Single photon** Demo #6 above, which isolates the selected *3d,0* channel cleanly to 100%)? How would turning on *B*<sub>*z*</sub> change their degeneracy?
+1. Using parity (**r** → −**r**) and Δ*l* = ±1, explain why both **1s → 2s** and **2s → 3d** are E1-forbidden even though energy conservation alone would allow them.
+2. Why can **σ⁻** light drive **\|2p, +1⟩ → \|3d, 0⟩** (and **\|3s, 0⟩**) upward in absorption, yet cannot trigger stimulated emission **\|2p, +1⟩ → \|1s, 0⟩** downward?
+3. Switch to **Coherent EM wave** mode at *B* = 0 (`2p → 3d` at H<sub>α</sub>, `30 cyc`, `Power = 1`): why does driving **2p,+1 + σ⁻** populate **both** *3d,0* and *3s,0* (unlike the **Single photon** demo "Allowed upward σ⁻: 2p,+1 → 3d,0" above, whose animation shows only the selected *3d,0* channel, ending at 100%)? How would turning on *B*<sub>*z*</sub> change their degeneracy?
 
 ### Pen-and-Paper Practice
 - **P1.** Use the Rydberg formula to predict the wavelength of the Balmer H<sub>β</sub> line (*n* = 4 → 2).
@@ -486,7 +492,7 @@ Watch conservation of angular momentum literally spin up—and spin down—the B
 
 - **1.** Every hydrogen orbital has parity (−1)<sup>*l*</sup>. 1s → 2s has Δ*l* = 0 (same parity), and 2s → 3d has Δ*l* = 2 (same parity again). In both cases the integrand of **d**<sub>21</sub> is odd under **r** → −**r**, so the integral vanishes even though the energy difference is fine.
 - **2.** σ⁻ always changes *m* by −1 in absorption and +1 in stimulated emission. Absorbing upward from *m* = +1 lands on *m* = 0, which exists in both 3d and 3s. Stimulated emission downward to 1s would need *m* = +2, which an *s* orbital cannot have, so the coupling is exactly zero.
-- **3.** At B = 0, both \|3d, 0⟩ and \|3s, 0⟩ satisfy Δl = ±1 with Δm = −1 from \|2p, +1⟩ and share m = 0, so a full-spectrum classical field couples both simultaneously—and even for B_z ≠ 0, both m = 0 levels experience zero linear Zeeman shift (+0·B_z/2) and remain exactly degenerate! By contrast, 2p,+1 + σ⁺ → 3d,+2 shifts by +B_z/2 and has no m = +2 s-orbital counterpart.
+- **3.** At *B*<sub>*z*</sub> = 0, both \|3d, 0⟩ and \|3s, 0⟩ satisfy Δ*l* = ±1 with Δ*m* = −1 from \|2p, +1⟩, and they have the same energy, so a classical field tuned to H<sub>α</sub> couples both at once. Even for *B*<sub>*z*</sub> ≠ 0, both *m* = 0 levels get zero linear Zeeman shift (0 · *B*<sub>*z*</sub>/2) and stay exactly degenerate in the app, which keeps only the linear Zeeman term (the much smaller diamagnetic *B*<sub>*z*</sub>² shift of Chapter 2 would split them very slightly in a real atom). By contrast, 2p,+1 + σ⁺ → 3d,+2 shifts by +*B*<sub>*z*</sub>/2 and has no *m* = +2 *s*-orbital partner.
 - **P1.** 1/λ = 109,737 × (1/4 − 1/16) ≈ 20,576 cm⁻¹, so λ ≈ **486 nm** (blue-green).
 - **P2.** Allowed (Δ*l* = ±1): **2p → 1s, 3d → 2p, 4f → 3d**. Forbidden: 3d → 1s (Δ*l* = 2) and 3s → 2s (Δ*l* = 0).
 - **P3.** Abs = ε*c*ℓ = 5.0 × 10⁴ × 1.0 × 10⁻⁵ × 1.00 = **0.50**. Transmitted fraction = 10<sup>−0.50</sup> ≈ **32%**.
