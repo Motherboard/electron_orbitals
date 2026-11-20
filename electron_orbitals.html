@@ -3800,7 +3800,7 @@ const SPHERE_CFG={
 radFront:4.8,radBack:2.4,nucRad:3.2,
 alphaFront:0.76,alphaBack:0.40,nucAlphaMin:0.75,
 diffAmb:0.24,diffScale:0.76,
-specFront:0.62,specBack:0.25,
+specFront:0.52,specBack:0.20,
 fogMax:0.22,volBase:0.72,volCore:0.28,
 aaPx:1.5,aaMin:0.01,aaMax:0.45,
 trailAlpha:0.55,arcMax:1.65*Math.PI,arcStep:0.18,arcMinSegs:8};
@@ -3888,7 +3888,7 @@ const d=Number.isFinite(dn)?Math.max(0,Math.min(1,dn)):0.5;
 const nz=Math.sqrt(1-r2);
 const diff=C.diffAmb+C.diffScale*nz;
 const n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8;
-const spec=n16*n8*n4*n2*(C.specFront-(C.specFront-C.specBack)*d);
+const spec=n16*n16*n16*(C.specFront-(C.specFront-C.specBack)*d);
 let lr=_clamp01((Number.isFinite(r)?r:0)*diff+spec);
 let lg=_clamp01((Number.isFinite(g)?g:0)*diff+spec);
 let lb=_clamp01((Number.isFinite(b)?b:0)*diff+spec);
@@ -3934,10 +3934,10 @@ let edge=1;
 if(dist>e0){const t=(dist-e0)*invAa;edge=1-t*t*(3-2*t);}
 if(!(edge>0))continue;
 const nz=Math.sqrt(1-r2),diff=C.diffAmb+C.diffScale*nz;
-const n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8,nz30=n16*n8*n4*n2;
+const n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8,nz48=n16*n16*n16;
 const vol=edge*(C.volBase+C.volCore*nz);
 for(let db=0;db<depthBands;db++){
-const d=bandDns[db],spec=nz30*(C.specFront-specSpan*d),fog=C.fogMax*d,invFog=1-fog;
+const d=bandDns[db],spec=nz48*(C.specFront-specSpan*d),fog=C.fogMax*d,invFog=1-fog;
 const fR=bR*fog,fG=bG*fog,fB=bB*fog;
 const aByte=Math.round(_clamp01((C.alphaFront-alphaSpan*d)*vol)*255);
 const rowBase=((db*tilePx+py)*w+px)*4;
@@ -4539,7 +4539,7 @@ void main(){
   float nz=sqrt(max(0.0,1.0-r2));
   float diff=${_glF(SPHERE_CFG.diffAmb)}+${_glF(SPHERE_CFG.diffScale)}*nz;
   float n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8;
-  float spec=n16*n8*n4*n2*v_specScale;
+  float spec=n16*n16*n16*v_specScale;
   vec3 lit=clamp(v_rgb*diff+vec3(spec),0.0,1.0);
   vec3 col=clamp(mix(lit,u_bgColor,v_fog),0.0,1.0);
   float a=clamp(v_baseAlpha*edge*(${_glF(SPHERE_CFG.volBase)}+${_glF(SPHERE_CFG.volCore)}*nz),0.0,1.0);
