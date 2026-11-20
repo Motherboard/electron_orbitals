@@ -35,9 +35,25 @@ function createHelpersContext(cssVars = {}) {
     Float64Array,
     Int32Array,
     Uint8Array,
+    Uint8ClampedArray,
     Object,
     RegExp,
-    document: { documentElement: {} },
+    document: {
+      documentElement: {},
+      createElement: (tag) => {
+        if (tag !== 'canvas') return {};
+        const cv = {
+          width: 0,
+          height: 0,
+          _img: null,
+          getContext: () => ({
+            createImageData: (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }),
+            putImageData: (img) => { cv._img = img; },
+          }),
+        };
+        return cv;
+      },
+    },
     getComputedStyle: () => ({
       getPropertyValue: (name) => cssVars[name] ?? '',
     }),
@@ -47,6 +63,8 @@ function createHelpersContext(cssVars = {}) {
       parseCssColor: typeof parseCssColor === 'function' ? parseCssColor : undefined,
       hslRhoToRgb: typeof hslRhoToRgb === 'function' ? hslRhoToRgb : undefined,
       sortParticleOrder: typeof sortParticleOrder === 'function' ? sortParticleOrder : undefined,
+      shadeSpherePixel: typeof shadeSpherePixel === 'function' ? shadeSpherePixel : undefined,
+      buildSphereSpriteAtlas: typeof buildSphereSpriteAtlas === 'function' ? buildSphereSpriteAtlas : undefined,
       refreshTheme: typeof refreshTheme === 'function' ? refreshTheme : undefined,
       getTheme: () => (typeof theme !== 'undefined' ? theme : undefined),
       getThemeVersion: () => (typeof themeVersion !== 'undefined' ? themeVersion : undefined),
@@ -446,4 +464,91 @@ test('refreshTheme populates normalized RGB/alpha fields, increments themeVersio
   assert.equal(t.ovR, 83);
   assert.equal(t.ovG, 74);
   assert.equal(t.ovB, 183);
+});
+
+test('shadeSpherePixel produces camera-lit shading, crisp edges, semi-transparency, and depth fog', () => {
+  const { shadeSpherePixel } = createHelpersContext();
+  assert.equal(typeof shadeSpherePixel, 'function');
+
+  const lum = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+  // 1. Center (0, 0) has higher luminance than limb (0.85, 0) (camera-aligned diffuse + specular highlight)
+  const center = shadeSpherePixel(0, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
+  const limb = shadeSpherePixel(0.85, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
+  assert.equal(center.length, 4);
+  assert.ok(lum(center) > lum(limb) + 0.2, `Expected center lum (${lum(center)}) >> limb lum (${lum(limb)})`);
+
+  // 2. Outside unit circle returns alpha 0
+  const outside = shadeSpherePixel(0.9, 0.9, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
+  assert.equal(outside[3], 0);
+  const exactEdge = shadeSpherePixel(1, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
+  assert.equal(exactEdge[3], 0);
+  const nanCoord = shadeSpherePixel(NaN, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
+  assert.equal(nanCoord[3], 0);
+
+  // 3. Semi-transparency: center alpha for dn = 0 in (0.65, 0.85) and strictly greater than dn = 1 alpha in (0.30, 0.50)
+  const nearPx = shadeSpherePixel(0, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 10);
+  const farPx = shadeSpherePixel(0, 0, 0.4, 0.6, 0.8, 1, 0.5, 0.5, 0.5, 10);
+  assert.ok(nearPx[3] > 0.65 && nearPx[3] < 0.85, `Expected dn=0 alpha in (0.65, 0.85), got ${nearPx[3]}`);
+  assert.ok(farPx[3] > 0.30 && farPx[3] < 0.50, `Expected dn=1 alpha in (0.30, 0.50), got ${farPx[3]}`);
+  assert.ok(nearPx[3] > farPx[3], 'Near sphere must be more opaque than far sphere');
+  // Core-to-edge translucency: center alpha > mid-limb alpha (before AA zone)
+  const midLimb = shadeSpherePixel(0.7, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 20);
+  assert.ok(nearPx[3] > midLimb[3], 'Center must have higher volumetric alpha than limb');
+
+  // 4. Depth fog: at dn = 1, far pixel shifts toward active dark vs light background
+  const farDark = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 1, 0.08, 0.08, 0.09, 10);
+  const farLight = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 1, 0.98, 0.98, 0.98, 10);
+  const nearDark = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 0, 0.08, 0.08, 0.09, 10);
+  const nearLight = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 0, 0.98, 0.98, 0.98, 10);
+  assert.ok(Math.abs(lum(nearDark) - lum(nearLight)) < 1e-6, 'Near sphere (dn=0) should have zero background fog');
+  assert.ok(lum(farLight) > lum(farDark) + 0.15, `Far sphere on light bg (${lum(farLight)}) must be brighter than on dark bg (${lum(farDark)})`);
+
+  // 5. All output channels stay within [0, 1] even for tiny/invalid radPx or bright inputs
+  const clamped = shadeSpherePixel(0, 0, 1, 1, 1, -0.5, 1, 1, 1, 0);
+  for (let c = 0; c < 4; c++) {
+    assert.ok(Number.isFinite(clamped[c]) && clamped[c] >= 0 && clamped[c] <= 1, `Channel ${c} out of [0,1]: ${clamped[c]}`);
+  }
+});
+
+test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile with transparent gutters', () => {
+  const h = createHelpersContext({
+    '--bg': '#fbfbfa',
+    '--grid': 'rgba(110,110,115,.55)',
+  });
+  assert.equal(typeof h.buildSphereSpriteAtlas, 'function');
+  const atlas = h.buildSphereSpriteAtlas(2, h.getTheme());
+  assert.ok(atlas && atlas.canvas && atlas.canvas._img, 'Expected atlas with populated ImageData');
+  assert.equal(atlas.buckets, 48);
+  assert.equal(atlas.depthBands, 3);
+  assert.ok(atlas.tilePx >= 32, `Expected DPR 2 tilePx >= 32, got ${atlas.tilePx}`);
+  assert.equal(atlas.canvas.width, (atlas.buckets + 1) * atlas.tilePx);
+  assert.equal(atlas.canvas.height, atlas.depthBands * atlas.tilePx);
+
+  const img = atlas.canvas._img;
+  const pxAt = (x, y) => {
+    const o = (y * img.width + x) * 4;
+    return [img.data[o], img.data[o + 1], img.data[o + 2], img.data[o + 3]];
+  };
+
+  // Every tile border pixel (1px gutter) must be transparent to prevent bilinear bleed
+  const tp = atlas.tilePx;
+  for (const col of [0, 23, 47, 48]) {
+    const x0 = col * tp;
+    assert.equal(pxAt(x0, 0)[3], 0);
+    assert.equal(pxAt(x0 + tp - 1, 0)[3], 0);
+    assert.equal(pxAt(x0 + (tp >> 1), 0)[3], 0);
+    assert.equal(pxAt(x0 + (tp >> 1), tp - 1)[3], 0);
+  }
+
+  // Front depth band center alpha > mid > back for the same hue bucket
+  const cx = 10 * tp + (tp >> 1);
+  const aFront = pxAt(cx, 0 * tp + (tp >> 1))[3];
+  const aMid = pxAt(cx, 1 * tp + (tp >> 1))[3];
+  const aBack = pxAt(cx, 2 * tp + (tp >> 1))[3];
+  assert.ok(aFront > aMid && aMid > aBack && aBack > 60, `Expected front(${aFront}) > mid(${aMid}) > back(${aBack}) > 60`);
+
+  // Nucleus tile (col = 48, row = 0) has visible shaded center
+  const nucCenter = pxAt(48 * tp + (tp >> 1), tp >> 1);
+  assert.ok(nucCenter[3] >= 120, `Expected visible nucleus tile center alpha >= 120, got ${nucCenter[3]}`);
 });

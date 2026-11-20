@@ -3857,6 +3857,73 @@ if(Number.isFinite(r)&&Number.isFinite(g)&&Number.isFinite(b)){
 theme.ovR=Math.max(0,Math.min(255,r));theme.ovG=Math.max(0,Math.min(255,g));theme.ovB=Math.max(0,Math.min(255,b));}}
 themeVersion++;}
 refreshTheme();
+
+function _clamp01(x){return x>1?1:(x>0?x:0);}
+function shadeSpherePixel(u,v,r,g,b,dn,bgR,bgG,bgB,radPx,baseAlphaOverride,out){
+const res=out||[0,0,0,0];
+const r2=u*u+v*v;
+if(!(r2<1)){res[0]=0;res[1]=0;res[2]=0;res[3]=0;return res;}
+const dist=Math.sqrt(r2);
+const rad=Number.isFinite(radPx)&&radPx>0?radPx:4;
+const aa=Math.max(0.01,Math.min(0.45,1.5/Math.max(1.5,rad)));
+const e0=1-aa;
+let edge=1;
+if(dist>e0){const t=(dist-e0)/aa;edge=1-t*t*(3-2*t);}
+if(!(edge>0)){res[0]=0;res[1]=0;res[2]=0;res[3]=0;return res;}
+const d=Number.isFinite(dn)?Math.max(0,Math.min(1,dn)):0.5;
+const nz=Math.sqrt(1-r2);
+const diff=0.24+0.76*nz;
+const n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8;
+const spec=n16*n8*n4*n2*(0.62-0.37*d);
+let lr=_clamp01((Number.isFinite(r)?r:0)*diff+spec);
+let lg=_clamp01((Number.isFinite(g)?g:0)*diff+spec);
+let lb=_clamp01((Number.isFinite(b)?b:0)*diff+spec);
+const fog=0.22*d,invFog=1-fog;
+const bR=Number.isFinite(bgR)?_clamp01(bgR):0,bG=Number.isFinite(bgG)?_clamp01(bgG):0,bB=Number.isFinite(bgB)?_clamp01(bgB):0;
+res[0]=_clamp01(lr*invFog+bR*fog);
+res[1]=_clamp01(lg*invFog+bG*fog);
+res[2]=_clamp01(lb*invFog+bB*fog);
+const baseAlpha=Number.isFinite(baseAlphaOverride)?_clamp01(baseAlphaOverride):(0.76-0.36*d);
+res[3]=_clamp01(baseAlpha*edge*(0.72+0.28*nz));
+return res;}
+
+function buildSphereSpriteAtlas(dpr,themeObj){
+if(typeof document==='undefined'||typeof document.createElement!=='function')return null;
+const cvEl=document.createElement('canvas');
+if(!cvEl||typeof cvEl.getContext!=='function')return null;
+const g=cvEl.getContext('2d');
+if(!g)return null;
+const buckets=48,depthBands=3;
+const effDpr=Math.max(1,Math.min(3,Number.isFinite(dpr)&&dpr>0?dpr:1));
+const tilePx=Math.max(16,Math.ceil(16*effDpr));
+const cols=buckets+1,w=cols*tilePx,h=depthBands*tilePx;
+cvEl.width=w;cvEl.height=h;
+const img=g.createImageData(w,h),data=img.data;
+const innerRad=(tilePx-2)*0.5,invInner=1/innerRad,halfTile=tilePx*0.5;
+const tileScale=halfTile/innerRad;
+const tObj=themeObj||theme;
+const bgR=tObj.bgR,bgG=tObj.bgG,bgB=tObj.bgB;
+const bandDns=[0.08,0.5,0.92];
+const rgb=new Float32Array(3),pxOut=[0,0,0,0];
+const paintTile=(col,row,cr,cg,cb,dn,alphaOv)=>{
+const ox=col*tilePx,oy=row*tilePx;
+for(let py=0;py<tilePx;py++){
+const v=(py+0.5-halfTile)*invInner;
+const rowOff=((oy+py)*w+ox)*4;
+for(let px=0;px<tilePx;px++){
+const u=(px+0.5-halfTile)*invInner;
+shadeSpherePixel(u,v,cr,cg,cb,dn,bgR,bgG,bgB,innerRad,alphaOv,pxOut);
+const o=rowOff+px*4;
+data[o]=Math.round(pxOut[0]*255);
+data[o+1]=Math.round(pxOut[1]*255);
+data[o+2]=Math.round(pxOut[2]*255);
+data[o+3]=Math.round(pxOut[3]*255);}}};
+for(let bi=0;bi<buckets;bi++){
+hslRhoToRgb((bi/(buckets-1))*0.8,1,rgb,0);
+for(let db=0;db<depthBands;db++)paintTile(bi,db,rgb[0],rgb[1],rgb[2],bandDns[db],undefined);}
+paintTile(buckets,0,tObj.gridR,tObj.gridG,tObj.gridB,0.5,Math.max(0.75,Number.isFinite(tObj.gridA)?tObj.gridA:0.55));
+g.putImageData(img,0,0);
+return{canvas:cvEl,tilePx,tileScale,buckets,depthBands,nucCol:buckets,nucRow:0};}
 /* === RENDERER_HELPERS_END === */
 
 function packMainCoords(){
@@ -4224,6 +4291,116 @@ const nx=cx+rx*S,ny=cy-(ry*sp+pt[2]*cp)*S;
 ctx.lineTo(nx,ny);px=nx;py=ny;}
 ctx.stroke();}}
 
+let partCap=0,partLastN=-1;
+let partOrder=new Int32Array(0),partDepth=new Float32Array(0),partSX=new Float32Array(0),partSY=new Float32Array(0),partHueT=new Float32Array(0);
+function ensurePartBuffers(n){
+if(n>partCap){
+const cap=Math.max(64,n,partCap*2);
+const nextOrder=new Int32Array(cap);
+for(let i=0;i<cap;i++)nextOrder[i]=i;
+partOrder=nextOrder;
+partDepth=new Float32Array(cap);
+partSX=new Float32Array(cap);
+partSY=new Float32Array(cap);
+partHueT=new Float32Array(cap);
+partCap=cap;partLastN=n;return;}
+if(n!==partLastN){for(let i=0;i<n;i++)partOrder[i]=i;partLastN=n;}}
+
+let _sphereAtlas=null,_sphereAtlasThemeVer=-1,_sphereAtlasDpr=-1;
+addStageResizeListener((_w,_h,d)=>{
+const ed=Math.max(1,Math.min(3,Number.isFinite(d)&&d>0?d:1));
+if(ed!==_sphereAtlasDpr)_sphereAtlas=null;});
+function getSphereAtlas(){
+const ed=Math.max(1,Math.min(3,Number.isFinite(_stageDpr)&&_stageDpr>0?_stageDpr:1));
+if(!_sphereAtlas||_sphereAtlasThemeVer!==themeVersion||_sphereAtlasDpr!==ed){
+_sphereAtlas=buildSphereSpriteAtlas(ed,theme);
+_sphereAtlasThemeVer=themeVersion;_sphereAtlasDpr=ed;}
+return _sphereAtlas;}
+
+function drawHud2D(cp,sp,ca,sa,cx,cy,S,E_val){
+ctx.save();
+ctx.globalAlpha=1;
+ctx.fillStyle=theme.grid;
+ctx.font='12px system-ui,sans-serif';
+ctx.fillText('z',cx+6,cy-E_val*cp*S+4);
+ctx.restore();
+drawFieldGizmo(cp,sp,ca,sa);
+drawAxisTriad(cp,sp,ca,sa);}
+
+const _frameState={n:0,singleMode:true,showOverlay:false,showTr:false,cp:1,sp:0,ca:1,sa:0,az:0,cx:0,cy:0,S:1,E:1,Om:0,span:0};
+function drawScene2D(st){
+const {n,singleMode,showOverlay,showTr,cp,sp,ca,sa,az,cx,cy,S,E:E_val,Om,span}=st;
+ctx.clearRect(0,0,W,H);
+if(showOverlay)ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
+const grid=theme.grid;
+ctx.save();
+ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
+ctx.beginPath();ctx.moveTo(cx,cy+E_val*cp*S);ctx.lineTo(cx,cy-E_val*cp*S);ctx.stroke();
+ctx.setLineDash([]);
+if(showTr&&n>0){
+ctx.lineWidth=1;
+if(singleMode){
+for(let i=0;i<n;i++){
+const q=P[i],wt=q.w+Om;
+ctx.strokeStyle=q.col;
+if(q.hist&&q.hist.length>1){
+drawParticleTrail(q.hist,q.rho*Math.cos(q.ph),q.rho*Math.sin(q.ph),q.z,cx,cy,S,cp,sp,ca,sa);
+}else if(Math.abs(wt)>1e-9){
+const phV=q.ph+az,rx=q.rho*Math.cos(phV),ry=q.rho*Math.sin(phV);
+const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
+const band=Math.max(1,Math.ceil(N/4)),qzS=q.z*cp,rhoS=q.rho*S;
+let lx=cx+rx*S,ly=cy-(ry*sp+qzS)*S;
+for(let k=1;k<=N;){
+const end=Math.min(N,k+band-1),mid=0.5*(k+end);
+ctx.globalAlpha=.55*(1-mid/N);
+ctx.beginPath();ctx.moveTo(lx,ly);
+for(;k<=end;k++){
+const ph=phV-dir*arc*(k/N);
+lx=cx+rhoS*Math.cos(ph);ly=cy-(q.rho*Math.sin(ph)*sp+qzS)*S;
+ctx.lineTo(lx,ly);}
+ctx.stroke();}}}
+}else{
+for(let i=0;i<n;i++){
+const q=P[i];
+ctx.strokeStyle=q.col;
+if(q.hist)drawParticleTrail(q.hist,q.x,q.y,q.z,cx,cy,S,cp,sp,ca,sa);}}}
+ctx.globalAlpha=1;
+const atlas=getSphereAtlas();
+const invE=E_val>0?1/E_val:0;
+const drawNucleus=()=>{
+if(atlas){
+const half=3.2*atlas.tileScale,sz=half*2;
+ctx.drawImage(atlas.canvas,atlas.nucCol*atlas.tilePx,atlas.nucRow*atlas.tilePx,atlas.tilePx,atlas.tilePx,cx-half,cy-half,sz,sz);
+}else{
+ctx.fillStyle=grid;ctx.beginPath();ctx.arc(cx,cy,3.2,0,TAU);ctx.fill();}};
+let nucDrawn=false;
+if(atlas){
+const aCv=atlas.canvas,tp=atlas.tilePx,ts=atlas.tileScale,bMax=atlas.buckets-1;
+for(let k=0;k<n;k++){
+const i=partOrder[k],depth=partDepth[i];
+if(!nucDrawn&&!(depth>0)){drawNucleus();nucDrawn=true;}
+const sx=partSX[i],sy=partSY[i];
+if(!Number.isFinite(sx)||!Number.isFinite(sy)||!Number.isFinite(depth))continue;
+const dn=Math.max(0,Math.min(1,(depth*invE+1)*0.5));
+const rad=4.8-2.4*dn;
+const bi=Math.max(0,Math.min(bMax,Math.round(partHueT[i]*bMax)));
+const db=dn<1/3?0:(dn<2/3?1:2);
+const half=rad*ts,sz=half*2;
+ctx.drawImage(aCv,bi*tp,db*tp,tp,tp,sx-half,sy-half,sz,sz);}
+}else{
+for(let k=0;k<n;k++){
+const i=partOrder[k],depth=partDepth[i];
+if(!nucDrawn&&!(depth>0)){drawNucleus();nucDrawn=true;}
+const sx=partSX[i],sy=partSY[i];
+if(!Number.isFinite(sx)||!Number.isFinite(sy)||!Number.isFinite(depth))continue;
+const dn=Math.max(0,Math.min(1,(depth*invE+1)*0.5));
+ctx.globalAlpha=0.76-0.36*dn;ctx.fillStyle=P[i].col;
+ctx.beginPath();ctx.arc(sx,sy,4.8-2.4*dn,0,TAU);ctx.fill();}
+ctx.globalAlpha=1;}
+if(!nucDrawn)drawNucleus();
+ctx.restore();
+drawHud2D(cp,sp,ca,sa,cx,cy,S,E_val);}
+
 function frame(now){
 const dt=Math.min((now-last)/1000,.05);last=now;
 const spd=+$('spd').value,ts=tscale(),Om=Bau/2,span=spd*ts*0.7,dts=dt*spd*ts;
@@ -4239,28 +4416,22 @@ tSim+=dts;}}
 const p=getTiltRad(),cp=Math.cos(p),sp=Math.sin(p);
 const az=getAzRad(),ca=Math.cos(az),sa=Math.sin(az);
 const S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
-ctx.clearRect(0,0,W,H);
-if($('ov').checked&&renderOverlay(p,az,S,cx,cy))ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
-const grid=theme.grid;
-ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
-const ax=cx,ay=cy+E*cp*S,bx=cx,by=cy-E*cp*S;
-ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([]);
-ctx.fillStyle=grid;ctx.font='12px system-ui,sans-serif';ctx.fillText('z',bx+6,by+4);
-
+const showOverlay=$('ov').checked&&renderOverlay(p,az,S,cx,cy);
 const singleMode=!pulse&&eff.length===1;
+const hasParticles=singleMode||!!pulse||eff.length>=2;
+const n=hasParticles?P.length:0;
 const hasHistTrails=singleMode&&P.some(q=>q.hist&&q.hist.length>1);
 const showTr=$('tr').checked&&(!!pulse||eff.length>=2||hasHistTrails||(singleMode&&(eff[0].m!==0||Bau!==0)));
 const minStep=Math.max(span/22,1e-6);
-if(showTr)ctx.lineWidth=1;
+const inv08E=E>0?1/(0.8*E):0;
+ensurePartBuffers(n);
 if(singleMode){
-for(const q of P){
-ctx.strokeStyle=q.col;
-const wt=q.w+Om;
+for(let i=0;i<n;i++){
+const q=P[i],wt=q.w+Om;
 if(run)q.ph=(q.ph+wt*dts)%TAU;
-const px=q.rho*Math.cos(q.ph),py=q.rho*Math.sin(q.ph);
 const phV=q.ph+az,rx=q.rho*Math.cos(phV),ry=q.rho*Math.sin(phV);
 if(run&&q.hist){
-const hh=q.hist;
+const px=q.rho*Math.cos(q.ph),py=q.rho*Math.sin(q.ph),hh=q.hist;
 if((tSim-hh[hh.length-1][3])>=minStep){
 if(Math.abs(wt)>1e-9){
 hh.push([px,py,q.z,tSim]);
@@ -4269,39 +4440,18 @@ if(hh[0][3]>=0)delete q.hist;
 }else{
 hh[hh.length-1][3]=tSim;hh.shift();
 if(hh.length<=1)delete q.hist;}}}
-if(showTr){
-if(q.hist&&q.hist.length>1){
-drawParticleTrail(q.hist,px,py,q.z,cx,cy,S,cp,sp,ca,sa);
-}else if(Math.abs(wt)>1e-9){
-const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
-const band=Math.max(1,Math.ceil(N/4)),qzS=q.z*cp,rhoS=q.rho*S;
-let lx=cx+rx*S,ly=cy-(ry*sp+q.z*cp)*S;
-for(let k=1;k<=N;){
-const end=Math.min(N,k+band-1),mid=0.5*(k+end);
-ctx.globalAlpha=.55*(1-mid/N);
-ctx.beginPath();ctx.moveTo(lx,ly);
-for(;k<=end;k++){
-const ph=phV-dir*arc*(k/N);
-lx=cx+rhoS*Math.cos(ph);ly=cy-(q.rho*Math.sin(ph)*sp+qzS)*S;
-ctx.lineTo(lx,ly);}
-ctx.stroke();}}}
-const sx=cx+rx*S,sy=cy-(ry*sp+q.z*cp)*S,depth=ry*cp-q.z*sp;
-const dn=Math.max(0,Math.min(1,(depth/E+1)/2));
-ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
-ctx.beginPath();ctx.arc(sx,sy,2.6-.8*dn,0,TAU);ctx.fill();}
-}else if(pulse||eff.length>=2){
-for(const q of P){
-ctx.strokeStyle=q.col;
-if(showTr)drawParticleTrail(q.hist,q.x,q.y,q.z,cx,cy,S,cp,sp,ca,sa);
-const rx=q.x*ca-q.y*sa,ry=q.x*sa+q.y*ca;
-const sx=cx+rx*S,sy=cy-(ry*sp+q.z*cp)*S,depth=ry*cp-q.z*sp;
-const dn=Math.max(0,Math.min(1,(depth/E+1)/2));
-ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
-ctx.beginPath();ctx.arc(sx,sy,2.6-.8*dn,0,TAU);ctx.fill();}}
-ctx.globalAlpha=1;
-ctx.fillStyle=grid;ctx.beginPath();ctx.arc(cx,cy,3,0,TAU);ctx.fill();
-drawFieldGizmo(cp,sp,ca,sa);
-drawAxisTriad(cp,sp,ca,sa);
+partSX[i]=cx+rx*S;partSY[i]=cy-(ry*sp+q.z*cp)*S;partDepth[i]=ry*cp-q.z*sp;
+const ht=q.rho*inv08E;partHueT[i]=ht>0?(ht<1?ht:1):0;}
+}else if(n>0){
+for(let i=0;i<n;i++){
+const q=P[i],rx=q.x*ca-q.y*sa,ry=q.x*sa+q.y*ca;
+partSX[i]=cx+rx*S;partSY[i]=cy-(ry*sp+q.z*cp)*S;partDepth[i]=ry*cp-q.z*sp;
+const ht=Math.hypot(q.x,q.y)*inv08E;partHueT[i]=ht>0?(ht<1?ht:1):0;}}
+sortParticleOrder(partOrder,partDepth,n);
+const st=_frameState;
+st.n=n;st.singleMode=singleMode;st.showOverlay=showOverlay;st.showTr=showTr;
+st.cp=cp;st.sp=sp;st.ca=ca;st.sa=sa;st.az=az;st.cx=cx;st.cy=cy;st.S=S;st.E=E;st.Om=Om;st.span=span;
+drawScene2D(st);
 requestAnimationFrame(frame);}
 
 window.addEventListener('resize',()=>{resize();overlayDirty=true;requestOverlayNow();});
