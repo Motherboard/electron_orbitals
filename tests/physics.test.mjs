@@ -106,10 +106,11 @@ function createCoreContext() {
       buildPhotonSim, evalPhotonVel, advancePhotonRK4, photonOutcome, hydDecayChannels,
       fieldVecAt, stepTdseC, weisskopfWigner,
       buildGridSystem, stepGridDipole, advanceGridHalf, advanceGridParticlesRK4, projectGridStates, evalGridPsiGrad,
-      photoIonCoef, ionSafety, safeTrefCyc, onePiSetting, getRadTable, gauntCoeff,
+      photoIonCoef, ionSafety, safeTrefCyc, onePiSetting, getRadTable, gauntCoeff, zeemanQWeights, gridBoxR,
+      setDia: (v) => { bDia = v; computeEffective(); }, getDiaEff: () => diaEff, diaState, diaBlock, levelEnergy, angSin2, radialR2, symEig, advanceGridHalf,
       startPulse, stepPulseCore, finishPulse, getPulse: () => pulse,
       ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel,
-      consts: { B_SLIDER_MAX, B_SLIDER_SPAN, B_SLIDER_STEP, PHOTON_CYC, PHOTON_KTAU }
+      consts: { B_SLIDER_MAX, B_SLIDER_SPAN, B_SLIDER_STEP, B_PHYS_MAX_T, PHOTON_CYC, PHOTON_KTAU }
     };
   `;
   // overlayDirty lives in the UI half of the script (the Blob worker declares it in its own header)
@@ -756,7 +757,7 @@ test('magnetic field unlocks intra-shell E1 and M1 Zeeman level transitions', ()
 test('tutorial bundle stays synced with tutorial/*.md and validates every demo and red-detuned Ch5 TDSE', () => {
   const tutDir = path.resolve(import.meta.dirname, '..', 'tutorial');
   const mdFiles = fs.readdirSync(tutDir).filter((f) => f.endsWith('.md')).sort();
-  assert.equal(mdFiles.length, 7, 'Expected 7 markdown tutorial chapters');
+  assert.equal(mdFiles.length, 8, 'Expected 8 markdown tutorial chapters (1-7 and 9, strong fields)');
 
   const bundleMatch = HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/);
   assert.ok(bundleMatch, 'Expected embedded #tut-bundle JSON script in electron_orbitals.html');
@@ -799,6 +800,7 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
 
         api.setBau(d.B || 0);
         api.setComps(d.states.map((s, i) => ({ id: i + 1, ...s })));
+        api.setDia(!!d.dia);
         const tr = api.getTransitionList().find((t) => t.key === it.transition);
         assert.ok(tr, `Transition "${it.transition}" not selectable for demo "${d.label}" in ${file}`);
         const sys = api.buildCoupledSystem(tr);
@@ -817,6 +819,7 @@ test('tutorial bundle stays synced with tutorial/*.md and validates every demo a
   });
   assert.ok(totalDemos >= 40, `Expected >= 40 tutorial demos, got ${totalDemos}`);
   assert.ok(ch5RedDemo, 'Expected Ch 5 red-detuned demo to exist');
+  api.setDia(false);
 
   // Verify Ch 5 red-detuned demo (actual app calibration) stays predominantly in |1s,0> with zero 3p leak and no ionization
   api.setBau(0);
@@ -1369,6 +1372,137 @@ test('ionization-safe wave calibration: Coulomb photoionization rates, safe Tref
   const c76 = new Float64Array(g76.projStates.length * 2);
   const info76 = api.projectGridStates(g76, c76);
   assert.ok(Math.abs(info76.totalNorm - 1) < 0.02 && info76.boundNorm > 0.98, `Expected |7i,0> to load onto the grid, got total=${info76.totalNorm}, bound=${info76.boundNorm}`);
+  api.setPol([1, 0], [0, 0], [0, 0]);
+  api.setEl('pdur', 16);
+});
+
+test('ionization safety under B_z: Zeeman-shifted kicks, box-limited Rydberg admixture, quasi-continuum, long-pulse multiphoton cap', () => {
+  const SP = [[1, 0], [1, 90], [0, 0]];
+  const cfgFor = ({ B, init, key, pol = SP, dur = 50, det = 0 }) => {
+    api.setBau(B);
+    api.setComps([{ id: 1, amp: 1, phaseDeg: 0, ...init }]);
+    api.setMode('wave');
+    api.setPol(...pol);
+    api.setEl('tr-sel', key);
+    api.setEl('pdur', dur);
+    api.setEl('ppow', 1);
+    api.setEl('pdet', det);
+    return api.getPulseConfig();
+  };
+  // 1. Delta m components about B_z: sigma+ is pure q = +1, x splits evenly, and B_z = 0 needs no split
+  api.setBau(0.1);
+  api.setPol(...SP);
+  const wSp = api.zeemanQWeights();
+  assert.ok(wSp.length === 1 && wSp[0][0] === 1 && Math.abs(wSp[0][1] - 1) < 1e-12, `sigma+ must be pure q = +1, got ${JSON.stringify(wSp)}`);
+  api.setPol([1, 0], [0, 0], [0, 0]);
+  const wX = api.zeemanQWeights();
+  assert.equal(JSON.stringify(wX.map(([q, w]) => [q, +w.toFixed(6)])), '[[1,0.5],[-1,0.5]]');
+  api.setBau(0);
+  assert.equal(JSON.stringify(api.zeemanQWeights()), '[[0,1]]');
+
+  // 2. 3d,2 -> 4f,3 sigma+ at B = 0.1, red-detuned 2.5 bw: sigma+ drives 4f -> 7g at omega - B/2 and then ionizes (measured 60% loss
+  //    before the Zeeman-aware model). The safe field is now ~10x lower and the grid TDSE keeps >= 99% of the norm.
+  const cfgZ = cfgFor({ B: 0.1, init: { n: 3, l: 2, m: 2 }, key: '3|2|4|3|1', det: -2.5 });
+  assert.ok(cfgZ.ok && cfgZ.E0 < 1.5e-4 && cfgZ.ionEst <= 0.0061, `Expected Zeeman-ladder field < 1.5e-4 (was 9.8e-4), got E0=${cfgZ.E0}, est=${cfgZ.ionEst}`);
+  const g = api.buildGridSystem(cfgZ.trSpec, cfgZ.sys);
+  api.setP([]);
+  const pZ = { kind: 'E1', trSpec: cfgZ.trSpec, omegaL: cfgZ.omegaL, T: cfgZ.T, gamma: 0, E0: cfgZ.E0, pol: cfgZ.polInt };
+  const nSteps = Math.ceil(cfgZ.T / 0.5), h = cfgZ.T / nSteps;
+  for (let s = 0; s < nSteps; s++) api.advanceGridParticlesRK4(g, pZ, s * h, h);
+  const infoZ = api.projectGridStates(g, new Float64Array(g.projStates.length * 2));
+  assert.ok(infoZ.totalNorm >= 0.99, `Expected B = 0.1 Zeeman-ladder pulse to keep >= 99% norm, got ${infoZ.totalNorm}`);
+
+  // 3. Quasi-continuum: at B = -0.1, sigma+ on 2p shifts the effective photon to just below the 2p threshold, so dozens of Rydberg
+  //    levels share the pulse bandwidth (measured 8% loss when only the first one was counted)
+  const cfgQ = cfgFor({ B: -0.1, init: { n: 2, l: 1, m: 1 }, key: '2|1|3|2|0', det: 2.5 });
+  assert.ok(cfgQ.ok && cfgQ.E0 < 3.5e-4, `Expected quasi-continuum field < 3.5e-4 (was 7.1e-4), got ${cfgQ.E0}`);
+
+  // 4. Closed-channel n = 4 shells: 0.25 E_OBI, falling as 1/sqrt(T) past 150 cycles (4s -> 3p lost 1.4% at 0.35 E_OBI in 50 cycles)
+  const eObi4 = 1 / (16 * 4 ** 4);
+  const cfg50 = cfgFor({ B: 0, init: { n: 4, l: 0, m: 0 }, key: '4|0|3|1', pol: [[0, 0], [0, 0], [1, 0]], dur: 50 });
+  assert.ok(cfg50.E0 <= 0.25 * eObi4 * (1 + 1e-9), `Expected 4s field <= 0.25 E_OBI(4), got ${cfg50.E0 / eObi4} E_OBI`);
+  const cfg400 = cfgFor({ B: 0, init: { n: 4, l: 0, m: 0 }, key: '4|0|3|1', pol: [[0, 0], [0, 0], [1, 0]], dur: 400 });
+  assert.ok(cfg400.E0 <= 0.25 * Math.sqrt(150 / 400) * eObi4 * (1 + 1e-6), `Expected 400-cycle 4s field to fall as 1/sqrt(T), got ${cfg400.E0 / eObi4} E_OBI`);
+
+  // 5. The zero-field 1s -> 2p calibration the tutorials quote is unchanged
+  const cfg1s = cfgFor({ B: 0, init: { n: 1, l: 0, m: 0 }, key: '1|0|2|1', dur: 16 });
+  assert.equal(cfg1s.TrefCyc, 54);
+  api.setPol([1, 0], [0, 0], [0, 0]);
+  api.setEl('pdur', 16);
+  api.setEl('pdet', 0);
+});
+
+test('diamagnetic B^2 term: matrix elements, dressed energies vs exact results, grid consistency, dressed resonance', () => {
+  // 1. Matrix elements: <r^2> of hydrogen states, sin^2(theta) diagonals, symmetric eigensolver
+  assert.ok(Math.abs(api.radialR2(1, 0, 1, 0) - 3) < 1e-10 && Math.abs(api.radialR2(2, 1, 2, 1) - 30) < 1e-9 && Math.abs(api.radialR2(2, 0, 2, 0) - 42) < 1e-9, 'Expected <r^2> = 3, 30, 42 for 1s, 2p, 2s');
+  assert.ok(Math.abs(api.angSin2(0, 0, 0) - 2 / 3) < 1e-14 && Math.abs(api.angSin2(1, 1, 1) - 0.8) < 1e-14 && Math.abs(api.angSin2(1, 1, 0) - 0.4) < 1e-14);
+  const { vals, vecs } = api.symEig(Float64Array.from([2, 1, 0, 1, 2, 1, 0, 1, 2]), 3);
+  assert.ok(Math.abs(vals[0] - (2 - Math.SQRT2)) < 1e-12 && Math.abs(vals[2] - (2 + Math.SQRT2)) < 1e-12 && Math.abs(Math.abs(vecs[0 * 3 + 0]) - 0.5) < 1e-12);
+  // Sign convention: <3s|rho^2|3d0> from the app's own 3D basis functions equals radialR2 * angSin2 (sign included)
+  const b3s = api.getBasis(3, 0, 0), b3d = api.getBasis(3, 2, 0);
+  let num = 0;
+  const nR = 1200, nT = 200, rMax = 80;
+  for (let i = 0; i < nR; i++) {
+    const r = (i + 0.5) * rMax / nR;
+    for (let j = 0; j < nT; j++) {
+      const th = (j + 0.5) * Math.PI / nT, x = r * Math.sin(th), z = r * Math.cos(th);
+      num += api.evalBasisPsi(b3s, x, 0, z)[0] * api.evalBasisPsi(b3d, x, 0, z)[0] * x * x * r * r * Math.sin(th);
+    }
+  }
+  num *= 2 * Math.PI * (rMax / nR) * (Math.PI / nT);
+  const ana = api.radialR2(3, 0, 3, 2) * api.angSin2(0, 2, 0);
+  assert.ok(Math.abs(num - ana) < 2e-3 * Math.abs(ana), `Expected <3s|rho^2|3d0> = ${ana} (numerical ${num})`);
+
+  // 2. Dressed energies: first-order shifts B^2/4 (1s) and 3B^2 (2p+-1); exact ground state E(B = 0.1) = -0.4975265 (continuum-refined)
+  api.setBau(0.001);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  api.setDia(true);
+  assert.ok(Math.abs(api.diaState(1, 0, 0).Ediam / 2.5e-7 - 1) < 2e-3);
+  assert.ok(Math.abs(api.diaState(2, 1, 1).Ediam / 3e-6 - 1) < 2e-3);
+  api.setBau(0.1); api.setDia(true);
+  const g1 = api.diaState(1, 0, 0);
+  assert.ok(Math.abs(g1.E - -0.4975265) < 2e-6 && g1.ok, `Expected E_1s(B = 0.1) = -0.4975265, got ${g1.E}`);
+  assert.ok(!api.diaState(3, 0, 0).ok, 'Expected dressed 3s at B = 0.1 (Landau regime) to be flagged as not converged');
+  assert.ok(Math.abs(api.levelEnergy(2, 1, 1) - api.diaState(2, 1, 1).E) < 2e-3, 'Menu (bound-basis) energy close to the refined dressed energy');
+
+  // 3. A dressed state is an eigenstate of the TDSE grid with the B^2 step: overlap kept, phase advances at the refined energy
+  api.setBau(0.05);
+  api.setComps([{ id: 1, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }]);
+  api.setDia(true);
+  const de = api.getDiaEff();
+  assert.ok(de && de.D.length === 1 && api.getEff().length > 1, 'Expected a dressed 2p+1 expanded over several hydrogen states');
+  const tr = api.getTransitionList().find((t) => t.kind === 'E1');
+  const sys = api.buildCoupledSystem(tr), g = api.buildGridSystem(tr, sys), ds = api.diaState(2, 1, 1);
+  assert.ok(g.dia && g.Lmax >= 3);
+  const ov = () => {
+    let re = 0, im = 0;
+    for (const c of ds.comps) {
+      const ch = g.chMap.get(c.l + '|1'); if (ch === undefined) continue;
+      const rt = api.getRadTable(c.n, c.l); let oR = 0, oI = 0;
+      for (let j = 0; j < g.Nr; j++) { const r = (j + 1) * g.dr; if (r > rt.rmax) break; const u = rt.rad(r) * r * g.dr, off = j * g.Mch + ch; oR += u * g.URe[off]; oI += u * g.UIm[off]; }
+      re += c.w * oR; im += c.w * oI;
+    }
+    return [re, im];
+  };
+  const [r0, i0] = ov(), Tt = 150, N = 600, pObj = { kind: 'E1', trSpec: tr, omegaL: 1, T: 1e9, gamma: 0, E0: 0, pol: api.getPulseConfig().polInt };
+  for (let s = 0; s < N; s++) api.advanceGridHalf(g, pObj, Tt / N, 0);
+  const [r1, i1] = ov(), fid = (r1 * r1 + i1 * i1) / (r0 * r0 + i0 * i0);
+  const dph = Math.atan2(i1 * r0 - r1 * i0, r1 * r0 + i1 * i0) + ds.E * Tt;
+  assert.ok(fid > 0.998, `Expected dressed 2p+1 to stay an eigenstate of the grid, overlap ${fid}`);
+  assert.ok(Math.abs(Math.atan2(Math.sin(dph), Math.cos(dph))) < 0.05, `Expected the grid phase to follow the refined dressed energy, off by ${dph}`);
+
+  // 4. The selected line resonates at the refined dressed frequency (B = 0.05: 0.40632, linear Zeeman alone: 0.40000)
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  api.setDia(true);
+  api.setMode('wave');
+  api.setPol([1, 0], [1, 90], [0, 0]);
+  api.setEl('tr-sel', '1|0|2|1|1'); api.setEl('pdur', 53); api.setEl('ppow', 1); api.setEl('pdet', 0);
+  const cfgD = api.getPulseConfig();
+  assert.ok(Math.abs(cfgD.omega0 - (api.diaState(2, 1, 1).E - api.diaState(1, 0, 0).E)) < 1e-9 && Math.abs(cfgD.omega0 - 0.40632) < 2e-4, `Expected dressed resonance 0.40632, got ${cfgD.omega0}`);
+  api.setDia(false);
+  assert.ok(Math.abs(api.getPulseConfig().omega0 - 0.4) < 1e-9, 'Linear-Zeeman resonance when the B^2 term is off');
+  assert.equal(api.consts.B_PHYS_MAX_T, 20);
+  api.setBau(0);
   api.setPol([1, 0], [0, 0], [0, 0]);
   api.setEl('pdur', 16);
 });

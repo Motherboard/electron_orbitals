@@ -168,6 +168,8 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       const ranges = rows[1].querySelectorAll('input[type=range]');
       ranges[0].value = '0.5'; ranges[0].dispatchEvent(new Event('input'));
       ranges[1].value = '90'; ranges[1].dispatchEvent(new Event('input'));
+      // Fields above 20 T need the toy range (slider in units of 0.10/3 a.u.)
+      const toyEl = document.getElementById('btoy'); if (!toyEl.checked) { toyEl.checked = true; toyEl.dispatchEvent(new Event('change')); }
       const bf = document.getElementById('bf');
       bf.value = '1.5'; bf.dispatchEvent(new Event('input'));
     })()`);
@@ -347,6 +349,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       sels[0].value = '2'; sels[0].dispatchEvent(new Event('change'));
       sels[1].value = '1'; sels[1].dispatchEvent(new Event('change'));
       sels[2].value = '1'; sels[2].dispatchEvent(new Event('change'));
+      const toyEl = document.getElementById('btoy'); if (!toyEl.checked) { toyEl.checked = true; toyEl.dispatchEvent(new Event('change')); }
       const bfEl = document.getElementById('bf');
       bfEl.value = '1'; bfEl.dispatchEvent(new Event('input'));
       const opts = [...document.getElementById('tr-sel').options].map((o) => ({ value: o.value, text: o.textContent }));
@@ -624,6 +627,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       const sorted = [...eff].sort((a, b) => b.prob - a.prob);
       const top = sorted[0] ? { n: sorted[0].n, l: sorted[0].l, m: sorted[0].m, prob: sorted[0].prob } : null;
       // Now switch back to 1s with B=0.05 and z-pol: should show 0% match and disable Send photon
+      const toyEl = document.getElementById('btoy'); if (!toyEl.checked) { toyEl.checked = true; toyEl.dispatchEvent(new Event('change')); }
       const bfEl = document.getElementById('bf');
       bfEl.value = String(0.05 / B_SLIDER_STEP);
       const rows = document.querySelectorAll('.comp');
@@ -696,7 +700,10 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       document.querySelector('input[name="imode"][value="wave"]').checked = true;
       document.querySelector('input[name="imode"][value="wave"]').dispatchEvent(new Event('change'));
       const bfEl = document.getElementById('bf');
+      // Leaving the toy range restores the lab slider (tesla, max 20 T) and clamps the field
+      const toyOff = document.getElementById('btoy'); toyOff.checked = false; toyOff.dispatchEvent(new Event('change'));
       const bfDefaultMax = +bfEl.max;
+      const bLabAu = Bau, bLabNote = document.getElementById('b-note').textContent;
       document.getElementById('tr-sel').value = '3|1|1|0';
       document.getElementById('tr-sel').dispatchEvent(new Event('change'));
       document.getElementById('pdur').value = '50';
@@ -748,6 +755,15 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
       // 5f. Audit pedagogy/perf UI checks: dual B_z a.u.+T readout, fmtCycNat, #spd readout, Ch.1 <details>, zero ** in Ch.6, 2p->3d x-pol zero leak, tooltips & dz_cam
       Bau = 0.1; rescaleB();
       const bvHighText = document.getElementById('bv').textContent;
+      const toyAuto = document.getElementById('btoy').checked;
+      applyBauChange();
+      const toyNote = document.getElementById('b-note').textContent, toyNoteWarn = document.getElementById('b-note').classList.contains('warn');
+      // B^2 (diamagnetic) term: field-dressed 2p state, Single photon disabled, status note and dressed info readout
+      const diaEl = document.getElementById('bdia'); diaEl.checked = true; diaEl.dispatchEvent(new Event('change'));
+      const diaNote = document.getElementById('b-note').textContent, diaInfo = document.getElementById('info').textContent;
+      const photonDisabledDia = document.querySelector('input[name="imode"][value="photon"]').disabled, modeDia = interactionMode;
+      diaEl.checked = false; diaEl.dispatchEvent(new Event('change'));
+      const photonEnabledAfter = !document.querySelector('input[name="imode"][value="photon"]').disabled;
       Bau = 0; rescaleB();
       const bvZeroText = document.getElementById('bv').textContent;
       const cycNatBig = fmtCycNat(9.23e12);
@@ -771,14 +787,15 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
 
       const overflow320 = document.documentElement.scrollWidth > window.innerWidth;
       document.getElementById('tut-toggle').click();
-      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, obiWarn, p1Readout, p1Pow1s2p, p1Dur1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, bvHighText, bvZeroText, cycNatBig, svText, polSpTitle, polSmTitle, ovProjOpt, ch1DetClosedInitially, ch1DetToggledOpen, ch6HasRawStars, overflow320 };
+      return { compsAfterSup, trOptText, blockedWrongSpin, matchedEnabled, matchedText, bfDefaultMax, bLabAu, bLabNote, toyAuto, toyNote, toyNoteWarn, diaNote, diaInfo, photonDisabledDia, modeDia, photonEnabledAfter, obiWarn, p1Readout, p1Pow1s2p, p1Dur1s2p, p1Readout1s2p, highBWarn, orthCfg: { E0: orthCfg.E0, Eobi: orthCfg.Eobi, theta: orthCfg.theta }, orthNote, trailLen, trailDtMax, contInfoText, bvHighText, bvZeroText, cycNatBig, svText, polSpTitle, polSmTitle, ovProjOpt, ch1DetClosedInitially, ch1DetToggledOpen, ch6HasRawStars, overflow320 };
     })()`);
     assert.deepEqual(postSupAndStim.compsAfterSup, [{ n: 3, l: 1, m: 1, amp: 1 }]);
     assert.match(postSupAndStim.trOptText, /stim\. emit/);
     assert.equal(postSupAndStim.blockedWrongSpin, true);
     assert.equal(postSupAndStim.matchedEnabled, true);
     assert.equal(postSupAndStim.matchedText, '100%');
-    assert.equal(postSupAndStim.bfDefaultMax, 3);
+    assert.equal(postSupAndStim.bfDefaultMax, 20);
+    assert.ok(Math.abs(postSupAndStim.bLabAu) <= 20 / 2.3505e5 + 1e-12, `Expected the field clamped to 20 T on leaving the toy range, got ${postSupAndStim.bLabAu} a.u.`);
     assert.match(postSupAndStim.obiWarn, /exceeds the ionization-safe field/);
     assert.match(postSupAndStim.p1Readout, /Θ=1\.00π/);
     // 1π never exceeds the ionization-safe Power = 1: from 50 cyc it stretches 1s -> 2p to its 54-cycle safe reference duration
@@ -793,6 +810,15 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.ok(postSupAndStim.trailDtMax <= 4.0, `Expected smooth small trail step <= 4 a.u., got ${postSupAndStim.trailDtMax}`);
     assert.match(postSupAndStim.contInfoText, /continuum \/ higher n: 81%/);
     assert.match(postSupAndStim.bvHighText, /23\.5 kT \(0\.10 a\.u\.\)/);
+    // 20 T lab cap: a 0.1 a.u. field switches the toy range on and the note names the missing B^2 term
+    assert.ok(postSupAndStim.toyAuto, 'Expected B = 0.1 a.u. to enable the toy range');
+    assert.match(postSupAndStim.toyNote, /Toy range: the diamagnetic B²ρ²\/8 term is left out/);
+    assert.ok(postSupAndStim.toyNoteWarn, 'Expected the toy-range note to be styled as a warning');
+    assert.match(postSupAndStim.bLabNote, /Lab range|^$/);
+    assert.match(postSupAndStim.diaNote, /B² term on: states are field-dressed eigenstates/);
+    assert.match(postSupAndStim.diaInfo, /Field-dressed state/);
+    assert.ok(postSupAndStim.photonDisabledDia && postSupAndStim.modeDia === 'wave', 'Expected Single photon disabled (wave mode) with the B^2 term');
+    assert.ok(postSupAndStim.photonEnabledAfter, 'Expected Single photon re-enabled when the B^2 term is off');
     assert.equal(postSupAndStim.bvZeroText, '0 T (0 a.u.)');
     assert.equal(postSupAndStim.cycNatBig, '9.23×10¹² cyc');
     assert.equal(postSupAndStim.svText, '1.4×');
