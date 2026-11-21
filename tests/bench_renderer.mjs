@@ -2,7 +2,7 @@
  * Repeatable CDP performance benchmark and visual screenshot capture for
  * electron_orbitals.html, comparing:
  *   - Baseline (git rev `ba74eab` Canvas 2D flat circles + 2D stroke trails)
- *   - New WebGL2 instanced sphere impostors + batched trails (CPU submit & GPU-synced)
+ *   - New WebGL2 instanced sphere impostors + batched trails (CPU submit & GPU timer)
  *   - New Canvas 2D shaded-sphere sprite fallback (`window.__forceRenderer = '2d'`)
  *
  * Usage:
@@ -13,7 +13,7 @@
  *   --rev <git-rev>       Git revision for baseline export (default: ba74eab)
  *   --screenshots <dir>   Capture 5 visual verification PNGs into <dir>
  *   --dpr <num>           Device pixel ratio via --force-device-scale-factor (default: 1)
- *   --frames <num>        Measured frames per scenario (default: 120)
+ *   --frames <num>        Minimum measured frames per scenario (default: 120)
  *   --warmup <num>        Warmup frames excluded before measuring (default: 20)
  *   --gpu-mode <mode>     auto | default | gl | vulkan | swiftshader (default: auto)
  *   --help                Show this help message
@@ -44,6 +44,29 @@ const SCENARIOS = [
   { key: 'sup_2000_off', label: '1s + 2p0', mode: 'sup1s2p0', n: 2000, trails: false },
 ];
 
+const activeSessions = new Set();
+const activeTempDirs = new Set();
+
+function cleanupSyncOnSignal(signal) {
+  for (const session of activeSessions) {
+    try { session.cdp?.ws?.close(); } catch { /* ignore */ }
+    try {
+      if (session.chrome && session.chrome.exitCode === null && session.chrome.signalCode === null) {
+        session.chrome.kill('SIGKILL');
+      }
+    } catch { /* ignore */ }
+  }
+  for (const dir of activeTempDirs) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
+    } catch { /* ignore */ }
+  }
+  process.exit(signal === 'SIGINT' ? 130 : 143);
+}
+
+process.once('SIGINT', () => cleanupSyncOnSignal('SIGINT'));
+process.once('SIGTERM', () => cleanupSyncOnSignal('SIGTERM'));
+
 function printHelp() {
   console.log(`Usage: node tests/bench_renderer.mjs [options]
 
@@ -52,10 +75,18 @@ Options:
   --rev <git-rev>       Git revision for baseline export (default: ba74eab)
   --screenshots <dir>   Capture 5 visual verification PNGs into <dir>
   --dpr <num>           Device pixel ratio (default: 1)
-  --frames <num>        Measured frames per scenario (default: 120)
+  --frames <num>        Minimum measured frames per scenario (default: 120)
   --warmup <num>        Warmup frames per scenario (default: 20)
   --gpu-mode <mode>     auto | default | gl | vulkan | swiftshader (default: auto)
   --help                Print help`);
+}
+
+function parseIntFlag(raw, name, min) {
+  const s = raw.trim();
+  if (!/^\d+$/.test(s)) throw new Error(`Invalid ${name}: ${raw}`);
+  const v = Number(s);
+  if (!Number.isSafeInteger(v) || v < min) throw new Error(`Invalid ${name}: ${raw}`);
+  return v;
 }
 
 function parseArgs(argv) {
@@ -84,17 +115,14 @@ function parseArgs(argv) {
     } else if (a === '--screenshots') {
       opts.screenshots = path.resolve(next());
     } else if (a === '--dpr') {
-      const v = Number(next());
-      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --dpr: ${v}`);
+      const raw = next();
+      const v = raw.trim() === '' ? NaN : Number(raw);
+      if (!Number.isFinite(v) || v <= 0) throw new Error(`Invalid --dpr: ${raw}`);
       opts.dpr = v;
     } else if (a === '--frames') {
-      const v = Math.floor(Number(next()));
-      if (!Number.isFinite(v) || v < 1) throw new Error(`Invalid --frames: ${v}`);
-      opts.frames = v;
+      opts.frames = parseIntFlag(next(), '--frames', 1);
     } else if (a === '--warmup') {
-      const v = Math.floor(Number(next()));
-      if (!Number.isFinite(v) || v < 0) throw new Error(`Invalid --warmup: ${v}`);
-      opts.warmup = v;
+      opts.warmup = parseIntFlag(next(), '--warmup', 0);
     } else if (a === '--gpu-mode') {
       const m = next();
       if (!['auto', 'default', 'gl', 'vulkan', 'swiftshader'].includes(m)) {
@@ -154,7 +182,15 @@ async function waitForWs(port, chrome) {
 function createCDP(wsUrl) {
   const ws = new WebSocket(wsUrl);
   let nextId = 1;
+  let opened = false;
   const pending = new Map();
+
+  const rejectAll = (err) => {
+    for (const entry of pending.values()) {
+      entry.reject(err);
+    }
+    pending.clear();
+  };
 
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
@@ -169,22 +205,44 @@ function createCDP(wsUrl) {
   };
 
   const ready = new Promise((resolve, reject) => {
-    ws.onopen = resolve;
-    ws.onerror = reject;
+    ws.onopen = () => {
+      opened = true;
+      resolve();
+    };
+    ws.onerror = (ev) => {
+      const err = new Error(ev?.message || 'CDP WebSocket error');
+      rejectAll(err);
+      if (!opened) reject(err);
+    };
+    ws.onclose = () => {
+      const err = new Error('CDP WebSocket closed');
+      rejectAll(err);
+      if (!opened) reject(err);
+    };
   });
 
-  const call = (method, params = {}) =>
-    new Promise((resolve, reject) => {
+  const call = (method, params = {}) => {
+    if (ws.readyState !== WebSocket.OPEN) {
+      return Promise.reject(new Error(`CDP WebSocket not open (state=${ws.readyState})`));
+    }
+    return new Promise((resolve, reject) => {
       const id = nextId++;
       pending.set(id, { resolve, reject });
-      ws.send(JSON.stringify({ id, method, params }));
+      try {
+        ws.send(JSON.stringify({ id, method, params }));
+      } catch (err) {
+        pending.delete(id);
+        reject(err);
+      }
     });
+  };
 
   return { ws, ready, call };
 }
 
 async function closeBrowser(session) {
   if (!session) return;
+  activeSessions.delete(session);
   try {
     session.cdp?.ws?.close();
   } catch {
@@ -198,6 +256,7 @@ async function closeBrowser(session) {
   }
   await new Promise((r) => setTimeout(r, 80));
   if (userDataDir) {
+    activeTempDirs.delete(userDataDir);
     fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 120 });
   }
 }
@@ -205,6 +264,7 @@ async function closeBrowser(session) {
 async function openPage(browserBin, targetUrl, extraFlags, dpr) {
   const port = await getFreePort();
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-bench-chrome-'));
+  activeTempDirs.add(userDataDir);
   const args = [
     '--headless=new',
     '--no-sandbox',
@@ -221,6 +281,7 @@ async function openPage(browserBin, targetUrl, extraFlags, dpr) {
     if (stderr.length < 4096) stderr += chunk.toString();
   });
   const session = { chrome, userDataDir, cdp: null };
+  activeSessions.add(session);
   try {
     const wsUrl = await waitForWs(port, chrome);
     const cdp = createCDP(wsUrl);
@@ -245,7 +306,7 @@ async function openPage(browserBin, targetUrl, extraFlags, dpr) {
       return res.result?.value;
     };
 
-    return { ...session, evalJS, cdp };
+    return { ...session, evalJS };
   } catch (err) {
     await closeBrowser(session);
     throw new Error(`${err.message}${stderr ? `\nChrome stderr: ${stderr.trim()}` : ''}`);
@@ -399,20 +460,37 @@ const PAGE_HARNESS_EXPR = `(() => {
     origRAF(step);
   });
 
-  const paceTick = (fn) => new Promise((resolve) => {
+  const paceTick = (fn) => new Promise((resolve, reject) => {
     const ch = new MessageChannel();
-    ch.port1.onmessage = () => { fn(); resolve(); };
+    ch.port1.onmessage = () => {
+      try {
+        fn();
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    };
     ch.port2.postMessage(null);
   });
 
   const summarize = (arr) => {
     const s = [...arr].sort((a, b) => a - b);
     const mean = arr.reduce((acc, v) => acc + v, 0) / arr.length;
-    const p95 = s[Math.floor(0.95 * (s.length - 1))];
+    const p95Idx = Math.min(s.length - 1, Math.ceil(0.95 * s.length) - 1);
+    const p95 = s[p95Idx];
     return { mean, p95 };
   };
 
+  const activeGL = () => {
+    const force = typeof window.__forceRenderer !== 'undefined' ? window.__forceRenderer : null;
+    if (force === '2d') return null;
+    return typeof glState !== 'undefined' && glState && !glState.lost ? glState.gl : null;
+  };
+
   const setupScenario = ({ mode, n, trails, seed, states }) => {
+    if (typeof window.__forceRenderer !== 'undefined') {
+      window.__forceRenderer = null;
+    }
     resetSeed(seed);
     if (typeof pulse !== 'undefined' && pulse && typeof finishPulse === 'function') finishPulse(true);
     run = false;
@@ -474,6 +552,8 @@ const PAGE_HARNESS_EXPR = `(() => {
       throw new Error('Density overlay failed to paint synchronously before measurement');
     }
     frame(performance.now());
+    const gl = activeGL();
+    if (gl) gl.finish();
     return {
       pLen: P.length,
       histLen: P[0]?.hist?.length ?? 0,
@@ -482,65 +562,136 @@ const PAGE_HARNESS_EXPR = `(() => {
     };
   };
 
-  const measurePass = async ({ warmup, frames, forceRenderer, syncGpu }) => {
+  /**
+   * Measure unsynced CPU render time per frame.
+   * To defeat Chrome's 0.1 ms non-isolated performance.now() timer quantization on fast WebGL2 frames,
+   * a pilot pass picks batch size K (1..32) so each timed bracket spans >= 3.0 ms.
+   * Between brackets (outside timing), active WebGL2 calls gl.finish() and yields via MessageChannel
+   * so Chromium's GPU command ring buffer never saturates across frames.
+   */
+  const measureCpuPass = async ({ warmup, frames, forceRenderer }) => {
     if (typeof window.__forceRenderer !== 'undefined' || forceRenderer !== undefined) {
       window.__forceRenderer = forceRenderer ?? null;
     }
-    const gl = typeof glState !== 'undefined' && glState && !glState.lost ? glState.gl : null;
-    const px = syncGpu ? new Uint8Array(4) : null;
+    const gl = activeGL();
 
-    const tickOne = () => {
-      frame(performance.now());
-      if (syncGpu && gl) {
-        gl.finish();
-        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      }
-    };
-
+    // Warmup CPU JIT, caches, VBO growth, and GPU clocks outside timed samples.
     for (let i = 0; i < warmup; i++) {
-      await paceTick(tickOne);
+      await paceTick(() => frame(performance.now()));
     }
+    if (gl) gl.finish();
 
-    const samples = new Array(frames);
-    for (let i = 0; i < frames; i++) {
+    // Pilot pass to choose bracket batch size K.
+    const pilotCount = 8;
+    const tPilot0 = performance.now();
+    for (let i = 0; i < pilotCount; i++) frame(performance.now());
+    const pilotPerFrameMs = (performance.now() - tPilot0) / pilotCount;
+    if (gl) gl.finish();
+
+    const batchSize = Math.max(1, Math.min(32, Math.ceil(3.0 / Math.max(pilotPerFrameMs, 0.02))));
+    const brackets = batchSize === 1
+      ? frames
+      : Math.max(Math.min(frames, 30), Math.ceil(frames / batchSize));
+
+    const perFrameSamples = new Array(brackets);
+    let totalMs = 0;
+    for (let b = 0; b < brackets; b++) {
       await paceTick(() => {
         const t0 = performance.now();
-        tickOne();
-        samples[i] = performance.now() - t0;
+        for (let k = 0; k < batchSize; k++) {
+          frame(performance.now());
+        }
+        const elapsed = performance.now() - t0;
+        totalMs += elapsed;
+        perFrameSamples[b] = elapsed / batchSize;
+        if (gl) gl.finish();
       });
     }
 
+    const s = [...perFrameSamples].sort((a, b) => a - b);
+    const p95Idx = Math.min(s.length - 1, Math.ceil(0.95 * s.length) - 1);
     return {
-      ...summarize(samples),
+      mean: totalMs / (brackets * batchSize),
+      p95: s[p95Idx],
+      batchSize,
+      brackets,
+      totalFrames: brackets * batchSize,
       renderInfo: typeof window.__renderInfo !== 'undefined' ? window.__renderInfo : null,
     };
   };
 
-  const measureGpuTimerOnly = async (frames) => {
-    window.__forceRenderer = null;
-    const gl = typeof glState !== 'undefined' && glState && !glState.lost ? glState.gl : null;
-    const tq = gl ? gl.getExtension('EXT_disjoint_timer_query_webgl2') : null;
-    if (!gl || !tq) return null;
-    for (let i = 0; i < 5; i++) await paceTick(() => frame(performance.now()));
-    const vals = [];
-    for (let i = 0; i < frames; i++) {
-      const q = gl.createQuery();
-      await paceTick(() => {
-        gl.beginQuery(tq.TIME_ELAPSED_EXT, q);
-        frame(performance.now());
-        gl.endQuery(tq.TIME_ELAPSED_EXT);
-        gl.flush();
-      });
-      for (let wait = 0; wait < 200; wait++) {
-        if (gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
-        await new Promise((r) => setTimeout(r, 1));
+  /**
+   * Measure hardware/driver GPU execution time per scenario via EXT_disjoint_timer_query_webgl2,
+   * or fall back to synchronous gl.finish() + 1x1 readPixels when timer queries are unavailable.
+   */
+  const measureGpuPass = async ({ warmup, frames }) => {
+    if (typeof window.__forceRenderer !== 'undefined') window.__forceRenderer = null;
+    const gl = activeGL();
+    if (!gl) return null;
+
+    const tq = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+    if (tq) {
+      const nWarm = Math.min(10, Math.max(3, warmup));
+      for (let i = 0; i < nWarm; i++) {
+        await paceTick(() => frame(performance.now()));
       }
-      const disjoint = gl.getParameter(tq.GPU_DISJOINT_EXT);
-      const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
-      gl.deleteQuery(q);
-      if (!disjoint && Number.isFinite(ns)) vals.push(ns / 1e6);
+      gl.finish();
+      // Clear sticky disjoint flag before collecting timed queries.
+      gl.getParameter(tq.GPU_DISJOINT_EXT);
+
+      const nQueries = Math.min(30, Math.max(10, Math.floor(frames / 4)));
+      const vals = [];
+      for (let i = 0; i < nQueries; i++) {
+        const q = gl.createQuery();
+        if (!q) continue;
+        await paceTick(() => {
+          gl.beginQuery(tq.TIME_ELAPSED_EXT, q);
+          frame(performance.now());
+          gl.endQuery(tq.TIME_ELAPSED_EXT);
+          gl.flush();
+        });
+        let avail = false;
+        for (let wait = 0; wait < 200; wait++) {
+          if (gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) {
+            avail = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 1));
+        }
+        const disjoint = gl.getParameter(tq.GPU_DISJOINT_EXT);
+        if (avail && !disjoint) {
+          const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
+          if (Number.isFinite(ns)) vals.push(ns / 1e6);
+        }
+        gl.deleteQuery(q);
+      }
+      if (vals.length > 0) {
+        return { kind: 'timerQuery', ...summarize(vals), samples: vals.length };
+      }
     }
-    return vals.length ? summarize(vals) : null;
+
+    // Fallback when EXT_disjoint_timer_query_webgl2 is absent/disjoint: CPU + gl.finish() + readPixels.
+    const px = new Uint8Array(4);
+    const nWarm = Math.min(10, warmup);
+    const nSync = Math.min(60, frames);
+    for (let i = 0; i < nWarm; i++) {
+      await paceTick(() => {
+        frame(performance.now());
+        gl.finish();
+        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      });
+    }
+    const vals = new Array(nSync);
+    for (let i = 0; i < nSync; i++) {
+      await paceTick(() => {
+        const t0 = performance.now();
+        frame(performance.now());
+        gl.finish();
+        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        vals[i] = performance.now() - t0;
+      });
+    }
+    return { kind: 'readPixelsSync', ...summarize(vals), samples: nSync };
   };
 
   const getMeta = () => {
@@ -566,8 +717,8 @@ const PAGE_HARNESS_EXPR = `(() => {
   window.__benchHarness = {
     getMeta,
     setupScenario,
-    measurePass,
-    measureGpuTimerOnly,
+    measureCpuPass,
+    measureGpuPass,
     waitOrigRAF: waitFramesViaOrigRAF,
     setForceRenderer: (v) => { window.__forceRenderer = v; },
     repaintForTheme: () => {
@@ -587,7 +738,7 @@ const PAGE_HARNESS_EXPR = `(() => {
       const stage = document.querySelector('.stage') || document.getElementById('c');
       stage.scrollIntoView({ block: 'center' });
       const r = stage.getBoundingClientRect();
-      return { x: r.left, y: r.top, width: r.width, height: r.height };
+      return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height };
     },
   };
 
@@ -603,7 +754,6 @@ async function installHarness(page) {
     await new Promise((r) => setTimeout(r, 100));
   }
   const meta = await page.evalJS(PAGE_HARNESS_EXPR);
-  // Let any in-flight original rAF callback finish cleanly before measurements begin.
   await new Promise((r) => setTimeout(r, 80));
   return meta;
 }
@@ -689,9 +839,9 @@ async function captureScreenshots(page, outDir, dpr) {
   return { saved, dpr };
 }
 
-function fmtPair(stat) {
+function fmtPair(stat, digits = 2) {
   if (!stat || !Number.isFinite(stat.mean)) return 'N/A';
-  return `${stat.mean.toFixed(2)} / ${stat.p95.toFixed(2)}`;
+  return `${stat.mean.toFixed(digits)} / ${stat.p95.toFixed(digits)}`;
 }
 
 function fmtSpeedup(baseStat, targetStat) {
@@ -713,11 +863,20 @@ async function main() {
     let baselinePath = opts.baseline;
     if (!baselinePath) {
       tmpBaselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-base-'));
+      activeTempDirs.add(tmpBaselineDir);
       baselinePath = exportBaseline(opts.rev, tmpBaselineDir);
-    } else if (!fs.existsSync(baselinePath)) {
-      throw new Error(`Baseline HTML not found: ${baselinePath}`);
+    } else {
+      let st;
+      try {
+        st = fs.statSync(baselinePath);
+      } catch {
+        throw new Error(`Baseline HTML not found: ${baselinePath}`);
+      }
+      if (!st.isFile()) {
+        throw new Error(`Baseline path is not a file: ${baselinePath}`);
+      }
     }
-    if (!fs.existsSync(CURRENT_HTML)) {
+    if (!fs.existsSync(CURRENT_HTML) || !fs.statSync(CURRENT_HTML).isFile()) {
       throw new Error(`Current HTML not found: ${CURRENT_HTML}`);
     }
 
@@ -731,6 +890,15 @@ async function main() {
     newPage = await openPage(browserBin, currentUrl, gpu.flags, opts.dpr);
     const newMeta = await installHarness(newPage);
 
+    if (baseMeta.cvWidth !== newMeta.cvWidth || baseMeta.cvHeight !== newMeta.cvHeight) {
+      throw new Error(
+        `Stage backing dimensions mismatch: baseline=${baseMeta.cvWidth}x${baseMeta.cvHeight} vs new=${newMeta.cvWidth}x${newMeta.cvHeight}`
+      );
+    }
+    if (baseMeta.W !== newMeta.W || baseMeta.H !== newMeta.H) {
+      throw new Error(`Stage CSS dimensions mismatch: baseline=${baseMeta.W}x${baseMeta.H} vs new=${newMeta.W}x${newMeta.H}`);
+    }
+
     const hasWebGL2 = newMeta.backend === 'webgl2';
     const results = [];
 
@@ -742,7 +910,7 @@ async function main() {
         `window.__benchHarness.setupScenario(${JSON.stringify({ mode: sc.mode, n: sc.n, trails: sc.trails, seed })})`
       );
       const baseStat = await basePage.evalJS(
-        `window.__benchHarness.measurePass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames, syncGpu: false })})`
+        `window.__benchHarness.measureCpuPass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames })})`
       );
 
       const newSetup = await newPage.evalJS(
@@ -757,29 +925,21 @@ async function main() {
       }
 
       let glCpuStat = null;
-      let glSyncStat = null;
+      let glGpuStat = null;
       if (hasWebGL2) {
         glCpuStat = await newPage.evalJS(
-          `window.__benchHarness.measurePass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames, forceRenderer: null, syncGpu: false })})`
+          `window.__benchHarness.measureCpuPass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames, forceRenderer: null })})`
         );
-        glSyncStat = await newPage.evalJS(
-          `window.__benchHarness.measurePass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames, forceRenderer: null, syncGpu: true })})`
+        glGpuStat = await newPage.evalJS(
+          `window.__benchHarness.measureGpuPass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames })})`
         );
       }
 
       const d2Stat = await newPage.evalJS(
-        `window.__benchHarness.measurePass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames, forceRenderer: '2d', syncGpu: false })})`
+        `window.__benchHarness.measureCpuPass(${JSON.stringify({ warmup: opts.warmup, frames: opts.frames, forceRenderer: '2d' })})`
       );
 
-      results.push({ sc, baseStat, glCpuStat, glSyncStat, d2Stat });
-    }
-
-    let gpuKernelSample = null;
-    if (hasWebGL2 && newMeta.hasTimerQuery) {
-      await newPage.evalJS(
-        `window.__benchHarness.setupScenario(${JSON.stringify({ mode: 'single3d', n: 2000, trails: true, seed: 0x20269999 })})`
-      );
-      gpuKernelSample = await newPage.evalJS(`window.__benchHarness.measureGpuTimerOnly(30)`);
+      results.push({ sc, baseStat, glCpuStat, glGpuStat, d2Stat });
     }
 
     let screenshotReport = null;
@@ -790,26 +950,31 @@ async function main() {
       screenshotReport = await captureScreenshots(newPage, opts.screenshots, opts.dpr);
     }
 
+    const gpuColKind = results.find((r) => r.glGpuStat)?.glGpuStat?.kind || 'none';
+    const gpuColHeader = gpuColKind === 'timerQuery'
+      ? 'WebGL2 GPU mean / p95 (ms)'
+      : 'WebGL2 CPU+Sync mean / p95 (ms)';
+
     console.log('## Electron Renderer Benchmark');
     console.log('');
-    console.log(`- **Baseline:** ${opts.baseline ? opts.baseline : `git ${opts.rev}`}`);
+    console.log(`- **Baseline:** ${opts.baseline ? opts.baseline : `git ${opts.rev}`} (\`${baseMeta.backend}\`)`);
     console.log(`- **Browser:** ${path.basename(browserBin)} | **GPU Config:** ${gpu.label}`);
     console.log(`- **GL_VENDOR:** \`${newMeta.glVendor || gpu.probe.unmaskedVendor || 'unavailable'}\``);
     console.log(`- **GL_RENDERER:** \`${newMeta.glRenderer || gpu.probe.unmaskedRenderer || 'unavailable'}\``);
-    console.log(`- **DPR:** ${newMeta.dpr} (requested ${opts.dpr}) | **Baseline Stage:** ${baseMeta.W}×${baseMeta.H} CSS (${baseMeta.cvWidth}×${baseMeta.cvHeight} px) | **New Stage:** ${newMeta.W}×${newMeta.H} CSS (${newMeta.cvWidth}×${newMeta.cvHeight} px)`);
-    console.log(`- **Hygiene:** deterministic Mulberry32 \`Math.random\`, background rAF stopped, \`simWorker\` terminated, \`${opts.warmup}\` warmup + \`${opts.frames}\` measured frames/pass`);
-    if (gpuKernelSample) {
-      console.log(`- **GPU Timer (\`EXT_disjoint_timer_query_webgl2\`, 3d m=+2 N=2000 trails ON):** mean ${gpuKernelSample.mean.toFixed(3)} ms, p95 ${gpuKernelSample.p95.toFixed(3)} ms`);
-    }
+    console.log(`- **DPR:** ${newMeta.dpr} (requested ${opts.dpr}) | **Stage:** ${newMeta.W}×${newMeta.H} CSS (${newMeta.cvWidth}×${newMeta.cvHeight} px)`);
+    console.log(`- **Hygiene:** deterministic Mulberry32 \`Math.random\`, background rAF stopped, \`simWorker\` terminated, \`${opts.warmup}\` warmup + \`>= ${opts.frames}\` measured frames/pass with adaptive batching \`K\` (>= 3.0 ms/bracket to avoid 0.1 ms \`performance.now()\` quantization) and inter-bracket \`gl.finish()\``);
+    console.log(`- **Isolation note:** \`run = false\` isolates pure rendering from Bohmian/TDSE physics stepping (particle depth order and overlays stay steady across frames, and WebGL2 HUD caching skips redundant static HUD redraws just like steady-camera non-pulse playback).`);
+    console.log(`- **GPU timing column:** ${gpuColKind === 'timerQuery' ? '`EXT_disjoint_timer_query_webgl2` per-scenario GPU execution time (`TIME_ELAPSED_EXT`), measured separately from unsynced CPU submission.' : 'Synchronous `gl.finish() + readPixels` fallback (timer queries unavailable); reflects driver/IPC sync overhead alongside rasterization and is not directly comparable to unsynced Canvas 2D.'}`);
     console.log('');
-    console.log('| Scenario | N | Trails | Baseline mean / p95 (ms) | WebGL2 CPU mean / p95 (ms) | WebGL2 GPU-sync mean / p95 (ms) | New 2D mean / p95 (ms) | Speedup (GL CPU / GL Sync) |');
-    console.log('| :--- | ---: | :---: | :---: | :---: | :---: | :---: | :---: |');
+    console.log(`| Scenario | N | Trails | Baseline mean / p95 (ms) | WebGL2 CPU mean / p95 (ms) | K (Base/GL) | ${gpuColHeader} | New 2D mean / p95 (ms) | Speedup (Base / GL CPU) |`);
+    console.log('| :--- | ---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |');
     for (const r of results) {
       const tr = r.sc.trails ? 'ON' : 'OFF';
+      const kCol = r.glCpuStat ? `${r.baseStat.batchSize}/${r.glCpuStat.batchSize}` : `${r.baseStat.batchSize}/-`;
+      const gpuDigits = r.glGpuStat?.kind === 'timerQuery' ? 3 : 2;
       const spCpu = fmtSpeedup(r.baseStat, r.glCpuStat);
-      const spSync = fmtSpeedup(r.baseStat, r.glSyncStat);
       console.log(
-        `| ${r.sc.label} | ${r.sc.n} | ${tr} | ${fmtPair(r.baseStat)} | ${fmtPair(r.glCpuStat)} | ${fmtPair(r.glSyncStat)} | ${fmtPair(r.d2Stat)} | ${spCpu} / ${spSync} |`
+        `| ${r.sc.label} | ${r.sc.n} | ${tr} | ${fmtPair(r.baseStat)} | ${fmtPair(r.glCpuStat)} | ${kCol} | ${fmtPair(r.glGpuStat, gpuDigits)} | ${fmtPair(r.d2Stat)} | ${spCpu} |`
       );
     }
 
@@ -822,6 +987,7 @@ async function main() {
     await closeBrowser(newPage);
     await closeBrowser(basePage);
     if (tmpBaselineDir) {
+      activeTempDirs.delete(tmpBaselineDir);
       fs.rmSync(tmpBaselineDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   }
