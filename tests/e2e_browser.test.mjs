@@ -1367,19 +1367,34 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
 
     const lumOf = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-    // 1. Verify failIfMajorPerformanceCaveat falls back to fast 2D under software SwiftShader by default,
-    //    and opting in via window.__forceRenderer = 'webgl2' initializes WebGL2 cleanly with full telemetry.
+    // 1. Verify failIfMajorPerformanceCaveat falls back to fast 2D under software SwiftShader by default
+    //    (collapsing inactive #c-gl to 0x0), and opting in via window.__forceRenderer = 'webgl2'
+    //    resizes and initializes WebGL2 cleanly with full telemetry.
     await waitUntil('Boolean(window.__renderInfo && window.__renderInfo.backend === "2d")', 6000);
+    const fallback2dGl = await evalJS(`({
+      glW: document.getElementById('c-gl').width,
+      glH: document.getElementById('c-gl').height,
+      glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
+    })`);
+    assert.equal(fallback2dGl.glW, 0, 'Inactive #c-gl must collapse width to 0 in 2D-only fallback');
+    assert.equal(fallback2dGl.glH, 0, 'Inactive #c-gl must collapse height to 0 in 2D-only fallback');
+    assert.equal(fallback2dGl.glVis, 'hidden', 'Inactive #c-gl must be hidden in 2D-only fallback');
     await evalJS("window.__forceRenderer = 'webgl2';");
     await waitUntil('Boolean(window.__renderInfo && window.__renderInfo.backend === "webgl2")', 6000);
     await waitFrames(3);
     const initInfo = await evalJS(`({
       info: window.__renderInfo,
       pLen: P.length,
+      cvW: document.getElementById('c').width,
+      cvH: document.getElementById('c').height,
+      glW: document.getElementById('c-gl').width,
+      glH: document.getElementById('c-gl').height,
       glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
     })`);
     assert.equal(initInfo.info.backend, 'webgl2', 'Expected WebGL2 backend under SwiftShader after explicit opt-in');
+    assert.equal(initInfo.glW, initInfo.cvW, 'Opt-in WebGL2 must synchronize #c-gl width with #c');
+    assert.equal(initInfo.glH, initInfo.cvH, 'Opt-in WebGL2 must synchronize #c-gl height with #c');
     assert.equal(initInfo.info.sphereCount, initInfo.pLen + 1, 'sphereCount must equal P.length + nucleus');
     assert.ok(initInfo.info.drawCalls >= 1 && initInfo.info.drawCalls <= 3, `Expected drawCalls <= 3, got ${initInfo.info.drawCalls}`);
     assert.ok(Number.isFinite(initInfo.info.lastDrawMs) && initInfo.info.lastDrawMs >= 0, 'lastDrawMs must be finite >= 0');
@@ -1516,7 +1531,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       // Place 1 front violet sphere at (x = 0.18*E, y = -0.8*E, z = 0.25*E)
       // At tilt=0, az=0: sx = cx + x*S, sy = cy - z*S, depth = y = -0.8*E (dn=0.1, rad=4.56px, hueT=1.0)
       const geom = await evalJS(`(() => {
-        P = [{ x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, -0.8 * E)), hist: [] }];
+        P = [{ x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, hist: [] }];
         const S = Math.min(W, H * 1.15) / (2 * E);
         return { sx: W / 2 + 0.18 * E * S, sy: H / 2 - 0.25 * E * S, bgX: W / 2 + 0.18 * E * S + 30, bgY: H / 2 - 0.25 * E * S };
       })()`);
@@ -1553,8 +1568,8 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       // and (2) the back yellow-orange sphere visibly bleeds through the semi-transparent front sphere!
       await evalJS(`(() => {
         P = [
-          { x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, -0.8 * E)), hist: [] },
-          { x: 0.18 * E, y: 0.05 * E, z: 0.25 * E, col: colr(Math.hypot(0.18 * E, 0.05 * E)), hist: [] },
+          { x: 0.18 * E, y: -0.8 * E, z: 0.25 * E, hist: [] },
+          { x: 0.18 * E, y: 0.05 * E, z: 0.25 * E, hist: [] },
         ];
       })()`);
       await waitFrames(4);
@@ -1670,7 +1685,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       rebuildComponentList();
       refresh(false, true);
       setViewAngles(0, 0);
-      P = [{ x: -0.25 * E, y: -0.8 * E, z: 0.25 * E, col: colr(Math.hypot(-0.25 * E, -0.8 * E)), hist: [] }];
+      P = [{ x: -0.25 * E, y: -0.8 * E, z: 0.25 * E, hist: [] }];
     })()`);
     await waitFrames(4);
     const postRestoreGeom = await evalJS(`(() => {
@@ -1692,7 +1707,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
         const ang = (i / 2000) * Math.PI * 2;
         const r = (0.15 + 0.65 * ((i * 37) % 100) / 100) * E;
         const x = r * Math.cos(ang), y = r * Math.sin(ang), z = (((i * 19) % 100) / 50 - 1) * 0.4 * E;
-        arr.push({ x, y, z, col: colr(r), hist: [[x * 0.85, y * 0.85, z, 0], [x * 0.9, y * 0.9, z, 0.5], [x * 0.95, y * 0.95, z, 1]] });
+        arr.push({ x, y, z, hist: [[x * 0.85, y * 0.85, z, 0], [x * 0.9, y * 0.9, z, 0.5], [x * 0.95, y * 0.95, z, 1]] });
       }
       P = arr;
       document.getElementById('tr').checked = true;
@@ -1714,7 +1729,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       setViewAngles(0, 0);
       const x0 = 0.15 * E, z0 = 0.15 * E, x1 = 0.55 * E, z1 = 0.35 * E;
       // 3 identical tail points exercise zero-length segment guard while giving the main diagonal segment high alpha (0.44)
-      P = [{ x: x1, y: 0, z: z1, col: colr(x1), hist: [[x0, 0, z0, 0], [x0, 0, z0, 1], [x0, 0, z0, 2], [x0, 0, z0, 3]] }];
+      P = [{ x: x1, y: 0, z: z1, hist: [[x0, 0, z0, 0], [x0, 0, z0, 1], [x0, 0, z0, 2], [x0, 0, z0, 3]] }];
       document.getElementById('tr').checked = true;
       const S = Math.min(W, H * 1.15) / (2 * E);
       return {

@@ -313,7 +313,7 @@ async function openPage(browserBin, targetUrl, extraFlags, dpr) {
   }
 }
 
-const SOFTWARE_RE = /swiftshader|llvmpipe|softpipe|software|mesa offscreen/i;
+const SOFTWARE_RE = /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i;
 
 async function probeWebGL2(browserBin, flags, dpr) {
   let session;
@@ -365,14 +365,15 @@ async function selectGpuConfig(browserBin, gpuMode, dpr) {
   }
 
   // Try default ANGLE first; if unavailable or software-only, check hardware ANGLE GL/Vulkan, else SwiftShader.
+  const isSwProbe = (p) => SOFTWARE_RE.test(`${p.unmaskedRenderer || ''} ${p.glRenderer || ''}`);
   const defProbe = await probeWebGL2(browserBin, [], dpr);
-  if (defProbe.ok && !SOFTWARE_RE.test(defProbe.unmaskedRenderer || '')) {
+  if (defProbe.ok && !isSwProbe(defProbe)) {
     return { label: 'default ANGLE (hardware GPU)', flags: [], probe: defProbe };
   }
 
   for (const hw of [candidates.gl[0], candidates.vulkan[0]]) {
     const p = await probeWebGL2(browserBin, hw.flags, dpr);
-    if (p.ok && !SOFTWARE_RE.test(p.unmaskedRenderer || '')) {
+    if (p.ok && !isSwProbe(p)) {
       return {
         label: `${hw.label} (hardware GPU; default ANGLE was ${defProbe.ok ? defProbe.unmaskedRenderer : 'unavailable'})`,
         flags: hw.flags,
@@ -748,10 +749,17 @@ const PAGE_HARNESS_EXPR = `(() => {
 async function installHarness(page) {
   await new Promise((r) => setTimeout(r, 700));
   const deadline = Date.now() + 8000;
+  let isReady = false;
   while (Date.now() < deadline) {
     const ready = await page.evalJS('typeof frame === "function" && typeof refresh === "function" && typeof W === "number" && W > 0 && H > 0');
-    if (ready) break;
+    if (ready) {
+      isReady = true;
+      break;
+    }
     await new Promise((r) => setTimeout(r, 100));
+  }
+  if (!isReady) {
+    throw new Error('Timed out waiting for electron_orbitals.html stage initialization');
   }
   const meta = await page.evalJS(PAGE_HARNESS_EXPR);
   await new Promise((r) => setTimeout(r, 80));
@@ -891,10 +899,15 @@ async function main() {
     let newMeta = await installHarness(newPage);
     if (newMeta.backend !== 'webgl2' && gpu.probe.ok) {
       // Software GPU modes (e.g. --gpu-mode swiftshader) are skipped by failIfMajorPerformanceCaveat by default;
-      // opt in explicitly so the benchmark can still measure WebGL2 when requested.
-      newMeta = await newPage.evalJS(`(() => {
+      // opt in explicitly so the benchmark can still measure WebGL2 when requested (awaiting async restore if needed).
+      newMeta = await newPage.evalJS(`(async () => {
         window.__benchHarness.setForceRenderer('webgl2');
         frame(performance.now());
+        const deadline = performance.now() + 2000;
+        while (window.__renderInfo?.backend !== 'webgl2' && performance.now() < deadline) {
+          await window.__benchHarness.waitOrigRAF(1);
+          frame(performance.now());
+        }
         return window.__benchHarness.getMeta();
       })()`);
     }
@@ -971,7 +984,7 @@ async function main() {
     console.log(`- **GL_VENDOR:** \`${newMeta.glVendor || gpu.probe.unmaskedVendor || 'unavailable'}\``);
     console.log(`- **GL_RENDERER:** \`${newMeta.glRenderer || gpu.probe.unmaskedRenderer || 'unavailable'}\``);
     console.log(`- **DPR:** ${newMeta.dpr} (requested ${opts.dpr}) | **Stage:** ${newMeta.W}×${newMeta.H} CSS (${newMeta.cvWidth}×${newMeta.cvHeight} px)`);
-    console.log(`- **Hygiene:** deterministic Mulberry32 \`Math.random\`, background rAF stopped, \`simWorker\` terminated, \`${opts.warmup}\` warmup + \`>= ${opts.frames}\` measured frames/pass with adaptive batching \`K\` (>= 3.0 ms/bracket to avoid 0.1 ms \`performance.now()\` quantization) and inter-bracket \`gl.finish()\``);
+    console.log(`- **Hygiene:** deterministic Mulberry32 \`Math.random\`, background rAF stopped, \`simWorker\` terminated, \`${opts.warmup}\` warmup + \`>= ${opts.frames}\` measured frames/pass with adaptive batching \`K\` (>= 3.0 ms/bracket to avoid 0.1 ms \`performance.now()\` quantization) and inter-bracket \`gl.finish()\`. Note: when \`K > 1\`, \`p95\` is the 95th percentile of \`K\`-frame bracket means (smoother than single-frame tail latency), while \`mean\` is exact per-frame average.`);
     console.log(`- **Isolation note:** \`run = false\` isolates pure rendering from Bohmian/TDSE physics stepping (particle depth order and overlays stay steady across frames, and WebGL2 HUD caching skips redundant static HUD redraws just like steady-camera non-pulse playback).`);
     console.log(`- **GPU timing column:** ${gpuColKind === 'timerQuery' ? '`EXT_disjoint_timer_query_webgl2` per-scenario GPU execution time (`TIME_ELAPSED_EXT`), measured separately from unsynced CPU submission.' : 'Synchronous `gl.finish() + readPixels` fallback (timer queries unavailable); reflects driver/IPC sync overhead alongside rasterization and is not directly comparable to unsynced Canvas 2D.'}`);
     console.log('');

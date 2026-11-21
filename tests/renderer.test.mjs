@@ -61,7 +61,8 @@ function createHelpersContext(cssVars = {}) {
   const tail = `
     globalThis.__helpers = {
       parseCssColor: typeof parseCssColor === 'function' ? parseCssColor : undefined,
-      hslRhoToRgb: typeof hslRhoToRgb === 'function' ? hslRhoToRgb : undefined,
+      hueTToRgb: typeof hueTToRgb === 'function' ? hueTToRgb : undefined,
+      HUE_CSS_LUT: typeof HUE_CSS_LUT !== 'undefined' ? HUE_CSS_LUT : undefined,
       sortParticleOrder: typeof sortParticleOrder === 'function' ? sortParticleOrder : undefined,
       shadeSpherePixel: typeof shadeSpherePixel === 'function' ? shadeSpherePixel : undefined,
       buildSphereSpriteAtlas: typeof buildSphereSpriteAtlas === 'function' ? buildSphereSpriteAtlas : undefined,
@@ -90,7 +91,6 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
   const r2dSrc = SCRIPT_SRC.slice(s2, e2);
 
   const ops = [];
-  const resizeListeners = [];
   let gAlpha = 1;
   let fStyle = '';
   const fakeCtx = {
@@ -139,10 +139,8 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
     offH: 80,
     cellSz: 3,
     P: [],
-    addStageResizeListener: (fn) => resizeListeners.push(fn),
     drawFieldGizmo: () => ops.push({ op: 'drawFieldGizmo' }),
     drawAxisTriad: () => ops.push({ op: 'drawAxisTriad' }),
-    drawParticleTrail: () => ops.push({ op: 'drawParticleTrail' }),
     document: {
       documentElement: {},
       createElement: (tag) => {
@@ -173,12 +171,11 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
       drawScene2D,
       refreshTheme,
       getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
-      setStageDpr: (d) => { _stageDpr = d; for (const fn of __resizeListeners) fn(W, H, d, Math.round(W*d), Math.round(H*d)); },
+      setStageDpr: (d) => { _stageDpr = d; },
       setP: (arr) => { P = arr; },
       setOffDims: (w, h) => { offW = w; offH = h; },
     };
   `;
-  sandbox.__resizeListeners = resizeListeners;
   vm.runInNewContext(helpersSrc + '\n' + r2dSrc + '\n' + tail, sandbox);
   return { r2d: sandbox.__r2d, ops, cssVars, getAtlasBuilds: () => atlasBuilds };
 }
@@ -228,7 +225,7 @@ function createStageInitContext({ withGlCanvas = true, dpr = 1, clientWidth = 64
       getW: () => W,
       getH: () => H,
       getStageVersion: () => (typeof stageVersion !== 'undefined' ? stageVersion : undefined),
-      addStageResizeListener: typeof addStageResizeListener === 'function' ? addStageResizeListener : undefined,
+      setGlStageSync: (v) => { _glStageSync = Boolean(v); },
     };
   `;
   vm.runInNewContext(stageSrc + '\n' + tail, sandbox);
@@ -276,18 +273,13 @@ test('stage markup, CSS, and physics VM script boundary are properly structured'
   assert.ok(fmtBIdx > 0 && helpersIdx > fmtBIdx, 'Renderer helpers must live after function fmtB(');
 });
 
-test('resize() synchronizes #c and #c-gl backing buffers, skips no-op resets, and notifies multiple listeners', () => {
+test('resize() synchronizes #c and #c-gl backing buffers, skips no-op resets, and respects _glStageSync', () => {
   const { stage, cvEl, glEl, setTransformCalls } = createStageInitContext({
     withGlCanvas: true,
     dpr: 2,
     clientWidth: 640,
     clientHeight: 400,
   });
-  assert.equal(typeof stage.addStageResizeListener, 'function');
-  const hookA = [];
-  const hookB = [];
-  stage.addStageResizeListener((...args) => hookA.push(args));
-  stage.addStageResizeListener((...args) => hookB.push(args));
   stage.resize();
 
   assert.equal(stage.getW(), 640);
@@ -299,8 +291,6 @@ test('resize() synchronizes #c and #c-gl backing buffers, skips no-op resets, an
   assert.equal(glEl.widthWrites, 1);
   assert.equal(glEl.heightWrites, 1);
   assert.deepEqual(setTransformCalls.at(-1), [2, 0, 0, 2, 0, 0]);
-  assert.deepEqual(hookA, [[640, 400, 2, 1280, 800]]);
-  assert.deepEqual(hookB, [[640, 400, 2, 1280, 800]]);
   const verAfterFirst = stage.getStageVersion();
   assert.ok(verAfterFirst >= 1);
 
@@ -310,6 +300,19 @@ test('resize() synchronizes #c and #c-gl backing buffers, skips no-op resets, an
   assert.equal(glEl.heightWrites, 1, 'No-op resize must not reassign glCv.height');
   assert.equal(cvEl.widthWrites, 1, 'No-op resize must not reassign cv.width');
   assert.equal(stage.getStageVersion(), verAfterFirst);
+
+  // When WebGL2 is inactive (_glStageSync=false), resize() updates #c without allocating/touching #c-gl
+  stage.setGlStageSync(false);
+  glEl.width = 0;
+  glEl.height = 0;
+  const writesBefore2d = glEl.widthWrites;
+  cvEl.clientWidth = 700;
+  stage.resize();
+  assert.equal(cvEl.width, 1400);
+  assert.equal(glEl.width, 0, 'Inactive #c-gl must remain 0x0 during resize');
+  assert.equal(glEl.height, 0);
+  assert.equal(glEl.widthWrites, writesBefore2d, 'Inactive #c-gl must not be resized');
+  assert.equal(stage.getStageVersion(), verAfterFirst + 1);
 
   // Fractional DPR stays pixel-locked and aligns ctx.setTransform(pw/W, 0, 0, ph/H, 0, 0) with WebGL viewport
   const frac = createStageInitContext({ withGlCanvas: true, dpr: 1.5, clientWidth: 501, clientHeight: 333 });
@@ -379,46 +382,46 @@ test('parseCssColor parses hex, rgb/rgba, CSS4 space syntax, and invalid fallbac
   approx(parseCssColor('bad'), [0, 0, 0, 1]);
 });
 
-test('hslRhoToRgb matches reference HSL(15 + min(rho/(0.8*E), 1)*250, 70%, 56%)', () => {
-  const { hslRhoToRgb } = createHelpersContext();
-  assert.equal(typeof hslRhoToRgb, 'function');
+test('hueTToRgb and HUE_CSS_LUT match reference HSL(15 + clamp(t, 0, 1)*250, 70%, 56%)', () => {
+  const { hueTToRgb, HUE_CSS_LUT } = createHelpersContext();
+  assert.equal(typeof hueTToRgb, 'function');
+  assert.ok(Array.isArray(HUE_CSS_LUT) && HUE_CSS_LUT.length === 256);
+  assert.equal(HUE_CSS_LUT[0], 'hsl(15.00,70%,56%)');
+  assert.equal(HUE_CSS_LUT[255], 'hsl(265.00,70%,56%)');
 
-  // Verify colr(rho) in electron_orbitals.html still uses the matching formula
-  assert.match(SCRIPT_SRC, /const colr=rho=>'hsl\('\+\(15\+Math\.min\(rho\/\(0\.8\*E\),1\)\*250\)\+',70%,56%\)'/);
-
-  const E = 20;
   const buf = new Float32Array(8).fill(-1);
   // Include sector boundaries (hue 60, 120, 180, 240) plus endpoints and saturation
-  const rhos = [
+  const ts = [
     0,
-    ((60 - 15) / 250) * 0.8 * E,
-    ((120 - 15) / 250) * 0.8 * E,
-    ((180 - 15) / 250) * 0.8 * E,
-    ((240 - 15) / 250) * 0.8 * E,
-    0.4 * E,
-    0.8 * E,
-    2 * E,
+    (60 - 15) / 250,
+    (120 - 15) / 250,
+    (180 - 15) / 250,
+    (240 - 15) / 250,
+    0.5,
+    1,
+    2.5,
     Infinity,
   ];
-  for (const rho of rhos) {
-    const hue = 15 + Math.min(rho / (0.8 * E), 1) * 250;
+  for (const t of ts) {
+    const u = Math.max(0, Math.min(1, t));
+    const hue = 15 + u * 250;
     const expected = refHslToRgb(hue, 0.70, 0.56);
-    hslRhoToRgb(rho, E, buf, 2);
+    hueTToRgb(t, buf, 2);
     assert.equal(buf[1], -1, 'Must not touch elements before off');
     assert.equal(buf[5], -1, 'Must not touch elements after off + 2');
     for (let c = 0; c < 3; c++) {
       assert.ok(
         Math.abs(buf[2 + c] - expected[c]) < 1e-4,
-        `rho=${rho}, ch=${c}: got ${buf[2 + c]}, expected ${expected[c]}`
+        `t=${t}, ch=${c}: got ${buf[2 + c]}, expected ${expected[c]}`
       );
     }
   }
 
-  // Negative, NaN, and E <= 0 clamp cleanly to hue = 15 deg
+  // Negative, -Infinity, and NaN clamp cleanly to hue = 15 deg
   const zeroExpected = refHslToRgb(15, 0.70, 0.56);
   const out = new Float32Array(3);
-  for (const [rho, eVal] of [[-5, 20], [NaN, 20], [5, 0], [5, -10], [5, Infinity]]) {
-    hslRhoToRgb(rho, eVal, out, 0);
+  for (const t of [-5, -Infinity, NaN, 0]) {
+    hueTToRgb(t, out, 0);
     for (let c = 0; c < 3; c++) {
       assert.ok(Math.abs(out[c] - zeroExpected[c]) < 1e-4);
     }
@@ -671,7 +674,7 @@ test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile matchin
   const rgb = new Float32Array(3);
   const tLight = h.getTheme();
   for (const bi of [0, 17, 47]) {
-    h.hslRhoToRgb((bi / 47) * 0.8, 1, rgb, 0);
+    h.hueTToRgb(bi / 47, rgb, 0);
     for (let db = 0; db < 3; db++) {
       for (const [px, py] of [[tp >> 1, tp >> 1], [tp >> 1, 4], [tp - 3, tp >> 1]]) {
         const u = (px + 0.5 - halfTile) / innerRad;
@@ -761,9 +764,10 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   assert.equal(draws[2].a[0] < 48 * a3.tilePx, true, 'Third sprite must be front particle (depth -5)');
   assert.ok(ops.some((o) => o.op === 'fillText' && o.txt === 'z'), 'HUD z label must be drawn');
 
-  // 5. !atlas fallback must draw nucleus with globalAlpha === 1 even after semi-transparent back particles
+  // 5. !atlas fallback must draw nucleus with globalAlpha === 1 even after semi-transparent back particles,
+  //    and cache null atlas rather than allocating a new offscreen canvas every frame
   const noAtlas = createRenderer2DContext({ atlasOk: false, dpr: 1 });
-  noAtlas.r2d.setP([{ col: 'red' }, { col: 'blue' }]);
+  noAtlas.r2d.setP([{}, {}]);
   noAtlas.r2d.ensurePartBuffers(2);
   const npb = noAtlas.r2d.getPartBuffers();
   npb.depth[0] = 8; npb.sx[0] = 280; npb.sy[0] = 200; npb.hueT[0] = 0.1;
@@ -771,8 +775,11 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   noAtlas.r2d.sortParticleOrder(npb.order, npb.depth, 2);
   noAtlas.ops.length = 0;
   noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false });
+  const buildsAfterFirstNull = noAtlas.getAtlasBuilds();
+  noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false });
+  assert.equal(noAtlas.getAtlasBuilds(), buildsAfterFirstNull, 'Failed atlas build must be cached until theme or DPR changes');
   const arcs = noAtlas.ops.filter((o) => o.op === 'arc');
-  assert.equal(arcs.length, 3, 'Must draw back particle, nucleus, front particle in !atlas fallback');
+  assert.equal(arcs.length, 6, 'Must draw back particle, nucleus, front particle across both frames in !atlas fallback');
   assert.equal(arcs[1].x, 300);
   assert.equal(arcs[1].r, 3.2);
   assert.equal(arcs[1].alpha, 1, 'Nucleus in !atlas fallback must have globalAlpha === 1');
@@ -827,7 +834,44 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   const createMockGLContext = ({ failLinkAt = -1, failBufAt = -1, startLost = false, rejectCaveat = false, rendererStr = 'Mock Hardware GPU' } = {}) => {
     const calls = [];
     const deleted = { prog: 0, vao: 0, buf: 0, tex: 0, sh: 0 };
-    let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost;
+    const loseExtStats = { loseCalls: 0, restoreCalls: 0, invalidRestoreCalls: 0 };
+    let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost, restoreAllowed = false;
+    const listeners = {};
+    const taskQueue = [];
+    const queueTask = (fn) => taskQueue.push(fn);
+    const flushTasks = () => {
+      while (taskQueue.length) {
+        const fn = taskQueue.shift();
+        fn();
+      }
+    };
+    const loseExt = {
+      loseContext: () => {
+        loseExtStats.loseCalls++;
+        ctxLost = true;
+        restoreAllowed = false;
+        // Per WebGL WEBGL_lose_context spec: webglcontextlost is queued asynchronously,
+        // and restoreAllowed only becomes true AFTER dispatch completes with preventDefault().
+        queueTask(() => {
+          let prevented = false;
+          for (const fn of (listeners.webglcontextlost || [])) {
+            fn({ preventDefault: () => { prevented = true; } });
+          }
+          if (prevented) restoreAllowed = true;
+        });
+      },
+      restoreContext: () => {
+        loseExtStats.restoreCalls++;
+        if (!ctxLost || !restoreAllowed) {
+          loseExtStats.invalidRestoreCalls++;
+          return;
+        }
+        queueTask(() => {
+          ctxLost = false;
+          for (const fn of (listeners.webglcontextrestored || [])) fn();
+        });
+      },
+    };
     const gl = {
       VERTEX_SHADER: 0x8b31, FRAGMENT_SHADER: 0x8b30, COMPILE_STATUS: 0x8b81, LINK_STATUS: 0x8b82,
       ARRAY_BUFFER: 0x8892, STATIC_DRAW: 0x88e4, DYNAMIC_DRAW: 0x88e8, FLOAT: 0x1406,
@@ -837,8 +881,16 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       DEPTH_TEST: 0x0b71, BLEND: 0x0be2, ONE: 1, ONE_MINUS_SRC_ALPHA: 0x0303,
       LINES: 1, TRIANGLE_STRIP: 5, RENDERER: 0x1f01,
       isContextLost: () => ctxLost,
-      getExtension: (name) => (name === 'WEBGL_debug_renderer_info' ? { UNMASKED_RENDERER_WEBGL: 0x9246 } : null),
-      getParameter: (p) => (p === 0x1f01 || p === 0x9246 ? rendererStr : null),
+      getExtension: (name) => {
+        if (ctxLost) return null; // WebGL spec 5.14: getExtension returns null when context is lost
+        if (name === 'WEBGL_debug_renderer_info') return { UNMASKED_RENDERER_WEBGL: 0x9246 };
+        if (name === 'WEBGL_lose_context') return loseExt;
+        return null;
+      },
+      getParameter: (p) => {
+        if (ctxLost) return null; // WebGL spec 5.14: getParameter returns null when context is lost
+        return p === 0x1f01 || p === 0x9246 ? rendererStr : null;
+      },
       createShader: () => ({ id: nextId++ }),
       shaderSource: () => {},
       compileShader: () => {},
@@ -882,7 +934,6 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       drawArrays: (mode, first, count) => calls.push({ op: 'drawArrays', mode, first, count }),
       drawArraysInstanced: (mode, first, count, primCount) => calls.push({ op: 'drawArraysInstanced', mode, first, count, primCount }),
     };
-    const listeners = {};
     const contextOpts = [];
     const canvas = {
       width: 600, height: 400,
@@ -894,13 +945,14 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       },
       addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
     };
-    return { gl, canvas, calls, deleted, listeners, contextOpts, setLost: (v) => { ctxLost = v; } };
+    return { gl, canvas, calls, deleted, listeners, contextOpts, loseExtStats, queueTask, flushTasks, setLost: (v) => { ctxLost = v; } };
   };
 
   const runGLHarness = (mock) => {
     const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)', '--ov': '83,74,183' };
     const sandbox = {
       Math, Number, String, Array, ArrayBuffer, Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray, Object, RegExp,
+      setTimeout: (fn) => { mock.queueTask(fn); return 0; },
       TAU: Math.PI * 2,
       W: 600, H: 400, _stageDpr: 1,
       glCv: mock.canvas,
@@ -910,10 +962,8 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       offW: 100, offH: 80, cellSz: 3, ovPaintedVersion: 1,
       P: [],
       window: {},
-      addStageResizeListener: () => {},
       drawFieldGizmo: () => {},
       drawAxisTriad: () => {},
-      drawParticleTrail: () => {},
       document: { documentElement: {}, createElement: () => ({ getContext: () => null }) },
       getComputedStyle: () => ({ getPropertyValue: (n) => cssVars[n] ?? '' }),
     };
@@ -955,10 +1005,40 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   assert.equal(Boolean(swForced), true, 'allowSoftware=true must allow WebGL2 init even when caveat is rejected');
   assert.equal(swMock.contextOpts[1]?.failIfMajorPerformanceCaveat, false);
 
-  const swiftMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
-  const swiftHarness = runGLHarness(swiftMock);
-  assert.equal(swiftHarness.initWebGLRenderer(swiftMock.canvas) === null, true, 'SwiftShader renderer string must fall back to 2D by default');
-  assert.equal(Boolean(swiftHarness.initWebGLRenderer(swiftMock.canvas, true)), true, 'allowSoftware=true must allow SwiftShader WebGL2 opt-in');
+  // Early opt-in: allowSoftware=true called BEFORE queued webglcontextlost dispatches (must not prematurely call restoreContext)
+  const swiftEarlyMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
+  const swiftEarlyHarness = runGLHarness(swiftEarlyMock);
+  assert.equal(swiftEarlyHarness.initWebGLRenderer(swiftEarlyMock.canvas) === null, true, 'SwiftShader renderer string must fall back to 2D by default');
+  assert.equal(swiftEarlyMock.loseExtStats.loseCalls, 1, 'Rejected software WebGL2 context must be released via WEBGL_lose_context');
+  assert.equal(swiftEarlyMock.canvas.width, 0, 'Rejected software WebGL2 canvas backing width must collapse to 0');
+  assert.equal(swiftEarlyMock.canvas.height, 0, 'Rejected software WebGL2 canvas backing height must collapse to 0');
+  // Calling initWebGLRenderer(canvas, false) a second time on the lost context must STILL reject (no lost-context bypass!)
+  assert.equal(swiftEarlyHarness.initWebGLRenderer(swiftEarlyMock.canvas, false) === null, true, 'Repeated allowSoftware=false must remain rejected even when context is lost');
+  swiftEarlyMock.canvas.width = 600;
+  swiftEarlyMock.canvas.height = 400;
+  const swiftEarlyForced = swiftEarlyHarness.initWebGLRenderer(swiftEarlyMock.canvas, true);
+  assert.equal(Boolean(swiftEarlyForced), true, 'allowSoftware=true before webglcontextlost must return pending state');
+  assert.equal(swiftEarlyMock.loseExtStats.invalidRestoreCalls, 0, 'Must never call restoreContext before webglcontextlost finishes');
+  assert.equal(swiftEarlyForced.lost, true, 'State stays lost until async webglcontextlost + restoreContext + webglcontextrestored complete');
+  swiftEarlyMock.flushTasks();
+  assert.equal(swiftEarlyMock.loseExtStats.invalidRestoreCalls, 0, 'Deferred restoreContext must execute only after restoreAllowed');
+  assert.equal(swiftEarlyMock.loseExtStats.restoreCalls, 1, 'Deferred allowSoftware=true must call restoreContext once');
+  assert.equal(swiftEarlyForced.lost, false, 'Restored software WebGL2 opt-in context must rebuild resources cleanly');
+
+  // Late opt-in: webglcontextlost finishes BEFORE allowSoftware=true is requested
+  const swiftLateMock = createMockGLContext({ rendererStr: 'Mesa llvmpipe (LLVM 17)' });
+  const swiftLateHarness = runGLHarness(swiftLateMock);
+  assert.equal(swiftLateHarness.initWebGLRenderer(swiftLateMock.canvas) === null, true);
+  swiftLateMock.flushTasks();
+  assert.equal(swiftLateHarness.initWebGLRenderer(swiftLateMock.canvas, false) === null, true, 'Repeated allowSoftware=false after contextlost must remain rejected');
+  swiftLateMock.canvas.width = 600;
+  swiftLateMock.canvas.height = 400;
+  const swiftLateForced = swiftLateHarness.initWebGLRenderer(swiftLateMock.canvas, true);
+  assert.equal(Boolean(swiftLateForced), true);
+  swiftLateMock.flushTasks();
+  assert.equal(swiftLateMock.loseExtStats.invalidRestoreCalls, 0);
+  assert.equal(swiftLateMock.loseExtStats.restoreCalls, 1);
+  assert.equal(swiftLateForced.lost, false);
 
   // 2. Normal init, zero-line guard (cp=0, trails off), NaN/E<=0 interleaving, buffer growth, and context lost/restored
   const mock = createMockGLContext();

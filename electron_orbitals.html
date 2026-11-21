@@ -334,10 +334,8 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 "use strict";
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d'),glCv=$('c-gl');
-let W=0,H=0,key='',stageVersion=0,_stageDpr=1;
-const _stageResizeListeners=[];
-function addStageResizeListener(fn){if(typeof fn==='function'&&!_stageResizeListeners.includes(fn))_stageResizeListeners.push(fn);}
-function resize(){const rawD=window.devicePixelRatio,d=Number.isFinite(rawD)&&rawD>0?rawD:1;const nw=cv.clientWidth||0,nh=cv.clientHeight||0;const pw=Math.max(0,Math.round(nw*d)),ph=Math.max(0,Math.round(nh*d));const changed=nw!==W||nh!==H||d!==_stageDpr||cv.width!==pw||cv.height!==ph||(glCv&&(glCv.width!==pw||glCv.height!==ph));W=nw;H=nh;_stageDpr=d;if(cv.width!==pw||cv.height!==ph){cv.width=pw;cv.height=ph;}if(glCv&&(glCv.width!==pw||glCv.height!==ph)){glCv.width=pw;glCv.height=ph;}const sx=W>0?pw/W:d,sy=H>0?ph/H:d;ctx.setTransform(sx,0,0,sy,0,0);if(changed){key='';stageVersion++;for(let i=0;i<_stageResizeListeners.length;i++)_stageResizeListeners[i](W,H,d,pw,ph);}}
+let W=0,H=0,key='',stageVersion=0,_stageDpr=1,_glStageSync=true;
+function resize(){const rawD=window.devicePixelRatio,d=Number.isFinite(rawD)&&rawD>0?rawD:1;const nw=cv.clientWidth||0,nh=cv.clientHeight||0;const pw=Math.max(0,Math.round(nw*d)),ph=Math.max(0,Math.round(nh*d));const syncGl=Boolean(glCv&&_glStageSync);const changed=nw!==W||nh!==H||d!==_stageDpr||cv.width!==pw||cv.height!==ph||(syncGl&&(glCv.width!==pw||glCv.height!==ph));W=nw;H=nh;_stageDpr=d;if(cv.width!==pw||cv.height!==ph){cv.width=pw;cv.height=ph;}if(syncGl&&(glCv.width!==pw||glCv.height!==ph)){glCv.width=pw;glCv.height=ph;}const sx=W>0?pw/W:d,sy=H>0?ph/H:d;ctx.setTransform(sx,0,0,sy,0,0);if(changed){key='';stageVersion++;}}
 const _selfScriptEl=typeof document!=='undefined'?document.currentScript:null;
 /* === WORKER_CORE_START === */
 let workerActive=false;
@@ -739,7 +737,6 @@ const base=pulse.trSpec&&pulse.trSpec.n1===pulse.trSpec.n2?Math.max(tscaleBase()
 return Math.max(Math.min(base,8/maxFreq),pulse.T/PULSE_PLAY_S);}
 const base=tscaleBase();
 return(eff.length>=2&&omegaMax>0)?Math.min(base,8/omegaMax):base;};
-const colr=rho=>'hsl('+(15+Math.min(rho/(0.8*E),1)*250)+',70%,56%)';
 
 function computeRefDens(items){
 let harmSum=0;
@@ -819,8 +816,8 @@ const r=invc(b.rcdf,Math.random())*b.dr;
 const th=invc(b.tcdf,Math.random())*Math.PI/NT;
 const rho=r*Math.sin(th);
 if(r>E||(b.m!==0&&rho<0.03*E))continue;
-return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:b.m/(rho*rho),col:colr(rho)};}
-return{rho:0.5*E,z:0,ph:Math.random()*TAU,w:b.m/(0.25*E*E),col:colr(0.5*E)};}
+return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:b.m/(rho*rho)};}
+return{rho:0.5*E,z:0,ph:Math.random()*TAU,w:b.m/(0.25*E*E)};}
 
 function evalAlphas(t,out){
 if(diaEff){
@@ -855,10 +852,10 @@ pRe+=aRe*br-aIm*bi;pIm+=aRe*bi+aIm*br;
 g+=(ek.mag/sumMag)*(br*br+bi*bi);}
 const psi2=pRe*pRe+pIm*pIm;
 if(g>0&&Math.random()*M*g<=psi2){
-return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}}
+return{x,y,z,hist:[[x,y,z,tSim]]};}}
 const b0=eff[0].b,r=invc(b0.rcdf,Math.random())*b0.dr,th=invc(b0.tcdf,Math.random())*Math.PI/NT,ph=Math.random()*TAU;
 const rho=r*Math.sin(th),x=rho*Math.cos(ph),y=rho*Math.sin(ph),z=r*Math.cos(th);
-return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}
+return{x,y,z,hist:[[x,y,z,tSim]]};}
 
 function reseed(){
 P=[];
@@ -2618,7 +2615,7 @@ components=nextC;rebuildComponentList();computeEffective();reseed();}}
 if(eff.length===1){
 for(const q of P){
 const x=q.rho*Math.cos(q.ph),y=q.rho*Math.sin(q.ph);
-q.x=x;q.y=y;q.col=colr(q.rho);
+q.x=x;q.y=y;
 if(q.hist){for(const h of q.hist)h[3]-=tSim;}else{q.hist=[[x,y,q.z,0]];}}
 }else{
 for(const q of P){
@@ -2821,7 +2818,7 @@ for(let idx=0;idx<P.length;idx++){
 const q=P[idx],r=Math.hypot(q.x,q.y,q.z);
 if(!Number.isFinite(r)||r>escR){P[idx]=sampSingle(b0);continue;}
 const rho=Math.max(Math.hypot(q.x,q.y),1e-4);
-q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);q.col=colr(rho);
+q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);
 if(q.hist){for(const h of q.hist)h[3]-=doneT;}}
 }else{
 const escAl=P.some(q=>{const r=Math.hypot(q.x,q.y,q.z);return!Number.isFinite(r)||r>escR;})?new Float64Array(eff.length*2):null;
@@ -2829,7 +2826,6 @@ if(escAl)evalAlphas(0,escAl);
 for(let idx=0;idx<P.length;idx++){
 const q=P[idx],r=Math.hypot(q.x,q.y,q.z);
 if(!Number.isFinite(r)||r>escR){P[idx]=sampSuper(escAl);continue;}
-q.col=colr(Math.hypot(q.x,q.y));
 if(q.hist&&q.hist.length){for(const h of q.hist)h[3]-=doneT;}else{q.hist=[[q.x,q.y,q.z,0]];}}}
 setLocked(false);
 key='';overlayDirty=true;
@@ -3823,9 +3819,6 @@ else if(hp<5){r=mid;g=m;b=hi;}
 else{r=hi;g=m;b=mid;}
 out[off]=r;out[off+1]=g;out[off+2]=b;}
 
-function hslRhoToRgb(rho,E,out,off=0){
-hueTToRgb(E>0?rho/(0.8*E):0,out,off);}
-
 let _sortSeen=new Uint8Array(0);
 function sortParticleOrder(order,depths,n,trustedPerm=false){
 if(!order||!depths||!(n>0))return;
@@ -4394,7 +4387,7 @@ if(hasSeg)ctx.stroke();}}}
 let _sphereAtlas=null,_sphereAtlasThemeVer=-1,_sphereAtlasDpr=-1;
 function getSphereAtlas(){
 const ed=Math.max(1,Math.min(3,Number.isFinite(_stageDpr)&&_stageDpr>0?_stageDpr:1));
-if(!_sphereAtlas||_sphereAtlasThemeVer!==themeVersion||_sphereAtlasDpr!==ed){
+if(_sphereAtlasThemeVer!==themeVersion||_sphereAtlasDpr!==ed){
 _sphereAtlas=buildSphereSpriteAtlas(ed,theme);
 _sphereAtlasThemeVer=themeVersion;_sphereAtlasDpr=ed;}
 return _sphereAtlas;}
@@ -4729,14 +4722,53 @@ const ren=typeof gl.getParameter==='function'?gl.getParameter(gl.RENDERER):'';
 return /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i.test(String(uRen||'')+' '+String(ren||''));
 }catch(_){return false;}}
 
+function attachGLContextListeners(canvas){
+if(!canvas||canvas._glListenersAttached||typeof canvas.addEventListener!=='function')return;
+canvas._glListenersAttached=true;
+canvas.addEventListener('webglcontextlost',e=>{
+e.preventDefault();
+if(canvas._glState)canvas._glState.lost=true;
+if(canvas._glSoftLostExt){
+const sched=typeof setTimeout==='function'?setTimeout:fn=>fn();
+sched(()=>{
+canvas._glSoftLostDone=true;
+if(canvas._glSoftWantRestore&&canvas._glSoftLostExt&&canvas._glState&&canvas._glState.lost){
+const ext=canvas._glSoftLostExt;
+canvas._glSoftLostExt=null;
+canvas._glSoftWantRestore=false;
+try{ext.restoreContext();}catch(_){}}
+},0);}});
+canvas.addEventListener('webglcontextrestored',()=>{
+const s=canvas._glState;
+if(!s)return;
+clearGLHandles(s);
+s.ovTexVersion=-1;
+s.lineGpuCapFloats=0;
+s.instGpuCapFloats=0;
+s.lost=!buildGLResources(s);});}
+
 function initWebGLRenderer(canvas,allowSoftware=false){
 if(!canvas||typeof canvas.getContext!=='function')return null;
 if(canvas._glState){disposeGLResources(canvas._glState);canvas._glState=null;}
+if(!allowSoftware&&canvas._glSoftRejected){
+canvas._glSoftWantRestore=false;
+canvas.width=0;canvas.height=0;
+return null;}
 // Spheres and instanced trail quads both apply analytical per-pixel AA and overlay uses LINEAR;
 // antialias:false avoids 4x MSAA overhead, and skipping software WebGL (SwiftShader/llvmpipe) uses our faster batched 2D fallback.
 const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false,depth:false,preserveDrawingBuffer:false,failIfMajorPerformanceCaveat:!allowSoftware});
 if(!gl)return null;
-if(!allowSoftware&&isSoftwareWebGL(gl))return null;
+if(!allowSoftware&&isSoftwareWebGL(gl)){
+canvas._glSoftRejected=true;
+canvas._glSoftLostDone=false;
+canvas._glSoftWantRestore=false;
+attachGLContextListeners(canvas);
+const lc=typeof gl.getExtension==='function'?gl.getExtension('WEBGL_lose_context'):null;
+if(lc&&typeof lc.loseContext==='function'){
+canvas._glSoftLostExt=lc;
+lc.loseContext();}
+canvas.width=0;canvas.height=0;
+return null;}
 const state={
 canvas,gl,lost:false,
 ovProg:null,ovVao:null,ovVbo:null,ovTex:null,ovTexVersion:-1,uOvViewport:null,uOvSize:null,uOvTex:null,
@@ -4749,19 +4781,15 @@ state.lost=true;
 }else if(!buildGLResources(state)){
 return null;}
 canvas._glState=state;
-if(!canvas._glListenersAttached){
-canvas._glListenersAttached=true;
-canvas.addEventListener('webglcontextlost',e=>{
-e.preventDefault();
-if(canvas._glState)canvas._glState.lost=true;});
-canvas.addEventListener('webglcontextrestored',()=>{
-const s=canvas._glState;
-if(!s)return;
-clearGLHandles(s);
-s.ovTexVersion=-1;
-s.lineGpuCapFloats=0;
-s.instGpuCapFloats=0;
-s.lost=!buildGLResources(s);});}
+attachGLContextListeners(canvas);
+if(ctxLost&&allowSoftware&&canvas._glSoftLostExt){
+if(canvas._glSoftLostDone){
+const ext=canvas._glSoftLostExt;
+canvas._glSoftLostExt=null;
+canvas._glSoftWantRestore=false;
+if(typeof ext.restoreContext==='function'){try{ext.restoreContext();}catch(_){}}
+}else{
+canvas._glSoftWantRestore=true;}}
 return state;}
 
 function ensureLineFloats(s,need){
@@ -4994,7 +5022,11 @@ const st=_frameState;
 st.n=n;st.singleMode=singleMode;st.showOverlay=showOverlay;st.showTr=showTr;
 st.cp=cp;st.sp=sp;st.ca=ca;st.sa=sa;st.az=az;st.cx=cx;st.cy=cy;st.S=S;st.E=E;st.Om=Om;st.span=span;
 const force=typeof window!=='undefined'?(window.__forceRenderer||null):null;
-if(force==='webgl2'&&!glState&&!_glForceTried&&glCv){_glForceTried=true;glState=initWebGLRenderer(glCv,true);}
+if(force==='webgl2'&&!glState&&!_glForceTried&&glCv){
+_glForceTried=true;
+if(glCv.width!==cv.width||glCv.height!==cv.height){glCv.width=cv.width;glCv.height=cv.height;}
+glState=initWebGLRenderer(glCv,true);
+if(glState){_glStageSync=true;}else{glCv.width=0;glCv.height=0;}}
 const tDraw0=performance.now();
 if(force!=='2d'&&glState&&drawSceneGL(glState,st)){
 if(glCv){if(glCv.hidden)glCv.hidden=false;if(glCv.style.visibility==='hidden')glCv.style.visibility='';}
@@ -5018,7 +5050,12 @@ requestAnimationFrame(frame);}
 window.addEventListener('resize',()=>{resize();overlayDirty=true;requestOverlayNow();});
 window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{refreshTheme();key='';ovPaintedKey='';overlayDirty=true;requestOverlayNow();});
 initSimWorker();
-resize();glState=initWebGLRenderer(glCv,typeof window!=='undefined'&&window.__forceRenderer==='webgl2');refresh(false,true);
+const _initForceGL=typeof window!=='undefined'&&window.__forceRenderer==='webgl2';
+if(_initForceGL)_glForceTried=true;
+resize();
+glState=initWebGLRenderer(glCv,_initForceGL);
+if(!glState){_glStageSync=false;if(glCv){glCv.width=0;glCv.height=0;glCv.style.visibility='hidden';}}
+refresh(false,true);
 requestAnimationFrame(frame);
 
 /* ---------- interactive tutorial sidepanel ---------- */
