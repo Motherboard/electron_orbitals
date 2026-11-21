@@ -106,9 +106,9 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
     clearRect: (...a) => ops.push({ op: 'clearRect', a }),
     setLineDash: (d) => ops.push({ op: 'setLineDash', d }),
     beginPath: () => {},
-    moveTo: () => {},
-    lineTo: () => {},
-    stroke: () => {},
+    moveTo: () => ops.push({ op: 'moveTo' }),
+    lineTo: () => ops.push({ op: 'lineTo' }),
+    stroke: () => ops.push({ op: 'stroke', alpha: gAlpha }),
     arc: (x, y, r) => ops.push({ op: 'arc', x, y, r, alpha: gAlpha, fill: fStyle }),
     fill: () => ops.push({ op: 'fill', alpha: gAlpha, fill: fStyle }),
     fillText: (txt, x, y) => ops.push({ op: 'fillText', txt, x, y, alpha: gAlpha }),
@@ -172,7 +172,7 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
       drawHud2D,
       drawScene2D,
       refreshTheme,
-      getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, hueT: partHueT }),
+      getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
       setStageDpr: (d) => { _stageDpr = d; for (const fn of __resizeListeners) fn(W, H, d, Math.round(W*d), Math.round(H*d)); },
       setP: (arr) => { P = arr; },
       setOffDims: (w, h) => { offW = w; offH = h; },
@@ -776,6 +776,42 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   assert.equal(arcs[1].x, 300);
   assert.equal(arcs[1].r, 3.2);
   assert.equal(arcs[1].alpha, 1, 'Nucleus in !atlas fallback must have globalAlpha === 1');
+
+  // 6. Batched 2D trails: 200 particles with 20-point q.hist or single-mode arcs must batch into <= 125 stroke() calls
+  const batchCtx = createRenderer2DContext({ atlasOk: true, dpr: 1 });
+  const nTr = 200;
+  const supParticles = [];
+  batchCtx.r2d.ensurePartBuffers(nTr);
+  const bpb = batchCtx.r2d.getPartBuffers();
+  for (let i = 0; i < nTr; i++) {
+    const hist = [];
+    for (let j = 0; j < 20; j++) hist.push([1 + j * 0.1, 2, 0, j * 0.1]);
+    supParticles.push({ x: 3, y: 2, z: 0, hist });
+    bpb.depth[i] = (i - 100) * 0.1;
+    bpb.sx[i] = 300 + (i % 20);
+    bpb.sy[i] = 200;
+    bpb.rx[i] = 5;
+    bpb.ry[i] = 0;
+    bpb.hueT[i] = i / (nTr - 1);
+  }
+  batchCtx.r2d.setP(supParticles);
+  batchCtx.r2d.sortParticleOrder(bpb.order, bpb.depth, nTr);
+  batchCtx.ops.length = 0;
+  batchCtx.r2d.drawScene2D({ ...st, n: nTr, singleMode: false, showOverlay: false, showTr: true });
+  const supStrokes = batchCtx.ops.filter((o) => o.op === 'stroke').length;
+  const supLineTos = batchCtx.ops.filter((o) => o.op === 'lineTo').length;
+  assert.ok(supStrokes > 1 && supStrokes <= 125, `Expected batched multi-state trail strokes in (1, 125], got ${supStrokes}`);
+  assert.ok(supLineTos >= nTr * 15, `Expected full trail segments drawn (>= ${nTr * 15} lineTo), got ${supLineTos}`);
+
+  // Also test batched single-mode circular arcs
+  const arcParticles = Array.from({ length: nTr }, (_, i) => ({ rho: 5, z: 0, ph: i * 0.03, w: 2 }));
+  batchCtx.r2d.setP(arcParticles);
+  batchCtx.ops.length = 0;
+  batchCtx.r2d.drawScene2D({ ...st, n: nTr, singleMode: true, showOverlay: false, showTr: true, cp: 0.8, sp: 0.6 });
+  const arcStrokes = batchCtx.ops.filter((o) => o.op === 'stroke').length;
+  const arcLineTos = batchCtx.ops.filter((o) => o.op === 'lineTo').length;
+  assert.ok(arcStrokes > 1 && arcStrokes <= 125, `Expected batched single-mode arc strokes in (1, 125], got ${arcStrokes}`);
+  assert.ok(arcLineTos >= nTr * 8, `Expected full arc segments drawn (>= ${nTr * 8} lineTo), got ${arcLineTos}`);
 });
 
 test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 interleaving, cleanup, and context restore', () => {

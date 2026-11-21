@@ -4312,23 +4312,12 @@ ctx.beginPath();ctx.arc(a.ex,a.ey,2,0,TAU);ctx.fill();
 ctx.fillText(a.lbl,a.lx,a.ly);}
 ctx.restore();}
 
-function drawParticleTrail(hh,sx0,sy0,cx,cy,S,cp,sp,ca,sa){
-const len=hh.length;if(!len)return;
-let px=sx0,py=sy0;
-const band=Math.max(1,Math.ceil(len/5)),trA=SPHERE_CFG.trailAlpha;
-for(let j=0;j<len;){
-const end=Math.min(len,j+band),mid=0.5*(j+end-1);
-ctx.globalAlpha=trA*(1-(mid+1)/(len+1));
-ctx.beginPath();ctx.moveTo(px,py);
-for(;j<end;j++){
-const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
-const nx=cx+rx*S,ny=cy-(ry*sp+pt[2]*cp)*S;
-ctx.lineTo(nx,ny);px=nx;py=ny;}
-ctx.stroke();}}
-
 /* === RENDERER_2D_START === */
+const TRAIL_BUCKETS_2D=24,TRAIL_BANDS_2D=5;
+const _trHead2D=new Int32Array(TRAIL_BUCKETS_2D);
+const _trBucketCss=Array.from({length:TRAIL_BUCKETS_2D},(_,b)=>HUE_CSS_LUT[Math.round((b/(TRAIL_BUCKETS_2D-1))*255)]);
 let partCap=0,partLastN=-1;
-let partOrder=new Int32Array(0),partDepth=new Float32Array(0),partSX=new Float32Array(0),partSY=new Float32Array(0),partRX=new Float32Array(0),partRY=new Float32Array(0),partHueT=new Float32Array(0),partRgb=new Float32Array(0);
+let partOrder=new Int32Array(0),partDepth=new Float32Array(0),partSX=new Float32Array(0),partSY=new Float32Array(0),partRX=new Float32Array(0),partRY=new Float32Array(0),partHueT=new Float32Array(0),partRgb=new Float32Array(0),_trNext2D=new Int32Array(0);
 function ensurePartBuffers(n){
 if(n>partCap){
 const cap=Math.max(64,n,partCap*2);
@@ -4342,8 +4331,65 @@ partRX=new Float32Array(cap);
 partRY=new Float32Array(cap);
 partHueT=new Float32Array(cap);
 partRgb=new Float32Array(cap*3);
+_trNext2D=new Int32Array(cap);
 partCap=cap;partLastN=n;return;}
 if(n!==partLastN){for(let i=0;i<n;i++)partOrder[i]=i;partLastN=n;}}
+
+function drawBatchedTrails2D(st){
+const {n,singleMode,cp,sp,ca,sa,cx,cy,S,Om,span}=st;
+const C=SPHERE_CFG,bMax=TRAIL_BUCKETS_2D-1,invBands=1/TRAIL_BANDS_2D;
+_trHead2D.fill(-1);
+for(let i=0;i<n;i++){
+if(!Number.isFinite(partSX[i])||!Number.isFinite(partSY[i]))continue;
+const q=P[i];
+if(singleMode){if(!(q.hist&&q.hist.length>1)&&!(Math.abs(q.w+Om)>1e-9))continue;}
+else if(!q.hist||!q.hist.length)continue;
+const ht=partHueT[i],b=ht>0?Math.min(bMax,(ht*bMax+0.5)|0):0;
+_trNext2D[i]=_trHead2D[b];_trHead2D[b]=i;}
+ctx.lineWidth=1;
+const spS=sp*S,cpS=cp*S,trA=C.trailAlpha;
+for(let b=0;b<TRAIL_BUCKETS_2D;b++){
+if(_trHead2D[b]<0)continue;
+ctx.strokeStyle=_trBucketCss[b];
+for(let ab=0;ab<TRAIL_BANDS_2D;ab++){
+ctx.globalAlpha=trA*(1-(ab+0.5)*invBands);
+ctx.beginPath();
+let hasSeg=false;
+for(let i=_trHead2D[b];i>=0;i=_trNext2D[i]){
+const q=P[i];
+if(!singleMode||(q.hist&&q.hist.length>1)){
+const hh=q.hist,len=hh.length;
+const j0=Math.ceil(ab*len*invBands),j1=Math.ceil((ab+1)*len*invBands);
+if(j0>=j1)continue;
+let px,py;
+if(j0===0){px=partSX[i];py=partSY[i];}
+else{
+const p0=hh[len-j0],rx0=p0[0]*ca-p0[1]*sa,ry0=p0[0]*sa+p0[1]*ca;
+px=cx+rx0*S;py=cy-(ry0*spS+p0[2]*cpS);}
+if(!Number.isFinite(px)||!Number.isFinite(py))continue;
+ctx.moveTo(px,py);hasSeg=true;
+for(let j=j0;j<j1;j++){
+const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
+const nx=cx+rx*S,ny=cy-(ry*spS+pt[2]*cpS);
+if(Number.isFinite(nx)&&Number.isFinite(ny))ctx.lineTo(nx,ny);}
+}else{
+const wt=q.w+Om,arc=Math.min(Math.abs(wt)*span,C.arcMax),dir=wt>0?1:-1;
+const N=Math.max(C.arcMinSegs,Math.ceil(arc/C.arcStep));
+const k0=Math.ceil(ab*N*invBands),k1=Math.ceil((ab+1)*N*invBands);
+if(k0>=k1)continue;
+const dPhi=(-dir*arc)/N,dc=Math.cos(dPhi),ds=Math.sin(dPhi),qzS=q.z*cpS;
+let rx=partRX[i],ry=partRY[i],lx,ly;
+if(k0===0){lx=partSX[i];ly=partSY[i];}
+else{
+const a0=k0*dPhi,sc=Math.cos(a0),ss=Math.sin(a0);
+const nrx=rx*sc-ry*ss;ry=rx*ss+ry*sc;rx=nrx;
+lx=cx+rx*S;ly=cy-(ry*spS+qzS);}
+if(!Number.isFinite(lx)||!Number.isFinite(ly))continue;
+ctx.moveTo(lx,ly);hasSeg=true;
+for(let k=k0+1;k<=k1;k++){
+const nrx=rx*dc-ry*ds;ry=rx*ds+ry*dc;rx=nrx;
+ctx.lineTo(cx+rx*S,cy-(ry*spS+qzS));}}}
+if(hasSeg)ctx.stroke();}}}
 
 let _sphereAtlas=null,_sphereAtlasThemeVer=-1,_sphereAtlasDpr=-1;
 function getSphereAtlas(){
@@ -4373,7 +4419,7 @@ ctx.globalAlpha=1;ctx.fillStyle=grid;ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.
 
 const _frameState={n:0,singleMode:true,showOverlay:false,showTr:false,cp:1,sp:0,ca:1,sa:0,az:0,cx:0,cy:0,S:1,E:1,Om:0,span:0};
 function drawScene2D(st){
-const {n,singleMode,showOverlay,showTr,cp,sp,ca,sa,cx,cy,S,E:E_val,Om,span}=st;
+const {n,showOverlay,showTr,cp,sp,ca,sa,cx,cy,S,E:E_val}=st;
 const C=SPHERE_CFG,radSpan=C.radFront-C.radBack,alphaSpan=C.alphaFront-C.alphaBack;
 ctx.clearRect(0,0,W,H);
 if(showOverlay&&offW>0&&offH>0)ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
@@ -4382,35 +4428,7 @@ ctx.save();
 ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
 ctx.beginPath();ctx.moveTo(cx,cy+E_val*cp*S);ctx.lineTo(cx,cy-E_val*cp*S);ctx.stroke();
 ctx.setLineDash([]);
-if(showTr&&n>0){
-ctx.lineWidth=1;
-if(singleMode){
-for(let i=0;i<n;i++){
-const q=P[i],wt=q.w+Om,ht=partHueT[i];
-ctx.strokeStyle=HUE_CSS_LUT[ht>0?Math.min(255,(ht*255+0.5)|0):0];
-if(q.hist&&q.hist.length>1){
-drawParticleTrail(q.hist,partSX[i],partSY[i],cx,cy,S,cp,sp,ca,sa);
-}else if(Math.abs(wt)>1e-9){
-const arc=Math.min(Math.abs(wt)*span,C.arcMax),dir=wt>0?1:-1,N=Math.max(C.arcMinSegs,Math.ceil(arc/C.arcStep));
-const band=Math.max(1,Math.ceil(N/4)),qzS=q.z*cp*S,spS=sp*S;
-const dPhi=-dir*arc/N,dc=Math.cos(dPhi),ds=Math.sin(dPhi);
-let rx=partRX[i],ry=partRY[i],lx=partSX[i],ly=partSY[i];
-for(let k=1;k<=N;){
-const end=Math.min(N,k+band-1),mid=0.5*(k+end);
-ctx.globalAlpha=C.trailAlpha*(1-mid/N);
-ctx.beginPath();ctx.moveTo(lx,ly);
-for(;k<=end;k++){
-const nrx=rx*dc-ry*ds;ry=rx*ds+ry*dc;rx=nrx;
-lx=cx+rx*S;ly=cy-(ry*spS+qzS);
-ctx.lineTo(lx,ly);}
-ctx.stroke();}}}
-}else{
-for(let i=0;i<n;i++){
-const q=P[i];
-if(!q.hist||!q.hist.length)continue;
-const ht=partHueT[i];
-ctx.strokeStyle=HUE_CSS_LUT[ht>0?Math.min(255,(ht*255+0.5)|0):0];
-drawParticleTrail(q.hist,partSX[i],partSY[i],cx,cy,S,cp,sp,ca,sa);}}}
+if(showTr&&n>0)drawBatchedTrails2D(st);
 ctx.globalAlpha=1;
 const atlas=getSphereAtlas();
 const invE=E_val>0?1/E_val:0;
