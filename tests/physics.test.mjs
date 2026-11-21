@@ -109,6 +109,10 @@ function createCoreContext() {
       photoIonCoef, ionSafety, safeTrefCyc, onePiSetting, getRadTable, gauntCoeff, zeemanQWeights, gridBoxR,
       setDia: (v) => { bDia = v; computeEffective(); }, getDiaEff: () => diaEff, diaState, diaBlock, levelEnergy, angSin2, radialR2, symEig, advanceGridHalf,
       startPulse, stepPulseCore, finishPulse, getPulse: () => pulse,
+      stepSuperposition, tscale, setTSim: (v) => { tSim = v; },
+      recordTrailSample: typeof recordTrailSample === 'function' ? recordTrailSample : undefined,
+      trailMinStep: typeof trailMinStep === 'function' ? trailMinStep : undefined,
+      TRAIL_MAX_HIST: typeof TRAIL_MAX_HIST !== 'undefined' ? TRAIL_MAX_HIST : undefined,
       ovAlpha, evalProjSingle, computeProjSingleMap, computeProjPairData, evalPairProjPixel,
       consts: { B_SLIDER_MAX, B_SLIDER_SPAN, B_SLIDER_STEP, B_PHYS_MAX_T, PHOTON_CYC, PHOTON_KTAU }
     };
@@ -1555,7 +1559,7 @@ test('Bohmian equivariance fixes: exact Gaunt monopoles, grid continuity with fi
   // 3. Single-photon 2p,0 -> 4d,+1 (x, B = 0.1): shell-local + exact-Gaunt flow carries no spurious flux through tail spheres
   const pp = setup([{ n: 2, l: 1, m: 0 }], '2|1|4|2|1', 'photon', 'x', 0.1);
   const ps = pp.photonSim;
-  while (pp.t < 0.8 * pp.T) api.stepPulseCore(1 / 60, 0.8, 0.56, null, rec);
+  while (pp.t < 0.8 * pp.T) api.stepPulseCore(1 / 60, 0.8, 0.56, rec);
   const psiAt = (c, x, y, z) => { let re = 0, im = 0; for (let i = 0; i < ps.M; i++) { const [br, bi] = api.evalBasisPsi(ps.bases[i], x, y, z); re += c[2 * i] * br - c[2 * i + 1] * bi; im += c[2 * i] * bi + c[2 * i + 1] * br; } return re * re + im * im; };
   const sphere = (R, fn) => { let F = 0; const Nt = 60, Np = 32; for (let i = 0; i < Nt; i++) { const th = Math.PI * (i + 0.5) / Nt; for (let j = 0; j < Np; j++) { const ph = 2 * Math.PI * (j + 0.5) / Np; F += fn(R * Math.sin(th) * Math.cos(ph), R * Math.sin(th) * Math.sin(ph), R * Math.cos(th)) * R * R * Math.sin(th) * (Math.PI / Nt) * (2 * Math.PI / Np); } } return F; };
   const E995 = Math.max(...ps.states.map((st) => st.b.E995));
@@ -1563,7 +1567,7 @@ test('Bohmian equivariance fixes: exact Gaunt monopoles, grid continuity with fi
   const flux = sphere(R, (x, y, z) => { api.evalPhotonVel(ps, x, y, z, c0, rv, v); return psiAt(c0, x, y, z) * (v[0] * x + v[1] * y + v[2] * z) / R; });
   const tail = (c) => { let sT = 0; const R2 = ps.rMax * 1.5, N = 60; for (let k = 0; k < N; k++) { const r = R + (R2 - R) * (k + 0.5) / N; sT += sphere(r, (x, y, z) => psiAt(c, x, y, z)) * (R2 - R) / N; } return sT; };
   const P0 = tail(c0), t0 = pp.t;
-  api.stepPulseCore(1 / 60, 0.8, 0.56, null, rec);
+  api.stepPulseCore(1 / 60, 0.8, 0.56, rec);
   const dPdt = (tail(ps.c1v) - P0) / (pp.t - t0);
   assert.ok(Math.abs(flux - dPdt) < 0.1 * Math.abs(dPdt) + 1e-9, `Photon tail flux ${flux} != dP/dt ${dPdt} at R = 1.2 E995`);
   api.finishPulse(true);
@@ -1757,7 +1761,7 @@ test('Bohmian equivariance through a long 2pi m-flip: electrons follow |psi|^2 i
   const span = 3 * 0.7 * p.T / 36;
   let mid = null;
   for (;;) {
-    const res = api.stepPulseCore(1 / 30, 3, span, null, rec);
+    const res = api.stepPulseCore(1 / 30, 3, span, rec);
     if (!mid && p.t >= 0.5 * p.T) mid = check('mid-flip (|1s> dominant)');
     if (res.finished) break;
   }
@@ -1769,4 +1773,268 @@ test('Bohmian equivariance through a long 2pi m-flip: electrons follow |psi|^2 i
   assert.ok(c[2 * i2] ** 2 + c[2 * i2 + 1] ** 2 > 0.99, 'Expected ~|2p,-1> after the 2pi flip');
   assert.ok(end.medP >= 3.8, `Expected electrons back at the |2p> radius, median ${end.medP.toFixed(2)}`);
   api.finishPulse(false);
+});
+
+function histTurnAnglesDeg(hh) {
+  const turns = [];
+  for (let i = 2; i < hh.length; i++) {
+    const v0x = hh[i - 1][0] - hh[i - 2][0], v0y = hh[i - 1][1] - hh[i - 2][1], v0z = hh[i - 1][2] - hh[i - 2][2];
+    const v1x = hh[i][0] - hh[i - 1][0], v1y = hh[i][1] - hh[i - 1][1], v1z = hh[i][2] - hh[i - 1][2];
+    const l0 = Math.hypot(v0x, v0y, v0z), l1 = Math.hypot(v1x, v1y, v1z);
+    if (l0 > 1e-12 && l1 > 1e-12) {
+      const cos = Math.max(-1, Math.min(1, (v0x * v1x + v0y * v1y + v0z * v1z) / (l0 * l1)));
+      turns.push((Math.acos(cos) * 180) / Math.PI);
+    }
+  }
+  return turns;
+}
+
+function histAngStepsDeg(hh, startIdx = 1) {
+  const degs = [];
+  for (let i = startIdx; i < hh.length; i++) {
+    const a0 = Math.atan2(hh[i - 1][1], hh[i - 1][0]);
+    const a1 = Math.atan2(hh[i][1], hh[i][0]);
+    let d = Math.abs(a1 - a0);
+    if (d > Math.PI) d = 2 * Math.PI - d;
+    degs.push((d * 180) / Math.PI);
+  }
+  return degs;
+}
+
+test('adaptive recordTrailSample and smooth curved trails on fast 3p,0 + 3p,+1 orbits', () => {
+  assert.equal(typeof api.recordTrailSample, 'function', 'recordTrailSample helper must exist');
+  assert.ok(api.TRAIL_MAX_HIST >= 64, `Expected TRAIL_MAX_HIST >= 64, got ${api.TRAIL_MAX_HIST}`);
+
+  // 1. Straight/slow motion stays near ~22 vertices (minStep baseline) and evicts by span age
+  const span = 10;
+  const minStep = span / 22;
+  const straightQ = { hist: [[0, 0, 0, 0]] };
+  for (let i = 1; i <= 440; i++) {
+    const t = (i / 220) * span;
+    api.recordTrailSample(straightQ, t * 0.5, 0, 0, t, span, minStep);
+  }
+  assert.ok(
+    straightQ.hist.length >= 20 && straightQ.hist.length <= 25,
+    `Straight motion must stay near ~22 vertices, got ${straightQ.hist.length}`
+  );
+  const straightAge = straightQ.hist[straightQ.hist.length - 1][3] - straightQ.hist[0][3];
+  assert.ok(straightAge <= span + minStep + 1e-6 && straightAge >= span * 0.85, `Expected age-evicted span ~${span}, got ${straightAge}`);
+
+  // 2. Tight circular orbit records denser vertices (<= 18 deg / segment), bounded by TRAIL_MAX_HIST and evicted by span
+  const fastQ = { hist: [[2, 0, 0, 0]] };
+  const omega = (4 * Math.PI) / span; // 2 full revolutions per span (~33 deg per minStep)
+  for (let i = 1; i <= 400; i++) {
+    const t = (i / 200) * span;
+    const phi = omega * t;
+    api.recordTrailSample(fastQ, 2 * Math.cos(phi), 2 * Math.sin(phi), 0, t, span, minStep);
+  }
+  assert.ok(fastQ.hist.length > 35 && fastQ.hist.length <= api.TRAIL_MAX_HIST, `Expected adaptive circular hist in (35, ${api.TRAIL_MAX_HIST}], got ${fastQ.hist.length}`);
+  const maxDeg = Math.max(...histAngStepsDeg(fastQ.hist));
+  assert.ok(maxDeg <= 18, `Expected smooth circular angular step <= 18 deg, got ${maxDeg.toFixed(2)} deg`);
+  const fastAge = fastQ.hist[fastQ.hist.length - 1][3] - fastQ.hist[0][3];
+  assert.ok(fastAge <= span + minStep + 1e-6, `Expected fast orbit evicted by span age <= ${span}, got ${fastAge}`);
+
+  // 2b. Wide-angle coarse circular snapshots (60 deg / step) subdivide smoothly along the exact 3D osculating circle
+  const coarseQ = { hist: [[2, 0, 0, 0]] };
+  for (let i = 1; i <= 12; i++) {
+    const phi = i * (Math.PI / 3); // 60 deg per snapshot
+    api.recordTrailSample(coarseQ, 2 * Math.cos(phi), 2 * Math.sin(phi), 0, i * 0.2, span, minStep);
+  }
+  assert.ok(coarseQ.hist.length >= 25, `Expected 60-deg circular steps subdivided into >= 25 points, got ${coarseQ.hist.length}`);
+  let maxRadErr = 0;
+  for (let i = 2; i < coarseQ.hist.length; i++) {
+    const [x, y] = coarseQ.hist[i];
+    maxRadErr = Math.max(maxRadErr, Math.abs(Math.hypot(x, y) - 2));
+  }
+  const maxSubDeg = Math.max(...histAngStepsDeg(coarseQ.hist, 2));
+  assert.ok(maxRadErr < 1e-4, `Osculating-circle subdivision must stay on exact radius R=2 (err=${maxRadErr})`);
+  assert.ok(maxSubDeg <= 16, `Osculating-circle subdivision must reduce 60-deg chords to <= 16 deg (got ${maxSubDeg.toFixed(2)})`);
+
+  // 2c. Constant beta = 0.34 rad circular steps must subdivide on EVERY step (no alternating skips from pre-filter)
+  const midBetaQ = { hist: [[2, 0, 0, 0]] };
+  for (let i = 1; i <= 16; i++) {
+    const phi = i * 0.34;
+    api.recordTrailSample(midBetaQ, 2 * Math.cos(phi), 2 * Math.sin(phi), 0, i * 0.2, span, minStep);
+  }
+  const midBetaDegs = histAngStepsDeg(midBetaQ.hist, 2);
+  const maxMidBetaDeg = Math.max(...midBetaDegs);
+  assert.ok(
+    maxMidBetaDeg <= 12,
+    `Constant beta=0.34 rad steps must subdivide every step to ~9.7 deg (no alternating 19.5 deg skips), got max=${maxMidBetaDeg.toFixed(2)} deg`
+  );
+
+  // 2d. Sharp 180-deg axial reversal must NOT introduce sideways circular bulge
+  const revQ = { hist: [[0, 0, 0, 0]] };
+  api.recordTrailSample(revQ, 1, 0, 0, 0.2, span, minStep);
+  api.recordTrailSample(revQ, 2, 0, 0, 0.4, span, minStep);
+  api.recordTrailSample(revQ, 1, 0, 0, 0.6, span, minStep);
+  api.recordTrailSample(revQ, 0, 0, 0, 0.8, span, minStep);
+  for (const pt of revQ.hist) {
+    assert.equal(pt[1], 0, '180-deg axial reversal must keep y === 0');
+    assert.equal(pt[2], 0, '180-deg axial reversal must keep z === 0');
+  }
+
+  // 3. Repro: |3p,0> + |3p,+1> at B = 500 T, spd = 0.8 via stepSuperposition (main-thread fallback)
+  api.setDia(false);
+  api.setBau(500 / 2.3505e5);
+  api.setComps([
+    { id: 1, n: 3, l: 1, m: 0, amp: 1, phaseDeg: 0 },
+    { id: 2, n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+  ]);
+  api.setTSim(0);
+  const pFast = { x: 2.2, y: 0, z: 0.05, hist: [[2.2, 0, 0.05, 0]] };
+  const pSlow = { x: 18, y: 0, z: 0.05, hist: [[18, 0, 0.05, 0]] };
+  api.setP([pFast, pSlow]);
+  const spd = 0.8, ts = api.tscale(), supSpan = spd * ts * 0.7, dts = (1 / 60) * spd * ts;
+  for (let f = 0; f < 60; f++) {
+    api.stepSuperposition(dts, supSpan);
+  }
+  assert.ok(pFast.hist.length > 30 && pFast.hist.length <= api.TRAIL_MAX_HIST, `Expected dense fast inner trail, got ${pFast.hist.length}`);
+  assert.ok(pSlow.hist.length >= 18 && pSlow.hist.length <= 26, `Expected outer slow trail near ~22 vertices, got ${pSlow.hist.length}`);
+  // Use true 3D chord turning angles (avoids cylindrical atan2 coordinate singularity near the z-axis pole)
+  const turns = histTurnAnglesDeg(pFast.hist).sort((a, b) => a - b);
+  const medTurnDeg = turns[turns.length >> 1];
+  const maxTurnDeg = turns[turns.length - 1];
+  assert.ok(medTurnDeg <= 15, `Expected 3p,0+3p,1 inner median 3D turning angle <= 15 deg, got ${medTurnDeg.toFixed(2)} deg`);
+  assert.ok(maxTurnDeg <= 18, `Expected 3p,0+3p,1 inner max 3D turning angle <= 18 deg, got ${maxTurnDeg.toFixed(2)} deg`);
+  api.setBau(0);
+});
+
+test('stepPulseCore projects grid amplitudes at intermediate snapshots (nSnap = 2)', () => {
+  api.setDia(false);
+  api.setBau(0);
+  api.setComps([{ id: 1, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 }]);
+  api.setMode('wave');
+  api.setPol([0, 0], [0, 0], [1, 0]);
+  api.setEl('cnt', 0);
+  api.setEl('pdur', 40);
+  api.setEl('ppow', 1);
+  api.setEl('pdet', 0);
+  api.setEl('tr-sel', '1|0|2|1');
+  api.setP([]);
+  api.startPulse();
+  const p = api.getPulse();
+  assert.ok(p && p.grid, 'wave pulse must use radial grid');
+
+  // Advance near mid-pulse where the envelope is active so amplitudes evolve strongly within one chunk
+  const noopRec = { nSnap: 1, record() {} };
+  while (p.t < 0.25 * p.T) api.stepPulseCore(1 / 30, 2, 1, noopRec);
+
+  const cStart = Float64Array.from(p.c);
+  const t0 = p.t;
+  const snaps = [];
+  const rec = {
+    nSnap: 2,
+    record(idx, tEnd, _pts, cArr, bNorm, tNorm) {
+      snaps.push({ idx, tEnd, c: Float64Array.from(cArr), bNorm, tNorm });
+    },
+  };
+  const res = api.stepPulseCore(0.08, 3, 1, rec);
+  assert.equal(res.snapCount, 2, 'Expected 2 snapshots recorded for nSnap = 2');
+  assert.equal(snaps.length, 2, 'Expected snapRec.record called twice');
+  assert.ok(
+    Math.abs(snaps[0].tEnd - (t0 + 0.5 * res.dtSim)) < 0.2 * res.dtSim,
+    `Expected snapshot 0 near t0 + 0.5*dtSim, got tEnd=${snaps[0].tEnd} for [${t0}, ${t0 + res.dtSim}]`
+  );
+
+  const maxDiff = (a, b) => {
+    let m = 0;
+    for (let i = 0; i < a.length; i++) m = Math.max(m, Math.abs(a[i] - b[i]));
+    return m;
+  };
+  const diff0 = maxDiff(snaps[0].c, cStart);
+  const diff01 = maxDiff(snaps[1].c, snaps[0].c);
+  assert.ok(diff0 > 1e-4, `Expected fresh projected pulse.c at intermediate snapshot 0 (not stale t0), got maxDiff=${diff0}`);
+  assert.ok(diff01 > 1e-4, `Expected distinct projected pulse.c between snapshot 0 and snapshot 1, got maxDiff=${diff01}`);
+  api.finishPulse(true);
+});
+
+test('stepSuperposition and applyPlaybackStep preserve final chunk snapshot under float rounding', () => {
+  // Part A: stepSuperposition must clamp the final sub-step timestamp to tStart + dtSim
+  // so IEEE 754 drift (t0 + h > tStart + dtSim + 1e-12) cannot cause replayChunkSnaps to drop it.
+  api.setDia(false);
+  api.setBau(0);
+  api.setComps([
+    { id: 1, n: 3, l: 1, m: 0, amp: 1, phaseDeg: 0 },
+    { id: 2, n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+  ]);
+  const tStart = 100000.13;
+  const dtSim = 0.37;
+  const expectedEnd = tStart + dtSim;
+  api.setTSim(tStart);
+  api.setP([{ x: 2.2, y: 0, z: 0.05, hist: [[2.2, 0, 0.05, tStart]] }]);
+
+  const snapTimes = [];
+  api.stepSuperposition(dtSim, 0, {
+    nSnap: 3,
+    record(_idx, tEnd) {
+      snapTimes.push(tEnd);
+    },
+  });
+  assert.equal(snapTimes.length, 3, 'Expected 3 snapshots recorded');
+  assert.equal(
+    snapTimes[2],
+    expectedEnd,
+    `Final snapshot t1 must equal tStart + dtSim (${expectedEnd}), got ${snapTimes[2]} (overshoot=${snapTimes[2] - expectedEnd})`
+  );
+
+  // Part B: applyPlaybackStep must snap playSimT to ch.t1 when landing inside the chunk-retirement
+  // tolerance [ch.t1 - 1e-9, ch.t1 - 1e-12), so the final snapshot is replayed before simQueue.shift().
+  const replayStart = SCRIPT_SRC.indexOf('function replayChunkSnaps(');
+  const workerInitStart = SCRIPT_SRC.indexOf('function initSimWorker(');
+  assert.ok(replayStart > 0 && workerInitStart > replayStart, 'Expected replayChunkSnaps..initSimWorker slice');
+  const replaySlice = SCRIPT_SRC.slice(replayStart, workerInitStart);
+
+  function runPlaybackCase(kind, finished) {
+    let finishCalls = 0;
+    const p0 = { x: 0, y: 0, z: 0, hist: [[0, 0, 0, 0]] };
+    const ch = {
+      kind,
+      finished,
+      t0: 0,
+      t1: 10,
+      nPt: 3,
+      subTimes: new Float64Array([0, 5, 10]),
+      subCoords: new Float64Array([0, 0, 0, 1, 0, 0, 2, 0, 0]),
+    };
+    const sandbox = {
+      Math,
+      Number,
+      Float64Array,
+      P: [p0],
+      simQueue: [ch],
+      playSimT: 0,
+      tSim: 0,
+      omegaMax: 0,
+      overlayDirty: false,
+      pulse: kind === 'pulse' ? { t: 0, c: new Float64Array(0) } : null,
+      recordTrailSample: api.recordTrailSample,
+      trailMinStep: api.trailMinStep,
+      updatePulseInfo: () => {},
+      finishPulse: () => {
+        finishCalls++;
+      },
+    };
+    vm.runInNewContext(`${replaySlice}\nglobalThis.__apply = applyPlaybackStep;`, sandbox);
+    const dts = 10 - 5e-10; // inside [ch.t1 - 1e-9, ch.t1 - 1e-12)
+    sandbox.__apply(dts, 100);
+    return { p0, queueLen: sandbox.simQueue.length, finishCalls };
+  }
+
+  const pulseRes = runPlaybackCase('pulse', true);
+  assert.equal(pulseRes.queueLen, 0, 'Finished pulse chunk must be retired from simQueue');
+  assert.equal(pulseRes.finishCalls, 1, 'finishPulse must be called for finished pulse chunk');
+  assert.equal(
+    pulseRes.p0.hist[pulseRes.p0.hist.length - 1][3],
+    10,
+    `Pulse trail must record final snapshot t=10 before chunk retirement, got t=${pulseRes.p0.hist[pulseRes.p0.hist.length - 1][3]}`
+  );
+
+  const superRes = runPlaybackCase('super', false);
+  assert.equal(superRes.queueLen, 0, 'Final super chunk must be retired from simQueue');
+  assert.equal(
+    superRes.p0.hist[superRes.p0.hist.length - 1][3],
+    10,
+    `Superposition trail must record final snapshot t=10 before chunk retirement, got t=${superRes.p0.hist[superRes.p0.hist.length - 1][3]}`
+  );
 });

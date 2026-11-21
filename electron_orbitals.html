@@ -931,7 +931,73 @@ if(!Number.isFinite(disp))return;
 if(disp>maxStep){const sc=maxStep/disp;dx*=sc;dy*=sc;dz*=sc;}
 q.x+=dx;q.y+=dy;q.z+=dz;}
 
-function advanceParticlesRK4(bases,t0,h,a0,aM,a1,subAlphaFn){
+const TRAIL_MAX_HIST=88,TRAIL_COS_THRESH_SQ=0.96794840; // cos^2(0.18 rad), matching single-state arcStep
+function trailMinStep(span){return Math.max(span/22,1e-6);}
+const _trRec=[null,null,null,null,null,null,null,null];
+function recordTrailSample(q,x,y,z,t,span,minStep){
+const hh=q.hist;
+if(!hh)return false;
+const len=hh.length;
+if(!len){hh.push([x,y,z,t]);return true;}
+const last=hh[len-1],dt=t-last[3];
+if(!(dt>1e-12))return false;
+let push=dt>=minStep,prev=null,v0x=0,v0y=0,v0z=0,v1x=0,v1y=0,v1z=0,l0sq=0,l1sq=0,dot=0,hasVec=false;
+if(len===1){
+if(!push)push=dt>=0.25*minStep;
+}else{
+prev=hh[len-2];
+v0x=last[0]-prev[0];v0y=last[1]-prev[1];v0z=last[2]-prev[2];
+v1x=x-last[0];v1y=y-last[1];v1z=z-last[2];
+l0sq=v0x*v0x+v0y*v0y+v0z*v0z;l1sq=v1x*v1x+v1y*v1y+v1z*v1z;
+if(l0sq>1e-12&&l1sq>1e-12){
+dot=v0x*v1x+v0y*v1y+v0z*v1z;hasVec=true;
+if(!push&&(dot<=0||dot*dot<TRAIL_COS_THRESH_SQ*l0sq*l1sq))push=true;}}
+if(!push)return false;
+let kSub=1,rs=0,rc=0,dc=1,ds=0,cx=0,cy=0,cz=0,ux=0,uy=0,uz=0,nhx=0,nhy=0,nhz=0;
+const tPrev=last[3];
+if(hasVec&&(dot<=0||dot*dot<0.978*l0sq*l1sq)){
+const dt0=tPrev-prev[3];
+if(dt0>1e-12){
+const l0=Math.sqrt(l0sq),l1=Math.sqrt(l1sq),cosT=Math.max(-1,Math.min(1,dot/(l0*l1)));
+const spd0=l0/dt0,spd1=l1/dt;
+if(cosT>-0.35&&spd1>=0.45*spd0&&spd1<=2.2*spd0){
+const beta=Math.acos(cosT)*(2*dt/(dt0+dt));
+if(beta>0.30&&beta<2.2){
+const proj=dot/l1sq,nx=v0x-v1x*proj,ny=v0y-v1y*proj,nz=v0z-v1z*proj;
+const nLen=Math.hypot(nx,ny,nz);
+if(nLen>1e-5*l1){
+kSub=Math.min(8,Math.ceil(beta/0.22));
+const halfB=0.5*beta,halfL=0.5*l1,R=halfL/Math.sin(halfB),rcos=R*Math.cos(halfB);
+const invL1=1/l1,invN=1/nLen,dPhi=beta/kSub;
+rs=-halfL;rc=rcos;dc=Math.cos(dPhi);ds=Math.sin(dPhi);
+ux=v1x*invL1;uy=v1y*invL1;uz=v1z*invL1;
+nhx=nx*invN;nhy=ny*invN;nhz=nz*invN;
+cx=0.5*(last[0]+x)-nhx*rcos;cy=0.5*(last[1]+y)-nhy*rcos;cz=0.5*(last[2]+z)-nhz*rcos;}}}}}
+const newTotal=len+kSub;
+let drop=0;
+if(span>0){
+const tMin=t-span,lim=Math.min(len,newTotal-2);
+while(drop<lim&&hh[drop][3]<tMin)drop++;}
+const over=newTotal-drop-TRAIL_MAX_HIST;
+if(over>0)drop+=over;
+const nRec=drop<kSub?drop:kSub;
+for(let r=0;r<nRec;r++)_trRec[r]=hh[r];
+if(drop>0)for(let i=drop;i<len;i++)hh[i-drop]=hh[i];
+const w=len-drop;
+hh.length=w+kSub;
+const dtSub=dt/kSub;
+for(let m=1;m<=kSub;m++){
+let sx,sy,sz,st;
+if(m<kSub){
+const nrs=rs*dc+rc*ds;rc=rc*dc-rs*ds;rs=nrs;
+sx=cx+ux*rs+nhx*rc;sy=cy+uy*rs+nhy*rc;sz=cz+uz*rs+nhz*rc;st=tPrev+m*dtSub;
+}else{sx=x;sy=y;sz=z;st=t;}
+const idx=m-1;
+if(idx<nRec){const tup=_trRec[idx];_trRec[idx]=null;tup[0]=sx;tup[1]=sy;tup[2]=sz;tup[3]=st;hh[w+idx]=tup;}
+else hh[w+idx]=[sx,sy,sz,st];}
+return true;}
+
+function advanceParticlesRK4(bases,t0,h,a0,aM,a1,subAlphaFn,trSpan=0,trMinStep=0){
 for(const q of P){
 evalVel(bases,q.x,q.y,q.z,a0,k1v);
 const vMag=Math.hypot(k1v[0],k1v[1],k1v[2]);
@@ -949,12 +1015,14 @@ const disp=Math.hypot(dx,dy,dz);
 if(Number.isFinite(disp)){
 if(disp>0.15*E){const sc=(0.15*E)/disp;dx*=sc;dy*=sc;dz*=sc;}
 q.x+=dx;q.y+=dy;q.z+=dz;}
+if(trSpan>0)recordTrailSample(q,q.x,q.y,q.z,t0+h,trSpan,trMinStep);
 }else{
 const mSub=Math.min(12,Math.ceil(vMag*h/safeDisp)),hs=h/mSub;
 for(let j=0;j<mSub;j++){
 const ts0=t0+j*hs;
 subAlphaFn(ts0,subAl0,ts0+0.5*hs,subAlM,ts0+hs,subAl1,j/mSub,(j+0.5)/mSub,(j+1)/mSub);
-rk4Particle(bases,q,hs,subAl0,subAlM,subAl1);}}}}
+rk4Particle(bases,q,hs,subAl0,subAlM,subAl1);
+if(trSpan>0)recordTrailSample(q,q.x,q.y,q.z,ts0+hs,trSpan,trMinStep);}}}}
 
 function stepSuperposition(dtSim,span,snapRec){
 const bases=eff.map(k=>k.b),needed=bases.length*2;
@@ -963,24 +1031,18 @@ al0=new Float64Array(needed);alM=new Float64Array(needed);al1=new Float64Array(n
 subAl0=new Float64Array(needed);subAlM=new Float64Array(needed);subAl1=new Float64Array(needed);}
 const nSnap=snapRec?Math.max(1,snapRec.nSnap||1):1;
 const nSub=omegaMax>0?Math.max(nSnap,Math.min(24,Math.ceil(omegaMax*dtSim/0.1))):nSnap;
-const h=dtSim/nSub,tStart=tSim;
+const h=dtSim/nSub,tStart=tSim,tEndSim=tStart+dtSim;
+const trSpan=!snapRec&&span>0?span:0,trMinStep=trSpan>0?trailMinStep(span):0;
 const subAlphaFn=(ts0,s0,tsM,sM,ts1,s1)=>{evalAlphas(ts0,s0);evalAlphas(tsM,sM);evalAlphas(ts1,s1);};
 let snapIdx=0,nextSnapT=snapRec?(tStart+dtSim/nSnap):Infinity;
 for(let s=0;s<nSub;s++){
-const t0=tStart+s*h,tm=t0+0.5*h,t1=t0+h;
+const t0=tStart+s*h,tm=t0+0.5*h,t1=s===nSub-1?tEndSim:t0+h;
 evalAlphas(t0,al0);evalAlphas(tm,alM);evalAlphas(t1,al1);
-advanceParticlesRK4(bases,t0,h,al0,alM,al1,subAlphaFn);
+advanceParticlesRK4(bases,t0,h,al0,alM,al1,subAlphaFn,trSpan,trMinStep);
 if(snapRec&&(t1>=nextSnapT-1e-12||s===nSub-1)){
 while(snapIdx<nSnap&&(t1>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12||s===nSub-1)){
 snapRec.record(snapIdx++,t1,P,null);}}}
-tSim=tStart+dtSim;
-if(snapRec)return;
-const minStep=Math.max(span/22,1e-6);
-for(const q of P){
-const hh=q.hist;
-if(!hh.length||(tSim-hh[hh.length-1][3])>=minStep){
-hh.push([q.x,q.y,q.z,tSim]);
-if(hh.length>22)hh.shift();}}}
+tSim=tEndSim;}
 
 /* ---------- Coupled TDSE pulse simulation ---------- */
 let interactionMode='photon'; // 'photon' | 'wave'
@@ -2708,8 +2770,7 @@ intensityWcm2:cfg.intensityWcm2,
 t:0,
 c,
 boundNorm,
-totalNorm,
-lastHistT:0
+totalNorm
 };
 key='';overlayDirty=true;
 setLocked(true);
@@ -2718,41 +2779,34 @@ rescaleB();
 updatePulseInfo();
 _onPulseStart(cfg,pulse);}
 
-function stepPulseCore(dtFrame,spd,span,trailRec,snapRec){
+function stepPulseCore(dtFrame,spd,span,snapRec){
 const tStart=pulse.t,dtSim=Math.min(dtFrame*spd*tscale(),pulse.T-tStart);
-if(dtSim<=0)return{t0:tStart,t1:tStart,dtSim:0,finished:true,trailReset:false,trailCount:0,snapCount:0};
+if(dtSim<=0)return{t0:tStart,t1:tStart,dtSim:0,finished:true,snapCount:0};
 if(!pulse.photonSim&&!pulse.grid)ensureLocalPulseSim(pulse);
-const isM1=pulse.kind==='M1';
-const minStep=Math.min(Math.max(span/22,1e-6),Math.max(0.35,0.04*tscaleBase()));
+const isM1=pulse.kind==='M1',t1=tStart+dtSim;
+const minStep=Math.min(trailMinStep(span),Math.max(0.35,0.04*tscaleBase()));
 const nSnap=snapRec?Math.max(1,snapRec.nSnap||1):0;
-let trailReset=false,trailCount=0,snapIdx=0;
-const recordSnap=(tEnd,withProj)=>{
-if(!snapRec)return;
+let snapIdx=0;
+const runSub=(nSub,stepFn,withProj)=>{
+const h=dtSim/nSub;
+for(let s=0;s<nSub;s++){
+const tStep=tStart+s*h,tEnd=s===nSub-1?t1:tStep+h;
+stepFn(tStep,h);
+if(snapRec){
+if(snapIdx<nSnap&&(s===nSub-1||tEnd>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12)){
 if(withProj){
 const pi=projectGridStates(pulse.grid,pulse.c);
 pulse.boundNorm=pi.boundNorm;pulse.totalNorm=pi.totalNorm;}
-while(snapIdx<nSnap&&(tEnd>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12||tEnd>=tStart+dtSim-1e-12)){
-snapRec.record(snapIdx++,tEnd,P,pulse.c,pulse.boundNorm,pulse.totalNorm);}};
-const runSub=(nSub,stepFn)=>{
-const h=dtSim/nSub,stride=Math.max(1,Math.ceil(minStep/h));
-const fastWin=!snapRec&&dtSim>22*stride*h,firstS=fastWin?(nSub-1-21*stride):-1;
-if(fastWin){if(trailRec)trailReset=true;else for(const q of P)q.hist.length=0;}
-for(let s=0;s<nSub;s++){
-const tStep=tStart+s*h,tEnd=tStep+h;
-stepFn(tStep,h);
-if(snapRec&&(tEnd>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12||s===nSub-1))recordSnap(tEnd,false);
-else if(!snapRec){
-const push=fastWin?(s>=firstS&&(nSub-1-s)%stride===0):((tEnd-pulse.lastHistT)>=minStep);
-if(push){
-pulse.lastHistT=tEnd;
-if(trailRec){trailRec.record(trailCount++,tEnd,P);}
-else{for(const q of P){q.hist.push([q.x,q.y,q.z,tEnd]);if(!fastWin&&q.hist.length>22)q.hist.shift();}}}}}};
+do{snapRec.record(snapIdx++,tEnd,P,pulse.c,pulse.boundNorm,pulse.totalNorm);}
+while(snapIdx<nSnap&&(s===nSub-1||tEnd>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12));}
+}else{
+for(const q of P)recordTrailSample(q,q.x,q.y,q.z,tEnd,span,minStep);}}};
 if(pulse.photonSim){
 const ps=pulse.photonSim,beat=Math.max(ps.maxDiff,Math.abs(pulse.omegaL-pulse.omega0),1e-4),maxFreq=beat;
 const dtTarget=simStepScale*Math.min(40,Math.max(isM1?0.4:0.18,(isM1?0.25:0.16)/Math.max(beat,0.004)));
 const nSub=Math.max(nSnap||1,Math.min(48,Math.ceil(Math.max(dtSim/dtTarget,maxFreq*dtSim/(0.14*simStepScale)))));
 pulse.boundNorm=1;pulse.totalNorm=1;
-runSub(nSub,(tStep,h)=>advancePhotonRK4(pulse.photonSim,tStep,h));
+runSub(nSub,(tStep,h)=>advancePhotonRK4(pulse.photonSim,tStep,h),false);
 pulse.t=tStart+dtSim;
 }else{
 const g=pulse.grid,maxFreq=Math.max(pulse.omegaL,pulse.maxRelE,isM1?(pulse.E0*(pulse.trSpec.l1+1)):(pulse.E0*g.rMax),1e-4);
@@ -2765,18 +2819,12 @@ const nPartSteps=Math.max(nSnap||1,Math.min(64,Math.ceil(dtSim/pStepTarget)));
 const hP=dtSim/nPartSteps,half=0.5*hP;
 const maxSubHalf=Math.max(1,Math.floor((g.dia?512:128)/nPartSteps));
 const nHalf=Math.max(1,Math.min(maxSubHalf,Math.ceil(Math.max(half/dtTarget,maxFreq*half/(0.1*simStepScale))))),hh=half/nHalf;
-const stride=Math.max(1,Math.ceil(minStep/hP)),fastWin=!snapRec&&dtSim>22*stride*hP,firstS=fastWin?(nPartSteps-1-21*stride):-1;
-if(fastWin){if(trailRec)trailReset=true;else for(const q of P)q.hist.length=0;}
-for(let ps=0;ps<nPartSteps;ps++){
-const tStep=tStart+ps*hP,tEnd=tStep+hP;
-gridParticleStep(g,hP,(w)=>{const tw=tStep+w*half;for(let k=0;k<nHalf;k++)advanceGridHalf(g,pulse,hh,tw+(k+0.5)*hh);});
-if(snapRec&&(tEnd>=tStart+((snapIdx+1)*dtSim)/nSnap-1e-12||ps===nPartSteps-1))recordSnap(tEnd,true);
-else if(!snapRec){
-const push=fastWin?(ps>=firstS&&(nPartSteps-1-ps)%stride===0):((tEnd-pulse.lastHistT)>=minStep);
-if(push){pulse.lastHistT=tEnd;if(trailRec){trailRec.record(trailCount++,tEnd,P);}else{for(const q of P){q.hist.push([q.x,q.y,q.z,tEnd]);if(!fastWin&&q.hist.length>22)q.hist.shift();}}}}}
+runSub(nPartSteps,(tStep,h)=>{
+gridParticleStep(g,h,(w)=>{const tw=tStep+w*half;for(let k=0;k<nHalf;k++)advanceGridHalf(g,pulse,hh,tw+(k+0.5)*hh);});
+},true);
 pulse.t=tStart+dtSim;
 if(!snapRec){const projInfo=projectGridStates(g,pulse.c);pulse.boundNorm=projInfo.boundNorm;pulse.totalNorm=projInfo.totalNorm;}}
-return{t0:tStart,t1:pulse.t,dtSim,finished:pulse.t>=pulse.T-1e-9,trailReset,trailCount,snapCount:snapIdx};}
+return{t0:tStart,t1:pulse.t,dtSim,finished:pulse.t>=pulse.T-1e-9,snapCount:snapIdx};}
 
 function stepPulse(dtFrame,spd,span){
 if(!pulse)return;
@@ -3812,7 +3860,16 @@ const SPHERE_CFG = {
   fogMax: 0.22, volBase: 0.72, volCore: 0.28,
   aaPx: 1.5, aaMin: 0.01, aaMax: 0.45,
   trailAlpha: 0.55, arcMax: 1.65 * Math.PI, arcStep: 0.18, arcMinSegs: 8,
+  maxHist: typeof TRAIL_MAX_HIST !== 'undefined' ? TRAIL_MAX_HIST : 88,
 };
+
+function trailAgeSpan(hh, len, tNow, span) {
+  if (!(len > 0) || !Number.isFinite(tNow) || !(span > 0)) return 0;
+  const tHead = hh[len - 1][3], tTail = hh[0][3];
+  if (!Number.isFinite(tHead) || !Number.isFinite(tTail) || tHead < tTail || tNow < tHead - 1e-6 || (tNow - tHead) > 0.5 * span) return 0;
+  const ageMax = tNow - tTail;
+  return (len >= SPHERE_CFG.maxHist && ageMax > 1e-9 && ageMax < span) ? ageMax : span;
+}
 
 function hueTToRgb(t, out, off = 0) {
   let u = t;
@@ -3838,7 +3895,7 @@ let partRX = new Float32Array(0), partRY = new Float32Array(0);
 let partHueT = new Float32Array(0);
 const _frameState = {
   n: 0, singleMode: true, showOverlay: false, showTr: false,
-  cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 0, cy: 0, S: 1, E: 1, Om: 0, span: 0,
+  cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 0, cy: 0, S: 1, E: 1, Om: 0, span: 0, tNow: NaN,
 };
 
 function ensurePartBuffers(n) {
@@ -4098,22 +4155,39 @@ const{dtSec,nSnap}=chooseChunkPlan();
 simBusy=true;simInFlight++;
 simWorker.postMessage({type:'stepSuper',epoch:simEpoch,dtSec,dtSim:dtSec*rate,nSnap,span:rate*0.7,Bau});}}
 
+function replayChunkSnaps(ch,kEnd,afterT,maxT,nP,span,minStep){
+const subT=ch.subTimes,subP=ch.subCoords;
+let lastT=afterT;
+for(let k=0;k<=kEnd;k++){
+const tk=subT[k];
+if(tk<=lastT+1e-12)continue;
+if(tk>maxT+1e-12)break;
+const off=k*nP*3;
+for(let i=0;i<nP;i++){
+const i3=off+i*3;
+recordTrailSample(P[i],subP[i3],subP[i3+1],subP[i3+2],tk,span,minStep);}
+lastT=tk;}
+return lastT;}
+
 function applyPlaybackStep(dts,span){
 if(!simQueue.length)return false;
 const maxT=simQueue[simQueue.length-1].t1;
+let replayT=playSimT;
 playSimT=Math.min(maxT,playSimT+dts);
-while(simQueue.length>1&&simQueue[0].t1<playSimT-1e-12)simQueue.shift();
-const ch=simQueue[0],nPt=ch.nPt,nP=P.length,subT=ch.subTimes,subP=ch.subCoords;
+const nP=P.length,minStep=trailMinStep(span);
+while(simQueue.length>1&&simQueue[0].t1<playSimT-1e-12){
+const oldCh=simQueue.shift();
+replayT=replayChunkSnaps(oldCh,oldCh.nPt-1,replayT,playSimT,nP,span,minStep);}
+const ch=simQueue[0],nPt=ch.nPt,subT=ch.subTimes,subP=ch.subCoords;
+if((ch.finished||simQueue.length===1)&&playSimT>=ch.t1-1e-9&&playSimT<ch.t1)playSimT=ch.t1;
 let s=0;
 while(s+1<nPt-1&&subT[s+1]<playSimT)s++;
 const s1=Math.min(s+1,nPt-1),tA=subT[s],tB=subT[s1],al=(tB>tA+1e-15)?Math.max(0,Math.min(1,(playSimT-tA)/(tB-tA))):1;
-const offA=s*nP*3,offB=s1*nP*3,minStep=Math.max(span/22,1e-6);
+replayChunkSnaps(ch,s1,replayT,playSimT,nP,span,minStep);
+const offA=s*nP*3,offB=s1*nP*3;
 for(let i=0;i<nP;i++){
 const q=P[i],i3=i*3,ax=subP[offA+i3],ay=subP[offA+i3+1],az=subP[offA+i3+2];
-const x=ax+al*(subP[offB+i3]-ax),y=ay+al*(subP[offB+i3+1]-ay),z=az+al*(subP[offB+i3+2]-az);
-q.x=x;q.y=y;q.z=z;
-const hh=q.hist;
-if(!hh.length||(playSimT-hh[hh.length-1][3])>=minStep){hh.push([x,y,z,playSimT]);if(hh.length>22)hh.shift();}}
+q.x=ax+al*(subP[offB+i3]-ax);q.y=ay+al*(subP[offB+i3+1]-ay);q.z=az+al*(subP[offB+i3+2]-az);}
 if(ch.kind==='pulse'&&pulse){
 pulse.t=playSimT;
 if(ch.subC){
@@ -4199,7 +4273,7 @@ mode:cfg.mode,kind:cfg.trSpec.kind||'E1',trSpec:cfg.trSpec,sys,grid,photonSim,pr
 basesSig:proj.map(s=>s.n+'|'+s.l+'|'+s.m).join(';'),
 stateMags:bases?bases.map((_,i)=>Math.hypot(c[i*2],c[i*2+1])):null,
 pol:cfg.polInt,omega0:cfg.omega0,omegaL:cfg.omegaL,gamma:cfg.gammaSim,maxRelE:sys.maxRelE,
-T:cfg.T,cyc:cfg.cyc,E0:cfg.E0,t:0,c,boundNorm,totalNorm,lastHistT:0};
+T:cfg.T,cyc:cfg.cyc,E0:cfg.E0,t:0,c,boundNorm,totalNorm};
 ovCacheKey='';ovProjPairRadKey='';
 }else if(m.type==='stepSuper'){
 if(m.epoch!==wSimEpoch||pulse){self.postMessage({type:'stepReply',kind:'super',epoch:m.epoch,stale:true});return;}
@@ -4217,7 +4291,7 @@ const tw0=performance.now();
 if(m.Bau!==Bau){Bau=m.Bau;updateEnergies();}
 const nSnap=Math.max(1,m.nSnap||1),nC=pulse.c?pulse.c.length:0;
 wSnapRec.init(nSnap,P.length,nC,pulse.t,P,pulse.c,pulse.boundNorm,pulse.totalNorm);
-const res=stepPulseCore(m.dtFrame,m.spd,m.span,null,wSnapRec);
+const res=stepPulseCore(m.dtFrame,m.spd,m.span,wSnapRec);
 const nPt=1+Math.max(0,res.snapCount||0);
 const subT=wSnapTimes.slice(0,nPt),subP=wSnapCoords.slice(0,nPt*P.length*3),subC=nC>0?wSnapC.slice(0,nPt*nC):null;
 const subB=wSnapBound.slice(0,nPt),subTot=wSnapTotal.slice(0,nPt);
@@ -4386,6 +4460,7 @@ const _trBucketCss = Array.from(
 );
 let _trCap2D = 0;
 let _trNext2D = new Int32Array(0);
+let _trCut2D = new Int32Array(0);
 let _trArcN2D = new Int32Array(0);
 let _trArcDc2D = new Float64Array(0), _trArcDs2D = new Float64Array(0);
 let _trArcRx2D = new Float64Array(0), _trArcRy2D = new Float64Array(0);
@@ -4394,6 +4469,7 @@ function ensureTrail2DBuffers(n) {
   if (n <= _trCap2D) return;
   const cap = Math.max(64, n, _trCap2D * 2);
   _trNext2D = new Int32Array(cap);
+  _trCut2D = new Int32Array(cap * (TRAIL_BANDS_2D + 1));
   _trArcN2D = new Int32Array(cap);
   _trArcDc2D = new Float64Array(cap);
   _trArcDs2D = new Float64Array(cap);
@@ -4403,28 +4479,46 @@ function ensureTrail2DBuffers(n) {
 }
 
 function drawBatchedTrails2D(st) {
-  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, Om, span } = st;
-  const C = SPHERE_CFG, bMax = TRAIL_BUCKETS_2D - 1, invBands = 1 / TRAIL_BANDS_2D;
+  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, Om, span, tNow } = st;
+  const C = SPHERE_CFG, bMax = TRAIL_BUCKETS_2D - 1, invBands = 1 / TRAIL_BANDS_2D, cutStride = TRAIL_BANDS_2D + 1;
   ensureTrail2DBuffers(n);
   _trHead2D.fill(-1);
   for (let i = 0; i < n; i++) {
     if (!Number.isFinite(partSX[i]) || !Number.isFinite(partSY[i])) continue;
-    const q = P[i];
-    if (singleMode) {
-      if (!(q.hist && q.hist.length > 1)) {
-        const wt = q.w + Om;
-        if (!(Math.abs(wt) > 1e-9)) continue;
-        const arc = Math.min(Math.abs(wt) * span, C.arcMax), dir = wt > 0 ? 1 : -1;
-        const N = Math.max(C.arcMinSegs, Math.ceil(arc / C.arcStep));
-        const dPhi = (-dir * arc) / N;
-        _trArcN2D[i] = N;
-        _trArcDc2D[i] = Math.cos(dPhi);
-        _trArcDs2D[i] = Math.sin(dPhi);
-        _trArcRx2D[i] = partRX[i];
-        _trArcRy2D[i] = partRY[i];
+    const q = P[i], hh = q.hist, len = hh ? hh.length : 0;
+    const useHist = !singleMode ? (len > 0) : (len > 1);
+    if (!useHist) {
+      if (!singleMode) continue;
+      const wt = q.w + Om;
+      if (!(Math.abs(wt) > 1e-9)) continue;
+      const arc = Math.min(Math.abs(wt) * span, C.arcMax), dir = wt > 0 ? 1 : -1;
+      const N = Math.max(C.arcMinSegs, Math.ceil(arc / C.arcStep));
+      const dPhi = (-dir * arc) / N;
+      _trArcN2D[i] = N;
+      _trArcDc2D[i] = Math.cos(dPhi);
+      _trArcDs2D[i] = Math.sin(dPhi);
+      _trArcRx2D[i] = partRX[i];
+      _trArcRy2D[i] = partRY[i];
+    } else {
+      const cutBase = i * cutStride, effSpan = trailAgeSpan(hh, len, tNow, span);
+      _trCut2D[cutBase] = 0;
+      if (effSpan > 0) {
+        const bandDt = effSpan * invBands;
+        let hi = len;
+        for (let ab = 1; ab <= TRAIL_BANDS_2D; ab++) {
+          const tCut = ab < TRAIL_BANDS_2D ? (tNow - ab * bandDt) : (tNow - effSpan - 1e-6);
+          let lo = 0, r = hi;
+          while (lo < r) {
+            const mid = (lo + r) >> 1;
+            if (hh[mid][3] > tCut) r = mid; else lo = mid + 1;
+          }
+          hi = lo;
+          _trCut2D[cutBase + ab] = len - lo;
+        }
+      } else {
+        for (let ab = 1; ab < TRAIL_BANDS_2D; ab++) _trCut2D[cutBase + ab] = Math.ceil(ab * len * invBands);
+        _trCut2D[cutBase + TRAIL_BANDS_2D] = len;
       }
-    } else if (!q.hist || !q.hist.length) {
-      continue;
     }
     const ht = partHueT[i], b = ht > 0 ? Math.min(bMax, (ht * bMax + 0.5) | 0) : 0;
     _trNext2D[i] = _trHead2D[b];
@@ -4442,8 +4536,8 @@ function drawBatchedTrails2D(st) {
       for (let i = _trHead2D[b]; i >= 0; i = _trNext2D[i]) {
         const q = P[i];
         if (!singleMode || (q.hist && q.hist.length > 1)) {
-          const hh = q.hist, len = hh.length;
-          const j0 = Math.ceil(ab * len * invBands), j1 = Math.ceil((ab + 1) * len * invBands);
+          const hh = q.hist, len = hh.length, cutBase = i * cutStride;
+          const j0 = _trCut2D[cutBase + ab], j1 = _trCut2D[cutBase + ab + 1];
           if (j0 >= j1) continue;
           let px, py;
           if (j0 === 0) {
@@ -4938,21 +5032,30 @@ function ensureLineFloats(s, need) {
   s.lineBuf = next;
 }
 
-function pushHistTrailGL(s, hh, sx0, sy0, cx, cy, S, cp, sp, ca, sa, r, g, b) {
+function pushHistTrailGL(s, hh, sx0, sy0, cx, cy, S, cp, sp, ca, sa, r, g, b, tNow, span) {
   const len = hh.length;
   if (!len || !Number.isFinite(sx0) || !Number.isFinite(sy0)) return;
   ensureLineFloats(s, s.lineFloats + len * 8);
   const buf = s.lineBuf, trA = SPHERE_CFG.trailAlpha, invLen = 1 / (len + 1), spS = sp * S, cpS = cp * S;
+  const effSpan = trailAgeSpan(hh, len, tNow, span), invSpan = effSpan > 0 ? 1 / effSpan : 0;
   let f = s.lineFloats, px = sx0, py = sy0;
   for (let j = 0; j < len; j++) {
-    const pt = hh[len - 1 - j], rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
+    const pt = hh[len - 1 - j];
+    let frac;
+    if (effSpan > 0) {
+      frac = 1 - (tNow - pt[3]) * invSpan;
+      if (!(frac > 0)) break;
+      if (frac > 1) frac = 1;
+    } else {
+      frac = 1 - (j + 1) * invLen;
+    }
+    const rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
     const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
     if (Number.isFinite(nx) && Number.isFinite(ny)) {
       const dx = nx - px, dy = ny - py;
       if (dx * dx + dy * dy >= 1e-4) {
-        const al = trA * (1 - (j + 1) * invLen);
         buf[f] = px; buf[f + 1] = py; buf[f + 2] = nx; buf[f + 3] = ny;
-        buf[f + 4] = r; buf[f + 5] = g; buf[f + 6] = b; buf[f + 7] = al;
+        buf[f + 4] = r; buf[f + 5] = g; buf[f + 6] = b; buf[f + 7] = trA * frac;
         f += 8; px = nx; py = ny;
       }
     }
@@ -4978,7 +5081,7 @@ function drawOverlayGL(s) {
 }
 
 function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
-  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, E: E_val, Om, span } = st;
+  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, E: E_val, Om, span, tNow } = st;
   const C = SPHERE_CFG;
   s.lineFloats = 0;
 
@@ -5008,7 +5111,7 @@ function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
         const q = P[i], wt = q.w + Om, i3 = i * 3;
         const trR = partRgb[i3], trG = partRgb[i3 + 1], trB = partRgb[i3 + 2];
         if (q.hist && q.hist.length > 1) {
-          pushHistTrailGL(s, q.hist, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, trR, trG, trB);
+          pushHistTrailGL(s, q.hist, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, trR, trG, trB, tNow, span);
         } else if (Math.abs(wt) > 1e-9) {
           const sx0 = partSX[i], sy0 = partSY[i];
           if (!Number.isFinite(sx0) || !Number.isFinite(sy0)) continue;
@@ -5035,7 +5138,7 @@ function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
         const q = P[i], hh = q.hist;
         if (!hh || !hh.length) continue;
         const i3 = i * 3;
-        pushHistTrailGL(s, hh, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, partRgb[i3], partRgb[i3 + 1], partRgb[i3 + 2]);
+        pushHistTrailGL(s, hh, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, partRgb[i3], partRgb[i3 + 1], partRgb[i3 + 2], tNow, span);
       }
     }
   }
@@ -5169,27 +5272,36 @@ function frame(now) {
   const singleMode = !pulse && eff.length === 1;
   const hasParticles = singleMode || !!pulse || eff.length >= 2;
   const n = hasParticles ? P.length : 0;
-  const minStep = Math.max(span / 22, 1e-6);
+  const minStep = trailMinStep(span);
   const inv08E = E > 0 ? 1 / (0.8 * E) : 0;
   ensurePartBuffers(n);
   let hasHistTrails = false;
   if (singleMode) {
     for (let i = 0; i < n; i++) {
-      const q = P[i], wt = q.w + Om;
+      const q = P[i], wt = q.w + Om, prevPh = q.ph;
       if (run) q.ph = (q.ph + wt * dts) % TAU;
       const phV = q.ph + az, rx = q.rho * Math.cos(phV), ry = q.rho * Math.sin(phV);
       if (run && q.hist && q.hist.length) {
-        const px = q.rho * Math.cos(q.ph), py = q.rho * Math.sin(q.ph), hh = q.hist;
-        if ((tSim - hh[hh.length - 1][3]) >= minStep) {
-          if (Math.abs(wt) > 1e-9) {
-            hh.push([px, py, q.z, tSim]);
-            if (hh.length > 22) hh.shift();
-            if (hh[0][3] >= 0) delete q.hist;
-          } else {
-            hh[hh.length - 1][3] = tSim;
-            hh.shift();
-            if (hh.length <= 1) delete q.hist;
+        const hh = q.hist;
+        if (Math.abs(wt) > 1e-9) {
+          const dPh = wt * dts, nArc = Math.min(16, Math.max(1, Math.ceil(Math.abs(dPh) / SPHERE_CFG.arcStep))), t0 = tSim - dts;
+          const stepPh = dPh / nArc, dc = Math.cos(stepPh), ds = Math.sin(stepPh), dtK = dts / nArc;
+          let px = q.rho * Math.cos(prevPh), py = q.rho * Math.sin(prevPh);
+          for (let k = 1; k <= nArc; k++) {
+            const nx = px * dc - py * ds; py = px * ds + py * dc; px = nx;
+            recordTrailSample(q, px, py, q.z, t0 + k * dtK, span, minStep);
           }
+          if (hh[0][3] >= 0) delete q.hist;
+        } else {
+          const tMin = tSim - span;
+          let drop = 0;
+          while (hh.length - drop > 1 && hh[drop][3] < tMin) drop++;
+          if (drop > 0) {
+            for (let j = drop; j < hh.length; j++) hh[j - drop] = hh[j];
+            hh.length -= drop;
+          }
+          if (hh.length <= 1 || hh[0][3] >= 0) delete q.hist;
+          else if ((tSim - hh[hh.length - 1][3]) >= minStep) hh[hh.length - 1][3] = tSim;
         }
       }
       if (q.hist && q.hist.length > 1) hasHistTrails = true;
@@ -5213,6 +5325,7 @@ function frame(now) {
     const st = _frameState;
     st.n = n; st.singleMode = singleMode; st.showOverlay = showOverlay; st.showTr = showTr;
     st.cp = cp; st.sp = sp; st.ca = ca; st.sa = sa; st.az = az; st.cx = cx; st.cy = cy; st.S = S; st.E = E; st.Om = Om; st.span = span;
+    st.tNow = pulse ? pulse.t : tSim;
     const force = typeof window !== 'undefined' ? (window.__forceRenderer || null) : null;
     if (force === 'webgl2' && !glState && !_glForceTried && glCv) {
       _glForceTried = true;

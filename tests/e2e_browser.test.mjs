@@ -15,6 +15,21 @@ import { closeBrowserPage, findBrowser, launchBrowserPage } from './_cdp_helper.
 
 const HTML_URL = pathToFileURL(path.resolve(import.meta.dirname, '..', 'electron_orbitals.html')).href;
 
+function collectSessionErrors(cdp, { checkWebGL = false } = {}) {
+  return cdp.events.filter(
+    (e) =>
+      e.method === 'Runtime.exceptionThrown' ||
+      (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error') ||
+      (checkWebGL &&
+        e.method === 'Runtime.consoleAPICalled' &&
+        e.params?.type === 'warning' &&
+        /webgl|gl_invalid/i.test(JSON.stringify(e.params.args || []))) ||
+      (checkWebGL &&
+        e.method === 'Log.entryAdded' &&
+        (e.params?.entry?.level === 'error' || /webgl|gl_invalid/i.test(e.params?.entry?.text || '')))
+  );
+}
+
 test('E2E browser simulation: superposition builder, single photon, coherent 2pi flip, and 320px dark UI', async () => {
   const browserBin = findBrowser();
   assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
@@ -1012,11 +1027,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     assert.equal(dragCheck.singleAzCheck.rstAz, 0, 'Expected Reset view button to reset azimuth to 0°');
 
     // 6. Verify zero runtime or console errors across the session
-    const errors = cdp.events.filter(
-      (e) =>
-        e.method === 'Runtime.exceptionThrown' ||
-        (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error')
-    );
+    const errors = collectSessionErrors(cdp);
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
   } finally {
     await closeBrowserPage(session);
@@ -1085,7 +1096,7 @@ test('E2E tutorial figures: toolkit widgets mount, animate only while visible, h
     })()`);
     assert.deepEqual(narrow, { docOverflow: false, wide: 0 });
 
-    const errors = cdp.events.filter((e) => e.method === 'Runtime.exceptionThrown' || (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error'));
+    const errors = collectSessionErrors(cdp);
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
   } finally {
     await closeBrowserPage(session);
@@ -1632,18 +1643,93 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     assert.ok(darkBgLum < 45, `Expected dark rendered canvas background (<45 lum), got ${darkBgLum.toFixed(1)}`);
 
     // 6. Verify zero console/page runtime exceptions and zero WebGL warnings across the entire session
-    const errors = cdp.events.filter(
-      (e) =>
-        e.method === 'Runtime.exceptionThrown' ||
-        (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error') ||
-        (e.method === 'Runtime.consoleAPICalled' &&
-          e.params?.type === 'warning' &&
-          JSON.stringify(e.params.args || []).match(/webgl|gl_invalid/i)) ||
-        (e.method === 'Log.entryAdded' &&
-          (e.params?.entry?.level === 'error' ||
-            /webgl|gl_invalid/i.test(e.params?.entry?.text || '')))
-    );
+    const errors = collectSessionErrors(cdp, { checkWebGL: true });
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors or WebGL warnings, got: ${JSON.stringify(errors)}`);
+  } finally {
+    await closeBrowserPage(session);
+  }
+});
+
+test('E2E smooth curved trails: 3p,0 + 3p,+1 at 500 T under live Web Worker playback', async () => {
+  const browserBin = findBrowser();
+  assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
+
+  const session = await launchBrowserPage({
+    browserBin,
+    url: HTML_URL,
+    flags: ['--disable-gpu'],
+    windowSize: '900,900',
+    tempPrefix: 'orbitals-e2e-trails-',
+    settleMs: 500,
+  });
+  const { cdp, evalJS } = session;
+  const waitUntil = (predicateExpr, timeoutMs = 8000) => session.waitUntil(predicateExpr, timeoutMs, 60);
+  try {
+    await waitUntil('workerActive === true', 5000);
+
+    // Configure |3p,0> + |3p,+1> at B = 500 T, default spd = 0.8, seed fast inner + slow outer particles
+    const targetSpan = await evalJS(`(() => {
+      bDia = false;
+      Bau = 500 / 2.3505e5;
+      components = [
+        { id: nextId++, n: 3, l: 1, m: 0, amp: 1, phaseDeg: 0 },
+        { id: nextId++, n: 3, l: 1, m: 1, amp: 1, phaseDeg: 0 },
+      ];
+      rebuildComponentList();
+      refresh(false, true);
+      document.getElementById('spd').value = '0.8';
+      document.getElementById('spd').dispatchEvent(new Event('input'));
+      document.getElementById('tr').checked = true;
+      tSim = 0;
+      P[0] = { x: 2.2, y: 0, z: 0.05, hist: [[2.2, 0, 0.05, 0]] };
+      P[1] = { x: 18, y: 0, z: 0.05, hist: [[18, 0, 0.05, 0]] };
+      syncWorkerState();
+      if (!run) document.getElementById('pp').click();
+      return 0.8 * tscale() * 0.7;
+    })()`);
+
+    // Wait for at least 1.15 * span of live worker simulation time so steady-state trails populate
+    await waitUntil(`tSim >= ${(targetSpan * 1.15).toFixed(3)}`, 8000);
+
+    const stats = await evalJS(`(() => {
+      const measure = (hh) => {
+        const degs = [];
+        for (let i = 2; i < hh.length; i++) {
+          const v0x = hh[i - 1][0] - hh[i - 2][0], v0y = hh[i - 1][1] - hh[i - 2][1], v0z = hh[i - 1][2] - hh[i - 2][2];
+          const v1x = hh[i][0] - hh[i - 1][0], v1y = hh[i][1] - hh[i - 1][1], v1z = hh[i][2] - hh[i - 1][2];
+          const l0 = Math.hypot(v0x, v0y, v0z), l1 = Math.hypot(v1x, v1y, v1z);
+          if (l0 > 1e-12 && l1 > 1e-12) {
+            const cos = Math.max(-1, Math.min(1, (v0x * v1x + v0y * v1y + v0z * v1z) / (l0 * l1)));
+            degs.push((Math.acos(cos) * 180) / Math.PI);
+          }
+        }
+        degs.sort((a, b) => a - b);
+        return {
+          len: hh.length,
+          medDeg: degs.length ? degs[degs.length >> 1] : 999,
+          maxDeg: degs.length ? degs[degs.length - 1] : 999,
+          ageSpan: hh.length >= 2 ? hh[hh.length - 1][3] - hh[0][3] : 0,
+        };
+      };
+      return {
+        workerActive,
+        tSim,
+        maxHist: TRAIL_MAX_HIST,
+        fast: measure(P[0].hist || []),
+        slow: measure(P[1].hist || []),
+      };
+    })()`);
+
+    assert.equal(stats.workerActive, true, 'Web Worker must remain active during live playback test');
+    assert.ok(stats.fast.len > 26 && stats.fast.len <= stats.maxHist, `Expected dense fast inner trail (26 < len <= ${stats.maxHist}), got ${JSON.stringify(stats.fast)}`);
+    assert.ok(stats.fast.medDeg <= 18, `Expected smooth fast inner median 3D turn <= 18 deg, got ${stats.fast.medDeg.toFixed(2)} deg (${JSON.stringify(stats.fast)})`);
+    assert.ok(stats.fast.maxDeg <= 22, `Expected smooth fast inner max 3D turn <= 22 deg, got ${stats.fast.maxDeg.toFixed(2)} deg (${JSON.stringify(stats.fast)})`);
+    assert.ok(stats.fast.ageSpan > 0 && stats.fast.ageSpan <= targetSpan * 1.15, `Expected fast trail ageSpan bounded by span (${targetSpan.toFixed(2)}), got ${stats.fast.ageSpan.toFixed(2)}`);
+    assert.ok(stats.slow.len >= 16 && stats.slow.len <= 32, `Expected outer slow trail near ~22 vertices, got ${JSON.stringify(stats.slow)}`);
+    assert.ok(stats.slow.ageSpan >= targetSpan * 0.7 && stats.slow.ageSpan <= targetSpan * 1.2, `Expected slow trail ageSpan near span (${targetSpan.toFixed(2)}), got ${stats.slow.ageSpan.toFixed(2)}`);
+
+    const errors = collectSessionErrors(cdp);
+    assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
   } finally {
     await closeBrowserPage(session);
   }

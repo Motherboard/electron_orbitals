@@ -67,6 +67,7 @@ function createHelpersContext(cssVars = {}) {
       sortParticleOrder,
       buildSphereSpriteAtlas,
       ensurePartBuffers,
+      trailAgeSpan,
       SPHERE_CFG,
       getPartBuffers: () => ({
         order: partOrder,
@@ -215,6 +216,124 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1, co
     getTrigCalls: () => trigCalls,
     resetTrigCalls: () => { trigCalls = 0; },
   };
+}
+
+function createMockGLContext({ failLinkAt = -1, failBufAt = -1, startLost = false, rejectCaveat = false, rendererStr = 'Mock Hardware GPU' } = {}) {
+  const calls = [];
+  const deleted = { prog: 0, vao: 0, buf: 0, tex: 0, sh: 0 };
+  const loseExtStats = { loseCalls: 0 };
+  const progLinkIdx = new Map();
+  const compileOrder = [];
+  let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost;
+  const listeners = {};
+  const loseExt = {
+    loseContext: () => {
+      loseExtStats.loseCalls++;
+      ctxLost = true;
+    },
+  };
+  const gl = {
+    VERTEX_SHADER: 0x8b31, FRAGMENT_SHADER: 0x8b30, COMPILE_STATUS: 0x8b81, LINK_STATUS: 0x8b82,
+    ARRAY_BUFFER: 0x8892, STATIC_DRAW: 0x88e4, DYNAMIC_DRAW: 0x88e8, FLOAT: 0x1406,
+    TEXTURE_2D: 0x0de1, TEXTURE0: 0x84c0, TEXTURE_MIN_FILTER: 0x2801, TEXTURE_MAG_FILTER: 0x2800,
+    TEXTURE_WRAP_S: 0x2802, TEXTURE_WRAP_T: 0x2803, LINEAR: 0x2601, CLAMP_TO_EDGE: 0x812f,
+    RGBA: 0x1908, UNSIGNED_BYTE: 0x1401, COLOR_BUFFER_BIT: 0x4000,
+    DEPTH_TEST: 0x0b71, BLEND: 0x0be2, ONE: 1, ONE_MINUS_SRC_ALPHA: 0x0303,
+    LINES: 1, TRIANGLE_STRIP: 5, RENDERER: 0x1f01,
+    isContextLost: () => ctxLost,
+    getExtension: (name) => {
+      if (ctxLost) return null; // WebGL spec 5.14: getExtension returns null when context is lost
+      if (name === 'WEBGL_debug_renderer_info') return { UNMASKED_RENDERER_WEBGL: 0x9246 };
+      if (name === 'WEBGL_lose_context') return loseExt;
+      return null;
+    },
+    getParameter: (p) => {
+      if (ctxLost) return null; // WebGL spec 5.14: getParameter returns null when context is lost
+      return p === 0x1f01 || p === 0x9246 ? rendererStr : null;
+    },
+    createShader: () => ({ id: nextId++ }),
+    shaderSource: () => {},
+    compileShader: () => { compileOrder.push('compile'); },
+    getShaderParameter: () => { compileOrder.push('queryShader'); return true; },
+    deleteShader: () => { deleted.sh++; },
+    createProgram: () => ({ id: nextId++ }),
+    attachShader: () => {},
+    linkProgram: (p) => { compileOrder.push('link'); progLinkIdx.set(p, ++linkCount); },
+    getProgramParameter: (p) => { compileOrder.push('queryProg'); return progLinkIdx.get(p) !== failLinkAt; },
+    deleteProgram: () => { deleted.prog++; },
+    getUniformLocation: (_p, name) => ({ name }),
+    createVertexArray: () => ({ id: nextId++ }),
+    bindVertexArray: () => {},
+    deleteVertexArray: () => { deleted.vao++; },
+    createBuffer: () => (++bufCount === failBufAt ? null : { id: nextId++ }),
+    bindBuffer: () => {},
+    deleteBuffer: () => { deleted.buf++; },
+    bufferData: (_t, data) => calls.push({ op: 'bufferData', len: data?.length ?? data }),
+    bufferSubData: (_t, _off, _buf, _so, len) => calls.push({ op: 'bufferSubData', len }),
+    enableVertexAttribArray: () => {},
+    vertexAttribPointer: () => {},
+    vertexAttribDivisor: () => {},
+    createTexture: () => ({ id: nextId++ }),
+    bindTexture: () => {},
+    deleteTexture: () => { deleted.tex++; },
+    texParameteri: () => {},
+    texImage2D: () => calls.push({ op: 'texImage2D' }),
+    activeTexture: () => {},
+    viewport: () => {},
+    clearColor: () => {},
+    clear: () => {},
+    disable: () => {},
+    enable: () => {},
+    blendFunc: () => {},
+    useProgram: () => {},
+    uniform1i: () => {},
+    uniform1f: () => {},
+    uniform2f: () => {},
+    uniform3f: () => {},
+    drawArrays: (mode, first, count) => calls.push({ op: 'drawArrays', mode, first, count }),
+    drawArraysInstanced: (mode, first, count, primCount) => calls.push({ op: 'drawArraysInstanced', mode, first, count, primCount }),
+  };
+  const contextOpts = [];
+  const canvas = {
+    width: 600, height: 400,
+    getContext: (kind, opts) => {
+      if (kind !== 'webgl2') return null;
+      contextOpts.push(opts || {});
+      if (rejectCaveat && opts && opts.failIfMajorPerformanceCaveat) return null;
+      return gl;
+    },
+    addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
+  };
+  return { gl, canvas, calls, deleted, listeners, contextOpts, loseExtStats, compileOrder, setLost: (v) => { ctxLost = v; } };
+}
+
+// RENDERER_GL loads strictly with RENDERER_HELPERS (zero dependency on RENDERER_2D or 2D canvas mocks)
+function runGLHarness() {
+  const helpersSrc = extractRendererHelpersSource();
+  const rglSrc = extractSection('/* === RENDERER_GL_START === */', '/* === RENDERER_GL_END === */');
+  const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)', '--ov': '83,74,183' };
+  const sandbox = {
+    Math, Number, String, Array, ArrayBuffer, Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray, Object, RegExp,
+    W: 600, H: 400, _stageDpr: 1,
+    offIm: { width: 100, height: 80, data: new Uint8ClampedArray(100 * 80 * 4) },
+    offW: 100, offH: 80, cellSz: 3, ovPaintedVersion: 1,
+    P: [],
+    window: {},
+    document: { documentElement: {} },
+    getComputedStyle: () => ({ getPropertyValue: (n) => cssVars[n] ?? '' }),
+  };
+  const tail = `
+    globalThis.__gl = {
+      initWebGLRenderer, drawSceneGL, ensurePartBuffers, sortParticleOrder, SPHERE_CFG,
+      getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
+      setP: (a) => { P = a; },
+      bumpOv: () => { ovPaintedVersion++; },
+      setOffIm: (im) => { offIm = im; },
+      getRenderInfo: () => window.__renderInfo,
+    };
+  `;
+  vm.runInNewContext(helpersSrc + '\n' + rglSrc + '\n' + tail, sandbox);
+  return sandbox.__gl;
 }
 
 function createStageInitContext({ withGlCanvas = true, dpr = 1, clientWidth = 640, clientHeight = 400 } = {}) {
@@ -884,128 +1003,9 @@ test('ensurePartBuffers, getSphereAtlas, lazy 2D overlay, drawScene2D, and frame
 });
 
 test('RENDERER_GL unit invariants: standalone module loading, parallel compile, software rejection, buffer growth, and context restore', () => {
-  const helpersSrc = extractRendererHelpersSource();
-  const rglSrc = extractSection('/* === RENDERER_GL_START === */', '/* === RENDERER_GL_END === */');
-
-  const createMockGLContext = ({ failLinkAt = -1, failBufAt = -1, startLost = false, rejectCaveat = false, rendererStr = 'Mock Hardware GPU' } = {}) => {
-    const calls = [];
-    const deleted = { prog: 0, vao: 0, buf: 0, tex: 0, sh: 0 };
-    const loseExtStats = { loseCalls: 0 };
-    const progLinkIdx = new Map();
-    const compileOrder = [];
-    let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost;
-    const listeners = {};
-    const loseExt = {
-      loseContext: () => {
-        loseExtStats.loseCalls++;
-        ctxLost = true;
-      },
-    };
-    const gl = {
-      VERTEX_SHADER: 0x8b31, FRAGMENT_SHADER: 0x8b30, COMPILE_STATUS: 0x8b81, LINK_STATUS: 0x8b82,
-      ARRAY_BUFFER: 0x8892, STATIC_DRAW: 0x88e4, DYNAMIC_DRAW: 0x88e8, FLOAT: 0x1406,
-      TEXTURE_2D: 0x0de1, TEXTURE0: 0x84c0, TEXTURE_MIN_FILTER: 0x2801, TEXTURE_MAG_FILTER: 0x2800,
-      TEXTURE_WRAP_S: 0x2802, TEXTURE_WRAP_T: 0x2803, LINEAR: 0x2601, CLAMP_TO_EDGE: 0x812f,
-      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401, COLOR_BUFFER_BIT: 0x4000,
-      DEPTH_TEST: 0x0b71, BLEND: 0x0be2, ONE: 1, ONE_MINUS_SRC_ALPHA: 0x0303,
-      LINES: 1, TRIANGLE_STRIP: 5, RENDERER: 0x1f01,
-      isContextLost: () => ctxLost,
-      getExtension: (name) => {
-        if (ctxLost) return null; // WebGL spec 5.14: getExtension returns null when context is lost
-        if (name === 'WEBGL_debug_renderer_info') return { UNMASKED_RENDERER_WEBGL: 0x9246 };
-        if (name === 'WEBGL_lose_context') return loseExt;
-        return null;
-      },
-      getParameter: (p) => {
-        if (ctxLost) return null; // WebGL spec 5.14: getParameter returns null when context is lost
-        return p === 0x1f01 || p === 0x9246 ? rendererStr : null;
-      },
-      createShader: () => ({ id: nextId++ }),
-      shaderSource: () => {},
-      compileShader: () => { compileOrder.push('compile'); },
-      getShaderParameter: () => { compileOrder.push('queryShader'); return true; },
-      deleteShader: () => { deleted.sh++; },
-      createProgram: () => ({ id: nextId++ }),
-      attachShader: () => {},
-      linkProgram: (p) => { compileOrder.push('link'); progLinkIdx.set(p, ++linkCount); },
-      getProgramParameter: (p) => { compileOrder.push('queryProg'); return progLinkIdx.get(p) !== failLinkAt; },
-      deleteProgram: () => { deleted.prog++; },
-      getUniformLocation: (_p, name) => ({ name }),
-      createVertexArray: () => ({ id: nextId++ }),
-      bindVertexArray: () => {},
-      deleteVertexArray: () => { deleted.vao++; },
-      createBuffer: () => (++bufCount === failBufAt ? null : { id: nextId++ }),
-      bindBuffer: () => {},
-      deleteBuffer: () => { deleted.buf++; },
-      bufferData: (_t, data) => calls.push({ op: 'bufferData', len: data?.length ?? data }),
-      bufferSubData: (_t, _off, _buf, _so, len) => calls.push({ op: 'bufferSubData', len }),
-      enableVertexAttribArray: () => {},
-      vertexAttribPointer: () => {},
-      vertexAttribDivisor: () => {},
-      createTexture: () => ({ id: nextId++ }),
-      bindTexture: () => {},
-      deleteTexture: () => { deleted.tex++; },
-      texParameteri: () => {},
-      texImage2D: () => calls.push({ op: 'texImage2D' }),
-      activeTexture: () => {},
-      viewport: () => {},
-      clearColor: () => {},
-      clear: () => {},
-      disable: () => {},
-      enable: () => {},
-      blendFunc: () => {},
-      useProgram: () => {},
-      uniform1i: () => {},
-      uniform1f: () => {},
-      uniform2f: () => {},
-      uniform3f: () => {},
-      drawArrays: (mode, first, count) => calls.push({ op: 'drawArrays', mode, first, count }),
-      drawArraysInstanced: (mode, first, count, primCount) => calls.push({ op: 'drawArraysInstanced', mode, first, count, primCount }),
-    };
-    const contextOpts = [];
-    const canvas = {
-      width: 600, height: 400,
-      getContext: (kind, opts) => {
-        if (kind !== 'webgl2') return null;
-        contextOpts.push(opts || {});
-        if (rejectCaveat && opts && opts.failIfMajorPerformanceCaveat) return null;
-        return gl;
-      },
-      addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
-    };
-    return { gl, canvas, calls, deleted, listeners, contextOpts, loseExtStats, compileOrder, setLost: (v) => { ctxLost = v; } };
-  };
-
-  // RENDERER_GL loads strictly with RENDERER_HELPERS (zero dependency on RENDERER_2D or 2D canvas mocks)
-  const runGLHarness = (mock) => {
-    const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)', '--ov': '83,74,183' };
-    const sandbox = {
-      Math, Number, String, Array, ArrayBuffer, Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray, Object, RegExp,
-      W: 600, H: 400, _stageDpr: 1,
-      offIm: { width: 100, height: 80, data: new Uint8ClampedArray(100 * 80 * 4) },
-      offW: 100, offH: 80, cellSz: 3, ovPaintedVersion: 1,
-      P: [],
-      window: {},
-      document: { documentElement: {} },
-      getComputedStyle: () => ({ getPropertyValue: (n) => cssVars[n] ?? '' }),
-    };
-    const tail = `
-      globalThis.__gl = {
-        initWebGLRenderer, drawSceneGL, ensurePartBuffers, sortParticleOrder,
-        getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
-        setP: (a) => { P = a; },
-        bumpOv: () => { ovPaintedVersion++; },
-        setOffIm: (im) => { offIm = im; },
-        getRenderInfo: () => window.__renderInfo,
-      };
-    `;
-    vm.runInNewContext(helpersSrc + '\n' + rglSrc + '\n' + tail, sandbox);
-    return sandbox.__gl;
-  };
-
   // 1a. Parallel compile/link ordering & partial shader link failure cleanup
   const failMock = createMockGLContext({ failLinkAt: 2 });
-  const failHarness = runGLHarness(failMock);
+  const failHarness = runGLHarness();
   assert.equal(failHarness.initWebGLRenderer(failMock.canvas) === null, true, 'Failed shader link must return null');
   const firstQueryIdx = failMock.compileOrder.findIndex((op) => op.startsWith('query'));
   const lastLinkIdx = failMock.compileOrder.lastIndexOf('link');
@@ -1015,7 +1015,7 @@ test('RENDERER_GL unit invariants: standalone module loading, parallel compile, 
 
   // 1b. Partial VBO creation failure disposes all programs, VAOs, buffers, and texture
   const failBufMock = createMockGLContext({ failBufAt: 4 });
-  const failBufHarness = runGLHarness(failBufMock);
+  const failBufHarness = runGLHarness();
   assert.equal(failBufHarness.initWebGLRenderer(failBufMock.canvas) === null, true, 'Failed VBO allocation must return null');
   assert.equal(failBufMock.deleted.prog, 3);
   assert.equal(failBufMock.deleted.vao, 3);
@@ -1024,7 +1024,7 @@ test('RENDERER_GL unit invariants: standalone module loading, parallel compile, 
 
   // 1c. Default init passes failIfMajorPerformanceCaveat:true & antialias:false, and skips caveat-rejected contexts unless allowSoftware=true
   const swMock = createMockGLContext({ rejectCaveat: true });
-  const swHarness = runGLHarness(swMock);
+  const swHarness = runGLHarness();
   assert.equal(swHarness.initWebGLRenderer(swMock.canvas) === null, true, 'Software-only WebGL2 must fall back to null by default');
   assert.equal(swMock.contextOpts[0]?.failIfMajorPerformanceCaveat, true);
   assert.equal(swMock.contextOpts[0]?.antialias, false);
@@ -1035,7 +1035,7 @@ test('RENDERER_GL unit invariants: standalone module loading, parallel compile, 
   // 1d. Software renderer rejection calls loseContext(), collapses to 0x0, blocks repeated allowSoftware=false,
   //     does NOT attach webglcontextlost listeners, and succeeds synchronously on a fresh canvas with allowSoftware=true
   const swiftMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
-  const swiftHarness = runGLHarness(swiftMock);
+  const swiftHarness = runGLHarness();
   assert.equal(swiftHarness.initWebGLRenderer(swiftMock.canvas) === null, true, 'SwiftShader renderer string must fall back to 2D by default');
   assert.equal(swiftMock.loseExtStats.loseCalls, 1, 'Rejected software WebGL2 context must be released via WEBGL_lose_context');
   assert.equal(swiftMock.canvas.width, 0, 'Rejected software WebGL2 canvas backing width must collapse to 0');
@@ -1052,7 +1052,7 @@ test('RENDERER_GL unit invariants: standalone module loading, parallel compile, 
 
   // 2. Normal init, zero-line guard (cp=0, trails off), NaN/E<=0 interleaving, buffer growth, and context lost/restored
   const mock = createMockGLContext();
-  const h = runGLHarness(mock);
+  const h = runGLHarness();
   const st = h.initWebGLRenderer(mock.canvas);
   assert.ok(st, 'Expected valid glState');
   assert.equal(st.lineBuf.length, 2048 * 8, 'Initial lineBuf starts at 2048 * 8 floats');
@@ -1155,4 +1155,111 @@ test('RENDERER_GL unit invariants: standalone module loading, parallel compile, 
   assert.equal(h.drawSceneGL(st, frameSt), true);
   assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 1, 'Restored context must re-upload overlay texture');
   assert.ok(mock.calls.some((c) => c.op === 'bufferData'), 'Restored context must allocate fresh VBO via bufferData');
+});
+
+test('Age-based trail alpha fade in WebGL2 (pushHistTrailGL) and Canvas 2D (drawBatchedTrails2D)', () => {
+  // 0. Shared trailAgeSpan helper and SPHERE_CFG.maxHist === TRAIL_MAX_HIST invariant (standalone RENDERER_HELPERS VM slice)
+  const maxHistMatch = SCRIPT_SRC.match(/\bTRAIL_MAX_HIST\s*=\s*(\d+)/);
+  assert.ok(maxHistMatch, 'Expected TRAIL_MAX_HIST constant in electron_orbitals.html');
+  const h = createHelpersContext();
+  assert.equal(typeof h.trailAgeSpan, 'function', 'trailAgeSpan helper must be defined in RENDERER_HELPERS');
+  assert.equal(h.SPHERE_CFG.maxHist, Number(maxHistMatch[1]), 'SPHERE_CFG.maxHist must match TRAIL_MAX_HIST');
+  assert.equal(h.trailAgeSpan([[0, 0, 0, 0], [9, 0, 0, 9]], 2, 10, 10), 10, 'Normal history must return span');
+  assert.equal(h.trailAgeSpan([[0, 0, 0, 0], [1, 0, 0, 1]], 2, 100, 10), 0, 'Stale history must return 0 fallback');
+
+  const mock = createMockGLContext();
+  const t = runGLHarness();
+
+  // 1. WebGL2: dense (60-pt) and sparse (10-pt) trails with identical span/tNow must share equal alpha at equal simulation age
+  const stGL = t.initWebGLRenderer(mock.canvas);
+  // Non-uniform dense trail: 40 points packed in [8, 10] and 1 point at t = 5 (age = 0.5*span)
+  const histDense = [];
+  histDense.push([0, 0, 0, 0]);
+  histDense.push([5, 0, 0, 5]); // age = 5 (50% of span=10)
+  for (let k = 1; k <= 40; k++) {
+    const tt = 8 + (k / 40) * 1.9;
+    histDense.push([tt, 0, 0, tt]);
+  }
+  // Sparse trail: 2 points at t = 0 and t = 5
+  const histSparse = [[0, 1, 0, 0], [5, 1, 0, 5], [9.9, 1, 0, 9.9]];
+  t.setP([
+    { x: 10, y: 0, z: 0, hist: histDense },
+    { x: 10, y: 1, z: 0, hist: histSparse },
+  ]);
+  t.ensurePartBuffers(2);
+  const pb = t.getPartBuffers();
+  pb.sx[0] = 400; pb.sy[0] = 200; pb.depth[0] = 0; pb.hueT[0] = 0.2;
+  pb.sx[1] = 400; pb.sy[1] = 190; pb.depth[1] = 0; pb.hueT[1] = 0.2;
+  // cp = 0 suppresses z-axis lines so lineBuf contains ONLY the two trails
+  const frameSt = { n: 2, singleMode: false, showOverlay: false, showTr: true, cp: 0, sp: 1, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 10, tNow: 10 };
+  t.drawSceneGL(stGL, frameSt);
+  // Find segment ending at nx = 300 + 5*10 = 350 for both particles (y=200 vs y=190)
+  let alphaDenseAt5 = null, alphaSparseAt5 = null;
+  for (let o = 0; o < stGL.lineFloats; o += 8) {
+    const nx = stGL.lineBuf[o + 2], ny = stGL.lineBuf[o + 3], al = stGL.lineBuf[o + 7];
+    if (Math.abs(nx - 350) < 0.1 && Math.abs(ny - 200) < 0.1) alphaDenseAt5 = al;
+    if (Math.abs(nx - 350) < 0.1 && Math.abs(ny - 190) < 0.1) alphaSparseAt5 = al;
+  }
+  const expectedMidAlpha = t.SPHERE_CFG.trailAlpha * 0.5;
+  assert.ok(alphaDenseAt5 !== null && alphaSparseAt5 !== null, 'Both particles must emit segment at t=5');
+  assert.ok(Math.abs(alphaDenseAt5 - expectedMidAlpha) < 0.02, `Dense trail alpha at t=5 must be age-based (~${expectedMidAlpha.toFixed(3)}), got ${alphaDenseAt5}`);
+  assert.ok(Math.abs(alphaSparseAt5 - expectedMidAlpha) < 0.02, `Sparse trail alpha at t=5 must be age-based (~${expectedMidAlpha.toFixed(3)}), got ${alphaSparseAt5}`);
+
+  const drawOneGL = (hist, tNow = 10) => {
+    t.setP([{ x: 10, y: 0, z: 0, hist }]);
+    t.ensurePartBuffers(1);
+    pb.sx[0] = 400; pb.sy[0] = 200; pb.depth[0] = 0; pb.hueT[0] = 0.2;
+    t.drawSceneGL(stGL, { ...frameSt, n: 1, span: 10, tNow });
+  };
+
+  // Expired/zero-alpha tail points (t <= tNow - span) must stop early and emit zero alpha===0 quads
+  drawOneGL([[-5, 0, 0, -5], [0, 0, 0, 0], [5, 0, 0, 5], [9, 0, 0, 9]]);
+  assert.equal(stGL.lineFloats, 2 * 8, 'Expired tail points (t=0, t=-5 at tNow=10, span=10) must not emit quads');
+  for (let o = 0; o < stGL.lineFloats; o += 8) {
+    assert.ok(stGL.lineBuf[o + 7] > 0, `Expected strictly positive quad alpha, got ${stGL.lineBuf[o + 7]}`);
+  }
+
+  // Interior NaN timestamp must break cleanly without writing NaN alpha into lineBuf
+  drawOneGL([[1, 0, 0, 1], [5, 0, 0, Number.NaN], [9, 0, 0, 9]]);
+  assert.equal(stGL.lineFloats, 1 * 8, 'Interior NaN timestamp must break trail loop cleanly after t=9');
+  for (let o = 0; o < stGL.lineFloats; o += 8) {
+    assert.ok(Number.isFinite(stGL.lineBuf[o + 7]) && stGL.lineBuf[o + 7] > 0, `Expected finite positive alpha, got ${stGL.lineBuf[o + 7]}`);
+  }
+
+  // Synthetic stale timestamps (tNow = 100, hist timestamps [0, 0.5, 1]) must fall back to visible index alpha (not 0!)
+  drawOneGL([[7, 0, 0, 0], [8, 0, 0, 0.5], [9, 0, 0, 1]], 100);
+  assert.equal(stGL.lineFloats, 3 * 8, 'Synthetic stale hist must still emit all 3 segments');
+  assert.ok(stGL.lineBuf[7] > 0.3, `Synthetic stale hist must fall back to visible index alpha, got ${stGL.lineBuf[7]}`);
+
+  // Cap-limited dense trail (len === maxHist, ageMax < span) must still fade smoothly to ~0 at its tail instead of clipping
+  const capHist = [];
+  for (let k = 0; k < t.SPHERE_CFG.maxHist; k++) {
+    const tt = 6 + (k / (t.SPHERE_CFG.maxHist - 1)) * 3.9; // covers [6, 9.9] inside span=10 (ageMax=4 < 10)
+    capHist.push([tt, 0, 0, tt]);
+  }
+  drawOneGL(capHist);
+  const tailAlpha = stGL.lineBuf[stGL.lineFloats - 1];
+  assert.ok(tailAlpha > 0 && tailAlpha < 0.02, `Cap-limited trail tail must fade to ~0 (>0) instead of clipping, got ${tailAlpha}`);
+
+  // 2. Canvas 2D: age-based band assignment puts 40 recent points in [8, 10] into brightest band (ab=0), not spread across all 5 bands
+  const r2dCtx = createRenderer2DContext({ atlasOk: true, dpr: 1 });
+  r2dCtx.r2d.setP([{ x: 10, y: 0, z: 0, hist: histDense }]);
+  r2dCtx.r2d.ensurePartBuffers(1);
+  const pb2 = r2dCtx.r2d.getPartBuffers();
+  pb2.sx[0] = 400; pb2.sy[0] = 200; pb2.depth[0] = 0; pb2.hueT[0] = 0.2;
+  r2dCtx.ops.length = 0;
+  r2dCtx.r2d.drawScene2D({ n: 1, singleMode: false, showOverlay: false, showTr: true, cp: 0, sp: 1, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 10, tNow: 10 });
+  // Count lineTo operations before each trail stroke (ignoring the z-axis stroke drawn at alpha === 1)
+  const bandLineTos = [];
+  let curCount = 0;
+  for (const op of r2dCtx.ops) {
+    if (op.op === 'lineTo') curCount++;
+    else if (op.op === 'stroke') {
+      if (op.alpha < 0.99) bandLineTos.push({ alpha: op.alpha, lineTos: curCount });
+      curCount = 0;
+    }
+  }
+  const brightest = bandLineTos[0];
+  assert.ok(brightest && brightest.lineTos >= 38, `Expected brightest age band (age < 2) to hold >= 38 of 40 recent points, got ${JSON.stringify(bandLineTos)}`);
+  assert.ok(bandLineTos.length === 3, `Expected 3 populated age bands (ab=0,2,4), got ${JSON.stringify(bandLineTos)}`);
 });

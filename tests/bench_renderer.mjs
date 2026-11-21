@@ -357,8 +357,8 @@ const PAGE_HARNESS_EXPR = `(() => {
       for (let s = 0; s < 21; s++) {
         stepSuperposition(stepDt, span);
       }
-      if (P.length > 0 && (!P[0].hist || P[0].hist.length !== 22)) {
-        throw new Error('Expected 22-point q.hist polyline, got ' + (P[0].hist ? P[0].hist.length : 0));
+      if (P.length > 0 && (!P[0].hist || P[0].hist.length < 18 || P[0].hist.length > 88)) {
+        throw new Error('Expected populated q.hist polyline (18..88 pts), got ' + (P[0].hist ? P[0].hist.length : 0));
       }
     }
 
@@ -750,7 +750,7 @@ async function main() {
         `window.__benchHarness.setupScenario(${JSON.stringify({ mode: sc.mode, n: sc.n, trails: sc.trails, seed })})`
       );
 
-      if (baseSetup.pLen !== newSetup.pLen || baseSetup.histLen !== newSetup.histLen) {
+      if (baseSetup.pLen !== newSetup.pLen || (baseSetup.histLen > 0) !== (newSetup.histLen > 0)) {
         throw new Error(`Scenario ${sc.key} mismatch: baseline=${JSON.stringify(baseSetup)} new=${JSON.stringify(newSetup)}`);
       }
       if (baseSetup.firstPos !== null && newSetup.firstPos !== null && Math.abs(baseSetup.firstPos - newSetup.firstPos) > 1e-6) {
