@@ -25,6 +25,13 @@ function extractRendererHelpersSource() {
   return extractSection('/* === RENDERER_HELPERS_START === */', '/* === RENDERER_HELPERS_END === */');
 }
 
+const PHI_CUT_EXPORTS = `
+      _phiCutOff: typeof _phiCutOff !== 'undefined' ? _phiCutOff : undefined,
+      makePhiCut: typeof makePhiCut !== 'undefined' ? makePhiCut : undefined,
+      rotatePhiCut: typeof rotatePhiCut !== 'undefined' ? rotatePhiCut : undefined,
+      isXYCut: typeof isXYCut !== 'undefined' ? isXYCut : undefined,
+      clipSegPhiCut: typeof clipSegPhiCut !== 'undefined' ? clipSegPhiCut : undefined,`;
+
 function createHelpersContext(cssVars = {}) {
   const src = extractRendererHelpersSource();
   const sandbox = {
@@ -68,7 +75,7 @@ function createHelpersContext(cssVars = {}) {
       buildSphereSpriteAtlas,
       ensurePartBuffers,
       trailAgeSpan,
-      SPHERE_CFG,
+      SPHERE_CFG,${PHI_CUT_EXPORTS}
       getPartBuffers: () => ({
         order: partOrder,
         depth: partDepth,
@@ -194,7 +201,7 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1, co
       getSphereAtlas,
       drawHud2D,
       drawScene2D,
-      refreshTheme,
+      refreshTheme,${PHI_CUT_EXPORTS}
       getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
       setStageDpr: (d) => { _stageDpr = d; },
       setP: (arr) => { P = arr; },
@@ -324,7 +331,7 @@ function runGLHarness() {
   };
   const tail = `
     globalThis.__gl = {
-      initWebGLRenderer, drawSceneGL, ensurePartBuffers, sortParticleOrder, SPHERE_CFG,
+      initWebGLRenderer, drawSceneGL, ensurePartBuffers, sortParticleOrder, SPHERE_CFG,${PHI_CUT_EXPORTS}
       getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
       setP: (a) => { P = a; },
       bumpOv: () => { ovPaintedVersion++; },
@@ -1262,4 +1269,596 @@ test('Age-based trail alpha fade in WebGL2 (pushHistTrailGL) and Canvas 2D (draw
   const brightest = bandLineTos[0];
   assert.ok(brightest && brightest.lineTos >= 38, `Expected brightest age band (age < 2) to hold >= 38 of 40 recent points, got ${JSON.stringify(bandLineTos)}`);
   assert.ok(bandLineTos.length === 3, `Expected 3 populated age bands (ab=0,2,4), got ${JSON.stringify(bandLineTos)}`);
+});
+
+test('Phi cutaway markup, Float64 partRX/partRY promotion, and pure geometry helpers (makePhiCut, isXYCut, rotatePhiCut)', () => {
+  // 1. Markup directly below #azim row
+  const azimIdx = HTML_SRC.indexOf('id="azim"');
+  const cutIdx = HTML_SRC.indexOf('id="cut"');
+  const cntIdx = HTML_SRC.indexOf('id="cnt"');
+  assert.ok(azimIdx > 0 && cutIdx > azimIdx && cntIdx > cutIdx, 'Expected #cut slider row directly between #azim and #cnt');
+  assert.match(
+    HTML_SRC,
+    /<input\s+type="range"\s+id="cut"\s+min="0"\s+max="180"\s+step="1"\s+value="0"\s+aria-valuetext="0° \(full orbital\)"/,
+    'Expected #cut range input with min=0, max=180, step=1, value=0, aria-valuetext'
+  );
+  assert.match(HTML_SRC, /<span\s+class="val"\s+id="cutv">0°<\/span>/, 'Expected #cutv readout span');
+
+  // 2. partRX and partRY promoted to Float64Array, and frame() populates them in multi-state loop (and uses getPhiCut without _cachedCut*)
+  const h = createHelpersContext();
+  h.ensurePartBuffers(10);
+  const pb = h.getPartBuffers();
+  assert.equal(pb.rx instanceof Float64Array, true, 'partRX must be Float64Array');
+  assert.equal(pb.ry instanceof Float64Array, true, 'partRY must be Float64Array');
+
+  const frameStart = SCRIPT_SRC.indexOf('function frame(now)');
+  const frameEnd = SCRIPT_SRC.indexOf('requestAnimationFrame(frame)', frameStart);
+  assert.ok(frameStart > 0 && frameEnd > frameStart, 'Expected frame() body ending at requestAnimationFrame(frame)');
+  const frameSrc = SCRIPT_SRC.slice(frameStart, frameEnd);
+  const multiIdx = frameSrc.indexOf('} else if (n > 0) {');
+  assert.ok(multiIdx > 0, 'Expected multi-state loop in frame()');
+  const multiLoop = frameSrc.slice(multiIdx, frameSrc.indexOf('if (W > 0 && H > 0)', multiIdx));
+  assert.match(multiLoop, /partRX\[i\]\s*=\s*rx/, 'frame() multi-state loop must populate partRX[i]');
+  assert.match(multiLoop, /partRY\[i\]\s*=\s*ry/, 'frame() multi-state loop must populate partRY[i]');
+  assert.match(frameSrc, /\bgetPhiCut\(/, 'frame() must read cached cut via getPhiCut()');
+  assert.doesNotMatch(SCRIPT_SRC, /\b_cachedCutStart\b|\b_cachedCutSweep\b|\bgetPhiCutSweepRad\b/, 'Dead _cachedCutStart/_cachedCutSweep/getPhiCutSweepRad must be removed');
+
+  // 3. makePhiCut & isXYCut at 0°, 90°, 180°, 270° (reflex), 360° (full), custom startRad=0, origin, boundary rays, and edge guards
+  assert.equal(typeof h.makePhiCut, 'function');
+  assert.equal(typeof h.rotatePhiCut, 'function');
+  assert.equal(typeof h.isXYCut, 'function');
+  assert.equal(h._phiCutOff?.active, false);
+  assert.equal('start' in h._phiCutOff, false, 'Runtime cut struct must omit unused start field');
+  assert.equal('sweep' in h._phiCutOff, false, 'Runtime cut struct must omit unused sweep field');
+
+  assert.equal(h.makePhiCut(Math.PI, 0), h._phiCutOff);
+  assert.equal(h.makePhiCut(Math.PI, -0.1), h._phiCutOff);
+  assert.equal(h.makePhiCut(Math.PI, NaN), h._phiCutOff);
+  assert.equal(h.makePhiCut(Math.PI, Infinity), h._phiCutOff, 'Infinity sweepRad must return _phiCutOff');
+  assert.equal(h.makePhiCut(NaN, 1), h._phiCutOff, 'NaN startRad must return _phiCutOff');
+  assert.equal(h.isXYCut(-1, -1, h._phiCutOff), false);
+
+  const cut90 = h.makePhiCut(Math.PI, Math.PI / 2);
+  assert.equal(cut90.active, true);
+  assert.equal(cut90.reflex, false);
+  assert.equal(cut90.full, false);
+  assert.equal('start' in cut90, false, 'makePhiCut must omit unused start field');
+  assert.equal('sweep' in cut90, false, 'makePhiCut must omit unused sweep field');
+  assert.equal(h.isXYCut(1, 1, cut90), false, '90° cut: Q1 visible');
+  assert.equal(h.isXYCut(-1, 1, cut90), false, '90° cut: Q2 visible');
+  assert.equal(h.isXYCut(-1, -1, cut90), true, '90° cut: Q3 cut');
+  assert.equal(h.isXYCut(1, -1, cut90), false, '90° cut: Q4 visible');
+  assert.equal(h.isXYCut(0, 0, cut90), false, '90° cut: origin visible');
+  assert.equal(h.isXYCut(-5, 0, cut90), false, '90° cut: u0 (-x) boundary ray visible');
+  assert.equal(h.isXYCut(0, -5, cut90), false, '90° cut: u1 (-y) boundary ray visible');
+
+  const cut180 = h.makePhiCut(Math.PI, Math.PI);
+  assert.equal(cut180.active, true);
+  assert.equal(cut180.reflex, false);
+  assert.equal(cut180.u1x, -cut180.u0x, '180° cut must set exact u1 = -u0 with zero sin(2pi) drift');
+  assert.equal(cut180.u1y, -cut180.u0y, '180° cut must set exact u1y = -u0y');
+  assert.equal(h.isXYCut(1, 1, cut180), false, '180° cut: Q1 visible');
+  assert.equal(h.isXYCut(-1, 1, cut180), false, '180° cut: Q2 visible');
+  assert.equal(h.isXYCut(-1, -1, cut180), true, '180° cut: Q3 cut');
+  assert.equal(h.isXYCut(1, -1, cut180), true, '180° cut: Q4 cut');
+  assert.equal(h.isXYCut(0, 0, cut180), false, '180° cut: origin visible');
+  assert.equal(h.isXYCut(-5, 0, cut180), false, '180° cut: -x boundary ray visible');
+  assert.equal(h.isXYCut(5, 0, cut180), false, '180° cut: +x boundary ray visible');
+
+  // Near-180° snap consistency (F2): pi + 5e-10 snaps u1=-u0 so reflex MUST be false
+  const cut180Eps = h.makePhiCut(Math.PI, Math.PI + 5e-10);
+  assert.equal(cut180Eps.reflex, false, 'pi + 5e-10 snapped to 180° must have reflex === false');
+  assert.equal(cut180Eps.u1x, -cut180Eps.u0x);
+  assert.equal(cut180Eps.u1y, -cut180Eps.u0y);
+
+  const cut270 = h.makePhiCut(Math.PI, 1.5 * Math.PI);
+  assert.equal(cut270.active, true);
+  assert.equal(cut270.reflex, true);
+  assert.equal(cut270.full, false);
+  assert.equal(h.isXYCut(1, 1, cut270), true, '270° reflex cut: Q1 cut');
+  assert.equal(h.isXYCut(-1, 1, cut270), false, '270° reflex cut: Q2 visible');
+  assert.equal(h.isXYCut(-1, -1, cut270), true, '270° reflex cut: Q3 cut');
+  assert.equal(h.isXYCut(1, -1, cut270), true, '270° reflex cut: Q4 cut');
+  assert.equal(h.isXYCut(0, 0, cut270), false, '270° reflex cut: origin visible');
+  assert.equal(h.isXYCut(-5, 0, cut270), false, '270° reflex cut: u0 (-x) boundary visible');
+  assert.equal(h.isXYCut(0, 5, cut270), false, '270° reflex cut: u1 (+y) boundary visible');
+
+  // Full-circle >= 2pi cuts (F2): hide every non-origin point, keep origin visible
+  for (const fullSweep of [2 * Math.PI, 2.5 * Math.PI]) {
+    const cutFull = h.makePhiCut(Math.PI, fullSweep);
+    assert.equal(cutFull.active, true);
+    assert.equal(cutFull.reflex, true);
+    assert.equal(cutFull.full, true);
+    for (const [x, y] of [[1, 1], [-1, 1], [-1, -1], [1, -1], [5, 0], [-5, 0], [0, 5], [0, -5]]) {
+      assert.equal(h.isXYCut(x, y, cutFull), true, `Full cut (${fullSweep}) must hide (${x},${y})`);
+    }
+    assert.equal(h.isXYCut(0, 0, cutFull), false, `Full cut (${fullSweep}) must keep origin (0,0) visible`);
+  }
+
+  const cutStart0 = h.makePhiCut(0, Math.PI / 2);
+  assert.equal(h.isXYCut(1, 1, cutStart0), true, 'start=0, sweep=90°: Q1 cut');
+  assert.equal(h.isXYCut(-1, 1, cutStart0), false, 'start=0, sweep=90°: Q2 visible');
+  assert.equal(h.isXYCut(-1, -1, cutStart0), false, 'start=0, sweep=90°: Q3 visible');
+  assert.equal(h.isXYCut(1, -1, cutStart0), false, 'start=0, sweep=90°: Q4 visible');
+  assert.equal(h.isXYCut(5, 0, cutStart0), false, 'start=0, sweep=90°: +x boundary visible');
+  assert.equal(h.isXYCut(0, 5, cutStart0), false, 'start=0, sweep=90°: +y boundary visible');
+
+  // 4. rotatePhiCut invariance across arbitrary azimuths + in-place aliasing safety (F3)
+  const out = {};
+  const testSpecs = [
+    { cut: cut90, start: Math.PI, sweep: Math.PI / 2 },
+    { cut: cut180, start: Math.PI, sweep: Math.PI },
+    { cut: cut270, start: Math.PI, sweep: 1.5 * Math.PI },
+    { cut: cutStart0, start: 0, sweep: Math.PI / 2 },
+  ];
+  const azimuths = [0, 0.73, -1.85, 1.234567, Math.PI];
+  const testPts = [
+    [1, 1], [-1, 1], [-1, -1], [1, -1], [0, 0],
+    [3.5, 0.2], [-3.5, -0.2], [0.2, -3.5], [-0.2, 3.5],
+  ];
+  for (const { cut: baseCut, start, sweep } of testSpecs) {
+    for (const az of azimuths) {
+      const ca = Math.cos(az), sa = Math.sin(az);
+      const rot = h.rotatePhiCut(baseCut, ca, sa, out);
+      assert.equal(rot, out, 'rotatePhiCut must write into and return reusable out object');
+      assert.equal(rot.active, baseCut.active);
+      assert.equal(rot.reflex, baseCut.reflex);
+      assert.equal(rot.full, baseCut.full);
+      assert.equal('start' in rot, false, 'rotatePhiCut must not copy unused start field');
+      assert.equal('sweep' in rot, false, 'rotatePhiCut must not copy unused sweep field');
+      for (const [x, y] of testPts) {
+        const rx = x * ca - y * sa, ry = x * sa + y * ca;
+        assert.equal(
+          h.isXYCut(rx, ry, rot),
+          h.isXYCut(x, y, baseCut),
+          `Azimuth invariance failed for sweep=${sweep}, az=${az}, pt=(${x},${y})`
+        );
+      }
+      // Exact boundary rays via singleMode's q.rho * cos(q.ph + az)
+      for (const ph of [start, start + sweep]) {
+        const rho = 7.3;
+        const rx = rho * Math.cos(ph + az), ry = rho * Math.sin(ph + az);
+        assert.equal(
+          h.isXYCut(rx, ry, rot),
+          false,
+          `Boundary ray at ph=${ph} must remain visible under singleMode az=${az}`
+        );
+      }
+    }
+  }
+
+  // In-place aliasing check: rotatePhiCut(c, ca, sa, c) must equal non-aliased rotation and keep unit vectors
+  const aliasAz = 0.73, aliasCa = Math.cos(aliasAz), aliasSa = Math.sin(aliasAz);
+  const expectedRot = h.rotatePhiCut(cut90, aliasCa, aliasSa, {});
+  const aliased = { ...cut90 };
+  const retAlias = h.rotatePhiCut(aliased, aliasCa, aliasSa, aliased);
+  assert.equal(retAlias, aliased);
+  assert.ok(Math.abs(aliased.u0x - expectedRot.u0x) < 1e-12, `In-place u0x corrupted: ${aliased.u0x} vs ${expectedRot.u0x}`);
+  assert.ok(Math.abs(aliased.u0y - expectedRot.u0y) < 1e-12, `In-place u0y corrupted: ${aliased.u0y} vs ${expectedRot.u0y}`);
+  assert.ok(Math.abs(aliased.u1x - expectedRot.u1x) < 1e-12, `In-place u1x corrupted: ${aliased.u1x} vs ${expectedRot.u1x}`);
+  assert.ok(Math.abs(aliased.u1y - expectedRot.u1y) < 1e-12, `In-place u1y corrupted: ${aliased.u1y} vs ${expectedRot.u1y}`);
+  assert.ok(Math.abs(Math.hypot(aliased.u0x, aliased.u0y) - 1) < 1e-12, 'In-place u0 must remain unit length');
+  assert.ok(Math.abs(Math.hypot(aliased.u1x, aliased.u1y) - 1) < 1e-12, 'In-place u1 must remain unit length');
+});
+
+test('clipSegPhiCut parametric interval clipping: visible, cut, single crossing, 2-segment splits, reflex 270°, and NaN guard', () => {
+  const h = createHelpersContext();
+  assert.equal(typeof h.clipSegPhiCut, 'function');
+  const out = new Float64Array(4);
+  const approxEq = (a, b, msg, eps = 1e-9) => assert.ok(Math.abs(a - b) <= eps, `${msg}: got ${a}, expected ${b}`);
+
+  const cut90 = h.makePhiCut(Math.PI, Math.PI / 2);
+  const cut5 = h.makePhiCut(Math.PI, (5 * Math.PI) / 180);
+  const cut270 = h.makePhiCut(Math.PI, 1.5 * Math.PI);
+
+  // All visible
+  assert.equal(h.clipSegPhiCut(-1, 2, 2, 2, cut90, out), 1);
+  approxEq(out[0], 0, 'all-visible t0');
+  approxEq(out[1], 1, 'all-visible t1');
+
+  // All cut
+  assert.equal(h.clipSegPhiCut(-2, -1, -1, -2, cut90, out), 0);
+
+  // Single crossing on u0 (-x axis, y=0)
+  assert.equal(h.clipSegPhiCut(-1, 1, -1, -1, cut90, out), 1);
+  approxEq(out[0], 0, 'u0 crossing t0');
+  approxEq(out[1], 0.5, 'u0 crossing t1');
+
+  // Single crossing on u1 (-y axis, x=0)
+  assert.equal(h.clipSegPhiCut(-1, -1, 1, -1, cut90, out), 1);
+  approxEq(out[0], 0.5, 'u1 crossing t0');
+  approxEq(out[1], 1, 'u1 crossing t1');
+
+  // 2-segment split across narrow 5° wedge
+  const n5 = h.clipSegPhiCut(-1, 0.5, -1, -0.5, cut5, out);
+  assert.equal(n5, 2, 'Narrow 5° wedge must split crossing chord into 2 visible intervals');
+  approxEq(out[0], 0, '5° split seg0 t0');
+  approxEq(out[1], 0.5, '5° split seg0 t1');
+  approxEq(out[2], 0.5 + Math.tan((5 * Math.PI) / 180), '5° split seg1 t0');
+  approxEq(out[3], 1, '5° split seg1 t1');
+
+  // 2-segment split across 90° diagonal chord (-2, 1) -> (1, -2)
+  const nDiag = h.clipSegPhiCut(-2, 1, 1, -2, cut90, out);
+  assert.equal(nDiag, 2, '90° diagonal chord must split into 2 visible intervals');
+  approxEq(out[0], 0, '90° diag seg0 t0');
+  approxEq(out[1], 1 / 3, '90° diag seg0 t1');
+  approxEq(out[2], 2 / 3, '90° diag seg1 t0');
+  approxEq(out[3], 1, '90° diag seg1 t1');
+
+  // Reflex 270°: two cut endpoints (-2,-1) in Q3 and (1,2) in Q1 crossing visible Q2 wedge
+  const nRef = h.clipSegPhiCut(-2, -1, 1, 2, cut270, out);
+  assert.equal(nRef, 1, 'Reflex 270° chord through visible Q2 wedge must emit 1 interior visible segment');
+  approxEq(out[0], 1 / 3, 'reflex t0');
+  approxEq(out[1], 2 / 3, 'reflex t1');
+
+  // Boundary ray segment stays visible even after azimuth rotation
+  const rot90 = h.rotatePhiCut(cut90, Math.cos(1.234567), Math.sin(1.234567), {});
+  const ca = Math.cos(1.234567), sa = Math.sin(1.234567);
+  assert.equal(h.clipSegPhiCut(-2 * ca, -2 * sa, -5 * ca, -5 * sa, rot90, out), 1);
+  approxEq(out[0], 0, 'rotated boundary ray t0');
+  approxEq(out[1], 1, 'rotated boundary ray t1');
+
+  // NaN / Infinity / opposite-sign huge overflow & full-circle (>= 2pi) guards (F2)
+  assert.equal(h.clipSegPhiCut(NaN, 0, 1, 1, cut90, out), 0);
+  assert.equal(h.clipSegPhiCut(0, 0, Infinity, 1, cut90, out), 0);
+  assert.equal(h.clipSegPhiCut(1e308, 0, -1e308, 0, cut90, out), 0, 'Opposite-sign 1e308 overflow must return 0');
+  const cutFull2Pi = h.makePhiCut(Math.PI, 2 * Math.PI);
+  const cutFull25Pi = h.makePhiCut(Math.PI, 2.5 * Math.PI);
+  assert.equal(h.clipSegPhiCut(-1, 2, 2, 2, cutFull2Pi, out), 0, 'Full 2pi cut must clip every segment to 0');
+  assert.equal(h.clipSegPhiCut(-1, 2, 2, 2, cutFull25Pi, out), 0, 'Full 2.5pi cut must clip every segment to 0');
+
+  // Inactive cut returns full [0, 1]
+  assert.equal(h.clipSegPhiCut(-2, -1, -1, -2, h._phiCutOff, out), 1);
+  assert.equal(out[0], 0);
+  assert.equal(out[1], 1);
+});
+
+test('Dual-backend cutaway: sphere culling parity, nucleus slot & survivors, nonzero-az trail clipping, and 2D polyline continuity (F6)', () => {
+  const baseSt = {
+    n: 4, singleMode: false, showOverlay: false, showTr: false,
+    cp: 0, sp: 1, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 10, tNow: 10,
+  };
+
+  // Helper to populate 4 quadrant particles with Q3 at depth = -1 (first depth <= 0 to test nucleus interleaving!)
+  const quadPts = [
+    { x: 3, y: 3, z: 0, depth: 3 },    // Q1 (behind)
+    { x: -3, y: 3, z: 0, depth: 2 },   // Q2 (behind)
+    { x: -3, y: -3, z: 0, depth: -1 }, // Q3 (front, cut at 90° & 180°)
+    { x: 3, y: -3, z: 0, depth: -2 },  // Q4 (front, cut at 180°)
+  ];
+  const setupQuadParticles = (ctxObj, az = 0) => {
+    const ca = Math.cos(az), sa = Math.sin(az);
+    ctxObj.setP(quadPts.map((p) => ({ x: p.x, y: p.y, z: p.z, hist: [] })));
+    ctxObj.ensurePartBuffers(4);
+    const pb = ctxObj.getPartBuffers();
+    for (let i = 0; i < 4; i++) {
+      const rx = quadPts[i].x * ca - quadPts[i].y * sa;
+      const ry = quadPts[i].x * sa + quadPts[i].y * ca;
+      pb.rx[i] = rx; pb.ry[i] = ry;
+      pb.sx[i] = 300 + rx * 10; pb.sy[i] = 200 - ry * 10;
+      pb.depth[i] = quadPts[i].depth;
+      pb.hueT[i] = 0.2 * (i + 1);
+    }
+    ctxObj.sortParticleOrder(pb.order, pb.depth, 4);
+    return Array.from({ length: 4 }, (_, i) => [pb.sx[i], pb.sy[i]]);
+  };
+
+  // 1. Sphere culling parity, exact nucleus slot index (k===2), and surviving coordinates across 0°, 90°, 180° and rotated azimuth
+  const r2dCtx = createRenderer2DContext({ atlasOk: true, dpr: 1, countTrig: true });
+  const glMock = createMockGLContext();
+  const glH = runGLHarness();
+  const glSt = glH.initWebGLRenderer(glMock.canvas);
+  const atlas = r2dCtx.r2d.getSphereAtlas();
+
+  for (const az of [0, 0.73]) {
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const screenCoords = setupQuadParticles(r2dCtx.r2d, az);
+    setupQuadParticles(glH, az);
+    for (const [deg, survivorIdx] of [[0, [0, 1, 2, 3]], [90, [0, 1, 3]], [180, [0, 1]]]) {
+      const expectedSpheres = survivorIdx.length + 1;
+      const cutBase = r2dCtx.r2d.makePhiCut(Math.PI, (deg * Math.PI) / 180);
+      const cut = cutBase.active ? r2dCtx.r2d.rotatePhiCut(cutBase, ca, sa, {}) : cutBase;
+      const st = { ...baseSt, ca, sa, az, cut };
+
+      r2dCtx.ops.length = 0;
+      const count2D = r2dCtx.r2d.drawScene2D(st);
+      const draws2D = r2dCtx.ops.filter((o) => o.op === 'drawImage');
+
+      glMock.calls.length = 0;
+      assert.equal(glH.drawSceneGL(glSt, st), true);
+      const countGL = glH.getRenderInfo().sphereCount;
+
+      assert.equal(count2D, expectedSpheres, `2D sphereCount at ${deg}° (az=${az})`);
+      assert.equal(countGL, expectedSpheres, `GL sphereCount at ${deg}° (az=${az})`);
+
+      // Verify exact nucleus slot k === 2 (between Q1, Q2 behind and any surviving front spheres) in BOTH 2D and GL
+      assert.equal(draws2D[2].a[0], atlas.nucCol * atlas.tilePx, `2D nucleus must be at exact slot 2 at ${deg}° (az=${az})`);
+      assert.equal(draws2D[2].a[1], atlas.nucRow * atlas.tilePx);
+      assert.equal(glSt.instBuf[2 * 8 + 2], Math.fround(3.2), `GL nucleus must be at exact slot 2 at ${deg}° (az=${az})`);
+
+      // Verify exact surviving particle screen centers in BOTH GL and 2D (proves Q3 culled at 90°, Q3+Q4 at 180°)
+      const expectedCenters = [
+        screenCoords[0], screenCoords[1], [300, 200],
+        ...survivorIdx.filter((idx) => idx >= 2).map((idx) => screenCoords[idx]),
+      ];
+      for (let k = 0; k < expectedSpheres; k++) {
+        const [ex, ey] = expectedCenters[k];
+        assert.ok(Math.abs(glSt.instBuf[k * 8] - ex) < 1e-3 && Math.abs(glSt.instBuf[k * 8 + 1] - ey) < 1e-3,
+          `GL slot ${k} mismatch at ${deg}° (az=${az}): got (${glSt.instBuf[k * 8]},${glSt.instBuf[k * 8 + 1]}), expected (${ex},${ey})`);
+        const d2cx = draws2D[k].a[4] + draws2D[k].a[6] * 0.5;
+        const d2cy = draws2D[k].a[5] + draws2D[k].a[7] * 0.5;
+        assert.ok(Math.abs(d2cx - ex) < 1e-3 && Math.abs(d2cy - ey) < 1e-3,
+          `2D slot ${k} mismatch at ${deg}° (az=${az}): got (${d2cx},${d2cy}), expected (${ex},${ey})`);
+      }
+    }
+  }
+
+  // Helper to verify NO segment midpoint OR endpoint penetrates into the cut wedge (F1)
+  const assertPointOutsideCut = (x, y, cut, label, tol = 1e-4) => {
+    if (!cut || !cut.active) return;
+    const c0 = cut.u0x * y - cut.u0y * x;
+    const c1 = cut.u1x * y - cut.u1y * x;
+    const pen = cut.reflex ? Math.max(c0, -c1) : Math.min(c0, -c1);
+    assert.ok(pen <= tol, `${label}: point (${x.toFixed(4)},${y.toFixed(4)}) penetrated cut wedge by ${pen.toExponential(2)}`);
+  };
+  const assertSegsOutsideCutGL = (cut, label) => {
+    const segs = (glSt.lineFloats / 8) | 0;
+    assert.ok(segs > 0, `${label}: expected >0 surviving GL trail segments`);
+    for (let o = 0; o < glSt.lineFloats; o += 8) {
+      const x0 = (glSt.lineBuf[o] - 300) / 10, y0 = (200 - glSt.lineBuf[o + 1]) / 10;
+      const x1 = (glSt.lineBuf[o + 2] - 300) / 10, y1 = (200 - glSt.lineBuf[o + 3]) / 10;
+      const mx = (x0 + x1) * 0.5, my = (y0 + y1) * 0.5;
+      assertPointOutsideCut(x0, y0, cut, `${label} GL p0`, 1e-4);
+      assertPointOutsideCut(x1, y1, cut, `${label} GL p1`, 1e-4);
+      assert.equal(glH.isXYCut(mx, my, cut), false, `${label}: GL segment midpoint (${mx.toFixed(3)},${my.toFixed(3)}) must not enter cutaway`);
+    }
+    return segs;
+  };
+  const extract2DTrailSegs = () => {
+    const segs = [];
+    let cur = null;
+    for (const op of r2dCtx.ops) {
+      if (op.op === 'moveTo') cur = [op.x, op.y];
+      else if (op.op === 'lineTo' && cur) {
+        segs.push([cur[0], cur[1], op.x, op.y]);
+        cur = [op.x, op.y];
+      }
+    }
+    return segs.filter(([x0, y0, x1, y1]) => Math.hypot(x1 - x0, y1 - y0) > 1e-6);
+  };
+  const assertSegsOutsideCut2D = (cut, label) => {
+    const segs = extract2DTrailSegs();
+    assert.ok(segs.length > 0, `${label}: expected >0 surviving 2D trail segments`);
+    for (const [sx0, sy0, sx1, sy1] of segs) {
+      const x0 = (sx0 - 300) / 10, y0 = (200 - sy0) / 10;
+      const x1 = (sx1 - 300) / 10, y1 = (200 - sy1) / 10;
+      const mx = (x0 + x1) * 0.5, my = (y0 + y1) * 0.5;
+      assertPointOutsideCut(x0, y0, cut, `${label} 2D p0`, 1e-4);
+      assertPointOutsideCut(x1, y1, cut, `${label} 2D p1`, 1e-4);
+      assert.equal(r2dCtx.r2d.isXYCut(mx, my, cut), false, `${label}: 2D segment midpoint (${mx.toFixed(3)},${my.toFixed(3)}) must not enter cutaway`);
+    }
+    return segs.length;
+  };
+
+  const cut90 = glH.makePhiCut(Math.PI, Math.PI / 2);
+  const cut5 = glH.makePhiCut(Math.PI, (5 * Math.PI) / 180);
+  const cut1 = glH.makePhiCut(Math.PI, (1 * Math.PI) / 180);
+
+  // 2. Multi-state & single-mode q.hist trail crossing through Q3 at BOTH az=0 AND nonzero az=0.73 (F1)
+  const histCrossing = [
+    [-2, 1, 0, 2],   // Q2 (oldest)
+    [-1, -1, 0, 5],  // Q3 (inside cut)
+    [1, -2, 0, 8],   // Q4 (newest hist)
+  ];
+  const setupHist = (ctxObj, singleMode, az) => {
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const rx = 2 * ca - (-1) * sa, ry = 2 * sa + (-1) * ca;
+    ctxObj.setP(singleMode
+      ? [{ rho: Math.hypot(2, -1), ph: Math.atan2(-1, 2), z: 0, w: 0, hist: histCrossing }]
+      : [{ x: 2, y: -1, z: 0, hist: histCrossing }]);
+    ctxObj.ensurePartBuffers(1);
+    const pb = ctxObj.getPartBuffers();
+    pb.rx[0] = rx; pb.ry[0] = ry;
+    pb.sx[0] = 300 + rx * 10; pb.sy[0] = 200 - ry * 10;
+    pb.depth[0] = 0; pb.hueT[0] = 0.4;
+  };
+
+  for (const az of [0, 0.73]) {
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const rotCut90 = glH.rotatePhiCut(cut90, ca, sa, {});
+    for (const singleMode of [false, true]) {
+      const tag = `${singleMode ? 'single-mode q.hist (PR #7)' : 'multi-state q.hist'} az=${az}`;
+      setupHist(glH, singleMode, az);
+      setupHist(r2dCtx.r2d, singleMode, az);
+      const stCut = { ...baseSt, n: 1, singleMode, showTr: true, ca, sa, az, cut: rotCut90 };
+
+      glH.drawSceneGL(glSt, stCut);
+      const glSegs = assertSegsOutsideCutGL(rotCut90, tag);
+      assert.equal(glSegs, 3, `${tag}: GL should emit 3 visible segments (Q4 head->hist2, hist2->u1, u0->Q2)`);
+
+      r2dCtx.ops.length = 0;
+      r2dCtx.r2d.drawScene2D(stCut);
+      const d2Segs = assertSegsOutsideCut2D(rotCut90, tag);
+      assert.equal(d2Segs, 3, `${tag}: 2D should emit 3 visible segments`);
+    }
+  }
+
+  // 3. Single-mode circular arcs at BOTH az=0 AND nonzero az=0.73: narrow 5° split + 2 trig/particle + 90° cut (F1)
+  const setupArcAt = (ctxObj, phDeg, az) => {
+    const ph = (phDeg * Math.PI) / 180, rho = 5;
+    const rx = rho * Math.cos(ph + az), ry = rho * Math.sin(ph + az);
+    ctxObj.setP([{ rho, ph, z: 0, w: 2 }]);
+    ctxObj.ensurePartBuffers(1);
+    const pb = ctxObj.getPartBuffers();
+    pb.rx[0] = rx; pb.ry[0] = ry;
+    pb.sx[0] = 300 + rx * 10; pb.sy[0] = 200 - ry * 10;
+    pb.depth[0] = 0; pb.hueT[0] = 0.5;
+  };
+  for (const az of [0, 0.73]) {
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const rotCut5 = glH.rotatePhiCut(cut5, ca, sa, {});
+    const rotCut90 = glH.rotatePhiCut(cut90, ca, sa, {});
+
+    setupArcAt(glH, 190, az);
+    setupArcAt(r2dCtx.r2d, 190, az);
+    const arcUncutSt = { ...baseSt, n: 1, singleMode: true, showTr: true, ca, sa, az, span: 0.8, cut: glH._phiCutOff };
+    const arcCut5St = { ...baseSt, n: 1, singleMode: true, showTr: true, ca, sa, az, span: 0.8, cut: rotCut5 };
+
+    glH.drawSceneGL(glSt, arcUncutSt);
+    const uncutArcGL = (glSt.lineFloats / 8) | 0;
+    glH.drawSceneGL(glSt, arcCut5St);
+    const cut5ArcGL = assertSegsOutsideCutGL(rotCut5, `single-mode arc narrow 5° split az=${az}`);
+    assert.equal(cut5ArcGL, uncutArcGL + 1, `Narrow 5° wedge at az=${az} must split one chord into 2 quads (N -> N+1)`);
+
+    r2dCtx.ops.length = 0;
+    r2dCtx.resetTrigCalls();
+    r2dCtx.r2d.drawScene2D(arcUncutSt);
+    const uncutArc2D = extract2DTrailSegs().length;
+    assert.equal(r2dCtx.getTrigCalls(), 2);
+
+    r2dCtx.ops.length = 0;
+    r2dCtx.resetTrigCalls();
+    r2dCtx.r2d.drawScene2D(arcCut5St);
+    const cut5Arc2D = assertSegsOutsideCut2D(rotCut5, `single-mode arc narrow 5° split az=${az}`);
+    assert.equal(cut5Arc2D, uncutArc2D + 1, `Narrow 5° wedge at az=${az} must split one 2D chord into 2 segments`);
+    assert.equal(r2dCtx.getTrigCalls(), 2, 'Cutaway 2D single-mode arc must STILL use exactly 2 trig calls/particle');
+
+    setupArcAt(glH, 260, az);
+    setupArcAt(r2dCtx.r2d, 260, az);
+    const arcCut90St = { ...baseSt, n: 1, singleMode: true, showTr: true, ca, sa, az, span: 1.5, cut: rotCut90 };
+    glH.drawSceneGL(glSt, { ...arcCut90St, cut: glH._phiCutOff });
+    const fullArcGL = (glSt.lineFloats / 8) | 0;
+    glH.drawSceneGL(glSt, arcCut90St);
+    const clippedArcGL = assertSegsOutsideCutGL(rotCut90, `single-mode arc 90° cut az=${az}`);
+    assert.ok(clippedArcGL < fullArcGL, `Expected 90° cut at az=${az} to reduce GL arc segments (${clippedArcGL} < ${fullArcGL})`);
+
+    r2dCtx.ops.length = 0;
+    r2dCtx.r2d.drawScene2D(arcCut90St);
+    const clippedArc2D = assertSegsOutsideCut2D(rotCut90, `single-mode arc 90° cut az=${az}`);
+    assert.equal(clippedArc2D, clippedArcGL, `2D and GL clipped arc segment counts must match at az=${az}`);
+  }
+
+  // 4. F6: Canvas 2D polyline continuity (penDown) under cut=1° (1 moveTo per band, not per segment) + re-entry moveTo across 90° cut
+  // All 10 hist points lie in Q1 (completely visible under cut=1°) and within the brightest age band (age < 2)
+  const visHist = Array.from({ length: 10 }, (_, k) => [1 + k * 0.4, 2 + k * 0.2, 0, 8.5 + k * 0.14]);
+  r2dCtx.r2d.setP([{ x: 5, y: 4, z: 0, hist: visHist }]);
+  r2dCtx.r2d.ensurePartBuffers(1);
+  const pbF6 = r2dCtx.r2d.getPartBuffers();
+  pbF6.rx[0] = 5; pbF6.ry[0] = 4; pbF6.sx[0] = 350; pbF6.sy[0] = 160; pbF6.depth[0] = 0; pbF6.hueT[0] = 0.5;
+  r2dCtx.ops.length = 0;
+  r2dCtx.r2d.drawScene2D({ ...baseSt, n: 1, singleMode: false, showTr: true, cut: cut1 });
+  // Skip first moveTo/lineTo pair (zero-length z-axis at cp=0)
+  const trailMovesHist = r2dCtx.ops.filter((o) => o.op === 'moveTo').length - 1;
+  const trailLinesHist = r2dCtx.ops.filter((o) => o.op === 'lineTo').length - 1;
+  assert.equal(trailLinesHist, 10, 'Expected 10 visible hist segments under cut=1°');
+  assert.equal(trailMovesHist, 1, `Continuous visible hist trail under cut=1° must emit 1 moveTo (not ${trailMovesHist})`);
+
+  // Visible single-mode circular arc in Q1 under cut=1°: 1 moveTo per populated alpha band (<= 5, not N)
+  setupArcAt(r2dCtx.r2d, 80, 0);
+  r2dCtx.ops.length = 0;
+  r2dCtx.r2d.drawScene2D({ ...baseSt, n: 1, singleMode: true, showTr: true, span: 0.6, cut: cut1 });
+  const trailMovesArc = r2dCtx.ops.filter((o) => o.op === 'moveTo').length - 1;
+  const trailLinesArc = r2dCtx.ops.filter((o) => o.op === 'lineTo').length - 1;
+  assert.ok(trailLinesArc >= 8, `Expected >= 8 visible arc segments, got ${trailLinesArc}`);
+  assert.ok(trailMovesArc <= 5, `Continuous visible arc across 5 bands must emit <= 5 moveTo (got ${trailMovesArc} for ${trailLinesArc} segments)`);
+
+  // Crossing 90° cut in a single age band: Q4 -> Q3 -> Q2 must emit exactly 2 moveTo (one before cut, one on re-entry after cut)
+  const crossSingleBand = [
+    [-2, 1, 0, 8.6],  // Q2
+    [-1, -1, 0, 9.0], // Q3 (cut)
+    [1, -2, 0, 9.5],  // Q4
+  ];
+  r2dCtx.r2d.setP([{ x: 2, y: -1, z: 0, hist: crossSingleBand }]);
+  r2dCtx.r2d.ensurePartBuffers(1);
+  pbF6.rx[0] = 2; pbF6.ry[0] = -1; pbF6.sx[0] = 320; pbF6.sy[0] = 210; pbF6.depth[0] = 0; pbF6.hueT[0] = 0.5;
+  r2dCtx.ops.length = 0;
+  r2dCtx.r2d.drawScene2D({ ...baseSt, n: 1, singleMode: false, showTr: true, cut: cut90 });
+  const crossMoves = r2dCtx.ops.filter((o) => o.op === 'moveTo').length - 1;
+  assert.equal(crossMoves, 2, `Crossing 90° cut within 1 age band must emit exactly 2 moveTo (before cut + re-entry), got ${crossMoves}`);
+});
+
+test('Phi cutaway GL regressions: F7 clipped arc sliver filter and R2-F1 edge-on depth-only subpixel step parity', async (t) => {
+  await t.test('F7: microscopic clipped single-mode arc sliver (< 0.01 px) filtered out of GL lineBuf', () => {
+    const glMock = createMockGLContext();
+    const glH = runGLHarness();
+    const glSt = glH.initWebGLRenderer(glMock.canvas);
+    const cut90 = glH.makePhiCut(Math.PI, Math.PI / 2);
+    const phSliver = Math.PI - 1e-5, rhoSliver = 5;
+    const rxSliver = rhoSliver * Math.cos(phSliver), rySliver = rhoSliver * Math.sin(phSliver);
+    glH.setP([{ rho: rhoSliver, ph: phSliver, z: 0, w: -2 }]);
+    glH.ensurePartBuffers(1);
+    const pbSliv = glH.getPartBuffers();
+    pbSliv.rx[0] = rxSliver; pbSliv.ry[0] = rySliver;
+    pbSliv.sx[0] = 300 + rxSliver * 10; pbSliv.sy[0] = 200 - rySliver * 10;
+    pbSliv.depth[0] = 0; pbSliv.hueT[0] = 0.5;
+    glH.drawSceneGL(glSt, {
+      n: 1, singleMode: true, showOverlay: false, showTr: true,
+      cp: 0, sp: 1, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 0.5, tNow: 10, cut: cut90,
+    });
+    assert.equal((glSt.lineFloats / 8) | 0, 0, 'Microscopic (< 0.01 px) clipped arc sliver must be filtered out of GL lineBuf');
+  });
+
+  await t.test('R2-F1: edge-on (tilt=0°, sp=0) depth-only subpixel step advances prx/pry in pushHistTrailGL matching 2D', () => {
+    const glMock = createMockGLContext();
+    const glH = runGLHarness();
+    const glSt = glH.initWebGLRenderer(glMock.canvas);
+    const r2dCtx = createRenderer2DContext({ atlasOk: true, dpr: 1 });
+    const cut90 = glH.makePhiCut(Math.PI, Math.PI / 2);
+    // cp=1, sp=0 (edge-on tilt=0°), E=0 suppresses z-axis dashed line so only trail segments are emitted
+    const edgeSt = {
+      n: 1, singleMode: false, showOverlay: false, showTr: true,
+      cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 0, Om: 0, span: 10, tNow: 10, cut: cut90,
+    };
+    const extract2DSegs = () => {
+      const segs = [];
+      let cur = null;
+      for (const op of r2dCtx.ops) {
+        if (op.op === 'moveTo') cur = [op.x, op.y];
+        else if (op.op === 'lineTo' && cur) {
+          if (Math.hypot(op.x - cur[0], op.y - cur[1]) > 1e-4) segs.push([cur[0], cur[1], op.x, op.y]);
+          cur = [op.x, op.y];
+        }
+      }
+      return segs;
+    };
+    const extractGLSegs = () => {
+      const segs = [];
+      for (let o = 0; o < glSt.lineFloats; o += 8) {
+        segs.push([glSt.lineBuf[o], glSt.lineBuf[o + 1], glSt.lineBuf[o + 2], glSt.lineBuf[o + 3]]);
+      }
+      return segs;
+    };
+    const runEdgeCase = (headX, headY, hist) => {
+      for (const ctxObj of [glH, r2dCtx.r2d]) {
+        ctxObj.setP([{ x: headX, y: headY, z: 0, hist }]);
+        ctxObj.ensurePartBuffers(1);
+        const pb = ctxObj.getPartBuffers();
+        pb.rx[0] = headX; pb.ry[0] = headY;
+        pb.sx[0] = 300 + headX * 10; pb.sy[0] = 200;
+        pb.depth[0] = headY; pb.hueT[0] = 0.5;
+      }
+      glH.drawSceneGL(glSt, edgeSt);
+      r2dCtx.ops.length = 0;
+      r2dCtx.r2d.drawScene2D(edgeSt);
+      return { gl: extractGLSegs(), d2: extract2DSegs() };
+    };
+
+    // Case A: (-1,+10,0) -> (-1,+0.05,0) -> (+1,-1,0) MUST split across Q3 into 2 segments (not penetrate Q3 as 1 segment!)
+    const caseA = runEdgeCase(-1, 10, [[1, -1, 0, 8.5], [-1, 0.05, 0, 9.2]]);
+    assert.equal(caseA.d2.length, 2, `Case A 2D must split Q3-crossing chord into 2 segments, got ${JSON.stringify(caseA.d2)}`);
+    assert.equal(caseA.gl.length, 2, `Case A GL must split Q3-crossing chord into 2 segments (no Q3 penetration), got ${JSON.stringify(caseA.gl)}`);
+    for (let k = 0; k < 2; k++) {
+      for (let c = 0; c < 4; c++) {
+        assert.ok(Math.abs(caseA.gl[k][c] - caseA.d2[k][c]) < 1e-3, `Case A seg ${k}[${c}] GL vs 2D mismatch: ${caseA.gl[k][c]} vs ${caseA.d2[k][c]}`);
+      }
+    }
+
+    // Case B: (-1,+0.05,0) -> (-1,+10,0) -> (+1,-1,0) MUST stay 1 uncut visible segment [290->310] (no spurious ~9px hole!)
+    const caseB = runEdgeCase(-1, 0.05, [[1, -1, 0, 8.5], [-1, 10, 0, 9.2]]);
+    assert.equal(caseB.d2.length, 1, `Case B 2D must emit 1 continuous visible segment, got ${JSON.stringify(caseB.d2)}`);
+    assert.equal(caseB.gl.length, 1, `Case B GL must emit 1 continuous visible segment (no spurious hole), got ${JSON.stringify(caseB.gl)}`);
+    for (let c = 0; c < 4; c++) {
+      assert.ok(Math.abs(caseB.gl[0][c] - caseB.d2[0][c]) < 1e-3, `Case B seg 0[${c}] GL vs 2D mismatch: ${caseB.gl[0][c]} vs ${caseB.d2[0][c]}`);
+    }
+  });
 });

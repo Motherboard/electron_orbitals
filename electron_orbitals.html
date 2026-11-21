@@ -300,6 +300,9 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <label class="lab" for="azim">Rotate</label><input type="range" id="azim" min="-180" max="180" step="1" value="0"><span class="val" id="av">0°</span><button type="button" class="chip" id="view-rst" title="Reset view angle (double-click canvas)">Reset view</button>
 </div>
 <div class="row">
+<label class="lab" for="cut">Cutaway</label><input type="range" id="cut" min="0" max="180" step="1" value="0" aria-valuetext="0° (full orbital)" title="Hide electrons in a counter-clockwise φ wedge starting from −x toward +x to reveal a cross-section"><span class="val" id="cutv">0°</span>
+</div>
+<div class="row">
 <label class="lab" for="cnt">Electrons</label><input type="range" id="cnt" min="50" max="600" step="10" value="220"><span class="val" id="cv">220</span>
 </div>
 <div class="row">
@@ -3888,14 +3891,101 @@ function hueTToRgb(t, out, off = 0) {
   out[off] = r; out[off + 1] = g; out[off + 2] = b;
 }
 
+const _phiCutOff = Object.freeze({
+  active: false, u0x: -1, u0y: 0, u1x: -1, u1y: 0, reflex: false, full: false,
+});
+
+function makePhiCut(startRad, sweepRad) {
+  if (!Number.isFinite(startRad) || !Number.isFinite(sweepRad) || !(sweepRad > 1e-9)) return _phiCutOff;
+  if (sweepRad >= 2 * Math.PI - 1e-9) {
+    return { active: true, u0x: -1, u0y: 0, u1x: -1, u1y: 0, reflex: true, full: true };
+  }
+  const u0x = Math.cos(startRad), u0y = Math.sin(startRad);
+  const isHalf = Math.abs(sweepRad - Math.PI) < 1e-9;
+  let u1x, u1y;
+  if (isHalf) {
+    u1x = -u0x; u1y = -u0y;
+  } else {
+    const endRad = startRad + sweepRad;
+    u1x = Math.cos(endRad); u1y = Math.sin(endRad);
+  }
+  return { active: true, u0x, u0y, u1x, u1y, reflex: !isHalf && sweepRad > Math.PI, full: false };
+}
+
+function rotatePhiCut(cut, ca, sa, out) {
+  const dst = out || {};
+  if (!cut || !cut.active) {
+    dst.active = false;
+    dst.u0x = -1; dst.u0y = 0; dst.u1x = -1; dst.u1y = 0;
+    dst.reflex = false; dst.full = false;
+    return dst;
+  }
+  const u0x = cut.u0x, u0y = cut.u0y, u1x = cut.u1x, u1y = cut.u1y;
+  dst.active = true;
+  dst.u0x = u0x * ca - u0y * sa;
+  dst.u0y = u0x * sa + u0y * ca;
+  dst.u1x = u1x * ca - u1y * sa;
+  dst.u1y = u1x * sa + u1y * ca;
+  dst.reflex = cut.reflex;
+  dst.full = Boolean(cut.full);
+  return dst;
+}
+
+function isXYCut(x, y, cut) {
+  if (!cut || !cut.active) return false;
+  const mag = Math.abs(x) + Math.abs(y);
+  if (cut.reflex) {
+    if (cut.full) return mag > 0;
+    const eps = 1e-12 * mag;
+    return (cut.u0x * y - cut.u0y * x) > eps || (cut.u1x * y - cut.u1y * x) < -eps;
+  }
+  const eps = 1e-12 * mag;
+  return (cut.u0x * y - cut.u0y * x) > eps && (cut.u1x * y - cut.u1y * x) < -eps;
+}
+
+const _clipSpan = new Float64Array(2);
+function _clipHalfPlane(v0, v1, eps, open) {
+  const o0 = open ? v0 <= eps : v0 < -eps;
+  const o1 = open ? v1 <= eps : v1 < -eps;
+  if (o0 && o1) return false;
+  if (o0) { const t = -v0 / (v1 - v0); if (t > _clipSpan[0]) _clipSpan[0] = t; }
+  else if (o1) { const t = -v0 / (v1 - v0); if (t < _clipSpan[1]) _clipSpan[1] = t; }
+  return true;
+}
+
+const _clipOut = new Float64Array(4);
+function clipSegPhiCut(x0, y0, x1, y1, cut, out) {
+  const mag = Math.abs(x0) + Math.abs(y0) + Math.abs(x1) + Math.abs(y1);
+  if (!Number.isFinite(mag)) return 0;
+  if (!cut || !cut.active) { out[0] = 0; out[1] = 1; return 1; }
+  if (cut.reflex && cut.full) return 0;
+  const eps = 1e-12 * mag;
+  const c0_0 = cut.u0x * y0 - cut.u0y * x0, c0_1 = cut.u0x * y1 - cut.u0y * x1;
+  const c1_0 = cut.u1x * y0 - cut.u1y * x0, c1_1 = cut.u1x * y1 - cut.u1y * x1;
+  _clipSpan[0] = 0; _clipSpan[1] = 1;
+  if (!cut.reflex) {
+    if (!_clipHalfPlane(c0_0, c0_1, eps, true) || !_clipHalfPlane(-c1_0, -c1_1, eps, true) || _clipSpan[1] - _clipSpan[0] <= 1e-9) {
+      out[0] = 0; out[1] = 1; return 1;
+    }
+    const tLo = _clipSpan[0], tHi = _clipSpan[1];
+    let cnt = 0;
+    if (tLo > 1e-9) { out[0] = 0; out[1] = tLo; cnt = 1; }
+    if (tHi < 1 - 1e-9) { out[cnt * 2] = tHi; out[cnt * 2 + 1] = 1; cnt++; }
+    return cnt;
+  }
+  if (!_clipHalfPlane(-c0_0, -c0_1, eps, false) || !_clipHalfPlane(c1_0, c1_1, eps, false) || _clipSpan[1] - _clipSpan[0] <= 1e-9) return 0;
+  out[0] = _clipSpan[0]; out[1] = _clipSpan[1];
+  return 1;
+}
+
 let partCap = 0, partLastN = -1;
 let partOrder = new Int32Array(0), partDepth = new Float32Array(0);
 let partSX = new Float32Array(0), partSY = new Float32Array(0);
-let partRX = new Float32Array(0), partRY = new Float32Array(0);
+let partRX = new Float64Array(0), partRY = new Float64Array(0);
 let partHueT = new Float32Array(0);
 const _frameState = {
   n: 0, singleMode: true, showOverlay: false, showTr: false,
-  cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 0, cy: 0, S: 1, E: 1, Om: 0, span: 0, tNow: NaN,
+  cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 0, cy: 0, S: 1, E: 1, Om: 0, span: 0, tNow: NaN, cut: _phiCutOff,
 };
 
 function ensurePartBuffers(n) {
@@ -3907,8 +3997,8 @@ function ensurePartBuffers(n) {
     partDepth = new Float32Array(cap);
     partSX = new Float32Array(cap);
     partSY = new Float32Array(cap);
-    partRX = new Float32Array(cap);
-    partRY = new Float32Array(cap);
+    partRX = new Float64Array(cap);
+    partRY = new Float64Array(cap);
     partHueT = new Float32Array(cap);
     partCap = cap;
     partLastN = n;
@@ -4478,8 +4568,20 @@ function ensureTrail2DBuffers(n) {
   _trCap2D = cap;
 }
 
+function emitClippedSeg2D(px, py, nx, ny, nSeg, penDown) {
+  if (nSeg <= 0) return false;
+  const dx = nx - px, dy = ny - py;
+  for (let ci = 0; ci < nSeg; ci++) {
+    const tA = _clipOut[ci * 2], tB = _clipOut[ci * 2 + 1];
+    if (!(ci === 0 && tA === 0 && penDown)) ctx.moveTo(px + tA * dx, py + tA * dy);
+    ctx.lineTo(px + tB * dx, py + tB * dy);
+  }
+  return _clipOut[(nSeg - 1) * 2 + 1] === 1;
+}
+
 function drawBatchedTrails2D(st) {
-  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, Om, span, tNow } = st;
+  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, Om, span, tNow, cut } = st;
+  const cutActive = Boolean(cut && cut.active);
   const C = SPHERE_CFG, bMax = TRAIL_BUCKETS_2D - 1, invBands = 1 / TRAIL_BANDS_2D, cutStride = TRAIL_BANDS_2D + 1;
   ensureTrail2DBuffers(n);
   _trHead2D.fill(-1);
@@ -4539,20 +4641,46 @@ function drawBatchedTrails2D(st) {
           const hh = q.hist, len = hh.length, cutBase = i * cutStride;
           const j0 = _trCut2D[cutBase + ab], j1 = _trCut2D[cutBase + ab + 1];
           if (j0 >= j1) continue;
-          let px, py;
-          if (j0 === 0) {
-            px = partSX[i]; py = partSY[i];
+          if (!cutActive) {
+            let px, py;
+            if (j0 === 0) {
+              px = partSX[i]; py = partSY[i];
+            } else {
+              const p0 = hh[len - j0], rx0 = p0[0] * ca - p0[1] * sa, ry0 = p0[0] * sa + p0[1] * ca;
+              px = cx + rx0 * S; py = cy - (ry0 * spS + p0[2] * cpS);
+            }
+            if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+            ctx.moveTo(px, py);
+            hasSeg = true;
+            for (let j = j0; j < j1; j++) {
+              const pt = hh[len - 1 - j], rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
+              const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
+              if (Number.isFinite(nx) && Number.isFinite(ny)) ctx.lineTo(nx, ny);
+            }
           } else {
-            const p0 = hh[len - j0], rx0 = p0[0] * ca - p0[1] * sa, ry0 = p0[0] * sa + p0[1] * ca;
-            px = cx + rx0 * S; py = cy - (ry0 * spS + p0[2] * cpS);
-          }
-          if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
-          ctx.moveTo(px, py);
-          hasSeg = true;
-          for (let j = j0; j < j1; j++) {
-            const pt = hh[len - 1 - j], rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
-            const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
-            if (Number.isFinite(nx) && Number.isFinite(ny)) ctx.lineTo(nx, ny);
+            let prx, pry, px, py;
+            if (j0 === 0) {
+              prx = partRX[i]; pry = partRY[i];
+              px = partSX[i]; py = partSY[i];
+            } else {
+              const p0 = hh[len - j0];
+              prx = p0[0] * ca - p0[1] * sa; pry = p0[0] * sa + p0[1] * ca;
+              px = cx + prx * S; py = cy - (pry * spS + p0[2] * cpS);
+            }
+            if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+            let penDown = false;
+            for (let j = j0; j < j1; j++) {
+              const pt = hh[len - 1 - j], rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
+              const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
+              if (Number.isFinite(nx) && Number.isFinite(ny)) {
+                const nSeg = clipSegPhiCut(prx, pry, rx, ry, cut, _clipOut);
+                if (nSeg > 0) hasSeg = true;
+                penDown = emitClippedSeg2D(px, py, nx, ny, nSeg, penDown);
+                prx = rx; pry = ry; px = nx; py = ny;
+              } else {
+                penDown = false;
+              }
+            }
           }
         } else {
           const N = _trArcN2D[i];
@@ -4560,16 +4688,31 @@ function drawBatchedTrails2D(st) {
           if (k0 >= k1) continue;
           const dc = _trArcDc2D[i], ds = _trArcDs2D[i], qzS = q.z * cpS;
           let rx = _trArcRx2D[i], ry = _trArcRy2D[i];
-          const lx = k0 === 0 ? partSX[i] : cx + rx * S;
-          const ly = k0 === 0 ? partSY[i] : cy - (ry * spS + qzS);
+          let lx = k0 === 0 ? partSX[i] : cx + rx * S;
+          let ly = k0 === 0 ? partSY[i] : cy - (ry * spS + qzS);
           if (!Number.isFinite(lx) || !Number.isFinite(ly)) continue;
-          ctx.moveTo(lx, ly);
-          hasSeg = true;
-          for (let k = k0 + 1; k <= k1; k++) {
-            const nrx = rx * dc - ry * ds;
-            ry = rx * ds + ry * dc;
-            rx = nrx;
-            ctx.lineTo(cx + rx * S, cy - (ry * spS + qzS));
+          if (!cutActive) {
+            ctx.moveTo(lx, ly);
+            hasSeg = true;
+            for (let k = k0 + 1; k <= k1; k++) {
+              const nrx = rx * dc - ry * ds;
+              ry = rx * ds + ry * dc;
+              rx = nrx;
+              ctx.lineTo(cx + rx * S, cy - (ry * spS + qzS));
+            }
+          } else {
+            let penDown = false;
+            for (let k = k0 + 1; k <= k1; k++) {
+              const prx = rx, pry = ry;
+              const nrx = rx * dc - ry * ds;
+              ry = rx * ds + ry * dc;
+              rx = nrx;
+              const nx = cx + rx * S, ny = cy - (ry * spS + qzS);
+              const nSeg = clipSegPhiCut(prx, pry, rx, ry, cut, _clipOut);
+              if (nSeg > 0) hasSeg = true;
+              penDown = emitClippedSeg2D(lx, ly, nx, ny, nSeg, penDown);
+              lx = nx; ly = ny;
+            }
           }
           _trArcRx2D[i] = rx;
           _trArcRy2D[i] = ry;
@@ -4604,7 +4747,8 @@ function drawHud2D(cp, sp, ca, sa, cx, cy, S, E_val) {
 }
 
 function drawScene2D(st) {
-  const { n, showOverlay, showTr, cp, sp, ca, sa, cx, cy, S, E: E_val } = st;
+  const { n, showOverlay, showTr, cp, sp, ca, sa, cx, cy, S, E: E_val, cut } = st;
+  const cutActive = Boolean(cut && cut.active);
   const C = SPHERE_CFG, radSpan = C.radFront - C.radBack;
   ctx.clearRect(0, 0, W, H);
   if (showOverlay && offW > 0 && offH > 0 && offIm && offIm.width === offW && offIm.height === offH) {
@@ -4644,6 +4788,7 @@ function drawScene2D(st) {
         nucDrawn = true;
         drawnSpheres++;
       }
+      if (cutActive && isXYCut(partRX[i], partRY[i], cut)) continue;
       const sx = partSX[i], sy = partSY[i];
       if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(depth)) continue;
       let dn = (depth * invE + 1) * 0.5;
@@ -5032,13 +5177,33 @@ function ensureLineFloats(s, need) {
   s.lineBuf = next;
 }
 
-function pushHistTrailGL(s, hh, sx0, sy0, cx, cy, S, cp, sp, ca, sa, r, g, b, tNow, span) {
+function writeLineQuad(buf, f, x0, y0, x1, y1, r, g, b, a) {
+  buf[f] = x0; buf[f + 1] = y0; buf[f + 2] = x1; buf[f + 3] = y1;
+  buf[f + 4] = r; buf[f + 5] = g; buf[f + 6] = b; buf[f + 7] = a;
+  return f + 8;
+}
+
+function emitClippedQuadsGL(buf, f, x0, y0, dx, dy, nSeg, r, g, b, a) {
+  for (let ci = 0; ci < nSeg; ci++) {
+    const tA = _clipOut[ci * 2], tB = _clipOut[ci * 2 + 1];
+    const ax = x0 + tA * dx, ay = y0 + tA * dy;
+    const bx = x0 + tB * dx, by = y0 + tB * dy;
+    const sdx = bx - ax, sdy = by - ay;
+    if (sdx * sdx + sdy * sdy >= 1e-4) {
+      f = writeLineQuad(buf, f, ax, ay, bx, by, r, g, b, a);
+    }
+  }
+  return f;
+}
+
+function pushHistTrailGL(s, hh, sx0, sy0, rx0, ry0, cx, cy, S, cp, sp, ca, sa, r, g, b, tNow, span, cut) {
   const len = hh.length;
   if (!len || !Number.isFinite(sx0) || !Number.isFinite(sy0)) return;
-  ensureLineFloats(s, s.lineFloats + len * 8);
+  const cutActive = Boolean(cut && cut.active);
+  ensureLineFloats(s, s.lineFloats + len * (cutActive ? 16 : 8));
   const buf = s.lineBuf, trA = SPHERE_CFG.trailAlpha, invLen = 1 / (len + 1), spS = sp * S, cpS = cp * S;
   const effSpan = trailAgeSpan(hh, len, tNow, span), invSpan = effSpan > 0 ? 1 / effSpan : 0;
-  let f = s.lineFloats, px = sx0, py = sy0;
+  let f = s.lineFloats, px = sx0, py = sy0, prx = rx0, pry = ry0;
   for (let j = 0; j < len; j++) {
     const pt = hh[len - 1 - j];
     let frac;
@@ -5051,13 +5216,25 @@ function pushHistTrailGL(s, hh, sx0, sy0, cx, cy, S, cp, sp, ca, sa, r, g, b, tN
     }
     const rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
     const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
-    if (Number.isFinite(nx) && Number.isFinite(ny)) {
-      const dx = nx - px, dy = ny - py;
+    if (!Number.isFinite(nx) || !Number.isFinite(ny)) continue;
+    const dx = nx - px, dy = ny - py;
+    if (!cutActive) {
       if (dx * dx + dy * dy >= 1e-4) {
-        buf[f] = px; buf[f + 1] = py; buf[f + 2] = nx; buf[f + 3] = ny;
-        buf[f + 4] = r; buf[f + 5] = g; buf[f + 6] = b; buf[f + 7] = trA * frac;
-        f += 8; px = nx; py = ny;
+        f = writeLineQuad(buf, f, px, py, nx, ny, r, g, b, trA * frac);
+        px = nx; py = ny;
       }
+    } else {
+      const nSeg = clipSegPhiCut(prx, pry, rx, ry, cut, _clipOut);
+      if (nSeg === 1 && _clipOut[0] === 0 && _clipOut[1] === 1) {
+        if (dx * dx + dy * dy >= 1e-4) {
+          f = writeLineQuad(buf, f, px, py, nx, ny, r, g, b, trA * frac);
+          px = nx; py = ny;
+        }
+      } else {
+        f = emitClippedQuadsGL(buf, f, px, py, dx, dy, nSeg, r, g, b, trA * frac);
+        px = nx; py = ny;
+      }
+      prx = rx; pry = ry;
     }
   }
   s.lineFloats = f;
@@ -5081,7 +5258,8 @@ function drawOverlayGL(s) {
 }
 
 function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
-  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, E: E_val, Om, span, tNow } = st;
+  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, E: E_val, Om, span, tNow, cut } = st;
+  const cutActive = Boolean(cut && cut.active);
   const C = SPHERE_CFG;
   s.lineFloats = 0;
 
@@ -5111,24 +5289,39 @@ function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
         const q = P[i], wt = q.w + Om, i3 = i * 3;
         const trR = partRgb[i3], trG = partRgb[i3 + 1], trB = partRgb[i3 + 2];
         if (q.hist && q.hist.length > 1) {
-          pushHistTrailGL(s, q.hist, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, trR, trG, trB, tNow, span);
+          pushHistTrailGL(s, q.hist, partSX[i], partSY[i], partRX[i], partRY[i], cx, cy, S, cp, sp, ca, sa, trR, trG, trB, tNow, span, cut);
         } else if (Math.abs(wt) > 1e-9) {
           const sx0 = partSX[i], sy0 = partSY[i];
           if (!Number.isFinite(sx0) || !Number.isFinite(sy0)) continue;
           const arc = Math.min(Math.abs(wt) * span, C.arcMax), dir = wt > 0 ? 1 : -1;
           const N = Math.max(C.arcMinSegs, Math.ceil(arc / C.arcStep));
-          ensureLineFloats(s, s.lineFloats + N * 8);
+          ensureLineFloats(s, s.lineFloats + N * (cutActive ? 16 : 8));
           const buf = s.lineBuf, qzS = q.z * cpS, invNp1 = 1 / (N + 1);
           const dPhi = (-dir * arc) / N, dc = Math.cos(dPhi), ds = Math.sin(dPhi);
           let f = s.lineFloats, rx = partRX[i], ry = partRY[i], lx = sx0, ly = sy0;
-          for (let k = 1; k <= N; k++) {
-            const nrx = rx * dc - ry * ds;
-            ry = rx * ds + ry * dc;
-            rx = nrx;
-            const nx = cx + rx * S, ny = cy - (ry * spS + qzS), al = trA * (1 - k * invNp1);
-            buf[f] = lx; buf[f + 1] = ly; buf[f + 2] = nx; buf[f + 3] = ny;
-            buf[f + 4] = trR; buf[f + 5] = trG; buf[f + 6] = trB; buf[f + 7] = al;
-            f += 8; lx = nx; ly = ny;
+          if (!cutActive) {
+            for (let k = 1; k <= N; k++) {
+              const nrx = rx * dc - ry * ds;
+              ry = rx * ds + ry * dc;
+              rx = nrx;
+              const nx = cx + rx * S, ny = cy - (ry * spS + qzS), al = trA * (1 - k * invNp1);
+              buf[f] = lx; buf[f + 1] = ly; buf[f + 2] = nx; buf[f + 3] = ny;
+              buf[f + 4] = trR; buf[f + 5] = trG; buf[f + 6] = trB; buf[f + 7] = al;
+              f += 8; lx = nx; ly = ny;
+            }
+          } else {
+            for (let k = 1; k <= N; k++) {
+              const prx = rx, pry = ry;
+              const nrx = rx * dc - ry * ds;
+              ry = rx * ds + ry * dc;
+              rx = nrx;
+              const nx = cx + rx * S, ny = cy - (ry * spS + qzS);
+              const nSeg = clipSegPhiCut(prx, pry, rx, ry, cut, _clipOut);
+              if (nSeg > 0) {
+                f = emitClippedQuadsGL(buf, f, lx, ly, nx - lx, ny - ly, nSeg, trR, trG, trB, trA * (1 - k * invNp1));
+              }
+              lx = nx; ly = ny;
+            }
           }
           s.lineFloats = f;
         }
@@ -5138,7 +5331,7 @@ function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
         const q = P[i], hh = q.hist;
         if (!hh || !hh.length) continue;
         const i3 = i * 3;
-        pushHistTrailGL(s, hh, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, partRgb[i3], partRgb[i3 + 1], partRgb[i3 + 2], tNow, span);
+        pushHistTrailGL(s, hh, partSX[i], partSY[i], partRX[i], partRY[i], cx, cy, S, cp, sp, ca, sa, partRgb[i3], partRgb[i3 + 1], partRgb[i3 + 2], tNow, span, cut);
       }
     }
   }
@@ -5171,7 +5364,8 @@ function pushNucleusInstance(instBuf, instCount, cx, cy, nucAlpha) {
 }
 
 function drawSpheresGL(s, st, glDpr, rgbPrecomputed) {
-  const { n, cx, cy, E: E_val } = st;
+  const { n, cx, cy, E: E_val, cut } = st;
+  const cutActive = Boolean(cut && cut.active);
   const C = SPHERE_CFG, radSpan = C.radFront - C.radBack, alphaSpan = C.alphaFront - C.alphaBack;
   const needInstFloats = (n + 1) * 8;
   if (needInstFloats > s.instBuf.length) {
@@ -5189,6 +5383,7 @@ function drawSpheresGL(s, st, glDpr, rgbPrecomputed) {
       instCount = pushNucleusInstance(instBuf, instCount, cx, cy, nucAlpha);
       nucDrawn = true;
     }
+    if (cutActive && isXYCut(partRX[i], partRY[i], cut)) continue;
     const sx = partSX[i], sy = partSY[i];
     if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(depth)) continue;
     let dn = (depth * invE + 1) * 0.5;
@@ -5250,6 +5445,23 @@ function drawSceneGL(s, st) {
 let glState = null, _glForceTried = false;
 let _hudDirty = true, _hudStageVer = -1, _hudThemeVer = -1;
 let _hudP = NaN, _hudAz = NaN, _hudE = -1, _hudPulse = null, _hudPulseT = -1;
+let phiCutStartRad = Math.PI, lastCutElVal = '0', _baseCut = _phiCutOff;
+const _viewCut = { active: false, u0x: -1, u0y: 0, u1x: -1, u1y: 0, reflex: false, full: false };
+function setPhiCutDeg(deg) {
+  const d = Number.isFinite(deg) ? Math.max(0, Math.min(180, Math.round(deg))) : 0;
+  lastCutElVal = String(d);
+  _baseCut = makePhiCut(phiCutStartRad, d * Math.PI / 180);
+  const el = $('cut');
+  if (el) { el.value = lastCutElVal; el.setAttribute('aria-valuetext', d === 0 ? '0° (full orbital)' : d + '°'); }
+  const valEl = $('cutv');
+  if (valEl) valEl.textContent = d + '°';
+}
+function getPhiCut() {
+  const el = $('cut');
+  if (el && el.value !== lastCutElVal) setPhiCutDeg(+el.value);
+  return _baseCut;
+}
+$('cut').oninput = e => setPhiCutDeg(+e.target.value);
 function frame(now) {
   const curDpr = window.devicePixelRatio;
   if (Number.isFinite(curDpr) && curDpr > 0 && curDpr !== _stageDpr) resize();
@@ -5313,6 +5525,7 @@ function frame(now) {
   } else if (n > 0) {
     for (let i = 0; i < n; i++) {
       const q = P[i], rx = q.x * ca - q.y * sa, ry = q.x * sa + q.y * ca;
+      partRX[i] = rx; partRY[i] = ry;
       partSX[i] = cx + rx * S; partSY[i] = cy - (ry * sp + q.z * cp) * S; partDepth[i] = ry * cp - q.z * sp;
       const ht = Math.sqrt(q.x * q.x + q.y * q.y) * inv08E;
       partHueT[i] = ht > 0 ? (ht < 1 ? ht : 1) : 0;
@@ -5322,10 +5535,13 @@ function frame(now) {
     const showOverlay = $('ov').checked && renderOverlay(p, az, S, cx, cy);
     const showTr = $('tr').checked && (!!pulse || eff.length >= 2 || hasHistTrails || (singleMode && (eff[0].m !== 0 || Bau !== 0)));
     sortParticleOrder(partOrder, partDepth, n);
+    const baseCut = getPhiCut();
+    const viewCut = baseCut.active ? rotatePhiCut(baseCut, ca, sa, _viewCut) : _phiCutOff;
     const st = _frameState;
     st.n = n; st.singleMode = singleMode; st.showOverlay = showOverlay; st.showTr = showTr;
     st.cp = cp; st.sp = sp; st.ca = ca; st.sa = sa; st.az = az; st.cx = cx; st.cy = cy; st.S = S; st.E = E; st.Om = Om; st.span = span;
     st.tNow = pulse ? pulse.t : tSim;
+    st.cut = viewCut;
     const force = typeof window !== 'undefined' ? (window.__forceRenderer || null) : null;
     if (force === 'webgl2' && !glState && !_glForceTried && glCv) {
       _glForceTried = true;
@@ -5612,6 +5828,7 @@ function initTutorial(){
     components=(d.states&&d.states.length?d.states:[{n:1,l:0,m:0,amp:1,phaseDeg:0}]).map(s=>({id:nextId++,n:s.n,l:s.l,m:s.m,amp:s.amp??1,phaseDeg:s.phaseDeg??0}));
     rebuildComponentList();
     setViewAngles(d.tilt!==undefined?d.tilt*Math.PI/180:getTiltRad(),(d.azimuth||0)*Math.PI/180);
+    setPhiCutDeg(d.cutaway!==undefined?+d.cutaway:0);
     if(d.speed!==undefined){$('spd').value=String(d.speed);$('sv').textContent=(+d.speed).toFixed(1)+'×';}
     if(d.trails!==undefined)$('tr').checked=!!d.trails;
     if(d.overlay!==undefined)$('ov').checked=!!d.overlay;

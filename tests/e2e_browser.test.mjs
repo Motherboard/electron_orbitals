@@ -1734,3 +1734,316 @@ test('E2E smooth curved trails: 3p,0 + 3p,+1 at 500 T under live Web Worker play
     await closeBrowserPage(session);
   }
 });
+
+test('E2E phi cutaway slider: UI sync, 320px layout, view-rst/tutorial interaction, and dual-backend 4-quadrant culling + trail clipping', async () => {
+  const browserBin = findBrowser();
+  assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
+
+  const session = await launchBrowserPage({
+    browserBin,
+    url: HTML_URL,
+    flags: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+    windowSize: '1000,1200',
+    tempPrefix: 'orbitals-e2e-cutaway-',
+    enableLog: true,
+    colorScheme: 'light',
+    settleMs: 500,
+  });
+  const { cdp, evalJS, waitUntil } = session;
+  const waitFrames = async (count = 3) => {
+    await evalJS(`new Promise((resolve) => {
+      let left = ${count};
+      const step = () => { if (--left <= 0) resolve(true); else requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    })`);
+  };
+
+  try {
+    // Enable WebGL2 opt-in under SwiftShader
+    await evalJS("window.__forceRenderer = 'webgl2';");
+    await waitUntil('Boolean(window.__renderInfo && window.__renderInfo.backend === "webgl2")', 6000);
+
+    // 1. Slider defaults, readout, aria-valuetext, and #view-rst preservation
+    const initUI = await evalJS(`(() => {
+      const cut = document.getElementById('cut');
+      const cutv = document.getElementById('cutv');
+      return {
+        exists: Boolean(cut && cutv),
+        min: cut?.min, max: cut?.max, step: cut?.step, val: cut?.value,
+        aria: cut?.getAttribute('aria-valuetext'),
+        text: cutv?.textContent,
+      };
+    })()`);
+    assert.equal(initUI.exists, true, 'Expected #cut and #cutv elements');
+    assert.equal(initUI.min, '0');
+    assert.equal(initUI.max, '180');
+    assert.equal(initUI.step, '1');
+    assert.equal(initUI.val, '0');
+    assert.equal(initUI.aria, '0° (full orbital)');
+    assert.equal(initUI.text, '0°');
+
+    // Change tilt, azim, and cutaway -> click #view-rst -> tilt/azim reset while #cut stays at 120°
+    const afterViewRst = await evalJS(`(() => {
+      const cut = document.getElementById('cut');
+      cut.value = '120'; cut.dispatchEvent(new Event('input'));
+      setViewAngles(60 * Math.PI / 180, 75 * Math.PI / 180);
+      const midAria = cut.getAttribute('aria-valuetext');
+      const midText = document.getElementById('cutv').textContent;
+      document.getElementById('view-rst').click();
+      return {
+        midAria, midText,
+        cutAfterRst: cut.value,
+        cutvAfterRst: document.getElementById('cutv').textContent,
+        tiltAfterRst: document.getElementById('tilt').value,
+        azimAfterRst: document.getElementById('azim').value,
+      };
+    })()`);
+    assert.equal(afterViewRst.midAria, '120°');
+    assert.equal(afterViewRst.midText, '120°');
+    assert.equal(afterViewRst.cutAfterRst, '120', '#view-rst must preserve cutaway angle');
+    assert.equal(afterViewRst.cutvAfterRst, '120°');
+    assert.equal(afterViewRst.tiltAfterRst, '35');
+    assert.equal(afterViewRst.azimAfterRst, '0');
+
+    // 2. applyTutorialDemo resets cutaway to 0°
+    const afterTutDemo = await evalJS(`(() => {
+      if (document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      const sel = document.getElementById('tut-sel');
+      sel.value = '0'; sel.dispatchEvent(new Event('change'));
+      const btn = document.querySelector('#tut-body .tut-demo-btn');
+      if (btn) btn.click();
+      if (!document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      const cut = document.getElementById('cut');
+      return {
+        hasBtn: Boolean(btn),
+        val: cut.value,
+        text: document.getElementById('cutv').textContent,
+        aria: cut.getAttribute('aria-valuetext'),
+      };
+    })()`);
+    assert.equal(afterTutDemo.hasBtn, true);
+    assert.equal(afterTutDemo.val, '0', 'applyTutorialDemo must reset cutaway to 0°');
+    assert.equal(afterTutDemo.text, '0°');
+    assert.equal(afterTutDemo.aria, '0° (full orbital)');
+
+    // 3. 320px mobile zero-overflow check for #cut row
+    await cdp.call('Emulation.setDeviceMetricsOverride', {
+      width: 320, height: 850, deviceScaleFactor: 2, mobile: true,
+    });
+    await waitFrames(2);
+    const mobCut = await evalJS(`(() => {
+      const r = document.getElementById('cutv').getBoundingClientRect();
+      return { scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth, cutvRight: r.right };
+    })()`);
+    assert.ok(mobCut.scrollW <= mobCut.innerW, `Expected 0 horizontal overflow at 320px, got ${mobCut.scrollW} > ${mobCut.innerW}`);
+    assert.ok(mobCut.cutvRight <= mobCut.innerW, `Expected #cutv within 320px viewport, got right=${mobCut.cutvRight}`);
+    await cdp.call('Emulation.setDeviceMetricsOverride', {
+      width: 1000, height: 1200, deviceScaleFactor: 1, mobile: false,
+    });
+    await waitFrames(2);
+
+    // 4. Asymmetric bitmask 4-quadrant particles (Q1:1, Q2:2, Q3:4, Q4:8 -> 16 total, 12 at 90°, 4 at 180°) + pixel verification on both WebGL2 & 2D
+    const captureCanvasPng = async () => {
+      const rect = await evalJS(`(() => {
+        const r = document.getElementById('c').getBoundingClientRect();
+        return { left: r.left, top: r.top, width: r.width, height: r.height, vw: window.innerWidth, vh: window.innerHeight };
+      })()`);
+      const { data } = await cdp.call('Page.captureScreenshot', { format: 'png' });
+      const png = decodePngRgba(data);
+      return { png, rect, scaleX: png.width / rect.vw, scaleY: png.height / rect.vh };
+    };
+    const sampleCssPixel = (shot, cssX, cssY) => {
+      const px = Math.max(0, Math.min(shot.png.width - 1, Math.round((shot.rect.left + cssX) * shot.scaleX)));
+      const py = Math.max(0, Math.min(shot.png.height - 1, Math.round((shot.rect.top + cssY) * shot.scaleY)));
+      const idx = (py * shot.png.width + px) * 4;
+      const d = shot.png.data;
+      return [d[idx], d[idx + 1], d[idx + 2]];
+    };
+    const minLumInBox = (shot, cx, cy, r = 3) => {
+      let minL = 255;
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const [R, G, B] = sampleCssPixel(shot, cx + dx, cy + dy);
+          const L = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+          if (L < minL) minL = L;
+        }
+      }
+      return minL;
+    };
+
+    await evalJS(`(() => {
+      if (run) document.getElementById('pp').click();
+      const ov = document.getElementById('ov');
+      if (ov.checked) { ov.checked = false; ov.dispatchEvent(new Event('change')); }
+      document.getElementById('tr').checked = true;
+    })()`);
+
+    const checkQuadsForBackend = async (backend) => {
+      await evalJS(`window.__forceRenderer = '${backend}';`);
+      await waitUntil(`window.__renderInfo && window.__renderInfo.backend === '${backend}'`, 5000);
+
+      // 4a. singleMode: 2p, m=+1 with bitmask counts Q1:1, Q2:2, Q3:4, Q4:8 (P.length = 15)
+      await evalJS(`(() => {
+        components = [{ id: nextId++, n: 2, l: 1, m: 1, amp: 1, phaseDeg: 0 }];
+        rebuildComponentList();
+        refresh(false, true);
+        const mk = (basePh, count) => Array.from({ length: count }, (_, k) => ({
+          rho: 3 + k * 0.25, ph: basePh + (k - count * 0.5) * 0.08, z: 0, w: 1.2,
+        }));
+        P = [
+          ...mk(Math.PI / 4, 1),
+          ...mk(3 * Math.PI / 4, 2),
+          ...mk(5 * Math.PI / 4, 4),
+          ...mk(7 * Math.PI / 4, 8),
+        ];
+      })()`);
+
+      for (const azDeg of [0, 45, -110]) {
+        await evalJS(`setViewAngles(35 * Math.PI / 180, ${(azDeg * Math.PI) / 180});`);
+        const lineVertsByCut = {};
+        for (const [cutDeg, expectedSpheres] of [[0, 16], [90, 12], [180, 4]]) {
+          // Exercise both oninput and programmatic value sync (at 90° set value directly without oninput)
+          if (cutDeg === 90 && azDeg === 0) {
+            await evalJS(`document.getElementById('cut').value = '90';`);
+          } else {
+            await evalJS(`(() => { const c = document.getElementById('cut'); c.value = '${cutDeg}'; c.dispatchEvent(new Event('input')); })()`);
+          }
+          await waitFrames(3);
+          const snap = await evalJS(`({ info: window.__renderInfo, pLen: P.length, cutv: document.getElementById('cutv').textContent })`);
+          assert.equal(snap.info.backend, backend);
+          assert.equal(snap.pLen, 15, `[${backend}] Cutaway must never mutate P`);
+          assert.equal(snap.cutv, `${cutDeg}°`, `[${backend}] #cutv must stay synced even on programmatic #cut.value`);
+          assert.equal(snap.info.sphereCount, expectedSpheres, `[${backend} singleMode az=${azDeg}° cut=${cutDeg}°] bitmask sphereCount`);
+          lineVertsByCut[cutDeg] = snap.info.lineVerts;
+        }
+        if (backend === 'webgl2') {
+          assert.ok(
+            lineVertsByCut[180] < lineVertsByCut[90] && lineVertsByCut[90] < lineVertsByCut[0],
+            `[webgl2 singleMode az=${azDeg}°] Expected lineVerts to shrink with cutaway: 0°=${lineVertsByCut[0]}, 90°=${lineVertsByCut[90]}, 180°=${lineVertsByCut[180]}`
+          );
+        }
+      }
+
+      // 4b. multi-state: 1s + 2p,0 with bitmask counts Q1:1, Q2:2, Q3:4, Q4:8 ({x, y, z, hist})
+      await evalJS(`(() => {
+        components = [
+          { id: nextId++, n: 1, l: 0, m: 0, amp: 1, phaseDeg: 0 },
+          { id: nextId++, n: 2, l: 1, m: 0, amp: 1, phaseDeg: 0 },
+        ];
+        rebuildComponentList();
+        refresh(false, true);
+        tSim = 10;
+        const mkHist = (x, y) => [[x * 0.6, y * 0.6, 0, 6], [x * 0.8, y * 0.8, 0, 8], [x * 0.9, y * 0.9, 0, 9]];
+        const mkQ = (sx, sy, count) => Array.from({ length: count }, (_, k) => {
+          const x = sx * (2.5 + k * 0.2), y = sy * (2.5 + k * 0.15);
+          return { x, y, z: 0, hist: mkHist(x, y) };
+        });
+        P = [
+          ...mkQ(1, 1, 1),
+          ...mkQ(-1, 1, 2),
+          ...mkQ(-1, -1, 4),
+          ...mkQ(1, -1, 8),
+        ];
+      })()`);
+
+      for (const azDeg of [0, 60]) {
+        await evalJS(`setViewAngles(35 * Math.PI / 180, ${(azDeg * Math.PI) / 180});`);
+        const lineVertsByCut = {};
+        for (const [cutDeg, expectedSpheres] of [[0, 16], [90, 12], [180, 4]]) {
+          await evalJS(`(() => { const c = document.getElementById('cut'); c.value = '${cutDeg}'; c.dispatchEvent(new Event('input')); })()`);
+          await waitFrames(3);
+          const snap = await evalJS(`({ info: window.__renderInfo, pLen: P.length })`);
+          assert.equal(snap.pLen, 15, `[${backend} multi-state] Cutaway must never mutate P`);
+          assert.equal(snap.info.sphereCount, expectedSpheres, `[${backend} multi-state az=${azDeg}° cut=${cutDeg}°] bitmask sphereCount`);
+          lineVertsByCut[cutDeg] = snap.info.lineVerts;
+        }
+        if (backend === 'webgl2') {
+          assert.ok(
+            lineVertsByCut[180] < lineVertsByCut[90] && lineVertsByCut[90] < lineVertsByCut[0],
+            `[webgl2 multi-state az=${azDeg}°] Expected lineVerts to shrink with cutaway: 0°=${lineVertsByCut[0]}, 90°=${lineVertsByCut[90]}, 180°=${lineVertsByCut[180]}`
+          );
+        }
+      }
+
+      // 4c. Canvas pixel verification on top-down view (tilt=90°, az=0°): verify Q3/Q4 spheres disappear at 90°/180° while Q1/Q2 remain, and 2D trail pixels vanish in Q3
+      const pxCoords = await evalJS(`(() => {
+        setViewAngles(Math.PI / 2, 0);
+        const r = 0.45 * E;
+        tSim = 10;
+        const trail = (x, y) => [[x * 0.35, y * 0.35, 0, 8.5], [x * 0.65, y * 0.65, 0, 9.2], [x * 0.9, y * 0.9, 0, 9.7]];
+        P = [
+          { x: r, y: r, z: 0, hist: trail(r, r) },     // Q1
+          { x: -r, y: r, z: 0, hist: trail(-r, r) },   // Q2
+          { x: -r, y: -r, z: 0, hist: trail(-r, -r) }, // Q3
+          { x: r, y: -r, z: 0, hist: trail(r, -r) },   // Q4
+        ];
+        const S = Math.min(W, H * 1.15) / (2 * E), cx = W / 2, cy = H / 2;
+        return {
+          q1: [cx + r * S, cy - r * S],
+          q2: [cx - r * S, cy - r * S],
+          q3: [cx - r * S, cy + r * S],
+          q4: [cx + r * S, cy + r * S],
+          q2TrailMid: [cx - 0.6 * r * S, cy - 0.6 * r * S],
+          q3TrailMid: [cx - 0.6 * r * S, cy + 0.6 * r * S],
+          bg: [18, 18],
+        };
+      })()`);
+
+      await evalJS(`(() => { const c = document.getElementById('cut'); c.value = '0'; c.dispatchEvent(new Event('input')); })()`);
+      await waitFrames(4);
+      const shot0 = await captureCanvasPng();
+      const bgLum = minLumInBox(shot0, pxCoords.bg[0], pxCoords.bg[1], 1);
+      for (const [qName, pt] of [['Q1', pxCoords.q1], ['Q2', pxCoords.q2], ['Q3', pxCoords.q3], ['Q4', pxCoords.q4]]) {
+        assert.ok(bgLum - minLumInBox(shot0, pt[0], pt[1]) > 25, `[${backend}] ${qName} must be visible at 0°`);
+      }
+
+      // On 2D, check Q3 trail pixels via getImageData at 0° vs 90° (proves 2D trails actually clip!)
+      const count2DTrailAlpha = async (pt) => evalJS(`(() => {
+        const cvEl = document.getElementById('c');
+        const g = cvEl.getContext('2d');
+        const sx = cvEl.width / W, sy = cvEl.height / H;
+        const x = Math.max(0, Math.round(${pt[0]} * sx) - 8);
+        const y = Math.max(0, Math.round(${pt[1]} * sy) - 8);
+        const d = g.getImageData(x, y, 17, 17).data;
+        let nz = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 10) nz++;
+        return nz;
+      })()`);
+      const q3Trail0 = backend === '2d' ? await count2DTrailAlpha(pxCoords.q3TrailMid) : 0;
+      const q2Trail0 = backend === '2d' ? await count2DTrailAlpha(pxCoords.q2TrailMid) : 0;
+      if (backend === '2d') {
+        assert.ok(q3Trail0 > 5 && q2Trail0 > 5, `[2d] Expected visible trail pixels in Q2 (${q2Trail0}) & Q3 (${q3Trail0}) at 0°`);
+      }
+
+      await evalJS(`(() => { const c = document.getElementById('cut'); c.value = '90'; c.dispatchEvent(new Event('input')); })()`);
+      await waitFrames(4);
+      const shot90 = await captureCanvasPng();
+      assert.ok(bgLum - minLumInBox(shot90, pxCoords.q1[0], pxCoords.q1[1]) > 25, `[${backend}] Q1 must stay visible at 90°`);
+      assert.ok(bgLum - minLumInBox(shot90, pxCoords.q2[0], pxCoords.q2[1]) > 25, `[${backend}] Q2 must stay visible at 90°`);
+      assert.ok(Math.abs(bgLum - minLumInBox(shot90, pxCoords.q3[0], pxCoords.q3[1])) < 6, `[${backend}] Q3 sphere must vanish at 90°`);
+      assert.ok(bgLum - minLumInBox(shot90, pxCoords.q4[0], pxCoords.q4[1]) > 25, `[${backend}] Q4 must stay visible at 90°`);
+      if (backend === '2d') {
+        const q3Trail90 = await count2DTrailAlpha(pxCoords.q3TrailMid);
+        const q2Trail90 = await count2DTrailAlpha(pxCoords.q2TrailMid);
+        assert.equal(q3Trail90, 0, `[2d] Q3 trail pixels must vanish at 90°, got ${q3Trail90}`);
+        assert.ok(q2Trail90 > 5, `[2d] Q2 trail pixels must remain visible at 90°, got ${q2Trail90}`);
+      }
+
+      await evalJS(`(() => { const c = document.getElementById('cut'); c.value = '180'; c.dispatchEvent(new Event('input')); })()`);
+      await waitFrames(4);
+      const shot180 = await captureCanvasPng();
+      assert.ok(bgLum - minLumInBox(shot180, pxCoords.q1[0], pxCoords.q1[1]) > 25, `[${backend}] Q1 must stay visible at 180°`);
+      assert.ok(bgLum - minLumInBox(shot180, pxCoords.q2[0], pxCoords.q2[1]) > 25, `[${backend}] Q2 must stay visible at 180°`);
+      assert.ok(Math.abs(bgLum - minLumInBox(shot180, pxCoords.q3[0], pxCoords.q3[1])) < 6, `[${backend}] Q3 sphere must vanish at 180°`);
+      assert.ok(Math.abs(bgLum - minLumInBox(shot180, pxCoords.q4[0], pxCoords.q4[1])) < 6, `[${backend}] Q4 sphere must vanish at 180°`);
+    };
+
+    await checkQuadsForBackend('webgl2');
+    await checkQuadsForBackend('2d');
+
+    const errors = collectSessionErrors(cdp, { checkWebGL: true });
+    assert.deepEqual(errors, [], `Expected 0 console/runtime errors or WebGL warnings, got: ${JSON.stringify(errors)}`);
+  } finally {
+    await closeBrowserPage(session);
+  }
+});
