@@ -36,9 +36,12 @@ select,button{font:inherit;font-size:max(1rem,1em);color:var(--fg);background:va
 button{cursor:pointer}
 button:disabled,select:disabled,input:disabled{opacity:.5;cursor:default}
 select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-canvas{width:100%;height:min(54vh,480px);display:block;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
-canvas.dragging{cursor:grabbing}
-canvas:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.stage{position:relative;width:100%;height:min(54vh,480px);border:1px solid var(--line);border-radius:12px;margin-top:6px;background:var(--bg)}
+#c-gl,#c{width:100%;height:100%;display:block;border:0;border-radius:11px;background:transparent}
+#c-gl{position:absolute;inset:0;pointer-events:none}
+#c{position:relative;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+#c.dragging{cursor:grabbing}
+#c:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 #info{font-size:13px;color:var(--mut);margin:8px 0 6px;min-height:2.8em}
 #info b{color:var(--fg);font-weight:600}
 input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accent-color:var(--acc)}
@@ -212,7 +215,10 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <button type="button" id="tut-toggle" aria-controls="tut-panel" aria-expanded="false">Tutorial</button>
 </header>
 
+<div class="stage">
+<canvas id="c-gl" aria-hidden="true"></canvas>
 <canvas id="c" tabindex="0" aria-label="Animated Bohmian electron trajectories. Drag or use arrow keys to rotate the 3D view; press 0 to reset."></canvas>
+</div>
 <div id="view-live" class="sr-only" aria-live="polite"></div>
 <div id="info"></div>
 
@@ -327,9 +333,26 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const cv=$('c'),ctx=cv.getContext('2d');
-let W=0,H=0,key='';
-function resize(){const d=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);key='';}
+const cv = $('c'), ctx = cv.getContext('2d');
+let glCv = $('c-gl');
+let W = 0, H = 0, key = '', stageVersion = 0, _stageDpr = 1, _glStageSync = true;
+function resize() {
+  const rawD = window.devicePixelRatio;
+  const d = Number.isFinite(rawD) && rawD > 0 ? rawD : 1;
+  const nw = cv.clientWidth || 0, nh = cv.clientHeight || 0;
+  const pw = Math.max(0, Math.round(nw * d)), ph = Math.max(0, Math.round(nh * d));
+  const syncGl = Boolean(glCv && _glStageSync);
+  const changed =
+    nw !== W || nh !== H || d !== _stageDpr ||
+    cv.width !== pw || cv.height !== ph ||
+    (syncGl && (glCv.width !== pw || glCv.height !== ph));
+  W = nw; H = nh; _stageDpr = d;
+  if (cv.width !== pw || cv.height !== ph) { cv.width = pw; cv.height = ph; }
+  if (syncGl && (glCv.width !== pw || glCv.height !== ph)) { glCv.width = pw; glCv.height = ph; }
+  const sx = W > 0 ? pw / W : d, sy = H > 0 ? ph / H : d;
+  ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  if (changed) { key = ''; stageVersion++; }
+}
 const _selfScriptEl=typeof document!=='undefined'?document.currentScript:null;
 /* === WORKER_CORE_START === */
 let workerActive=false;
@@ -731,7 +754,6 @@ const base=pulse.trSpec&&pulse.trSpec.n1===pulse.trSpec.n2?Math.max(tscaleBase()
 return Math.max(Math.min(base,8/maxFreq),pulse.T/PULSE_PLAY_S);}
 const base=tscaleBase();
 return(eff.length>=2&&omegaMax>0)?Math.min(base,8/omegaMax):base;};
-const colr=rho=>'hsl('+(15+Math.min(rho/(0.8*E),1)*250)+',70%,56%)';
 
 function computeRefDens(items){
 let harmSum=0;
@@ -811,8 +833,8 @@ const r=invc(b.rcdf,Math.random())*b.dr;
 const th=invc(b.tcdf,Math.random())*Math.PI/NT;
 const rho=r*Math.sin(th);
 if(r>E||(b.m!==0&&rho<0.03*E))continue;
-return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:b.m/(rho*rho),col:colr(rho)};}
-return{rho:0.5*E,z:0,ph:Math.random()*TAU,w:b.m/(0.25*E*E),col:colr(0.5*E)};}
+return{rho,z:r*Math.cos(th),ph:Math.random()*TAU,w:b.m/(rho*rho)};}
+return{rho:0.5*E,z:0,ph:Math.random()*TAU,w:b.m/(0.25*E*E)};}
 
 function evalAlphas(t,out){
 if(diaEff){
@@ -847,10 +869,10 @@ pRe+=aRe*br-aIm*bi;pIm+=aRe*bi+aIm*br;
 g+=(ek.mag/sumMag)*(br*br+bi*bi);}
 const psi2=pRe*pRe+pIm*pIm;
 if(g>0&&Math.random()*M*g<=psi2){
-return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}}
+return{x,y,z,hist:[[x,y,z,tSim]]};}}
 const b0=eff[0].b,r=invc(b0.rcdf,Math.random())*b0.dr,th=invc(b0.tcdf,Math.random())*Math.PI/NT,ph=Math.random()*TAU;
 const rho=r*Math.sin(th),x=rho*Math.cos(ph),y=rho*Math.sin(ph),z=r*Math.cos(th);
-return{x,y,z,col:colr(rho),hist:[[x,y,z,tSim]]};}
+return{x,y,z,hist:[[x,y,z,tSim]]};}
 
 function reseed(){
 P=[];
@@ -955,7 +977,6 @@ tSim=tStart+dtSim;
 if(snapRec)return;
 const minStep=Math.max(span/22,1e-6);
 for(const q of P){
-q.col=colr(Math.hypot(q.x,q.y));
 const hh=q.hist;
 if(!hh.length||(tSim-hh[hh.length-1][3])>=minStep){
 hh.push([q.x,q.y,q.z,tSim]);
@@ -2611,7 +2632,7 @@ components=nextC;rebuildComponentList();computeEffective();reseed();}}
 if(eff.length===1){
 for(const q of P){
 const x=q.rho*Math.cos(q.ph),y=q.rho*Math.sin(q.ph);
-q.x=x;q.y=y;q.col=colr(q.rho);
+q.x=x;q.y=y;
 if(q.hist){for(const h of q.hist)h[3]-=tSim;}else{q.hist=[[x,y,q.z,0]];}}
 }else{
 for(const q of P){
@@ -2762,7 +2783,6 @@ if(!pulse)return;
 pulse._localSim=true;
 const res=stepPulseCore(dtFrame,spd,span,null);
 if(res.dtSim<=0){finishPulse(false);return;}
-for(const q of P)q.col=colr(Math.hypot(q.x,q.y));
 overlayDirty=true;
 updatePulseInfo();
 if(res.finished)finishPulse(false);}
@@ -2815,7 +2835,7 @@ for(let idx=0;idx<P.length;idx++){
 const q=P[idx],r=Math.hypot(q.x,q.y,q.z);
 if(!Number.isFinite(r)||r>escR){P[idx]=sampSingle(b0);continue;}
 const rho=Math.max(Math.hypot(q.x,q.y),1e-4);
-q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);q.col=colr(rho);
+q.rho=rho;q.ph=(Math.atan2(q.y,q.x)+TAU)%TAU;q.w=m0/(rho*rho);
 if(q.hist){for(const h of q.hist)h[3]-=doneT;}}
 }else{
 const escAl=P.some(q=>{const r=Math.hypot(q.x,q.y,q.z);return!Number.isFinite(r)||r>escR;})?new Float64Array(eff.length*2):null;
@@ -2823,7 +2843,6 @@ if(escAl)evalAlphas(0,escAl);
 for(let idx=0;idx<P.length;idx++){
 const q=P[idx],r=Math.hypot(q.x,q.y,q.z);
 if(!Number.isFinite(r)||r>escR){P[idx]=sampSuper(escAl);continue;}
-q.col=colr(Math.hypot(q.x,q.y));
 if(q.hist&&q.hist.length){for(const h of q.hist)h[3]-=doneT;}else{q.hist=[[q.x,q.y,q.z,0]];}}}
 setLocked(false);
 key='';overlayDirty=true;
@@ -3718,7 +3737,7 @@ if(locked)$('fire').disabled=true;}
 /* ---------- density overlay: column projection or mid-plane slice + inline Blob Worker ---------- */
 const off=document.createElement('canvas'),offCtx=off.getContext('2d');
 let offW=0,offH=0,offIm=null,overlayDirty=true,cellSz=3,ovMode='proj';
-let ovHasImage=false,ovPaintedKey='';
+let ovHasImage=false,ovPaintedKey='',ovPaintedVersion=0;
 let simWorker=null,simWorkerUrl='',simEpoch=0,simBusy=false,simInFlight=0,lastSimDispatch=0;
 let simQueue=[],simQueueHasEnd=false,simQueuedEndT=0,playSimT=0,emaWorkRatio=0.35,lastOvReqT=0;
 let ovBusy=false,ovJobId=0,ovInFlightJobId=0,ovInFlightKey='',ovMinValidJobId=1,ovDesiredReq=null;
@@ -3738,18 +3757,271 @@ $('ov').onchange=()=>{$('ov-mode').disabled=!$('ov').checked;overlayDirty=true;i
 $('ov-mode').onchange=()=>setOvMode($('ov-mode').value);
 setOvMode($('ov-mode').value);
 
-let theme={line:'#d9d9dc',panel:'#f0f0ee',acc:'#534ab7',mut:'#6b6b70',grid:'rgba(110,110,115,.55)',ovR:83,ovG:74,ovB:183};
-function refreshTheme(){
-if(typeof getComputedStyle!=='function')return;
-const cs=getComputedStyle(document.documentElement);
-theme.line=cs.getPropertyValue('--line').trim()||theme.line;
-theme.panel=cs.getPropertyValue('--panel').trim()||theme.panel;
-theme.acc=cs.getPropertyValue('--acc').trim()||theme.acc;
-theme.mut=cs.getPropertyValue('--mut').trim()||theme.mut;
-theme.grid=cs.getPropertyValue('--grid').trim()||theme.grid;
-const ov=cs.getPropertyValue('--ov').split(',');
-if(ov.length===3){theme.ovR=+ov[0];theme.ovG=+ov[1];theme.ovB=+ov[2];}}
+/* === RENDERER_HELPERS_START === */
+function _clamp01(x) { return x > 1 ? 1 : (x > 0 ? x : 0); }
+
+function parseCssColor(str, fallbackRgb) {
+  const isArr = (Array.isArray(fallbackRgb) || ArrayBuffer.isView(fallbackRgb)) && fallbackRgb.length >= 3;
+  const fb = isArr
+    ? [
+        _clamp01(Number.isFinite(fallbackRgb[0]) ? fallbackRgb[0] : 0),
+        _clamp01(Number.isFinite(fallbackRgb[1]) ? fallbackRgb[1] : 0),
+        _clamp01(Number.isFinite(fallbackRgb[2]) ? fallbackRgb[2] : 0),
+        _clamp01(fallbackRgb.length >= 4 && Number.isFinite(fallbackRgb[3]) ? fallbackRgb[3] : 1),
+      ]
+    : [0, 0, 0, 1];
+  if (typeof str !== 'string') return fb;
+  const s = str.trim();
+  const hm = s.match(/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+  if (hm) {
+    const h = hm[1], sh = h.length <= 4;
+    const ch = i => parseInt(sh ? h[i] + h[i] : h.slice(i * 2, i * 2 + 2), 16) / 255;
+    return [ch(0), ch(1), ch(2), h.length === 4 || h.length === 8 ? ch(3) : 1];
+  }
+  const rm = s.match(/^rgba?\(\s*([^)]+)\s*\)$/i);
+  if (!rm) return fb;
+  const body = rm[1].trim();
+  let parts, aStr = null;
+  if (body.includes(',')) {
+    if (body.includes('/')) return fb;
+    parts = body.split(/\s*,\s*/);
+    if (parts.length !== 3 && parts.length !== 4) return fb;
+    if (parts.length === 4) aStr = parts[3];
+  } else {
+    const sp = body.split(/\s*\/\s*/);
+    if (sp.length > 2) return fb;
+    parts = sp[0].trim().split(/\s+/);
+    if (parts.length !== 3) return fb;
+    if (sp.length === 2) aStr = sp[1].trim();
+  }
+  const num = (t, div) => {
+    if (!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?%?$/i.test(t)) return NaN;
+    const v = parseFloat(t) / (t.endsWith('%') ? 100 : div);
+    return Number.isFinite(v) ? _clamp01(v) : NaN;
+  };
+  const r = num(parts[0], 255), g = num(parts[1], 255), b = num(parts[2], 255);
+  const a = aStr !== null ? num(aStr, 1) : 1;
+  return Number.isFinite(r + g + b + a) ? [r, g, b, a] : fb;
+}
+
+const SPHERE_CFG = {
+  radFront: 4.8, radBack: 2.4, nucRad: 3.2,
+  alphaFront: 0.76, alphaBack: 0.40, nucAlphaMin: 0.75,
+  diffAmb: 0.24, diffScale: 0.76,
+  specFront: 0.52, specBack: 0.20,
+  fogMax: 0.22, volBase: 0.72, volCore: 0.28,
+  aaPx: 1.5, aaMin: 0.01, aaMax: 0.45,
+  trailAlpha: 0.55, arcMax: 1.65 * Math.PI, arcStep: 0.18, arcMinSegs: 8,
+};
+
+function hueTToRgb(t, out, off = 0) {
+  let u = t;
+  if (!(u > 0)) u = 0; else if (u > 1) u = 1;
+  const hp = (15 + u * 250) / 60;
+  const c = 0.616, m = 0.252;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  const hi = c + m, mid = x + m;
+  let r, g, b;
+  if (hp < 1) { r = hi; g = mid; b = m; }
+  else if (hp < 2) { r = mid; g = hi; b = m; }
+  else if (hp < 3) { r = m; g = hi; b = mid; }
+  else if (hp < 4) { r = m; g = mid; b = hi; }
+  else if (hp < 5) { r = mid; g = m; b = hi; }
+  else { r = hi; g = m; b = mid; }
+  out[off] = r; out[off + 1] = g; out[off + 2] = b;
+}
+
+let partCap = 0, partLastN = -1;
+let partOrder = new Int32Array(0), partDepth = new Float32Array(0);
+let partSX = new Float32Array(0), partSY = new Float32Array(0);
+let partRX = new Float32Array(0), partRY = new Float32Array(0);
+let partHueT = new Float32Array(0);
+const _frameState = {
+  n: 0, singleMode: true, showOverlay: false, showTr: false,
+  cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 0, cy: 0, S: 1, E: 1, Om: 0, span: 0,
+};
+
+function ensurePartBuffers(n) {
+  if (n > partCap) {
+    const cap = Math.max(64, n, partCap * 2);
+    const nextOrder = new Int32Array(cap);
+    for (let i = 0; i < cap; i++) nextOrder[i] = i;
+    partOrder = nextOrder;
+    partDepth = new Float32Array(cap);
+    partSX = new Float32Array(cap);
+    partSY = new Float32Array(cap);
+    partRX = new Float32Array(cap);
+    partRY = new Float32Array(cap);
+    partHueT = new Float32Array(cap);
+    partCap = cap;
+    partLastN = n;
+    return;
+  }
+  if (n !== partLastN) {
+    for (let i = 0; i < n; i++) partOrder[i] = i;
+    partLastN = n;
+  }
+}
+
+let _sortTmp = new Int32Array(0);
+function _mergeSortOrder(order, depths, n) {
+  if (_sortTmp.length < n) {
+    let cap = _sortTmp.length || 64;
+    while (cap < n) cap *= 2;
+    _sortTmp = new Int32Array(cap);
+  }
+  let src = order, dst = _sortTmp;
+  for (let width = 1; width < n; width *= 2) {
+    for (let left = 0; left < n; left += width * 2) {
+      const mid = left + width < n ? left + width : n;
+      const right = left + width * 2 < n ? left + width * 2 : n;
+      let i = left, j = mid, k = left;
+      while (i < mid && j < right) {
+        const da = depths[src[i]], db = depths[src[j]];
+        if (!(db === db) || (da === da && da >= db)) {
+          dst[k++] = src[i++];
+        } else {
+          dst[k++] = src[j++];
+        }
+      }
+      while (i < mid) dst[k++] = src[i++];
+      while (j < right) dst[k++] = src[j++];
+    }
+    const tmp = src;
+    src = dst;
+    dst = tmp;
+  }
+  if (src !== order) {
+    if (typeof order.set === 'function') order.set(src.subarray(0, n));
+    else for (let i = 0; i < n; i++) order[i] = src[i];
+  }
+}
+
+function sortParticleOrder(order, depths, n) {
+  if (!order || !depths || !(n > 1)) return;
+  const limit = 4 * n;
+  let shifts = 0;
+  for (let i = 1; i < n; i++) {
+    const idx = order[i], d = depths[idx];
+    if (d === d) {
+      let j = i - 1;
+      while (j >= 0 && !(depths[order[j]] >= d)) {
+        order[j + 1] = order[j];
+        j--;
+        shifts++;
+      }
+      order[j + 1] = idx;
+      if (shifts > limit) {
+        _mergeSortOrder(order, depths, n);
+        return;
+      }
+    }
+  }
+}
+
+let themeVersion = 0;
+let theme = {
+  bg: '#fbfbfa', bgR: 251 / 255, bgG: 251 / 255, bgB: 250 / 255,
+  line: '#d9d9dc', panel: '#f0f0ee', acc: '#534ab7', mut: '#6b6b70',
+  grid: 'rgba(110,110,115,.55)', gridR: 110 / 255, gridG: 110 / 255, gridB: 115 / 255, gridA: 0.55,
+  ovR: 83, ovG: 74, ovB: 183,
+};
+function refreshTheme() {
+  if (typeof getComputedStyle !== 'function') return;
+  const cs = getComputedStyle(document.documentElement);
+  theme.bg = cs.getPropertyValue('--bg').trim() || theme.bg;
+  theme.line = cs.getPropertyValue('--line').trim() || theme.line;
+  theme.panel = cs.getPropertyValue('--panel').trim() || theme.panel;
+  theme.acc = cs.getPropertyValue('--acc').trim() || theme.acc;
+  theme.mut = cs.getPropertyValue('--mut').trim() || theme.mut;
+  theme.grid = cs.getPropertyValue('--grid').trim() || theme.grid;
+  const bgC = parseCssColor(theme.bg, [theme.bgR, theme.bgG, theme.bgB, 1]);
+  theme.bgR = bgC[0]; theme.bgG = bgC[1]; theme.bgB = bgC[2];
+  const grC = parseCssColor(theme.grid, [theme.gridR, theme.gridG, theme.gridB, theme.gridA]);
+  theme.gridR = grC[0]; theme.gridG = grC[1]; theme.gridB = grC[2]; theme.gridA = grC[3];
+  const ov = cs.getPropertyValue('--ov').split(',');
+  if (ov.length === 3 && ov[0].trim() !== '' && ov[1].trim() !== '' && ov[2].trim() !== '') {
+    const r = +ov[0], g = +ov[1], b = +ov[2];
+    if (Number.isFinite(r) && Number.isFinite(g) && Number.isFinite(b)) {
+      theme.ovR = Math.max(0, Math.min(255, r));
+      theme.ovG = Math.max(0, Math.min(255, g));
+      theme.ovB = Math.max(0, Math.min(255, b));
+    }
+  }
+  themeVersion++;
+}
 refreshTheme();
+
+function buildSphereSpriteAtlas(dpr, themeObj) {
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
+  const cvEl = document.createElement('canvas');
+  if (!cvEl || typeof cvEl.getContext !== 'function') return null;
+  const g = cvEl.getContext('2d');
+  if (!g) return null;
+  const C = SPHERE_CFG, buckets = 48, depthBands = 3;
+  const effDpr = Math.max(1, Math.min(3, Number.isFinite(dpr) && dpr > 0 ? dpr : 1));
+  const tilePx = Math.max(16, Math.ceil(16 * effDpr));
+  const cols = buckets + 1, w = cols * tilePx, h = depthBands * tilePx;
+  cvEl.width = w; cvEl.height = h;
+  const img = g.createImageData(w, h), data = img.data;
+  const innerRad = (tilePx - 2) * 0.5, invInner = 1 / innerRad, halfTile = tilePx * 0.5;
+  const tileScale = halfTile / innerRad;
+  const tObj = themeObj || theme;
+  const bR = Number.isFinite(tObj.bgR) ? _clamp01(tObj.bgR) : 0;
+  const bG = Number.isFinite(tObj.bgG) ? _clamp01(tObj.bgG) : 0;
+  const bB = Number.isFinite(tObj.bgB) ? _clamp01(tObj.bgB) : 0;
+  const gR = Number.isFinite(tObj.gridR) ? _clamp01(tObj.gridR) : 0;
+  const gG = Number.isFinite(tObj.gridG) ? _clamp01(tObj.gridG) : 0;
+  const gB = Number.isFinite(tObj.gridB) ? _clamp01(tObj.gridB) : 0;
+  const nucAlpha = Math.max(C.nucAlphaMin, Number.isFinite(tObj.gridA) ? _clamp01(tObj.gridA) : 0.55);
+  const bandDns = [0.08, 0.5, 0.92];
+  const hueRgb = new Float32Array(buckets * 3);
+  for (let bi = 0; bi < buckets; bi++) hueTToRgb(bi / (buckets - 1), hueRgb, bi * 3);
+  const aa = Math.max(C.aaMin, Math.min(C.aaMax, C.aaPx / Math.max(C.aaPx, innerRad)));
+  const e0 = 1 - aa, invAa = 1 / aa;
+  const specSpan = C.specFront - C.specBack, alphaSpan = C.alphaFront - C.alphaBack;
+  for (let py = 0; py < tilePx; py++) {
+    const v = (py + 0.5 - halfTile) * invInner, v2 = v * v;
+    for (let px = 0; px < tilePx; px++) {
+      const u = (px + 0.5 - halfTile) * invInner, r2 = u * u + v2;
+      if (!(r2 < 1)) continue;
+      const dist = Math.sqrt(r2);
+      let edge = 1;
+      if (dist > e0) {
+        const t = (dist - e0) * invAa;
+        edge = 1 - t * t * (3 - 2 * t);
+      }
+      if (!(edge > 0)) continue;
+      const nz = Math.sqrt(1 - r2), diff = C.diffAmb + C.diffScale * nz;
+      const n2 = nz * nz, n4 = n2 * n2, n8 = n4 * n4, n16 = n8 * n8, nz48 = n16 * n16 * n16;
+      const vol = edge * (C.volBase + C.volCore * nz);
+      for (let db = 0; db < depthBands; db++) {
+        const d = bandDns[db], spec = nz48 * (C.specFront - specSpan * d);
+        const fog = C.fogMax * d, invFog = 1 - fog;
+        const fR = bR * fog, fG = bG * fog, fB = bB * fog;
+        const aByte = Math.round(_clamp01((C.alphaFront - alphaSpan * d) * vol) * 255);
+        const rowBase = ((db * tilePx + py) * w + px) * 4;
+        for (let bi = 0; bi < buckets; bi++) {
+          const hi = bi * 3, o = rowBase + bi * tilePx * 4;
+          data[o] = Math.round(_clamp01(_clamp01(hueRgb[hi] * diff + spec) * invFog + fR) * 255);
+          data[o + 1] = Math.round(_clamp01(_clamp01(hueRgb[hi + 1] * diff + spec) * invFog + fG) * 255);
+          data[o + 2] = Math.round(_clamp01(_clamp01(hueRgb[hi + 2] * diff + spec) * invFog + fB) * 255);
+          data[o + 3] = aByte;
+        }
+        if (db === 1) {
+          const no = rowBase + buckets * tilePx * 4;
+          data[no] = Math.round(_clamp01(_clamp01(gR * diff + spec) * invFog + fR) * 255);
+          data[no + 1] = Math.round(_clamp01(_clamp01(gG * diff + spec) * invFog + fG) * 255);
+          data[no + 2] = Math.round(_clamp01(_clamp01(gB * diff + spec) * invFog + fB) * 255);
+          data[no + 3] = Math.round(_clamp01(nucAlpha * vol) * 255);
+        }
+      }
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return { canvas: cvEl, tilePx, tileScale, buckets, depthBands, nucCol: buckets, nucRow: 1 };
+}
+/* === RENDERER_HELPERS_END === */
 
 function packMainCoords(){
 const n=P.length,arr=new Float32Array(n*3);
@@ -3789,14 +4061,18 @@ const azTag=az?':AZ'+az.toFixed(5):'';
 if(pulse)return(pulse.photonSim?'PH:'+pulse.basesSig:'GR')+':'+base+azTag+':T'+pulse.t;
 return'SUP:'+stateSig+':'+radSig+':'+base+azTag+(omegaMax>1e-12?':T'+tSim:'');}
 
-function applyOverlayRGBA(res,ovKey){
-if(!res)return false;
-cellSz=res.cellSz;
-if(res.w!==offW||res.h!==offH){offW=res.w;offH=res.h;off.width=res.w;off.height=res.h;}
-offIm=new ImageData(res.rgba,res.w,res.h);
-offCtx.putImageData(offIm,0,0);
-ovHasImage=true;ovPaintedKey=ovKey;
-return true;}
+function applyOverlayRGBA(res, ovKey) {
+  if (!res) return false;
+  const nextIm = new ImageData(res.rgba, res.w, res.h);
+  cellSz = res.cellSz;
+  offW = res.w;
+  offH = res.h;
+  offIm = nextIm;
+  ovHasImage = true;
+  ovPaintedKey = ovKey;
+  ovPaintedVersion++;
+  return true;
+}
 
 function requestOverlayNow(){
 if(!(W>0&&H>0)||!$('ov').checked)return;
@@ -3835,7 +4111,7 @@ const offA=s*nP*3,offB=s1*nP*3,minStep=Math.max(span/22,1e-6);
 for(let i=0;i<nP;i++){
 const q=P[i],i3=i*3,ax=subP[offA+i3],ay=subP[offA+i3+1],az=subP[offA+i3+2];
 const x=ax+al*(subP[offB+i3]-ax),y=ay+al*(subP[offB+i3+1]-ay),z=az+al*(subP[offB+i3+2]-az);
-q.x=x;q.y=y;q.z=z;q.col=colr(Math.hypot(x,y));
+q.x=x;q.y=y;q.z=z;
 const hh=q.hist;
 if(!hh.length||(playSimT-hh[hh.length-1][3])>=minStep){hh.push([x,y,z,playSimT]);if(hh.length>22)hh.shift();}}
 if(ch.kind==='pulse'&&pulse){
@@ -4101,105 +4377,908 @@ ctx.beginPath();ctx.arc(a.ex,a.ey,2,0,TAU);ctx.fill();
 ctx.fillText(a.lbl,a.lx,a.ly);}
 ctx.restore();}
 
-function drawParticleTrail(hh,x,y,z,cx,cy,S,cp,sp,ca,sa){
-const len=hh.length;if(!len)return;
-const rx0=x*ca-y*sa,ry0=x*sa+y*ca;
-let px=cx+rx0*S,py=cy-(ry0*sp+z*cp)*S;
-const band=Math.max(1,Math.ceil(len/5));
-for(let j=0;j<len;){
-const end=Math.min(len,j+band),mid=0.5*(j+end-1);
-ctx.globalAlpha=.55*(1-(mid+1)/(len+1));
-ctx.beginPath();ctx.moveTo(px,py);
-for(;j<end;j++){
-const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
-const nx=cx+rx*S,ny=cy-(ry*sp+pt[2]*cp)*S;
-ctx.lineTo(nx,ny);px=nx;py=ny;}
-ctx.stroke();}}
+/* === RENDERER_2D_START === */
+const TRAIL_BUCKETS_2D = 24, TRAIL_BANDS_2D = 5;
+const _trHead2D = new Int32Array(TRAIL_BUCKETS_2D);
+const _trBucketCss = Array.from(
+  { length: TRAIL_BUCKETS_2D },
+  (_, b) => 'hsl(' + (15 + (b / (TRAIL_BUCKETS_2D - 1)) * 250).toFixed(2) + ',70%,56%)'
+);
+let _trCap2D = 0;
+let _trNext2D = new Int32Array(0);
+let _trArcN2D = new Int32Array(0);
+let _trArcDc2D = new Float64Array(0), _trArcDs2D = new Float64Array(0);
+let _trArcRx2D = new Float64Array(0), _trArcRy2D = new Float64Array(0);
 
-function frame(now){
-const dt=Math.min((now-last)/1000,.05);last=now;
-const spd=+$('spd').value,ts=tscale(),Om=Bau/2,span=spd*ts*0.7,dts=dt*spd*ts;
-if(run){
-if(pulse){
-if(!workerActive||pulse._localSim){resetSimPipeline(pulse.t);stepPulse(dt,spd,span);}
-else{dispatchNextSim();applyPlaybackStep(dts,span);dispatchNextSim();}
-}else if(eff.length>=2){
-if(!workerActive){resetSimPipeline(tSim);stepSuperposition(dts,span);}
-else{dispatchNextSim();applyPlaybackStep(dts,span);dispatchNextSim();}
-}else if(eff.length===1){
-tSim+=dts;}}
-const p=getTiltRad(),cp=Math.cos(p),sp=Math.sin(p);
-const az=getAzRad(),ca=Math.cos(az),sa=Math.sin(az);
-const S=Math.min(W,H*1.15)/(2*E),cx=W/2,cy=H/2;
-ctx.clearRect(0,0,W,H);
-if($('ov').checked&&renderOverlay(p,az,S,cx,cy))ctx.drawImage(off,0,0,offW*cellSz,offH*cellSz);
-const grid=theme.grid;
-ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.setLineDash([4,4]);
-const ax=cx,ay=cy+E*cp*S,bx=cx,by=cy-E*cp*S;
-ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([]);
-ctx.fillStyle=grid;ctx.font='12px system-ui,sans-serif';ctx.fillText('z',bx+6,by+4);
+function ensureTrail2DBuffers(n) {
+  if (n <= _trCap2D) return;
+  const cap = Math.max(64, n, _trCap2D * 2);
+  _trNext2D = new Int32Array(cap);
+  _trArcN2D = new Int32Array(cap);
+  _trArcDc2D = new Float64Array(cap);
+  _trArcDs2D = new Float64Array(cap);
+  _trArcRx2D = new Float64Array(cap);
+  _trArcRy2D = new Float64Array(cap);
+  _trCap2D = cap;
+}
 
-const singleMode=!pulse&&eff.length===1;
-const hasHistTrails=singleMode&&P.some(q=>q.hist&&q.hist.length>1);
-const showTr=$('tr').checked&&(!!pulse||eff.length>=2||hasHistTrails||(singleMode&&(eff[0].m!==0||Bau!==0)));
-const minStep=Math.max(span/22,1e-6);
-if(showTr)ctx.lineWidth=1;
-if(singleMode){
-for(const q of P){
-ctx.strokeStyle=q.col;
-const wt=q.w+Om;
-if(run)q.ph=(q.ph+wt*dts)%TAU;
-const px=q.rho*Math.cos(q.ph),py=q.rho*Math.sin(q.ph);
-const phV=q.ph+az,rx=q.rho*Math.cos(phV),ry=q.rho*Math.sin(phV);
-if(run&&q.hist){
-const hh=q.hist;
-if((tSim-hh[hh.length-1][3])>=minStep){
-if(Math.abs(wt)>1e-9){
-hh.push([px,py,q.z,tSim]);
-if(hh.length>22)hh.shift();
-if(hh[0][3]>=0)delete q.hist;
-}else{
-hh[hh.length-1][3]=tSim;hh.shift();
-if(hh.length<=1)delete q.hist;}}}
-if(showTr){
-if(q.hist&&q.hist.length>1){
-drawParticleTrail(q.hist,px,py,q.z,cx,cy,S,cp,sp,ca,sa);
-}else if(Math.abs(wt)>1e-9){
-const arc=Math.min(Math.abs(wt)*span,1.65*Math.PI),dir=Math.sign(wt),N=Math.max(8,Math.ceil(arc/0.18));
-const band=Math.max(1,Math.ceil(N/4)),qzS=q.z*cp,rhoS=q.rho*S;
-let lx=cx+rx*S,ly=cy-(ry*sp+q.z*cp)*S;
-for(let k=1;k<=N;){
-const end=Math.min(N,k+band-1),mid=0.5*(k+end);
-ctx.globalAlpha=.55*(1-mid/N);
-ctx.beginPath();ctx.moveTo(lx,ly);
-for(;k<=end;k++){
-const ph=phV-dir*arc*(k/N);
-lx=cx+rhoS*Math.cos(ph);ly=cy-(q.rho*Math.sin(ph)*sp+qzS)*S;
-ctx.lineTo(lx,ly);}
-ctx.stroke();}}}
-const sx=cx+rx*S,sy=cy-(ry*sp+q.z*cp)*S,depth=ry*cp-q.z*sp;
-const dn=Math.max(0,Math.min(1,(depth/E+1)/2));
-ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
-ctx.beginPath();ctx.arc(sx,sy,2.6-.8*dn,0,TAU);ctx.fill();}
-}else if(pulse||eff.length>=2){
-for(const q of P){
-ctx.strokeStyle=q.col;
-if(showTr)drawParticleTrail(q.hist,q.x,q.y,q.z,cx,cy,S,cp,sp,ca,sa);
-const rx=q.x*ca-q.y*sa,ry=q.x*sa+q.y*ca;
-const sx=cx+rx*S,sy=cy-(ry*sp+q.z*cp)*S,depth=ry*cp-q.z*sp;
-const dn=Math.max(0,Math.min(1,(depth/E+1)/2));
-ctx.globalAlpha=.95-.35*dn;ctx.fillStyle=q.col;
-ctx.beginPath();ctx.arc(sx,sy,2.6-.8*dn,0,TAU);ctx.fill();}}
-ctx.globalAlpha=1;
-ctx.fillStyle=grid;ctx.beginPath();ctx.arc(cx,cy,3,0,TAU);ctx.fill();
-drawFieldGizmo(cp,sp,ca,sa);
-drawAxisTriad(cp,sp,ca,sa);
-requestAnimationFrame(frame);}
+function drawBatchedTrails2D(st) {
+  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, Om, span } = st;
+  const C = SPHERE_CFG, bMax = TRAIL_BUCKETS_2D - 1, invBands = 1 / TRAIL_BANDS_2D;
+  ensureTrail2DBuffers(n);
+  _trHead2D.fill(-1);
+  for (let i = 0; i < n; i++) {
+    if (!Number.isFinite(partSX[i]) || !Number.isFinite(partSY[i])) continue;
+    const q = P[i];
+    if (singleMode) {
+      if (!(q.hist && q.hist.length > 1)) {
+        const wt = q.w + Om;
+        if (!(Math.abs(wt) > 1e-9)) continue;
+        const arc = Math.min(Math.abs(wt) * span, C.arcMax), dir = wt > 0 ? 1 : -1;
+        const N = Math.max(C.arcMinSegs, Math.ceil(arc / C.arcStep));
+        const dPhi = (-dir * arc) / N;
+        _trArcN2D[i] = N;
+        _trArcDc2D[i] = Math.cos(dPhi);
+        _trArcDs2D[i] = Math.sin(dPhi);
+        _trArcRx2D[i] = partRX[i];
+        _trArcRy2D[i] = partRY[i];
+      }
+    } else if (!q.hist || !q.hist.length) {
+      continue;
+    }
+    const ht = partHueT[i], b = ht > 0 ? Math.min(bMax, (ht * bMax + 0.5) | 0) : 0;
+    _trNext2D[i] = _trHead2D[b];
+    _trHead2D[b] = i;
+  }
+  ctx.lineWidth = 1;
+  const spS = sp * S, cpS = cp * S, trA = C.trailAlpha;
+  for (let b = 0; b < TRAIL_BUCKETS_2D; b++) {
+    if (_trHead2D[b] < 0) continue;
+    ctx.strokeStyle = _trBucketCss[b];
+    for (let ab = 0; ab < TRAIL_BANDS_2D; ab++) {
+      ctx.globalAlpha = trA * (1 - (ab + 0.5) * invBands);
+      ctx.beginPath();
+      let hasSeg = false;
+      for (let i = _trHead2D[b]; i >= 0; i = _trNext2D[i]) {
+        const q = P[i];
+        if (!singleMode || (q.hist && q.hist.length > 1)) {
+          const hh = q.hist, len = hh.length;
+          const j0 = Math.ceil(ab * len * invBands), j1 = Math.ceil((ab + 1) * len * invBands);
+          if (j0 >= j1) continue;
+          let px, py;
+          if (j0 === 0) {
+            px = partSX[i]; py = partSY[i];
+          } else {
+            const p0 = hh[len - j0], rx0 = p0[0] * ca - p0[1] * sa, ry0 = p0[0] * sa + p0[1] * ca;
+            px = cx + rx0 * S; py = cy - (ry0 * spS + p0[2] * cpS);
+          }
+          if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+          ctx.moveTo(px, py);
+          hasSeg = true;
+          for (let j = j0; j < j1; j++) {
+            const pt = hh[len - 1 - j], rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
+            const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
+            if (Number.isFinite(nx) && Number.isFinite(ny)) ctx.lineTo(nx, ny);
+          }
+        } else {
+          const N = _trArcN2D[i];
+          const k0 = Math.ceil(ab * N * invBands), k1 = Math.ceil((ab + 1) * N * invBands);
+          if (k0 >= k1) continue;
+          const dc = _trArcDc2D[i], ds = _trArcDs2D[i], qzS = q.z * cpS;
+          let rx = _trArcRx2D[i], ry = _trArcRy2D[i];
+          const lx = k0 === 0 ? partSX[i] : cx + rx * S;
+          const ly = k0 === 0 ? partSY[i] : cy - (ry * spS + qzS);
+          if (!Number.isFinite(lx) || !Number.isFinite(ly)) continue;
+          ctx.moveTo(lx, ly);
+          hasSeg = true;
+          for (let k = k0 + 1; k <= k1; k++) {
+            const nrx = rx * dc - ry * ds;
+            ry = rx * ds + ry * dc;
+            rx = nrx;
+            ctx.lineTo(cx + rx * S, cy - (ry * spS + qzS));
+          }
+          _trArcRx2D[i] = rx;
+          _trArcRy2D[i] = ry;
+        }
+      }
+      if (hasSeg) ctx.stroke();
+    }
+  }
+}
+
+let _sphereAtlas = null, _sphereAtlasThemeVer = -1, _sphereAtlasDpr = -1;
+let _offCanvasVersion = -1;
+function getSphereAtlas() {
+  const ed = Math.max(1, Math.min(3, Number.isFinite(_stageDpr) && _stageDpr > 0 ? _stageDpr : 1));
+  if (_sphereAtlasThemeVer !== themeVersion || _sphereAtlasDpr !== ed) {
+    _sphereAtlas = buildSphereSpriteAtlas(ed, theme);
+    _sphereAtlasThemeVer = themeVersion;
+    _sphereAtlasDpr = ed;
+  }
+  return _sphereAtlas;
+}
+
+function drawHud2D(cp, sp, ca, sa, cx, cy, S, E_val) {
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = theme.grid;
+  ctx.font = '12px system-ui,sans-serif';
+  ctx.fillText('z', cx + 6, cy - E_val * cp * S + 4);
+  ctx.restore();
+  drawFieldGizmo(cp, sp, ca, sa);
+  drawAxisTriad(cp, sp, ca, sa);
+}
+
+function drawScene2D(st) {
+  const { n, showOverlay, showTr, cp, sp, ca, sa, cx, cy, S, E: E_val } = st;
+  const C = SPHERE_CFG, radSpan = C.radFront - C.radBack;
+  ctx.clearRect(0, 0, W, H);
+  if (showOverlay && offW > 0 && offH > 0 && offIm && offIm.width === offW && offIm.height === offH) {
+    if (_offCanvasVersion !== ovPaintedVersion) {
+      if (off.width !== offW || off.height !== offH) {
+        off.width = offW;
+        off.height = offH;
+      }
+      offCtx.putImageData(offIm, 0, 0);
+      _offCanvasVersion = ovPaintedVersion;
+    }
+    ctx.drawImage(off, 0, 0, offW * cellSz, offH * cellSz);
+  }
+  ctx.save();
+  ctx.strokeStyle = theme.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + E_val * cp * S);
+  ctx.lineTo(cx, cy - E_val * cp * S);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (showTr && n > 0) drawBatchedTrails2D(st);
+  ctx.globalAlpha = 1;
+  const atlas = getSphereAtlas();
+  let drawnSpheres = 0;
+  if (atlas) {
+    const invE = E_val > 0 ? 1 / E_val : 0;
+    const aCv = atlas.canvas, tp = atlas.tilePx, ts = atlas.tileScale, bMax = atlas.buckets - 1;
+    const nucHalf = C.nucRad * ts, nucSz = nucHalf * 2;
+    const nucSX = atlas.nucCol * tp, nucSY = atlas.nucRow * tp;
+    let nucDrawn = false;
+    for (let k = 0; k < n; k++) {
+      const i = partOrder[k], depth = partDepth[i];
+      if (!nucDrawn && !(depth > 0)) {
+        ctx.drawImage(aCv, nucSX, nucSY, tp, tp, cx - nucHalf, cy - nucHalf, nucSz, nucSz);
+        nucDrawn = true;
+        drawnSpheres++;
+      }
+      const sx = partSX[i], sy = partSY[i];
+      if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(depth)) continue;
+      let dn = (depth * invE + 1) * 0.5;
+      if (dn < 0) dn = 0; else if (dn > 1) dn = 1;
+      const rad = C.radFront - radSpan * dn, ht = partHueT[i];
+      const bi = ht > 0 ? Math.min(bMax, Math.round(ht * bMax)) : 0;
+      const db = dn < 1 / 3 ? 0 : (dn < 2 / 3 ? 1 : 2);
+      const half = rad * ts, sz = half * 2;
+      ctx.drawImage(aCv, bi * tp, db * tp, tp, tp, sx - half, sy - half, sz, sz);
+      drawnSpheres++;
+    }
+    if (!nucDrawn) {
+      ctx.drawImage(aCv, nucSX, nucSY, tp, tp, cx - nucHalf, cy - nucHalf, nucSz, nucSz);
+      drawnSpheres++;
+    }
+  }
+  ctx.restore();
+  drawHud2D(cp, sp, ca, sa, cx, cy, S, E_val);
+  return drawnSpheres;
+}
+/* === RENDERER_2D_END === */
+
+/* === RENDERER_GL_START === */
+const _renderStats = { backend: '2d', lastDrawMs: 0, drawCalls: 0, sphereCount: 0, lineVerts: 0 };
+if (typeof window !== 'undefined' && !Object.getOwnPropertyDescriptor(window, '__renderInfo')) {
+  Object.defineProperty(window, '__renderInfo', {
+    enumerable: true,
+    configurable: false,
+    get() {
+      return Object.freeze({
+        backend: _renderStats.backend,
+        lastDrawMs: _renderStats.lastDrawMs,
+        drawCalls: _renderStats.drawCalls,
+        sphereCount: _renderStats.sphereCount,
+        lineVerts: _renderStats.lineVerts,
+      });
+    },
+  });
+}
+
+let partRgb = new Float32Array(0);
+function ensurePartRgb(n) {
+  const need = n * 3;
+  if (need <= partRgb.length) return;
+  let cap = partRgb.length || 192;
+  while (cap < need) cap *= 2;
+  partRgb = new Float32Array(cap);
+}
+
+const GL_OV_VS = `#version 300 es
+layout(location=0) in vec2 a_uv;
+uniform vec2 u_viewport;
+uniform vec2 u_ovSize;
+out vec2 v_uv;
+void main(){
+  vec2 pos=a_uv*u_ovSize;
+  vec2 ndc=vec2(pos.x/u_viewport.x*2.0-1.0,1.0-pos.y/u_viewport.y*2.0);
+  gl_Position=vec4(ndc,0.0,1.0);
+  v_uv=a_uv;
+}`;
+const GL_OV_FS = `#version 300 es
+precision mediump float;
+uniform sampler2D u_tex;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec4 c=texture(u_tex,v_uv);
+  if(c.a<=0.001)discard;
+  fragColor=vec4(c.rgb*c.a,c.a);
+}`;
+const GL_LINE_VS = `#version 300 es
+layout(location=0) in vec2 a_corner;
+layout(location=1) in vec4 a_seg;
+layout(location=2) in vec4 a_col;
+uniform vec2 u_viewport;
+uniform vec2 u_lineHalf;
+out float v_perpDev;
+out vec4 v_pmCol;
+void main(){
+  vec2 p0=a_seg.xy,p1=a_seg.zw;
+  vec2 d=p1-p0;
+  float len2=dot(d,d);
+  if(len2<1e-8){
+    gl_Position=vec4(2.0,2.0,0.0,1.0);
+    v_perpDev=0.0;
+    v_pmCol=vec4(0.0);
+    return;
+  }
+  vec2 dir=d*inversesqrt(len2);
+  vec2 perp=vec2(-dir.y,dir.x);
+  vec2 base=mix(p0,p1,a_corner.x*0.5+0.5);
+  vec2 pos=base+perp*(a_corner.y*u_lineHalf.y);
+  vec2 ndc=vec2(pos.x/u_viewport.x*2.0-1.0,1.0-pos.y/u_viewport.y*2.0);
+  gl_Position=vec4(ndc,0.0,1.0);
+  v_perpDev=a_corner.y*u_lineHalf.x;
+  v_pmCol=vec4(a_col.rgb*a_col.a,a_col.a);
+}`;
+const GL_LINE_FS = `#version 300 es
+precision mediump float;
+uniform highp vec2 u_lineHalf;
+in float v_perpDev;
+in vec4 v_pmCol;
+out vec4 fragColor;
+void main(){
+  float cov=clamp(u_lineHalf.x-abs(v_perpDev),0.0,1.0);
+  fragColor=v_pmCol*cov;
+}`;
+const _glF = v => (Number.isInteger(v) ? v + '.0' : String(v));
+const GL_SPHERE_VS = `#version 300 es
+layout(location=0) in vec2 a_corner;
+layout(location=1) in vec4 a_geom;
+layout(location=2) in vec4 a_colAlpha;
+uniform vec2 u_viewport;
+uniform float u_dpr;
+out vec2 v_uv;
+out float v_aa;
+out float v_specScale;
+out float v_fog;
+out vec3 v_rgb;
+out float v_baseAlpha;
+void main(){
+  float rad=a_geom.z;
+  float dpr=max(1.0,u_dpr);
+  float halfCss=rad+0.75/dpr;
+  vec2 pos=a_geom.xy+a_corner*halfCss;
+  vec2 ndc=vec2(pos.x/u_viewport.x*2.0-1.0,1.0-pos.y/u_viewport.y*2.0);
+  gl_Position=vec4(ndc,0.0,1.0);
+  v_uv=a_corner*(halfCss/max(0.001,rad));
+  float dn=clamp(a_geom.w,0.0,1.0);
+  v_aa=clamp(${_glF(SPHERE_CFG.aaPx)}/max(${_glF(SPHERE_CFG.aaPx)},rad*dpr),${_glF(SPHERE_CFG.aaMin)},${_glF(SPHERE_CFG.aaMax)});
+  v_specScale=mix(${_glF(SPHERE_CFG.specFront)},${_glF(SPHERE_CFG.specBack)},dn);
+  v_fog=${_glF(SPHERE_CFG.fogMax)}*dn;
+  v_rgb=a_colAlpha.rgb;
+  v_baseAlpha=a_colAlpha.a;
+}`;
+const GL_SPHERE_FS = `#version 300 es
+precision highp float;
+uniform vec3 u_bgColor;
+in vec2 v_uv;
+in float v_aa;
+in float v_specScale;
+in float v_fog;
+in vec3 v_rgb;
+in float v_baseAlpha;
+out vec4 fragColor;
+void main(){
+  float r2=dot(v_uv,v_uv);
+  if(r2>=1.0)discard;
+  float dist=sqrt(r2);
+  float edge=1.0-smoothstep(1.0-v_aa,1.0,dist);
+  float nz=sqrt(max(0.0,1.0-r2));
+  float diff=${_glF(SPHERE_CFG.diffAmb)}+${_glF(SPHERE_CFG.diffScale)}*nz;
+  float n2=nz*nz,n4=n2*n2,n8=n4*n4,n16=n8*n8;
+  float spec=n16*n16*n16*v_specScale;
+  vec3 lit=clamp(v_rgb*diff+vec3(spec),0.0,1.0);
+  vec3 col=clamp(mix(lit,u_bgColor,v_fog),0.0,1.0);
+  float a=clamp(v_baseAlpha*edge*(${_glF(SPHERE_CFG.volBase)}+${_glF(SPHERE_CFG.volCore)}*nz),0.0,1.0);
+  fragColor=vec4(col*a,a);
+}`;
+
+function startGLProgram(gl, vsSrc, fsSrc) {
+  const vs = gl.createShader(gl.VERTEX_SHADER);
+  const fs = gl.createShader(gl.FRAGMENT_SHADER);
+  const prog = gl.createProgram();
+  if (!vs || !fs || !prog) {
+    if (vs) gl.deleteShader(vs);
+    if (fs) gl.deleteShader(fs);
+    if (prog) gl.deleteProgram(prog);
+    return null;
+  }
+  gl.shaderSource(vs, vsSrc);
+  gl.compileShader(vs);
+  gl.shaderSource(fs, fsSrc);
+  gl.compileShader(fs);
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  return { prog, vs, fs };
+}
+
+function finishGLProgram(gl, entry) {
+  if (!entry) return null;
+  const { prog, vs, fs } = entry;
+  // Per GLES3 / WebGL2 spec, LINK_STATUS is true only if both attached shaders compiled cleanly.
+  const ok = Boolean(gl.getProgramParameter(prog, gl.LINK_STATUS));
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+  if (!ok) {
+    gl.deleteProgram(prog);
+    return null;
+  }
+  return prog;
+}
+
+function clearGLHandles(s) {
+  s.ovVao = null; s.ovVbo = null; s.ovTex = null; s.ovProg = null;
+  s.lineVao = null; s.lineVbo = null; s.lineProg = null;
+  s.sphereVao = null; s.quadVbo = null; s.instVbo = null; s.sphereProg = null;
+}
+
+function disposeGLResources(s) {
+  const gl = s.gl;
+  if (gl && !gl.isContextLost()) {
+    if (s.ovVao) gl.deleteVertexArray(s.ovVao);
+    if (s.ovVbo) gl.deleteBuffer(s.ovVbo);
+    if (s.ovTex) gl.deleteTexture(s.ovTex);
+    if (s.ovProg) gl.deleteProgram(s.ovProg);
+    if (s.lineVao) gl.deleteVertexArray(s.lineVao);
+    if (s.lineVbo) gl.deleteBuffer(s.lineVbo);
+    if (s.lineProg) gl.deleteProgram(s.lineProg);
+    if (s.sphereVao) gl.deleteVertexArray(s.sphereVao);
+    if (s.quadVbo) gl.deleteBuffer(s.quadVbo);
+    if (s.instVbo) gl.deleteBuffer(s.instVbo);
+    if (s.sphereProg) gl.deleteProgram(s.sphereProg);
+  }
+  clearGLHandles(s);
+}
+
+function setupInstancedQuadVao(gl, vao, quadVbo, instVbo) {
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadVbo);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, instVbo);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 0);
+  gl.vertexAttribDivisor(1, 1);
+  gl.enableVertexAttribArray(2);
+  gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, 16);
+  gl.vertexAttribDivisor(2, 1);
+}
+
+function buildGLResources(s) {
+  const gl = s.gl;
+  if (!gl || gl.isContextLost()) return false;
+  disposeGLResources(s);
+
+  // Compile all 6 shaders and issue all 3 linkProgram calls before querying status (parallel ANGLE compile)
+  const ovEntry = startGLProgram(gl, GL_OV_VS, GL_OV_FS);
+  const lineEntry = startGLProgram(gl, GL_LINE_VS, GL_LINE_FS);
+  const sphereEntry = startGLProgram(gl, GL_SPHERE_VS, GL_SPHERE_FS);
+  s.ovProg = finishGLProgram(gl, ovEntry);
+  s.lineProg = finishGLProgram(gl, lineEntry);
+  s.sphereProg = finishGLProgram(gl, sphereEntry);
+  if (!s.ovProg || !s.lineProg || !s.sphereProg) {
+    disposeGLResources(s);
+    return false;
+  }
+
+  s.uOvViewport = gl.getUniformLocation(s.ovProg, 'u_viewport');
+  s.uOvSize = gl.getUniformLocation(s.ovProg, 'u_ovSize');
+  s.uOvTex = gl.getUniformLocation(s.ovProg, 'u_tex');
+  s.uLineViewport = gl.getUniformLocation(s.lineProg, 'u_viewport');
+  s.uLineHalf = gl.getUniformLocation(s.lineProg, 'u_lineHalf');
+  s.uSphereViewport = gl.getUniformLocation(s.sphereProg, 'u_viewport');
+  s.uSphereDpr = gl.getUniformLocation(s.sphereProg, 'u_dpr');
+  s.uSphereBg = gl.getUniformLocation(s.sphereProg, 'u_bgColor');
+
+  s.ovVao = gl.createVertexArray(); s.ovVbo = gl.createBuffer(); s.ovTex = gl.createTexture();
+  s.lineVao = gl.createVertexArray(); s.lineVbo = gl.createBuffer();
+  s.sphereVao = gl.createVertexArray(); s.quadVbo = gl.createBuffer(); s.instVbo = gl.createBuffer();
+  if (!s.ovVao || !s.ovVbo || !s.ovTex || !s.lineVao || !s.lineVbo || !s.sphereVao || !s.quadVbo || !s.instVbo) {
+    disposeGLResources(s);
+    return false;
+  }
+
+  gl.bindVertexArray(s.ovVao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, s.ovVbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  gl.bindTexture(gl.TEXTURE_2D, s.ovTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, s.quadVbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+  setupInstancedQuadVao(gl, s.lineVao, s.quadVbo, s.lineVbo);
+  setupInstancedQuadVao(gl, s.sphereVao, s.quadVbo, s.instVbo);
+
+  gl.bindVertexArray(null);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  gl.disable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0, 0, 0, 0);
+  gl.useProgram(s.ovProg);
+  gl.uniform1i(s.uOvTex, 0);
+
+  s.ovTexVersion = -1;
+  s.lineGpuCapFloats = 0;
+  s.instGpuCapFloats = 0;
+  return true;
+}
+
+function isSoftwareWebGL(gl) {
+  try {
+    const dbg = typeof gl.getExtension === 'function' ? gl.getExtension('WEBGL_debug_renderer_info') : null;
+    const uRen = dbg && typeof gl.getParameter === 'function' ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '';
+    const ren = typeof gl.getParameter === 'function' ? gl.getParameter(gl.RENDERER) : '';
+    return /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i.test(String(uRen || '') + ' ' + String(ren || ''));
+  } catch (_) {
+    return false;
+  }
+}
+
+function attachGLContextListeners(canvas) {
+  if (!canvas || canvas._glListenersAttached || typeof canvas.addEventListener !== 'function') return;
+  canvas._glListenersAttached = true;
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    if (canvas._glState) canvas._glState.lost = true;
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    const s = canvas._glState;
+    if (!s) return;
+    clearGLHandles(s);
+    s.ovTexVersion = -1;
+    s.lineGpuCapFloats = 0;
+    s.instGpuCapFloats = 0;
+    s.lost = !buildGLResources(s);
+  });
+}
+
+function initWebGLRenderer(canvas, allowSoftware = false) {
+  if (!canvas || typeof canvas.getContext !== 'function') return null;
+  if (canvas._glState) {
+    disposeGLResources(canvas._glState);
+    canvas._glState = null;
+  }
+  if (canvas._glSoftRejected) {
+    canvas.width = 0;
+    canvas.height = 0;
+    return null;
+  }
+  // Spheres and instanced trail quads both apply analytical per-pixel AA and overlay uses LINEAR;
+  // antialias:false avoids 4x MSAA overhead, and skipping software WebGL (SwiftShader/llvmpipe) uses our faster batched 2D fallback.
+  const gl = canvas.getContext('webgl2', {
+    alpha: true,
+    premultipliedAlpha: true,
+    antialias: false,
+    depth: false,
+    preserveDrawingBuffer: false,
+    failIfMajorPerformanceCaveat: !allowSoftware,
+  });
+  if (!gl) return null;
+  if (!allowSoftware && isSoftwareWebGL(gl)) {
+    canvas._glSoftRejected = true;
+    const lc = typeof gl.getExtension === 'function' ? gl.getExtension('WEBGL_lose_context') : null;
+    if (lc && typeof lc.loseContext === 'function') lc.loseContext();
+    canvas.width = 0;
+    canvas.height = 0;
+    return null;
+  }
+  const state = {
+    canvas, gl, lost: false,
+    ovProg: null, ovVao: null, ovVbo: null, ovTex: null, ovTexVersion: -1, uOvViewport: null, uOvSize: null, uOvTex: null,
+    lineProg: null, lineVao: null, lineVbo: null, uLineViewport: null, uLineHalf: null,
+    lineBuf: new Float32Array(2048 * 8), lineFloats: 0, lineGpuCapFloats: 0,
+    sphereProg: null, sphereVao: null, quadVbo: null, instVbo: null, uSphereViewport: null, uSphereDpr: null, uSphereBg: null,
+    instBuf: new Float32Array(256 * 8), instGpuCapFloats: 0,
+  };
+  const ctxLost = typeof gl.isContextLost === 'function' && gl.isContextLost();
+  if (ctxLost) {
+    state.lost = true;
+  } else if (!buildGLResources(state)) {
+    return null;
+  }
+  canvas._glState = state;
+  attachGLContextListeners(canvas);
+  return state;
+}
+
+function ensureLineFloats(s, need) {
+  if (need <= s.lineBuf.length) return;
+  let cap = s.lineBuf.length || 2048;
+  while (cap < need) cap *= 2;
+  const next = new Float32Array(cap);
+  if (s.lineFloats > 0) next.set(s.lineBuf.subarray(0, s.lineFloats));
+  s.lineBuf = next;
+}
+
+function pushHistTrailGL(s, hh, sx0, sy0, cx, cy, S, cp, sp, ca, sa, r, g, b) {
+  const len = hh.length;
+  if (!len || !Number.isFinite(sx0) || !Number.isFinite(sy0)) return;
+  ensureLineFloats(s, s.lineFloats + len * 8);
+  const buf = s.lineBuf, trA = SPHERE_CFG.trailAlpha, invLen = 1 / (len + 1), spS = sp * S, cpS = cp * S;
+  let f = s.lineFloats, px = sx0, py = sy0;
+  for (let j = 0; j < len; j++) {
+    const pt = hh[len - 1 - j], rx = pt[0] * ca - pt[1] * sa, ry = pt[0] * sa + pt[1] * ca;
+    const nx = cx + rx * S, ny = cy - (ry * spS + pt[2] * cpS);
+    if (Number.isFinite(nx) && Number.isFinite(ny)) {
+      const dx = nx - px, dy = ny - py;
+      if (dx * dx + dy * dy >= 1e-4) {
+        const al = trA * (1 - (j + 1) * invLen);
+        buf[f] = px; buf[f + 1] = py; buf[f + 2] = nx; buf[f + 3] = ny;
+        buf[f + 4] = r; buf[f + 5] = g; buf[f + 6] = b; buf[f + 7] = al;
+        f += 8; px = nx; py = ny;
+      }
+    }
+  }
+  s.lineFloats = f;
+}
+
+function drawOverlayGL(s) {
+  if (!offIm || offIm.width !== offW || offIm.height !== offH) return 0;
+  const gl = s.gl;
+  gl.useProgram(s.ovProg);
+  gl.bindVertexArray(s.ovVao);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, s.ovTex);
+  if (s.ovTexVersion !== ovPaintedVersion) {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, offW, offH, 0, gl.RGBA, gl.UNSIGNED_BYTE, offIm.data);
+    s.ovTexVersion = ovPaintedVersion;
+  }
+  gl.uniform2f(s.uOvViewport, W, H);
+  gl.uniform2f(s.uOvSize, offW * cellSz, offH * cellSz);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  return 1;
+}
+
+function drawLinesGL(s, st, glDpr, rgbPrecomputed) {
+  const { n, singleMode, cp, sp, ca, sa, cx, cy, S, E: E_val, Om, span } = st;
+  const C = SPHERE_CFG;
+  s.lineFloats = 0;
+
+  const yAxis0 = cy + E_val * cp * S, yAxis1 = cy - E_val * cp * S;
+  const axisDy = yAxis1 - yAxis0, axisLen = Math.abs(axisDy);
+  if (axisLen >= 0.5 && Number.isFinite(cx) && Number.isFinite(axisLen)) {
+    const segs = Math.ceil(axisLen / 8);
+    ensureLineFloats(s, segs * 8);
+    const buf = s.lineBuf, dirY = axisDy >= 0 ? 1 : -1;
+    const gr = theme.gridR, gg = theme.gridG, gb = theme.gridB, ga = theme.gridA;
+    let f = 0;
+    for (let pos = 0; pos < axisLen; pos += 8) {
+      const segEnd = pos + 4 < axisLen ? pos + 4 : axisLen;
+      buf[f] = cx; buf[f + 1] = yAxis0 + dirY * pos; buf[f + 2] = cx; buf[f + 3] = yAxis0 + dirY * segEnd;
+      buf[f + 4] = gr; buf[f + 5] = gg; buf[f + 6] = gb; buf[f + 7] = ga;
+      f += 8;
+    }
+    s.lineFloats = f;
+  }
+
+  if (rgbPrecomputed) {
+    ensurePartRgb(n);
+    for (let i = 0; i < n; i++) hueTToRgb(partHueT[i], partRgb, i * 3);
+    if (singleMode) {
+      const spS = sp * S, cpS = cp * S, trA = C.trailAlpha;
+      for (let i = 0; i < n; i++) {
+        const q = P[i], wt = q.w + Om, i3 = i * 3;
+        const trR = partRgb[i3], trG = partRgb[i3 + 1], trB = partRgb[i3 + 2];
+        if (q.hist && q.hist.length > 1) {
+          pushHistTrailGL(s, q.hist, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, trR, trG, trB);
+        } else if (Math.abs(wt) > 1e-9) {
+          const sx0 = partSX[i], sy0 = partSY[i];
+          if (!Number.isFinite(sx0) || !Number.isFinite(sy0)) continue;
+          const arc = Math.min(Math.abs(wt) * span, C.arcMax), dir = wt > 0 ? 1 : -1;
+          const N = Math.max(C.arcMinSegs, Math.ceil(arc / C.arcStep));
+          ensureLineFloats(s, s.lineFloats + N * 8);
+          const buf = s.lineBuf, qzS = q.z * cpS, invNp1 = 1 / (N + 1);
+          const dPhi = (-dir * arc) / N, dc = Math.cos(dPhi), ds = Math.sin(dPhi);
+          let f = s.lineFloats, rx = partRX[i], ry = partRY[i], lx = sx0, ly = sy0;
+          for (let k = 1; k <= N; k++) {
+            const nrx = rx * dc - ry * ds;
+            ry = rx * ds + ry * dc;
+            rx = nrx;
+            const nx = cx + rx * S, ny = cy - (ry * spS + qzS), al = trA * (1 - k * invNp1);
+            buf[f] = lx; buf[f + 1] = ly; buf[f + 2] = nx; buf[f + 3] = ny;
+            buf[f + 4] = trR; buf[f + 5] = trG; buf[f + 6] = trB; buf[f + 7] = al;
+            f += 8; lx = nx; ly = ny;
+          }
+          s.lineFloats = f;
+        }
+      }
+    } else {
+      for (let i = 0; i < n; i++) {
+        const q = P[i], hh = q.hist;
+        if (!hh || !hh.length) continue;
+        const i3 = i * 3;
+        pushHistTrailGL(s, hh, partSX[i], partSY[i], cx, cy, S, cp, sp, ca, sa, partRgb[i3], partRgb[i3 + 1], partRgb[i3 + 2]);
+      }
+    }
+  }
+
+  const lineSegs = (s.lineFloats / 8) | 0;
+  // Reports logical segment endpoints (2 per instanced line quad)
+  _renderStats.lineVerts = lineSegs * 2;
+  if (lineSegs <= 0) return 0;
+
+  const gl = s.gl, effDpr = glDpr > 1 ? glDpr : 1, halfDev = 0.5 * effDpr + 0.5;
+  gl.useProgram(s.lineProg);
+  gl.bindVertexArray(s.lineVao);
+  gl.uniform2f(s.uLineViewport, W, H);
+  gl.uniform2f(s.uLineHalf, halfDev, halfDev / effDpr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, s.lineVbo);
+  if (s.lineFloats > s.lineGpuCapFloats) {
+    s.lineGpuCapFloats = s.lineBuf.length;
+    gl.bufferData(gl.ARRAY_BUFFER, s.lineBuf.byteLength, gl.DYNAMIC_DRAW);
+  }
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, s.lineBuf, 0, s.lineFloats);
+  gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, lineSegs);
+  return 1;
+}
+
+function pushNucleusInstance(instBuf, instCount, cx, cy, nucAlpha) {
+  const o = instCount * 8;
+  instBuf[o] = cx; instBuf[o + 1] = cy; instBuf[o + 2] = SPHERE_CFG.nucRad; instBuf[o + 3] = 0.5;
+  instBuf[o + 4] = theme.gridR; instBuf[o + 5] = theme.gridG; instBuf[o + 6] = theme.gridB; instBuf[o + 7] = nucAlpha;
+  return instCount + 1;
+}
+
+function drawSpheresGL(s, st, glDpr, rgbPrecomputed) {
+  const { n, cx, cy, E: E_val } = st;
+  const C = SPHERE_CFG, radSpan = C.radFront - C.radBack, alphaSpan = C.alphaFront - C.alphaBack;
+  const needInstFloats = (n + 1) * 8;
+  if (needInstFloats > s.instBuf.length) {
+    let cap = s.instBuf.length || 256 * 8;
+    while (cap < needInstFloats) cap *= 2;
+    s.instBuf = new Float32Array(cap);
+  }
+  const instBuf = s.instBuf;
+  const invE = E_val > 0 ? 1 / E_val : 0;
+  const nucAlpha = Math.max(C.nucAlphaMin, Number.isFinite(theme.gridA) ? theme.gridA : 0.55);
+  let instCount = 0, nucDrawn = false;
+  for (let k = 0; k < n; k++) {
+    const i = partOrder[k], depth = partDepth[i];
+    if (!nucDrawn && !(depth > 0)) {
+      instCount = pushNucleusInstance(instBuf, instCount, cx, cy, nucAlpha);
+      nucDrawn = true;
+    }
+    const sx = partSX[i], sy = partSY[i];
+    if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(depth)) continue;
+    let dn = (depth * invE + 1) * 0.5;
+    if (dn < 0) dn = 0; else if (dn > 1) dn = 1;
+    const o = instCount * 8;
+    instBuf[o] = sx; instBuf[o + 1] = sy; instBuf[o + 2] = C.radFront - radSpan * dn; instBuf[o + 3] = dn;
+    if (rgbPrecomputed) {
+      const i3 = i * 3;
+      instBuf[o + 4] = partRgb[i3]; instBuf[o + 5] = partRgb[i3 + 1]; instBuf[o + 6] = partRgb[i3 + 2];
+    } else {
+      hueTToRgb(partHueT[i], instBuf, o + 4);
+    }
+    instBuf[o + 7] = C.alphaFront - alphaSpan * dn;
+    instCount++;
+  }
+  if (!nucDrawn) instCount = pushNucleusInstance(instBuf, instCount, cx, cy, nucAlpha);
+  _renderStats.sphereCount = instCount;
+  if (instCount <= 0) return 0;
+
+  const gl = s.gl, instFloats = instCount * 8;
+  gl.useProgram(s.sphereProg);
+  gl.bindVertexArray(s.sphereVao);
+  gl.uniform2f(s.uSphereViewport, W, H);
+  gl.uniform1f(s.uSphereDpr, glDpr);
+  gl.uniform3f(s.uSphereBg, theme.bgR, theme.bgG, theme.bgB);
+  gl.bindBuffer(gl.ARRAY_BUFFER, s.instVbo);
+  if (instFloats > s.instGpuCapFloats) {
+    s.instGpuCapFloats = s.instBuf.length;
+    gl.bufferData(gl.ARRAY_BUFFER, s.instBuf.byteLength, gl.DYNAMIC_DRAW);
+  }
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, s.instBuf, 0, instFloats);
+  gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, instCount);
+  return 1;
+}
+
+function drawSceneGL(s, st) {
+  if (!s || s.lost) return false;
+  const gl = s.gl;
+  if (!gl || gl.isContextLost()) { s.lost = true; return false; }
+  const cvEl = s.canvas;
+  if (!cvEl || cvEl.width <= 0 || cvEl.height <= 0 || !(W > 0 && H > 0)) return false;
+
+  gl.viewport(0, 0, cvEl.width, cvEl.height);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  let drawCalls = 0;
+  if (st.showOverlay && offW > 0 && offH > 0) drawCalls += drawOverlayGL(s);
+
+  const glDpr = W > 0 ? cvEl.width / W : (_stageDpr || 1);
+  const rgbPrecomputed = st.showTr && st.n > 0;
+  drawCalls += drawLinesGL(s, st, glDpr, rgbPrecomputed);
+  drawCalls += drawSpheresGL(s, st, glDpr, rgbPrecomputed);
+
+  _renderStats.drawCalls = drawCalls;
+  return true;
+}
+/* === RENDERER_GL_END === */
+
+let glState = null, _glForceTried = false;
+let _hudDirty = true, _hudStageVer = -1, _hudThemeVer = -1;
+let _hudP = NaN, _hudAz = NaN, _hudE = -1, _hudPulse = null, _hudPulseT = -1;
+function frame(now) {
+  const curDpr = window.devicePixelRatio;
+  if (Number.isFinite(curDpr) && curDpr > 0 && curDpr !== _stageDpr) resize();
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+  const spd = +$('spd').value, ts = tscale(), Om = Bau / 2, span = spd * ts * 0.7, dts = dt * spd * ts;
+  if (run) {
+    if (pulse) {
+      if (!workerActive || pulse._localSim) { resetSimPipeline(pulse.t); stepPulse(dt, spd, span); }
+      else { dispatchNextSim(); applyPlaybackStep(dts, span); dispatchNextSim(); }
+    } else if (eff.length >= 2) {
+      if (!workerActive) { resetSimPipeline(tSim); stepSuperposition(dts, span); }
+      else { dispatchNextSim(); applyPlaybackStep(dts, span); dispatchNextSim(); }
+    } else if (eff.length === 1) {
+      tSim += dts;
+    }
+  }
+  const p = getTiltRad(), cp = Math.cos(p), sp = Math.sin(p);
+  const az = getAzRad(), ca = Math.cos(az), sa = Math.sin(az);
+  const S = Math.min(W, H * 1.15) / (2 * E), cx = W / 2, cy = H / 2;
+  const singleMode = !pulse && eff.length === 1;
+  const hasParticles = singleMode || !!pulse || eff.length >= 2;
+  const n = hasParticles ? P.length : 0;
+  const minStep = Math.max(span / 22, 1e-6);
+  const inv08E = E > 0 ? 1 / (0.8 * E) : 0;
+  ensurePartBuffers(n);
+  let hasHistTrails = false;
+  if (singleMode) {
+    for (let i = 0; i < n; i++) {
+      const q = P[i], wt = q.w + Om;
+      if (run) q.ph = (q.ph + wt * dts) % TAU;
+      const phV = q.ph + az, rx = q.rho * Math.cos(phV), ry = q.rho * Math.sin(phV);
+      if (run && q.hist && q.hist.length) {
+        const px = q.rho * Math.cos(q.ph), py = q.rho * Math.sin(q.ph), hh = q.hist;
+        if ((tSim - hh[hh.length - 1][3]) >= minStep) {
+          if (Math.abs(wt) > 1e-9) {
+            hh.push([px, py, q.z, tSim]);
+            if (hh.length > 22) hh.shift();
+            if (hh[0][3] >= 0) delete q.hist;
+          } else {
+            hh[hh.length - 1][3] = tSim;
+            hh.shift();
+            if (hh.length <= 1) delete q.hist;
+          }
+        }
+      }
+      if (q.hist && q.hist.length > 1) hasHistTrails = true;
+      partRX[i] = rx; partRY[i] = ry;
+      partSX[i] = cx + rx * S; partSY[i] = cy - (ry * sp + q.z * cp) * S; partDepth[i] = ry * cp - q.z * sp;
+      const ht = q.rho * inv08E;
+      partHueT[i] = ht > 0 ? (ht < 1 ? ht : 1) : 0;
+    }
+  } else if (n > 0) {
+    for (let i = 0; i < n; i++) {
+      const q = P[i], rx = q.x * ca - q.y * sa, ry = q.x * sa + q.y * ca;
+      partSX[i] = cx + rx * S; partSY[i] = cy - (ry * sp + q.z * cp) * S; partDepth[i] = ry * cp - q.z * sp;
+      const ht = Math.sqrt(q.x * q.x + q.y * q.y) * inv08E;
+      partHueT[i] = ht > 0 ? (ht < 1 ? ht : 1) : 0;
+    }
+  }
+  if (W > 0 && H > 0) {
+    const showOverlay = $('ov').checked && renderOverlay(p, az, S, cx, cy);
+    const showTr = $('tr').checked && (!!pulse || eff.length >= 2 || hasHistTrails || (singleMode && (eff[0].m !== 0 || Bau !== 0)));
+    sortParticleOrder(partOrder, partDepth, n);
+    const st = _frameState;
+    st.n = n; st.singleMode = singleMode; st.showOverlay = showOverlay; st.showTr = showTr;
+    st.cp = cp; st.sp = sp; st.ca = ca; st.sa = sa; st.az = az; st.cx = cx; st.cy = cy; st.S = S; st.E = E; st.Om = Om; st.span = span;
+    const force = typeof window !== 'undefined' ? (window.__forceRenderer || null) : null;
+    if (force === 'webgl2' && !glState && !_glForceTried && glCv) {
+      _glForceTried = true;
+      if (glCv._glSoftRejected && typeof glCv.cloneNode === 'function' && typeof glCv.replaceWith === 'function') {
+        const fresh = glCv.cloneNode(false);
+        glCv.replaceWith(fresh);
+        glCv = fresh;
+      }
+      if (glCv.width !== cv.width || glCv.height !== cv.height) {
+        glCv.width = cv.width;
+        glCv.height = cv.height;
+      }
+      glState = initWebGLRenderer(glCv, true);
+      _glStageSync = Boolean(glState);
+      if (!glState) { glCv.width = 0; glCv.height = 0; }
+    }
+    const tDraw0 = performance.now();
+    if (force !== '2d' && glState && drawSceneGL(glState, st)) {
+      if (glCv && glCv.style.visibility === 'hidden') glCv.style.visibility = '';
+      const pulseT = pulse ? pulse.t : -1;
+      if (
+        _hudDirty ||
+        _hudStageVer !== stageVersion ||
+        _hudThemeVer !== themeVersion ||
+        _hudP !== p ||
+        _hudAz !== az ||
+        _hudE !== E ||
+        _hudPulse !== pulse ||
+        _hudPulseT !== pulseT
+      ) {
+        ctx.clearRect(0, 0, W, H);
+        drawHud2D(cp, sp, ca, sa, cx, cy, S, E);
+        _hudDirty = false;
+        _hudStageVer = stageVersion;
+        _hudThemeVer = themeVersion;
+        _hudP = p;
+        _hudAz = az;
+        _hudE = E;
+        _hudPulse = pulse;
+        _hudPulseT = pulseT;
+      }
+      _renderStats.backend = 'webgl2';
+      _renderStats.lastDrawMs = performance.now() - tDraw0;
+    } else {
+      _hudDirty = true;
+      _hudPulse = null;
+      if (glCv && glCv.style.visibility !== 'hidden') glCv.style.visibility = 'hidden';
+      _renderStats.sphereCount = drawScene2D(st);
+      _renderStats.backend = '2d';
+      _renderStats.drawCalls = 0;
+      _renderStats.lineVerts = 0;
+      _renderStats.lastDrawMs = performance.now() - tDraw0;
+    }
+  }
+  requestAnimationFrame(frame);
+}
 
 window.addEventListener('resize',()=>{resize();overlayDirty=true;requestOverlayNow();});
 window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{refreshTheme();key='';ovPaintedKey='';overlayDirty=true;requestOverlayNow();});
 initSimWorker();
-resize();refresh(false,true);
+const _initForceGL=typeof window!=='undefined'&&window.__forceRenderer==='webgl2';
+if(_initForceGL)_glForceTried=true;
+resize();
+glState=initWebGLRenderer(glCv,_initForceGL);
+if(!glState){_glStageSync=false;if(glCv){glCv.width=0;glCv.height=0;glCv.style.visibility='hidden';}}
+refresh(false,true);
 requestAnimationFrame(frame);
 
 /* ---------- interactive tutorial sidepanel ---------- */
