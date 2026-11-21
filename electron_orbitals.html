@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -36,6 +50,9 @@ input[type=range]{flex:1;min-width:110px;min-block-size:var(--target-size);accen
 [hidden]{display:none!important}
 .note{font-size:12px;color:var(--mut);margin:6px 0 0;text-wrap:pretty}
 .note.warn{color:var(--warn)}
+footer.license-note{margin-top:12px;padding-top:8px;border-top:1px solid var(--line)}
+footer.license-note a{color:var(--acc);text-decoration:underline;text-underline-offset:2px}
+footer.license-note a:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:3px}
 details.b-info{font-size:12px;color:var(--mut);margin:4px 0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
 details.b-info>summary{cursor:pointer;padding:6px 10px;min-block-size:var(--target-size);display:flex;align-items:center;color:var(--fg)}
 details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
@@ -288,6 +305,7 @@ details.b-info>div{padding:0 10px 8px}details.b-info p{margin:6px 0}
 </select>
 </div>
 <p class="note">Normalized eigenstates (Σ|c<sub>k</sub>|² = 1) evolve freely as c<sub>k</sub>e<sup>−iE<sub>k</sub>t</sup> with linear Zeeman shifts and Larmor circulation. <b>Single photon</b> exchanges one quantum (use <b>Match</b> for valid spin); <b>Coherent EM wave</b> simulates a full 3D laser/RF pulse (click <b>1π</b> for clean transfer). Open <b>Tutorial</b> for derivations and guided demos.</p>
+<footer class="note license-note">Licensed under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">GNU Affero General Public License v3.0 (AGPLv3)</a>.</footer>
 </main>
 <aside id="tut-panel" aria-labelledby="tut-heading" hidden>
 <div class="tut-head">
