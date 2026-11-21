@@ -8,136 +8,29 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
-import fs from 'node:fs';
-import net from 'node:net';
-import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import zlib from 'node:zlib';
+import { closeBrowserPage, findBrowser, launchBrowserPage } from './_cdp_helper.mjs';
 
 const HTML_URL = pathToFileURL(path.resolve(import.meta.dirname, '..', 'electron_orbitals.html')).href;
-
-function findBrowser() {
-  if (process.env.CHROMIUM_BIN) return process.env.CHROMIUM_BIN;
-  for (const bin of ['chromium', 'chromium-browser', 'google-chrome']) {
-    try {
-      const resolved = execFileSync('which', [bin], { encoding: 'utf8' }).trim();
-      if (resolved) return resolved;
-    } catch {
-      // try next candidate
-    }
-  }
-  return null;
-}
-
-function getFreePort() {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer();
-    srv.unref();
-    srv.on('error', reject);
-    srv.listen(0, '127.0.0.1', () => {
-      const { port } = srv.address();
-      srv.close(() => resolve(port));
-    });
-  });
-}
-
-async function waitForWs(port) {
-  for (let i = 0; i < 50; i++) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json`);
-      const pages = await res.json();
-      const page = pages.find((p) => p.type === 'page');
-      if (page?.webSocketDebuggerUrl) return page.webSocketDebuggerUrl;
-    } catch {
-      // Chromium still starting up
-    }
-    await new Promise((r) => setTimeout(r, 150));
-  }
-  throw new Error('Chromium DevTools WebSocket did not become ready');
-}
-
-function createCDP(wsUrl) {
-  const ws = new WebSocket(wsUrl);
-  let nextId = 1;
-  const pending = new Map();
-  const events = [];
-
-  ws.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
-    if (msg.id) {
-      const entry = pending.get(msg.id);
-      if (entry) {
-        pending.delete(msg.id);
-        if (msg.error) entry.reject(new Error(msg.error.message));
-        else entry.resolve(msg.result);
-      }
-    } else {
-      events.push(msg);
-    }
-  };
-
-  const ready = new Promise((resolve, reject) => {
-    ws.onopen = resolve;
-    ws.onerror = reject;
-  });
-
-  const call = (method, params = {}) =>
-    new Promise((resolve, reject) => {
-      const id = nextId++;
-      pending.set(id, { resolve, reject });
-      ws.send(JSON.stringify({ id, method, params }));
-    });
-
-  return { ws, ready, call, events };
-}
 
 test('E2E browser simulation: superposition builder, single photon, coherent 2pi flip, and 320px dark UI', async () => {
   const browserBin = findBrowser();
   assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
 
-  const port = await getFreePort();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-e2e-'));
-  const chrome = spawn(
+  const session = await launchBrowserPage({
     browserBin,
-    [
-      '--headless=new',
-      '--disable-gpu',
-      '--no-sandbox',
-      `--remote-debugging-port=${port}`,
-      `--user-data-dir=${userDataDir}`,
-      '--window-size=1000,1200',
-      HTML_URL,
-    ],
-    { stdio: ['ignore', 'pipe', 'pipe'] }
-  );
+    url: HTML_URL,
+    flags: ['--disable-gpu'],
+    windowSize: '1000,1200',
+    tempPrefix: 'orbitals-e2e-',
+    settleMs: 600,
+  });
+  const { cdp, evalJS } = session;
+  const waitUntil = (predicateExpr, timeoutMs = 8000) => session.waitUntil(predicateExpr, timeoutMs, 120);
 
-  let cdp;
   try {
-    const wsUrl = await waitForWs(port);
-    cdp = createCDP(wsUrl);
-    await cdp.ready;
-    await cdp.call('Runtime.enable');
-    await cdp.call('Page.enable');
-    await new Promise((r) => setTimeout(r, 600));
-
-    const evalJS = async (expression) => {
-      const res = await cdp.call('Runtime.evaluate', { expression, returnByValue: true });
-      if (res.exceptionDetails) {
-        throw new Error(`Page JS exception: ${JSON.stringify(res.exceptionDetails)}`);
-      }
-      return res.result.value;
-    };
-
-    const waitUntil = async (predicateExpr, timeoutMs = 8000) => {
-      const deadline = Date.now() + timeoutMs;
-      while (Date.now() < deadline) {
-        if (await evalJS(predicateExpr)) return;
-        await new Promise((r) => setTimeout(r, 120));
-      }
-      throw new Error(`Timed out waiting for condition: ${predicateExpr}`);
-    };
 
     // 1. Initial load state
     const init = await evalJS(`({
@@ -562,7 +455,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     })()`);
     await new Promise((r) => setTimeout(r, 100));
     const sliceAlphaStats = await evalJS(`(() => {
-      const img = offCtx.getImageData(0, 0, offW, offH).data;
+      const img = offIm.data;
       let maxA = 0;
       for (let i = 3; i < img.length; i += 4) if (img[i] > maxA) maxA = img[i];
       return { maxA, offW, offH };
@@ -575,7 +468,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     })()`);
     await waitUntil('ovHasImage && ovMode === "proj" && !ovBusy', 2000);
     const projAlphaStats = await evalJS(`(() => {
-      const img = offCtx.getImageData(0, 0, offW, offH).data;
+      const img = offIm.data;
       let maxA = 0;
       for (let i = 3; i < img.length; i += 4) if (img[i] > maxA) maxA = img[i];
       const cornerA = img[3];
@@ -984,7 +877,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
 
     const dragStep1 = await evalJS(`(() => {
       const sampleDirs = () => {
-        const img = offCtx.getImageData(0, 0, offW, offH).data;
+        const img = offIm.data;
         const cxI = Math.floor(offW / 2), cyI = Math.floor(offH / 2);
         const rPx = Math.max(2, Math.round(Math.min(offW, offH) * 0.14));
         const dPx = Math.max(2, Math.round(rPx * Math.SQRT1_2));
@@ -1126,36 +1019,23 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
     );
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
   } finally {
-    if (cdp?.ws) {
-      try {
-        cdp.ws.close();
-      } catch {
-        // ignore close errors
-      }
-    }
-    chrome.kill('SIGKILL');
-    fs.rmSync(userDataDir, { recursive: true, force: true });
+    await closeBrowserPage(session);
   }
 });
 
 test('E2E tutorial figures: toolkit widgets mount, animate only while visible, honour reduced motion, fit 320px', async () => {
   const browserBin = findBrowser();
   assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
-  const port = await getFreePort();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-e2e-fig-'));
-  const chrome = spawn(browserBin, ['--headless=new', '--disable-gpu', '--no-sandbox', `--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`, '--window-size=1200,1000', HTML_URL], { stdio: ['ignore', 'pipe', 'pipe'] });
-  let cdp;
+  const session = await launchBrowserPage({
+    browserBin,
+    url: HTML_URL,
+    flags: ['--disable-gpu'],
+    windowSize: '1200,1000',
+    tempPrefix: 'orbitals-e2e-fig-',
+    settleMs: 600,
+  });
+  const { cdp, evalJS } = session;
   try {
-    cdp = createCDP(await waitForWs(port));
-    await cdp.ready;
-    await cdp.call('Runtime.enable');
-    await cdp.call('Page.enable');
-    await new Promise((r) => setTimeout(r, 600));
-    const evalJS = async (expression) => {
-      const res = await cdp.call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-      if (res.exceptionDetails) throw new Error(`Page JS exception: ${JSON.stringify(res.exceptionDetails)}`);
-      return res.result.value;
-    };
     // Instrument every live figure's tick() so we can count animation frames per figure
     const probe = `(async () => {
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1208,10 +1088,7 @@ test('E2E tutorial figures: toolkit widgets mount, animate only while visible, h
     const errors = cdp.events.filter((e) => e.method === 'Runtime.exceptionThrown' || (e.method === 'Runtime.consoleAPICalled' && e.params?.type === 'error'));
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
   } finally {
-    try { cdp?.ws?.close(); } catch { /* ignore */ }
-    chrome.kill('SIGKILL');
-    await new Promise((r) => setTimeout(r, 300));
-    fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    await closeBrowserPage(session);
   }
 });
 
@@ -1291,60 +1168,24 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
   const browserBin = findBrowser();
   assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
 
-  const port = await getFreePort();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-e2e-gl-'));
-  const chrome = spawn(
+  const session = await launchBrowserPage({
     browserBin,
-    [
-      '--headless=new',
-      '--use-gl=angle',
-      '--use-angle=swiftshader',
-      '--enable-unsafe-swiftshader',
-      '--no-sandbox',
-      `--remote-debugging-port=${port}`,
-      `--user-data-dir=${userDataDir}`,
-      '--window-size=1000,1200',
-      HTML_URL,
-    ],
-    { stdio: ['ignore', 'pipe', 'pipe'] }
-  );
-
-  let cdp;
+    url: HTML_URL,
+    flags: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+    windowSize: '1000,1200',
+    tempPrefix: 'orbitals-e2e-gl-',
+    enableLog: true,
+    colorScheme: 'light',
+    settleMs: 600,
+  });
+  const { cdp, evalJS, waitUntil } = session;
   try {
-    const wsUrl = await waitForWs(port);
-    cdp = createCDP(wsUrl);
-    await cdp.ready;
-    await cdp.call('Runtime.enable');
-    await cdp.call('Page.enable');
-    await cdp.call('Log.enable');
-    await cdp.call('Emulation.setEmulatedMedia', {
-      features: [{ name: 'prefers-color-scheme', value: 'light' }],
-    });
-    await new Promise((r) => setTimeout(r, 600));
-
-    const evalJS = async (expression) => {
-      const res = await cdp.call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-      if (res.exceptionDetails) {
-        throw new Error(`Page JS exception: ${JSON.stringify(res.exceptionDetails)}`);
-      }
-      return res.result.value;
-    };
-
     const waitFrames = async (count = 3) => {
       await evalJS(`new Promise((resolve) => {
         let left = ${count};
         const step = () => { if (--left <= 0) resolve(true); else requestAnimationFrame(step); };
         requestAnimationFrame(step);
       })`);
-    };
-
-    const waitUntil = async (predicateExpr, timeoutMs = 8000) => {
-      const deadline = Date.now() + timeoutMs;
-      while (Date.now() < deadline) {
-        if (await evalJS(predicateExpr)) return;
-        await new Promise((r) => setTimeout(r, 100));
-      }
-      throw new Error(`Timed out waiting for condition: ${predicateExpr}`);
     };
 
     const captureCanvasPng = async () => {
@@ -1389,7 +1230,6 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       cvH: document.getElementById('c').height,
       glW: document.getElementById('c-gl').width,
       glH: document.getElementById('c-gl').height,
-      glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
     })`);
     assert.equal(initInfo.info.backend, 'webgl2', 'Expected WebGL2 backend under SwiftShader after explicit opt-in');
@@ -1399,7 +1239,6 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     assert.ok(initInfo.info.drawCalls >= 1 && initInfo.info.drawCalls <= 3, `Expected drawCalls <= 3, got ${initInfo.info.drawCalls}`);
     assert.ok(Number.isFinite(initInfo.info.lastDrawMs) && initInfo.info.lastDrawMs >= 0, 'lastDrawMs must be finite >= 0');
     assert.ok(Number.isInteger(initInfo.info.lineVerts) && initInfo.info.lineVerts >= 2, 'lineVerts must include z-axis');
-    assert.equal(initInfo.glHidden, false);
     assert.equal(initInfo.glVis, 'visible');
 
     // Verify __renderInfo is read-only / cannot corrupt internal renderer telemetry
@@ -1603,22 +1442,19 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     await waitFrames(4);
     const forced2dState = await evalJS(`({
       info: window.__renderInfo,
-      glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
     })`);
     assert.equal(forced2dState.info.backend, '2d');
-    assert.ok(forced2dState.glHidden || forced2dState.glVis === 'hidden', '#c-gl must be hidden when forced 2D is active');
+    assert.equal(forced2dState.glVis, 'hidden', '#c-gl must be hidden when forced 2D is active');
     await verifyShadingAndTransparency('2d');
 
     await evalJS('window.__forceRenderer = null;');
     await waitFrames(4);
     const restoredGlState = await evalJS(`({
       info: window.__renderInfo,
-      glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
     })`);
     assert.equal(restoredGlState.info.backend, 'webgl2', 'Clearing __forceRenderer must restore WebGL2');
-    assert.equal(restoredGlState.glHidden, false);
     assert.equal(restoredGlState.glVis, 'visible');
 
     // 5. WebGL context loss & restoration recovery
@@ -1648,12 +1484,11 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     const lostState = await evalJS(`({
       info: window.__renderInfo,
       pLen: P.length,
-      glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
     })`);
     assert.equal(lostState.info.backend, '2d');
     assert.equal(lostState.info.sphereCount, lostState.pLen + 1);
-    assert.ok(lostState.glHidden || lostState.glVis === 'hidden', '#c-gl must be hidden during webglcontextlost');
+    assert.equal(lostState.glVis, 'hidden', '#c-gl must be hidden during webglcontextlost');
 
     await evalJS('window.__e2eLoseExt.restoreContext();');
     await waitUntil('window.__renderInfo && window.__renderInfo.backend === "webgl2"', 5000);
@@ -1661,14 +1496,12 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     const recState = await evalJS(`({
       info: window.__renderInfo,
       pLen: P.length,
-      glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
       glErr: document.getElementById('c-gl').getContext('webgl2').getError(),
     })`);
     assert.equal(recState.info.backend, 'webgl2');
     assert.equal(recState.info.sphereCount, recState.pLen + 1);
     assert.ok(recState.info.drawCalls >= 1 && recState.info.drawCalls <= 3);
-    assert.equal(recState.glHidden, false);
     assert.equal(recState.glVis, 'visible');
     assert.equal(recState.glErr, 0, `Expected gl.NO_ERROR after context restore, got ${recState.glErr}`);
 
@@ -1700,7 +1533,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       `WebGL2 must actively draw spheres after context restore (bg=${postRestoreBg.toFixed(1)}, ball=${postRestoreBall.toFixed(1)})`
     );
 
-    // 5b. High-count GPU buffer growth (N = 2000 > initial 1024 instBuf cap) + multi-state q.hist polylines
+    // 5b. High-count GPU buffer growth (N = 2000 > initial 256 instBuf cap) + multi-state q.hist polylines
     await evalJS(`(() => {
       const arr = [];
       for (let i = 0; i < 2000; i++) {
@@ -1812,9 +1645,6 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     );
     assert.deepEqual(errors, [], `Expected 0 console/runtime errors or WebGL warnings, got: ${JSON.stringify(errors)}`);
   } finally {
-    try { cdp?.ws?.close(); } catch { /* ignore */ }
-    chrome.kill('SIGKILL');
-    await new Promise((r) => setTimeout(r, 300));
-    fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    await closeBrowserPage(session);
   }
 });

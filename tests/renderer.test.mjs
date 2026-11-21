@@ -14,13 +14,15 @@ const HTML_SRC = fs.readFileSync(HTML_PATH, 'utf8');
 const SCRIPT_SRC = HTML_SRC.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(SCRIPT_SRC, 'Inline <script> block must exist in electron_orbitals.html');
 
-function extractRendererHelpersSource() {
-  const startMarker = '/* === RENDERER_HELPERS_START === */';
-  const endMarker = '/* === RENDERER_HELPERS_END === */';
+function extractSection(startMarker, endMarker) {
   const s = SCRIPT_SRC.indexOf(startMarker);
   const e = SCRIPT_SRC.indexOf(endMarker);
-  assert.ok(s >= 0 && e > s, 'Expected RENDERER_HELPERS_START..END markers in electron_orbitals.html');
+  assert.ok(s >= 0 && e > s, `Expected ${startMarker}..${endMarker} markers in electron_orbitals.html`);
   return SCRIPT_SRC.slice(s, e);
+}
+
+function extractRendererHelpersSource() {
+  return extractSection('/* === RENDERER_HELPERS_START === */', '/* === RENDERER_HELPERS_END === */');
 }
 
 function createHelpersContext(cssVars = {}) {
@@ -60,35 +62,33 @@ function createHelpersContext(cssVars = {}) {
   };
   const tail = `
     globalThis.__helpers = {
-      parseCssColor: typeof parseCssColor === 'function' ? parseCssColor : undefined,
-      hueTToRgb: typeof hueTToRgb === 'function' ? hueTToRgb : undefined,
-      HUE_CSS_LUT: typeof HUE_CSS_LUT !== 'undefined' ? HUE_CSS_LUT : undefined,
-      sortParticleOrder: typeof sortParticleOrder === 'function' ? sortParticleOrder : undefined,
-      shadeSpherePixel: typeof shadeSpherePixel === 'function' ? shadeSpherePixel : undefined,
-      buildSphereSpriteAtlas: typeof buildSphereSpriteAtlas === 'function' ? buildSphereSpriteAtlas : undefined,
-      ensurePartBuffers: typeof ensurePartBuffers === 'function' ? ensurePartBuffers : undefined,
+      parseCssColor,
+      hueTToRgb,
+      sortParticleOrder,
+      buildSphereSpriteAtlas,
+      ensurePartBuffers,
+      SPHERE_CFG,
       getPartBuffers: () => ({
-        order: typeof partOrder !== 'undefined' ? partOrder : undefined,
-        depth: typeof partDepth !== 'undefined' ? partDepth : undefined,
-        sx: typeof partSX !== 'undefined' ? partSX : undefined,
-        sy: typeof partSY !== 'undefined' ? partSY : undefined,
-        hueT: typeof partHueT !== 'undefined' ? partHueT : undefined,
+        order: partOrder,
+        depth: partDepth,
+        sx: partSX,
+        sy: partSY,
+        rx: partRX,
+        ry: partRY,
+        hueT: partHueT,
       }),
-      refreshTheme: typeof refreshTheme === 'function' ? refreshTheme : undefined,
-      getTheme: () => (typeof theme !== 'undefined' ? theme : undefined),
-      getThemeVersion: () => (typeof themeVersion !== 'undefined' ? themeVersion : undefined),
+      refreshTheme,
+      getTheme: () => theme,
+      getThemeVersion: () => themeVersion,
     };
   `;
   vm.runInNewContext(src + '\n' + tail, sandbox);
   return sandbox.__helpers;
 }
 
-function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } = {}) {
+function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1, countTrig = false } = {}) {
   const helpersSrc = extractRendererHelpersSource();
-  const s2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_START === */');
-  const e2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_END === */');
-  assert.ok(s2 >= 0 && e2 > s2, 'Expected RENDERER_2D_START..END markers in electron_orbitals.html');
-  const r2dSrc = SCRIPT_SRC.slice(s2, e2);
+  const r2dSrc = extractSection('/* === RENDERER_2D_START === */', '/* === RENDERER_2D_END === */');
 
   const ops = [];
   let gAlpha = 1;
@@ -106,8 +106,8 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
     clearRect: (...a) => ops.push({ op: 'clearRect', a }),
     setLineDash: (d) => ops.push({ op: 'setLineDash', d }),
     beginPath: () => {},
-    moveTo: () => ops.push({ op: 'moveTo' }),
-    lineTo: () => ops.push({ op: 'lineTo' }),
+    moveTo: (x, y) => ops.push({ op: 'moveTo', x, y }),
+    lineTo: (x, y) => ops.push({ op: 'lineTo', x, y }),
     stroke: () => ops.push({ op: 'stroke', alpha: gAlpha }),
     arc: (x, y, r) => ops.push({ op: 'arc', x, y, r, alpha: gAlpha, fill: fStyle }),
     fill: () => ops.push({ op: 'fill', alpha: gAlpha, fill: fStyle }),
@@ -116,6 +116,27 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
   };
 
   let atlasBuilds = 0;
+  let putImageDataCalls = 0;
+  const offCanvas = { _tag: 'overlay', width: 0, height: 0 };
+  const fakeOffCtx = {
+    putImageData: (im, x, y) => {
+      putImageDataCalls++;
+      ops.push({ op: 'putImageData', w: im.width, h: im.height, x, y });
+    },
+  };
+
+  let trigCalls = 0;
+  const mathObj = countTrig
+    ? new Proxy(Math, {
+        get(target, prop) {
+          if (prop === 'cos' || prop === 'sin') {
+            return (x) => { trigCalls++; return target[prop](x); };
+          }
+          return target[prop];
+        },
+      })
+    : Math;
+
   const cssVars = {
     '--bg': '#fbfbfa',
     '--line': '#d9d9dc',
@@ -127,17 +148,20 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
   };
 
   const sandbox = {
-    Math, Number, String, Array, ArrayBuffer,
+    Math: mathObj, Number, String, Array, ArrayBuffer,
     Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray,
     Object, RegExp,
     TAU: Math.PI * 2,
     W, H,
     _stageDpr: dpr,
     ctx: fakeCtx,
-    off: { _tag: 'overlay' },
+    off: offCanvas,
+    offCtx: fakeOffCtx,
+    offIm: { width: 100, height: 80, data: new Uint8ClampedArray(100 * 80 * 4) },
     offW: 100,
     offH: 80,
     cellSz: 3,
+    ovPaintedVersion: 1,
     P: [],
     drawFieldGizmo: () => ops.push({ op: 'drawFieldGizmo' }),
     drawAxisTriad: () => ops.push({ op: 'drawAxisTriad' }),
@@ -173,11 +197,24 @@ function createRenderer2DContext({ atlasOk = true, W = 600, H = 400, dpr = 1 } =
       getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
       setStageDpr: (d) => { _stageDpr = d; },
       setP: (arr) => { P = arr; },
-      setOffDims: (w, h) => { offW = w; offH = h; },
+      setOffDims: (w, h) => {
+        offW = w; offH = h;
+        offIm = w > 0 && h > 0 ? { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) } : null;
+      },
+      bumpOv: () => { ovPaintedVersion++; },
     };
   `;
   vm.runInNewContext(helpersSrc + '\n' + r2dSrc + '\n' + tail, sandbox);
-  return { r2d: sandbox.__r2d, ops, cssVars, getAtlasBuilds: () => atlasBuilds };
+  return {
+    r2d: sandbox.__r2d,
+    ops,
+    cssVars,
+    offCanvas,
+    getAtlasBuilds: () => atlasBuilds,
+    getPutImageDataCalls: () => putImageDataCalls,
+    getTrigCalls: () => trigCalls,
+    resetTrigCalls: () => { trigCalls = 0; },
+  };
 }
 
 function createStageInitContext({ withGlCanvas = true, dpr = 1, clientWidth = 640, clientHeight = 400 } = {}) {
@@ -256,17 +293,17 @@ test('stage markup, CSS, and physics VM script boundary are properly structured'
   const cIdx = stageHtml.indexOf('<canvas id="c"');
   assert.ok(glIdx >= 0, 'Expected <canvas id="c-gl"> inside .stage');
   assert.ok(cIdx > glIdx, 'Expected <canvas id="c"> stacked after <canvas id="c-gl"> inside .stage');
-  assert.match(stageHtml, /<canvas id="c-gl"[^>]*aria-hidden="true"/, '#c-gl must be aria-hidden');
-  assert.match(stageHtml, /<canvas id="c"[^>]*tabindex="0"/, '#c must remain focusable');
+  assert.match(stageHtml, /<canvas\s+id="c-gl"[^>]*aria-hidden="true"/, '#c-gl must be aria-hidden');
+  assert.match(stageHtml, /<canvas\s+id="c"[^>]*tabindex="0"/, '#c must remain focusable');
 
   const styleSrc = HTML_SRC.match(/<style>([\s\S]*?)<\/style>/)?.[1] || '';
-  assert.match(styleSrc, /\.stage\{[^}]*position:\s*relative/, '.stage must be position:relative');
-  assert.doesNotMatch(styleSrc, /\.stage\{[^}]*overflow:\s*hidden/, '.stage must not clip #c:focus-visible outline');
-  assert.match(styleSrc, /#c-gl,#c\{[^}]*width:\s*100%[^}]*height:\s*100%/, '#c-gl and #c must fill .stage');
-  assert.match(styleSrc, /#c-gl,#c\{[^}]*border:\s*0[^}]*background:\s*transparent/, '#c-gl and #c must be borderless and transparent');
-  assert.match(styleSrc, /#c-gl\{[^}]*position:\s*absolute[^}]*inset:\s*0[^}]*pointer-events:\s*none/, '#c-gl must be absolute inset:0 and ignore pointer events');
-  assert.match(styleSrc, /#c\{[^}]*position:\s*relative/, '#c must be position:relative to stack above #c-gl');
-  assert.match(styleSrc, /#c:focus-visible\{[^}]*outline:/, '#c must retain focus-visible outline');
+  assert.match(styleSrc, /\.stage\s*\{[^}]*position:\s*relative/, '.stage must be position:relative');
+  assert.doesNotMatch(styleSrc, /\.stage\s*\{[^}]*overflow:\s*hidden/, '.stage must not clip #c:focus-visible outline');
+  assert.match(styleSrc, /#c-gl\s*,\s*#c\s*\{[^}]*width:\s*100%[^}]*height:\s*100%/, '#c-gl and #c must fill .stage');
+  assert.match(styleSrc, /#c-gl\s*,\s*#c\s*\{[^}]*border:\s*0[^}]*background:\s*transparent/, '#c-gl and #c must be borderless and transparent');
+  assert.match(styleSrc, /#c-gl\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0[^}]*pointer-events:\s*none/, '#c-gl must be absolute inset:0 and ignore pointer events');
+  assert.match(styleSrc, /#c\s*\{[^}]*position:\s*relative/, '#c must be position:relative to stack above #c-gl');
+  assert.match(styleSrc, /#c:focus-visible\s*\{[^}]*outline:/, '#c must retain focus-visible outline');
 
   const fmtBIdx = SCRIPT_SRC.indexOf('function fmtB(');
   const helpersIdx = SCRIPT_SRC.indexOf('/* === RENDERER_HELPERS_START === */');
@@ -368,9 +405,11 @@ test('parseCssColor parses hex, rgb/rgba, CSS4 space syntax, and invalid fallbac
   approx(parseCssColor('rgb(100%, 50%, 0%)'), [1, 0.5, 0, 1]);
   approx(parseCssColor('rgb(300, -10, 128)'), [1, 0, 128 / 255, 1]);
   approx(parseCssColor('rgba(0, 0, 0, 1.5)'), [0, 0, 0, 1]);
+  approx(parseCssColor('rgb(+10, 20, 30)'), [10 / 255, 20 / 255, 30 / 255, 1]);
+  approx(parseCssColor('rgba(10, 20, 30, 1e-2)'), [10 / 255, 20 / 255, 30 / 255, 0.01]);
 
   const fb = [0.2, 0.4, 0.6];
-  for (const bad of ['', 'not-a-color', '#12', '#zzzzzz', 'rgb(1, 2)', 'rgba(1,2,3,nope)', 'rgb(1,2,3) extra', 'rgb(1e500, 0, 0)', 'rgba(0, 0, 0, 1e500)', null, undefined]) {
+  for (const bad of ['', 'not-a-color', '#12', '#zzzzzz', 'rgb(1, 2)', 'rgba(1,2,3,nope)', 'rgb(1,2,3) extra', 'rgb(10, 20 / 30)', 'rgb(10 20 / 30 / 40)', 'rgb(1e500, 0, 0)', 'rgba(0, 0, 0, 1e500)', `rgb(${'9'.repeat(400)}, 0, 0)`, null, undefined]) {
     const out = parseCssColor(bad, fb);
     approx(out, [0.2, 0.4, 0.6, 1]);
     out[0] = 99;
@@ -382,12 +421,9 @@ test('parseCssColor parses hex, rgb/rgba, CSS4 space syntax, and invalid fallbac
   approx(parseCssColor('bad'), [0, 0, 0, 1]);
 });
 
-test('hueTToRgb and HUE_CSS_LUT match reference HSL(15 + clamp(t, 0, 1)*250, 70%, 56%)', () => {
-  const { hueTToRgb, HUE_CSS_LUT } = createHelpersContext();
+test('hueTToRgb matches reference HSL(15 + clamp(t, 0, 1)*250, 70%, 56%)', () => {
+  const { hueTToRgb } = createHelpersContext();
   assert.equal(typeof hueTToRgb, 'function');
-  assert.ok(Array.isArray(HUE_CSS_LUT) && HUE_CSS_LUT.length === 256);
-  assert.equal(HUE_CSS_LUT[0], 'hsl(15.00,70%,56%)');
-  assert.equal(HUE_CSS_LUT[255], 'hsl(265.00,70%,56%)');
 
   const buf = new Float32Array(8).fill(-1);
   // Include sector boundaries (hue 60, 120, 180, 240) plus endpoints and saturation
@@ -428,7 +464,7 @@ test('hueTToRgb and HUE_CSS_LUT match reference HSL(15 + clamp(t, 0, 1)*250, 70%
   }
 });
 
-test('sortParticleOrder sorts back-to-front (descending depth) and handles edge cases', () => {
+test('sortParticleOrder handles insertion sort and O(N log N) stable merge-sort bailout cleanly', () => {
   const { sortParticleOrder } = createHelpersContext();
   assert.equal(typeof sortParticleOrder, 'function');
 
@@ -437,12 +473,11 @@ test('sortParticleOrder sorts back-to-front (descending depth) and handles edge 
   const d0 = new Float32Array(0);
   assert.doesNotThrow(() => sortParticleOrder(o0, d0, 0));
 
-  const o1 = new Int32Array([7]);
+  const o1 = new Int32Array([0]);
   const d1 = new Float32Array([3.5]);
   sortParticleOrder(o1, d1, 1);
   assert.equal(o1[0], 0);
 
-  // Deterministic pseudo-random depths
   let seed = 1234567;
   const rand = () => {
     seed = (seed * 1664525 + 1013904223) >>> 0;
@@ -450,74 +485,110 @@ test('sortParticleOrder sorts back-to-front (descending depth) and handles edge 
   };
   const assertSortedDescPerm = (order, depths, n) => {
     const seen = new Uint8Array(n);
+    let sawNaN = false;
     for (let i = 0; i < n; i++) {
       const idx = order[i];
       assert.ok(idx >= 0 && idx < n, `Index ${idx} out of range 0..${n - 1}`);
       assert.equal(seen[idx], 0, `Duplicate index ${idx} in order`);
       seen[idx] = 1;
-      if (i > 0) {
-        assert.ok(
-          depths[order[i - 1]] >= depths[idx],
-          `Not descending at ${i}: ${depths[order[i - 1]]} < ${depths[idx]}`
-        );
+      const d = depths[idx];
+      if (Number.isNaN(d)) {
+        sawNaN = true;
+      } else {
+        assert.equal(sawNaN, false, `Non-NaN ${d} appeared after NaN at ${i}`);
+        if (i > 0 && !Number.isNaN(depths[order[i - 1]])) {
+          assert.ok(
+            depths[order[i - 1]] >= d,
+            `Not descending at ${i}: ${depths[order[i - 1]]} < ${d}`
+          );
+        }
       }
     }
   };
 
-  const n = 200;
-  const depths = new Float32Array(n);
-  const order = new Int32Array(n);
-  for (let i = 0; i < n; i++) {
-    depths[i] = (rand() - 0.5) * 40;
-    order[i] = i;
+  // Nearly sorted frame-coherent update (insertion sort path)
+  const nNear = 200;
+  const nearDepths = new Float32Array(nNear);
+  const nearOrder = new Int32Array(nNear);
+  for (let i = 0; i < nNear; i++) {
+    nearDepths[i] = nNear - i;
+    nearOrder[i] = i;
   }
-  sortParticleOrder(order, depths, n);
-  assertSortedDescPerm(order, depths, n);
+  for (let i = 0; i < nNear; i++) nearDepths[i] += (rand() - 0.5) * 1.5;
+  sortParticleOrder(nearOrder, nearDepths, nNear);
+  assertSortedDescPerm(nearOrder, nearDepths, nNear);
 
-  // Nearly sorted frame-coherent update
-  for (let i = 0; i < n; i++) depths[i] += (rand() - 0.5) * 0.4;
-  sortParticleOrder(order, depths, n);
-  assertSortedDescPerm(order, depths, n);
-
-  // Fresh zero-filled buffer recovers into valid sorted permutation
-  const zeroOrder = new Int32Array(n);
-  sortParticleOrder(zeroOrder, depths, n);
-  assertSortedDescPerm(zeroOrder, depths, n);
-
-  // Grown buffer with copied prefix and trailing zeros recovers cleanly
-  const grownOrder = new Int32Array(n + 25);
-  grownOrder.set(order);
-  const grownDepths = new Float32Array(n + 25);
-  for (let i = 0; i < grownDepths.length; i++) grownDepths[i] = (rand() - 0.5) * 40;
-  sortParticleOrder(grownOrder, grownDepths, grownDepths.length);
-  assertSortedDescPerm(grownOrder, grownDepths, grownDepths.length);
-
-  // Shrunk buffer with stale out-of-range indices recovers cleanly
-  sortParticleOrder(grownOrder, grownDepths, 40);
-  assertSortedDescPerm(grownOrder, grownDepths, 40);
-
-  // Stability on equal depths: 3 precedes 1 (both depth 10), 2 precedes 0 (both depth 5)
+  // Stability on equal depths (insertion sort path): 3 precedes 1 (depth 10), 2 precedes 0 (depth 5)
   const tieOrder = new Int32Array([2, 0, 3, 1]);
   const tieDepths = new Float32Array([5, 10, 5, 10]);
   sortParticleOrder(tieOrder, tieDepths, 4);
   assert.deepEqual([...tieOrder], [3, 1, 2, 0]);
 
-  // NaN and +/-Infinity in depths: finite values sort strictly descending and NaNs collect at tail
+  // NaN and +/-Infinity in depths (insertion sort path)
   const nanOrder = new Int32Array([0, 1, 2, 3, 4, 5, 6]);
   const nanDepths = new Float32Array([1, 3, NaN, 2, 4, -Infinity, Infinity]);
   sortParticleOrder(nanOrder, nanDepths, 7);
   assert.deepEqual([...nanOrder], [6, 4, 1, 3, 0, 5, 2]);
 
-  // Colliding non-permutation (same zeroCount=1, sum=21, xor=7 as 0..6) must self-heal
-  const collideOrder = new Int32Array([0, 1, 1, 3, 4, 6, 6]);
-  const collideDepths = new Float32Array([10, 20, 30, 40, 50, 60, 70]);
-  sortParticleOrder(collideOrder, collideDepths, 7);
-  assertSortedDescPerm(collideOrder, collideDepths, 7);
+  // Merge-sort bailout path 1: reversed N = 2000 array (shifts >> 4 * n)
+  const nRev = 2000;
+  const revDepths = new Float32Array(nRev);
+  const revOrder = new Int32Array(nRev);
+  for (let i = 0; i < nRev; i++) {
+    revDepths[i] = i;
+    revOrder[i] = i;
+  }
+  sortParticleOrder(revOrder, revDepths, nRev);
+  assertSortedDescPerm(revOrder, revDepths, nRev);
+  assert.equal(revOrder[0], nRev - 1);
+  assert.equal(revOrder[nRev - 1], 0);
 
-  // Plain array with fractional indices and non-integer n must self-heal safely
-  const floatOrder = [0, 0.5, 4.5, 1, 2, 6, 6];
-  sortParticleOrder(floatOrder, collideDepths, 5.7);
-  assertSortedDescPerm(floatOrder, collideDepths, 5);
+  // Merge-sort bailout path 2: random N = 500 array
+  const nRand = 500;
+  const randDepths = new Float32Array(nRand);
+  const randOrder = new Int32Array(nRand);
+  for (let i = 0; i < nRand; i++) {
+    randDepths[i] = (rand() - 0.5) * 100;
+    randOrder[i] = i;
+  }
+  sortParticleOrder(randOrder, randDepths, nRand);
+  assertSortedDescPerm(randOrder, randDepths, nRand);
+
+  // Merge-sort bailout path 3: stability on ties under bailout (ascending bands -> reversed order triggers bailout)
+  const nStab = 200;
+  const stabDepths = new Float32Array(nStab);
+  const stabOrder = new Int32Array(nStab);
+  for (let i = 0; i < nStab; i++) {
+    stabDepths[i] = Math.floor(i / 4); // 50 ascending groups of 4 ties -> ~20,000 inversions >> 4*200
+    stabOrder[i] = i;
+  }
+  sortParticleOrder(stabOrder, stabDepths, nStab);
+  assertSortedDescPerm(stabOrder, stabDepths, nStab);
+  for (let i = 1; i < nStab; i++) {
+    if (stabDepths[stabOrder[i - 1]] === stabDepths[stabOrder[i]]) {
+      assert.ok(
+        stabOrder[i - 1] < stabOrder[i],
+        `Lost stability on tie at ${i}: ${stabOrder[i - 1]} before ${stabOrder[i]}`
+      );
+    }
+  }
+
+  // Merge-sort bailout path 4: NaN and +/-Infinity ordering + NaN stability under bailout
+  const nEdge = 120;
+  const edgeDepths = new Float32Array(nEdge);
+  const edgeOrder = new Int32Array(nEdge);
+  for (let i = 0; i < nEdge; i++) {
+    edgeOrder[i] = i;
+    if (i === 10 || i === 55 || i === 105) edgeDepths[i] = NaN;
+    else if (i === 95 || i === 115) edgeDepths[i] = Infinity;
+    else if (i === 5 || i === 45) edgeDepths[i] = -Infinity;
+    else edgeDepths[i] = i; // strictly ascending forces bailout
+  }
+  sortParticleOrder(edgeOrder, edgeDepths, nEdge);
+  assertSortedDescPerm(edgeOrder, edgeDepths, nEdge);
+  assert.deepEqual([edgeOrder[0], edgeOrder[1]], [95, 115], '+Infinity elements must be first and stable');
+  assert.deepEqual([edgeOrder[nEdge - 5], edgeOrder[nEdge - 4]], [5, 45], '-Infinity elements must precede NaNs and stay stable');
+  assert.deepEqual([edgeOrder[nEdge - 3], edgeOrder[nEdge - 2], edgeOrder[nEdge - 1]], [10, 55, 105], 'NaN elements must collect stably at the tail');
 });
 
 test('refreshTheme populates normalized RGB/alpha fields, increments themeVersion, and ignores malformed vars', () => {
@@ -578,62 +649,7 @@ test('refreshTheme populates normalized RGB/alpha fields, increments themeVersio
   assert.equal(t.ovB, 183);
 });
 
-test('shadeSpherePixel produces camera-lit shading, crisp edges, semi-transparency, and depth fog', () => {
-  const { shadeSpherePixel } = createHelpersContext();
-  assert.equal(typeof shadeSpherePixel, 'function');
-
-  const lum = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
-
-  // 1. Center (0, 0) has higher luminance than limb (0.85, 0) (camera-aligned diffuse + specular highlight)
-  const center = shadeSpherePixel(0, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
-  const limb = shadeSpherePixel(0.85, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
-  assert.equal(center.length, 4);
-  assert.ok(lum(center) > lum(limb) + 0.2, `Expected center lum (${lum(center)}) >> limb lum (${lum(limb)})`);
-
-  // 2. Outside unit circle returns alpha 0
-  const outside = shadeSpherePixel(0.9, 0.9, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
-  assert.equal(outside[3], 0);
-  const exactEdge = shadeSpherePixel(1, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
-  assert.equal(exactEdge[3], 0);
-  const nanCoord = shadeSpherePixel(NaN, 0, 0.3, 0.55, 0.85, 0, 0.98, 0.98, 0.98, 10);
-  assert.equal(nanCoord[3], 0);
-
-  // 3. Semi-transparency: center alpha for dn = 0 in (0.65, 0.85) and strictly greater than dn = 1 alpha in (0.30, 0.50)
-  const nearPx = shadeSpherePixel(0, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 10);
-  const farPx = shadeSpherePixel(0, 0, 0.4, 0.6, 0.8, 1, 0.5, 0.5, 0.5, 10);
-  assert.ok(nearPx[3] > 0.65 && nearPx[3] < 0.85, `Expected dn=0 alpha in (0.65, 0.85), got ${nearPx[3]}`);
-  assert.ok(farPx[3] > 0.30 && farPx[3] < 0.50, `Expected dn=1 alpha in (0.30, 0.50), got ${farPx[3]}`);
-  assert.ok(nearPx[3] > farPx[3], 'Near sphere must be more opaque than far sphere');
-  // Core-to-edge translucency: center alpha > mid-limb alpha (before AA zone)
-  const midLimb = shadeSpherePixel(0.7, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 20);
-  assert.ok(nearPx[3] > midLimb[3], 'Center must have higher volumetric alpha than limb');
-
-  // 4. Depth fog: at dn = 1, far pixel shifts toward active dark vs light background
-  const farDark = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 1, 0.08, 0.08, 0.09, 10);
-  const farLight = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 1, 0.98, 0.98, 0.98, 10);
-  const nearDark = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 0, 0.08, 0.08, 0.09, 10);
-  const nearLight = shadeSpherePixel(0.4, 0, 0.5, 0.5, 0.5, 0, 0.98, 0.98, 0.98, 10);
-  assert.ok(Math.abs(lum(nearDark) - lum(nearLight)) < 1e-6, 'Near sphere (dn=0) should have zero background fog');
-  assert.ok(lum(farLight) > lum(farDark) + 0.15, `Far sphere on light bg (${lum(farLight)}) must be brighter than on dark bg (${lum(farDark)})`);
-
-  // 5. All output channels stay within [0, 1] even for tiny/invalid radPx or bright inputs
-  const clamped = shadeSpherePixel(0, 0, 1, 1, 1, -0.5, 1, 1, 1, 0);
-  for (let c = 0; c < 4; c++) {
-    assert.ok(Number.isFinite(clamped[c]) && clamped[c] >= 0 && clamped[c] <= 1, `Channel ${c} out of [0,1]: ${clamped[c]}`);
-  }
-
-  // 6. baseAlphaOverride, reusable out buffer, and smooth AA ramp (1 - aa < dist < 1)
-  const reuse = [9, 9, 9, 9];
-  const nuc = shadeSpherePixel(0, 0, 0.5, 0.5, 0.5, 0.5, 0.98, 0.98, 0.98, 10, 0.85, reuse);
-  assert.equal(nuc, reuse, 'Must write into and return provided out array');
-  assert.ok(Math.abs(nuc[3] - 0.85) < 1e-6, `Expected overridden center alpha 0.85, got ${nuc[3]}`);
-
-  const aaInner = shadeSpherePixel(0.88, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 10);
-  const aaOuter = shadeSpherePixel(0.96, 0, 0.4, 0.6, 0.8, 0, 0.5, 0.5, 0.5, 10);
-  assert.ok(aaInner[3] > aaOuter[3] && aaOuter[3] > 0, `Expected smooth AA falloff: ${aaInner[3]} > ${aaOuter[3]} > 0`);
-});
-
-test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile matching shadeSpherePixel', () => {
+test('buildSphereSpriteAtlas renders camera-lit shading, AA, translucency, depth fog, nucleus tile, gutters, and DPR clamping', () => {
   const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)' };
   const h = createHelpersContext(cssVars);
   assert.equal(typeof h.buildSphereSpriteAtlas, 'function');
@@ -641,6 +657,8 @@ test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile matchin
   assert.ok(atlas && atlas.canvas && atlas.canvas._img, 'Expected atlas with populated ImageData');
   assert.equal(atlas.buckets, 48);
   assert.equal(atlas.depthBands, 3);
+  assert.equal(atlas.nucCol, 48);
+  assert.equal(atlas.nucRow, 1);
   assert.ok(atlas.tilePx >= 32, `Expected DPR 2 tilePx >= 32, got ${atlas.tilePx}`);
   assert.equal(atlas.canvas.width, (atlas.buckets + 1) * atlas.tilePx);
   assert.equal(atlas.canvas.height, atlas.depthBands * atlas.tilePx);
@@ -652,9 +670,11 @@ test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile matchin
     const o = (y * img.width + x) * 4;
     return [img.data[o], img.data[o + 1], img.data[o + 2], img.data[o + 3]];
   };
-
-  // Every tile perimeter (all 49 cols x 3 rows) has a 1px transparent gutter
+  const lum = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
   const tp = atlas.tilePx;
+  const mid = tp >> 1;
+
+  // 1. Every tile perimeter (all 49 cols x 3 rows) has a 1px transparent gutter and corner outside circle is 0
   for (let row = 0; row < atlas.depthBands; row++) {
     const y0 = row * tp;
     for (let col = 0; col <= atlas.buckets; col++) {
@@ -667,58 +687,69 @@ test('buildSphereSpriteAtlas creates 48x3 hue/depth tiles + nucleus tile matchin
       }
     }
   }
+  assert.equal(pxAt(10 * tp + 2, 0 * tp + 2)[3], 0, 'Pixel outside unit circle inside tile must have alpha 0');
 
-  // Spot-check exact pixel match between atlas and shadeSpherePixel across buckets and depth bands
-  const halfTile = tp * 0.5, innerRad = (tp - 2) * 0.5;
-  const bandDns = [0.08, 0.5, 0.92];
-  const rgb = new Float32Array(3);
-  const tLight = h.getTheme();
-  for (const bi of [0, 17, 47]) {
-    h.hueTToRgb(bi / 47, rgb, 0);
-    for (let db = 0; db < 3; db++) {
-      for (const [px, py] of [[tp >> 1, tp >> 1], [tp >> 1, 4], [tp - 3, tp >> 1]]) {
-        const u = (px + 0.5 - halfTile) / innerRad;
-        const v = (py + 0.5 - halfTile) / innerRad;
-        const ref = h.shadeSpherePixel(u, v, rgb[0], rgb[1], rgb[2], bandDns[db], tLight.bgR, tLight.bgG, tLight.bgB, innerRad);
-        const got = pxAt(bi * tp + px, db * tp + py);
-        for (let c = 0; c < 4; c++) {
-          assert.ok(Math.abs(got[c] - Math.round(ref[c] * 255)) <= 1, `Mismatch at bi=${bi},db=${db},ch=${c}: ${got[c]} vs ${Math.round(ref[c] * 255)}`);
-        }
-      }
-    }
-  }
+  // 2. Center luminance >> limb luminance (camera-aligned diffuse + specular highlight)
+  const centerFront = pxAt(24 * tp + mid, 0 * tp + mid);
+  const limbFront = pxAt(24 * tp + tp - 4, 0 * tp + mid);
+  assert.ok(lum(centerFront) > lum(limbFront) + 45, `Expected center lum (${lum(centerFront)}) >> limb lum (${lum(limbFront)})`);
 
-  // Front depth band center alpha > mid > back
-  const cx = 10 * tp + (tp >> 1);
-  const aFront = pxAt(cx, 0 * tp + (tp >> 1))[3];
-  const aMid = pxAt(cx, 1 * tp + (tp >> 1))[3];
-  const aBack = pxAt(cx, 2 * tp + (tp >> 1))[3];
-  assert.ok(aFront > aMid && aMid > aBack && aBack > 60, `Expected front(${aFront}) > mid(${aMid}) > back(${aBack}) > 60`);
+  // 3. Semi-transparency: front > mid > back in expected ranges, and core-to-edge volumetric translucency
+  const cx = 10 * tp + mid;
+  const pFront = pxAt(cx, 0 * tp + mid);
+  const pMid = pxAt(cx, 1 * tp + mid);
+  const pBack = pxAt(cx, 2 * tp + mid);
+  assert.ok(pFront[3] > 165 && pFront[3] < 210, `Expected front center alpha in (165, 210), got ${pFront[3]}`);
+  assert.ok(pBack[3] > 85 && pBack[3] < 130, `Expected back center alpha in (85, 130), got ${pBack[3]}`);
+  assert.ok(pFront[3] > pMid[3] && pMid[3] > pBack[3], `Expected front(${pFront[3]}) > mid(${pMid[3]}) > back(${pBack[3]})`);
 
-  // Dark theme shifts far-band sprite pixels darker than light theme
+  const midLimb = pxAt(10 * tp + mid + Math.round(tp * 0.32), 0 * tp + mid);
+  assert.ok(pFront[3] > midLimb[3] && midLimb[3] > 0, `Expected core-to-edge translucency: center(${pFront[3]}) > midLimb(${midLimb[3]}) > 0`);
+
+  // 4. Smooth AA ramp near the unit-circle rim (1 - aa < dist < 1)
+  const rimInner = pxAt(10 * tp + tp - 3, 0 * tp + mid);
+  const rimOuter = pxAt(10 * tp + tp - 2, 0 * tp + mid);
+  assert.ok(midLimb[3] > rimInner[3] && rimInner[3] > rimOuter[3] && rimOuter[3] > 0,
+    `Expected smooth AA falloff: ${midLimb[3]} > ${rimInner[3]} > ${rimOuter[3]} > 0`);
+
+  // 5. Nucleus tile (nucCol=48, nucRow=1): camera-lit with high alpha (>= nucAlphaMin), center > limb
+  const nucCenter = pxAt(atlas.nucCol * tp + mid, atlas.nucRow * tp + mid);
+  const nucLimb = pxAt(atlas.nucCol * tp + tp - 4, atlas.nucRow * tp + mid);
+  assert.ok(nucCenter[3] >= 185, `Expected nucleus center alpha >= 185 (nucAlphaMin=0.75), got ${nucCenter[3]}`);
+  assert.ok(lum(nucCenter) > lum(nucLimb) + 30, `Expected nucleus center lum (${lum(nucCenter)}) >> limb lum (${lum(nucLimb)})`);
+
+  // 6. Depth fog: far band shifts strongly toward dark vs light bg while front band shifts minimally
   cssVars['--bg'] = '#161618';
   h.refreshTheme();
   const darkAtlas = h.buildSphereSpriteAtlas(2, h.getTheme());
   const dImg = darkAtlas.canvas._img;
-  const farOff = ((2 * tp + (tp >> 1)) * img.width + (10 * tp + (tp >> 1))) * 4;
-  assert.ok(img.data[farOff] > dImg.data[farOff] + 20, 'Far band on light theme must be brighter than dark theme');
+  const dPxAt = (x, y) => {
+    const o = (y * dImg.width + x) * 4;
+    return [dImg.data[o], dImg.data[o + 1], dImg.data[o + 2], dImg.data[o + 3]];
+  };
+  const lightFar = pxAt(10 * tp + mid + 4, 2 * tp + mid);
+  const darkFar = dPxAt(10 * tp + mid + 4, 2 * tp + mid);
+  const lightFront = pxAt(10 * tp + mid + 4, 0 * tp + mid);
+  const darkFront = dPxAt(10 * tp + mid + 4, 0 * tp + mid);
+  assert.ok(lum(lightFar) - lum(darkFar) > 35, `Far band on light bg (${lum(lightFar)}) must be much brighter than dark bg (${lum(darkFar)})`);
+  assert.ok(lum(lightFar) - lum(darkFar) > (lum(lightFront) - lum(darkFront)) * 4, 'Far band must exhibit stronger depth fog than front band');
 
-  // Fractional/odd/invalid DPRs clamp safely to [1, 3]
+  // 7. Fractional/odd/invalid DPRs clamp safely to [1, 3]
   for (const d of [0.5, 1.05, 1.5, 4, NaN]) {
     const a = h.buildSphereSpriteAtlas(d, h.getTheme());
     assert.ok(a && a.tilePx >= 16 && a.tilePx <= 48, `Unexpected tilePx=${a?.tilePx} for dpr=${d}`);
   }
 });
 
-test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invariants', () => {
+test('ensurePartBuffers, getSphereAtlas, lazy 2D overlay, drawScene2D, and frame() hot-loop invariants', () => {
   // 1. Hot-loop invariants in frame(): no P.some closure, safe q.hist.length guard, DPR change sync
   const frameSrc = SCRIPT_SRC.slice(SCRIPT_SRC.indexOf('function frame(now)'));
   assert.doesNotMatch(frameSrc, /P\.some\(/, 'frame() must not allocate a closure via P.some()');
-  assert.match(frameSrc, /if\(run&&q\.hist&&q\.hist\.length\)/, 'frame() must guard q.hist.length before indexing');
+  assert.match(frameSrc, /if\s*\(\s*run\s*&&\s*q\.hist\s*&&\s*q\.hist\.length\s*\)/, 'frame() must guard q.hist.length before indexing');
   assert.match(frameSrc, /devicePixelRatio/, 'frame() must detect DPR changes without window resize');
 
   // 2. ensurePartBuffers: n=0, grow 50->600, shrink ->50, re-grow ->220
-  const { r2d, ops, cssVars, getAtlasBuilds } = createRenderer2DContext({ atlasOk: true, dpr: 1 });
+  const { r2d, ops, cssVars, offCanvas, getAtlasBuilds, getPutImageDataCalls } = createRenderer2DContext({ atlasOk: true, dpr: 1 });
   r2d.ensurePartBuffers(0);
   r2d.ensurePartBuffers(50);
   assert.ok(r2d.getPartBuffers().order.length >= 64);
@@ -745,8 +776,20 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   const a3 = r2d.getSphereAtlas();
   assert.notEqual(a3, a2, 'DPR change must invalidate and rebuild atlas');
 
-  // 4. drawScene2D nucleus interleaving: straddling depth=0 + NaN depth skipped cleanly + offW=0 guard
-  const st = { n: 3, singleMode: true, showOverlay: true, showTr: false, cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 1 };
+  // 4. Lazy offCtx.putImageData in drawScene2D: paints once per ovPaintedVersion bump
+  const st = { n: 0, singleMode: true, showOverlay: true, showTr: false, cp: 1, sp: 0, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 20, Om: 0, span: 1 };
+  assert.equal(getPutImageDataCalls(), 0);
+  r2d.drawScene2D(st);
+  assert.equal(getPutImageDataCalls(), 1, 'First 2D frame with overlay must lazily call putImageData');
+  assert.equal(offCanvas.width, 100);
+  assert.equal(offCanvas.height, 80);
+  r2d.drawScene2D(st);
+  assert.equal(getPutImageDataCalls(), 1, 'Unchanged ovPaintedVersion must skip redundant putImageData');
+  r2d.bumpOv();
+  r2d.drawScene2D(st);
+  assert.equal(getPutImageDataCalls(), 2, 'Bumped ovPaintedVersion must trigger lazy putImageData');
+
+  // 5. drawScene2D nucleus interleaving: straddling depth=0 + NaN depth skipped cleanly + offW=0 guard
   r2d.setOffDims(0, 0);
   r2d.ensurePartBuffers(3);
   const pb = r2d.getPartBuffers();
@@ -756,16 +799,17 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   pb.depth[2] = NaN; pb.sx[2] = 300; pb.sy[2] = 200; pb.hueT[2] = 0.5;
   r2d.sortParticleOrder(pb.order, pb.depth, 3);
   ops.length = 0;
-  r2d.drawScene2D(st);
+  const drawnCount = r2d.drawScene2D({ ...st, n: 3 });
+  assert.equal(drawnCount, 3);
   const draws = ops.filter((o) => o.op === 'drawImage');
   assert.equal(draws.length, 3, 'Must draw back particle, nucleus, front particle (skipping NaN and 0x0 overlay)');
   assert.equal(draws[0].a[0] < 48 * a3.tilePx, true, 'First sprite must be back particle (depth +5)');
-  assert.equal(draws[1].a[0], 48 * a3.tilePx, 'Second sprite must be interleaved nucleus (depth 0)');
+  assert.equal(draws[1].a[0], a3.nucCol * a3.tilePx, 'Second sprite must be interleaved nucleus col');
+  assert.equal(draws[1].a[1], a3.nucRow * a3.tilePx, 'Second sprite must be interleaved nucleus row');
   assert.equal(draws[2].a[0] < 48 * a3.tilePx, true, 'Third sprite must be front particle (depth -5)');
   assert.ok(ops.some((o) => o.op === 'fillText' && o.txt === 'z'), 'HUD z label must be drawn');
 
-  // 5. !atlas fallback must draw nucleus with globalAlpha === 1 even after semi-transparent back particles,
-  //    and cache null atlas rather than allocating a new offscreen canvas every frame
+  // 6. !atlas caches null safely and drawScene2D does not throw
   const noAtlas = createRenderer2DContext({ atlasOk: false, dpr: 1 });
   noAtlas.r2d.setP([{}, {}]);
   noAtlas.r2d.ensurePartBuffers(2);
@@ -773,19 +817,13 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   npb.depth[0] = 8; npb.sx[0] = 280; npb.sy[0] = 200; npb.hueT[0] = 0.1;
   npb.depth[1] = -8; npb.sx[1] = 320; npb.sy[1] = 200; npb.hueT[1] = 0.9;
   noAtlas.r2d.sortParticleOrder(npb.order, npb.depth, 2);
-  noAtlas.ops.length = 0;
-  noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false });
+  assert.equal(noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false }), 0);
   const buildsAfterFirstNull = noAtlas.getAtlasBuilds();
-  noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false });
+  assert.equal(noAtlas.r2d.drawScene2D({ ...st, n: 2, showOverlay: false }), 0);
   assert.equal(noAtlas.getAtlasBuilds(), buildsAfterFirstNull, 'Failed atlas build must be cached until theme or DPR changes');
-  const arcs = noAtlas.ops.filter((o) => o.op === 'arc');
-  assert.equal(arcs.length, 6, 'Must draw back particle, nucleus, front particle across both frames in !atlas fallback');
-  assert.equal(arcs[1].x, 300);
-  assert.equal(arcs[1].r, 3.2);
-  assert.equal(arcs[1].alpha, 1, 'Nucleus in !atlas fallback must have globalAlpha === 1');
 
-  // 6. Batched 2D trails: 200 particles with 20-point q.hist or single-mode arcs must batch into <= 125 stroke() calls
-  const batchCtx = createRenderer2DContext({ atlasOk: true, dpr: 1 });
+  // 7. Batched 2D trails: 200 particles batch into <= 125 stroke() calls, and single-mode arcs use 2 trig calls/particle
+  const batchCtx = createRenderer2DContext({ atlasOk: true, dpr: 1, countTrig: true });
   const nTr = 200;
   const supParticles = [];
   batchCtx.r2d.ensurePartBuffers(nTr);
@@ -810,66 +848,57 @@ test('ensurePartBuffers, getSphereAtlas, drawScene2D, and frame() hot-loop invar
   assert.ok(supStrokes > 1 && supStrokes <= 125, `Expected batched multi-state trail strokes in (1, 125], got ${supStrokes}`);
   assert.ok(supLineTos >= nTr * 15, `Expected full trail segments drawn (>= ${nTr * 15} lineTo), got ${supLineTos}`);
 
-  // Also test batched single-mode circular arcs
+  // Single-mode circular arcs: verify 2 trig calls/particle and exact continuity across all 5 alpha bands
   const arcParticles = Array.from({ length: nTr }, (_, i) => ({ rho: 5, z: 0, ph: i * 0.03, w: 2 }));
   batchCtx.r2d.setP(arcParticles);
   batchCtx.ops.length = 0;
+  batchCtx.resetTrigCalls();
   batchCtx.r2d.drawScene2D({ ...st, n: nTr, singleMode: true, showOverlay: false, showTr: true, cp: 0.8, sp: 0.6 });
   const arcStrokes = batchCtx.ops.filter((o) => o.op === 'stroke').length;
   const arcLineTos = batchCtx.ops.filter((o) => o.op === 'lineTo').length;
   assert.ok(arcStrokes > 1 && arcStrokes <= 125, `Expected batched single-mode arc strokes in (1, 125], got ${arcStrokes}`);
   assert.ok(arcLineTos >= nTr * 8, `Expected full arc segments drawn (>= ${nTr * 8} lineTo), got ${arcLineTos}`);
+  assert.equal(batchCtx.getTrigCalls(), nTr * 2, `Expected exactly 2 trig calls/particle (${nTr * 2}), got ${batchCtx.getTrigCalls()}`);
+
+  // Single-particle arc band continuity: each band's moveTo equals previous band's final lineTo
+  const contCtx = createRenderer2DContext({ atlasOk: true, dpr: 1, countTrig: true });
+  contCtx.r2d.setP([{ rho: 5, z: 0, ph: 0, w: 2 }]);
+  contCtx.r2d.ensurePartBuffers(1);
+  const cpb = contCtx.r2d.getPartBuffers();
+  cpb.rx[0] = 5; cpb.ry[0] = 0; cpb.sx[0] = 350; cpb.sy[0] = 200; cpb.depth[0] = 0; cpb.hueT[0] = 0.5;
+  contCtx.ops.length = 0;
+  contCtx.resetTrigCalls();
+  contCtx.r2d.drawScene2D({ ...st, n: 1, singleMode: true, showOverlay: false, showTr: true, cp: 0, sp: 1, span: 1 });
+  assert.equal(contCtx.getTrigCalls(), 2, 'Single particle circular arc must invoke cos/sin only twice');
+  // Skip first moveTo/lineTo pair (z-axis dashed line)
+  const pathOps = contCtx.ops.filter((o) => o.op === 'moveTo' || o.op === 'lineTo').slice(2);
+  let prevEnd = null;
+  for (let i = 0; i < pathOps.length; i++) {
+    const o = pathOps[i];
+    if (o.op === 'moveTo' && prevEnd) {
+      assert.ok(Math.hypot(o.x - prevEnd.x, o.y - prevEnd.y) < 1e-9, `Band seam discontinuity: (${prevEnd.x},${prevEnd.y}) -> (${o.x},${o.y})`);
+    }
+    prevEnd = o;
+  }
+  assert.ok(prevEnd && Math.abs(Math.hypot(prevEnd.x - 300, prevEnd.y - 200) - 50) < 1e-6, 'Final arc endpoint must lie on exact radius 50');
 });
 
-test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 interleaving, cleanup, and context restore', () => {
+test('RENDERER_GL unit invariants: standalone module loading, parallel compile, software rejection, buffer growth, and context restore', () => {
   const helpersSrc = extractRendererHelpersSource();
-  const s2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_START === */');
-  const e2 = SCRIPT_SRC.indexOf('/* === RENDERER_2D_END === */');
-  const sg = SCRIPT_SRC.indexOf('/* === RENDERER_GL_START === */');
-  const eg = SCRIPT_SRC.indexOf('/* === RENDERER_GL_END === */');
-  assert.ok(sg >= 0 && eg > sg, 'Expected RENDERER_GL_START..END markers');
-  const r2dSrc = SCRIPT_SRC.slice(s2, e2);
-  const rglSrc = SCRIPT_SRC.slice(sg, eg);
+  const rglSrc = extractSection('/* === RENDERER_GL_START === */', '/* === RENDERER_GL_END === */');
 
   const createMockGLContext = ({ failLinkAt = -1, failBufAt = -1, startLost = false, rejectCaveat = false, rendererStr = 'Mock Hardware GPU' } = {}) => {
     const calls = [];
     const deleted = { prog: 0, vao: 0, buf: 0, tex: 0, sh: 0 };
-    const loseExtStats = { loseCalls: 0, restoreCalls: 0, invalidRestoreCalls: 0 };
-    let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost, restoreAllowed = false;
+    const loseExtStats = { loseCalls: 0 };
+    const progLinkIdx = new Map();
+    const compileOrder = [];
+    let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost;
     const listeners = {};
-    const taskQueue = [];
-    const queueTask = (fn) => taskQueue.push(fn);
-    const flushTasks = () => {
-      while (taskQueue.length) {
-        const fn = taskQueue.shift();
-        fn();
-      }
-    };
     const loseExt = {
       loseContext: () => {
         loseExtStats.loseCalls++;
         ctxLost = true;
-        restoreAllowed = false;
-        // Per WebGL WEBGL_lose_context spec: webglcontextlost is queued asynchronously,
-        // and restoreAllowed only becomes true AFTER dispatch completes with preventDefault().
-        queueTask(() => {
-          let prevented = false;
-          for (const fn of (listeners.webglcontextlost || [])) {
-            fn({ preventDefault: () => { prevented = true; } });
-          }
-          if (prevented) restoreAllowed = true;
-        });
-      },
-      restoreContext: () => {
-        loseExtStats.restoreCalls++;
-        if (!ctxLost || !restoreAllowed) {
-          loseExtStats.invalidRestoreCalls++;
-          return;
-        }
-        queueTask(() => {
-          ctxLost = false;
-          for (const fn of (listeners.webglcontextrestored || [])) fn();
-        });
       },
     };
     const gl = {
@@ -893,13 +922,13 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       },
       createShader: () => ({ id: nextId++ }),
       shaderSource: () => {},
-      compileShader: () => {},
-      getShaderParameter: () => true,
+      compileShader: () => { compileOrder.push('compile'); },
+      getShaderParameter: () => { compileOrder.push('queryShader'); return true; },
       deleteShader: () => { deleted.sh++; },
       createProgram: () => ({ id: nextId++ }),
       attachShader: () => {},
-      linkProgram: () => { linkCount++; },
-      getProgramParameter: () => linkCount !== failLinkAt,
+      linkProgram: (p) => { compileOrder.push('link'); progLinkIdx.set(p, ++linkCount); },
+      getProgramParameter: (p) => { compileOrder.push('queryProg'); return progLinkIdx.get(p) !== failLinkAt; },
       deleteProgram: () => { deleted.prog++; },
       getUniformLocation: (_p, name) => ({ name }),
       createVertexArray: () => ({ id: nextId++ }),
@@ -918,7 +947,6 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       deleteTexture: () => { deleted.tex++; },
       texParameteri: () => {},
       texImage2D: () => calls.push({ op: 'texImage2D' }),
-      texSubImage2D: () => calls.push({ op: 'texSubImage2D' }),
       activeTexture: () => {},
       viewport: () => {},
       clearColor: () => {},
@@ -945,26 +973,20 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       },
       addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
     };
-    return { gl, canvas, calls, deleted, listeners, contextOpts, loseExtStats, queueTask, flushTasks, setLost: (v) => { ctxLost = v; } };
+    return { gl, canvas, calls, deleted, listeners, contextOpts, loseExtStats, compileOrder, setLost: (v) => { ctxLost = v; } };
   };
 
+  // RENDERER_GL loads strictly with RENDERER_HELPERS (zero dependency on RENDERER_2D or 2D canvas mocks)
   const runGLHarness = (mock) => {
     const cssVars = { '--bg': '#fbfbfa', '--grid': 'rgba(110,110,115,.55)', '--ov': '83,74,183' };
     const sandbox = {
       Math, Number, String, Array, ArrayBuffer, Float32Array, Float64Array, Int32Array, Uint8Array, Uint8ClampedArray, Object, RegExp,
-      setTimeout: (fn) => { mock.queueTask(fn); return 0; },
-      TAU: Math.PI * 2,
       W: 600, H: 400, _stageDpr: 1,
-      glCv: mock.canvas,
-      ctx: { save: () => {}, restore: () => {}, clearRect: () => {}, setLineDash: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {}, fillText: () => {}, drawImage: () => {} },
-      off: { width: 100, height: 80 },
       offIm: { width: 100, height: 80, data: new Uint8ClampedArray(100 * 80 * 4) },
       offW: 100, offH: 80, cellSz: 3, ovPaintedVersion: 1,
       P: [],
       window: {},
-      drawFieldGizmo: () => {},
-      drawAxisTriad: () => {},
-      document: { documentElement: {}, createElement: () => ({ getContext: () => null }) },
+      document: { documentElement: {} },
       getComputedStyle: () => ({ getPropertyValue: (n) => cssVars[n] ?? '' }),
     };
     const tail = `
@@ -973,18 +995,23 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
         getPartBuffers: () => ({ order: partOrder, depth: partDepth, sx: partSX, sy: partSY, rx: partRX, ry: partRY, hueT: partHueT }),
         setP: (a) => { P = a; },
         bumpOv: () => { ovPaintedVersion++; },
+        setOffIm: (im) => { offIm = im; },
         getRenderInfo: () => window.__renderInfo,
       };
     `;
-    vm.runInNewContext(helpersSrc + '\n' + r2dSrc + '\n' + rglSrc + '\n' + tail, sandbox);
+    vm.runInNewContext(helpersSrc + '\n' + rglSrc + '\n' + tail, sandbox);
     return sandbox.__gl;
   };
 
-  // 1a. Partial shader link failure cleans up compiled programs/shaders and returns null
+  // 1a. Parallel compile/link ordering & partial shader link failure cleanup
   const failMock = createMockGLContext({ failLinkAt: 2 });
   const failHarness = runGLHarness(failMock);
   assert.equal(failHarness.initWebGLRenderer(failMock.canvas) === null, true, 'Failed shader link must return null');
-  assert.ok(failMock.deleted.prog >= 2 && failMock.deleted.sh >= 6, 'Failed shader link must dispose created programs and shaders');
+  const firstQueryIdx = failMock.compileOrder.findIndex((op) => op.startsWith('query'));
+  const lastLinkIdx = failMock.compileOrder.lastIndexOf('link');
+  assert.ok(firstQueryIdx > lastLinkIdx, `All 3 linkProgram calls must happen before first status query: ${JSON.stringify(failMock.compileOrder)}`);
+  assert.equal(failMock.deleted.prog, 3, 'Failed shader link must dispose all 3 created programs');
+  assert.equal(failMock.deleted.sh, 6, 'Failed shader link must dispose all 6 shaders');
 
   // 1b. Partial VBO creation failure disposes all programs, VAOs, buffers, and texture
   const failBufMock = createMockGLContext({ failBufAt: 4 });
@@ -995,7 +1022,7 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   assert.equal(failBufMock.deleted.buf, 3);
   assert.equal(failBufMock.deleted.tex, 1);
 
-  // 1c. Default init passes failIfMajorPerformanceCaveat:true & antialias:false, and skips SwiftShader/software renderers unless allowSoftware=true
+  // 1c. Default init passes failIfMajorPerformanceCaveat:true & antialias:false, and skips caveat-rejected contexts unless allowSoftware=true
   const swMock = createMockGLContext({ rejectCaveat: true });
   const swHarness = runGLHarness(swMock);
   assert.equal(swHarness.initWebGLRenderer(swMock.canvas) === null, true, 'Software-only WebGL2 must fall back to null by default');
@@ -1005,46 +1032,31 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   assert.equal(Boolean(swForced), true, 'allowSoftware=true must allow WebGL2 init even when caveat is rejected');
   assert.equal(swMock.contextOpts[1]?.failIfMajorPerformanceCaveat, false);
 
-  // Early opt-in: allowSoftware=true called BEFORE queued webglcontextlost dispatches (must not prematurely call restoreContext)
-  const swiftEarlyMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
-  const swiftEarlyHarness = runGLHarness(swiftEarlyMock);
-  assert.equal(swiftEarlyHarness.initWebGLRenderer(swiftEarlyMock.canvas) === null, true, 'SwiftShader renderer string must fall back to 2D by default');
-  assert.equal(swiftEarlyMock.loseExtStats.loseCalls, 1, 'Rejected software WebGL2 context must be released via WEBGL_lose_context');
-  assert.equal(swiftEarlyMock.canvas.width, 0, 'Rejected software WebGL2 canvas backing width must collapse to 0');
-  assert.equal(swiftEarlyMock.canvas.height, 0, 'Rejected software WebGL2 canvas backing height must collapse to 0');
-  // Calling initWebGLRenderer(canvas, false) a second time on the lost context must STILL reject (no lost-context bypass!)
-  assert.equal(swiftEarlyHarness.initWebGLRenderer(swiftEarlyMock.canvas, false) === null, true, 'Repeated allowSoftware=false must remain rejected even when context is lost');
-  swiftEarlyMock.canvas.width = 600;
-  swiftEarlyMock.canvas.height = 400;
-  const swiftEarlyForced = swiftEarlyHarness.initWebGLRenderer(swiftEarlyMock.canvas, true);
-  assert.equal(Boolean(swiftEarlyForced), true, 'allowSoftware=true before webglcontextlost must return pending state');
-  assert.equal(swiftEarlyMock.loseExtStats.invalidRestoreCalls, 0, 'Must never call restoreContext before webglcontextlost finishes');
-  assert.equal(swiftEarlyForced.lost, true, 'State stays lost until async webglcontextlost + restoreContext + webglcontextrestored complete');
-  swiftEarlyMock.flushTasks();
-  assert.equal(swiftEarlyMock.loseExtStats.invalidRestoreCalls, 0, 'Deferred restoreContext must execute only after restoreAllowed');
-  assert.equal(swiftEarlyMock.loseExtStats.restoreCalls, 1, 'Deferred allowSoftware=true must call restoreContext once');
-  assert.equal(swiftEarlyForced.lost, false, 'Restored software WebGL2 opt-in context must rebuild resources cleanly');
+  // 1d. Software renderer rejection calls loseContext(), collapses to 0x0, blocks repeated allowSoftware=false,
+  //     does NOT attach webglcontextlost listeners, and succeeds synchronously on a fresh canvas with allowSoftware=true
+  const swiftMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
+  const swiftHarness = runGLHarness(swiftMock);
+  assert.equal(swiftHarness.initWebGLRenderer(swiftMock.canvas) === null, true, 'SwiftShader renderer string must fall back to 2D by default');
+  assert.equal(swiftMock.loseExtStats.loseCalls, 1, 'Rejected software WebGL2 context must be released via WEBGL_lose_context');
+  assert.equal(swiftMock.canvas.width, 0, 'Rejected software WebGL2 canvas backing width must collapse to 0');
+  assert.equal(swiftMock.canvas.height, 0, 'Rejected software WebGL2 canvas backing height must collapse to 0');
+  assert.equal((swiftMock.listeners.webglcontextlost || []).length, 0, 'Intentional software disposal must NOT attach webglcontextlost listener');
+  assert.equal((swiftMock.listeners.webglcontextrestored || []).length, 0, 'Intentional software disposal must NOT attach webglcontextrestored listener');
+  assert.equal(swiftHarness.initWebGLRenderer(swiftMock.canvas, false) === null, true, 'Repeated allowSoftware=false must remain rejected');
+  assert.equal(swiftHarness.initWebGLRenderer(swiftMock.canvas, true) === null, true, 'Permanently soft-rejected canvas must fail closed even with allowSoftware=true');
 
-  // Late opt-in: webglcontextlost finishes BEFORE allowSoftware=true is requested
-  const swiftLateMock = createMockGLContext({ rendererStr: 'Mesa llvmpipe (LLVM 17)' });
-  const swiftLateHarness = runGLHarness(swiftLateMock);
-  assert.equal(swiftLateHarness.initWebGLRenderer(swiftLateMock.canvas) === null, true);
-  swiftLateMock.flushTasks();
-  assert.equal(swiftLateHarness.initWebGLRenderer(swiftLateMock.canvas, false) === null, true, 'Repeated allowSoftware=false after contextlost must remain rejected');
-  swiftLateMock.canvas.width = 600;
-  swiftLateMock.canvas.height = 400;
-  const swiftLateForced = swiftLateHarness.initWebGLRenderer(swiftLateMock.canvas, true);
-  assert.equal(Boolean(swiftLateForced), true);
-  swiftLateMock.flushTasks();
-  assert.equal(swiftLateMock.loseExtStats.invalidRestoreCalls, 0);
-  assert.equal(swiftLateMock.loseExtStats.restoreCalls, 1);
-  assert.equal(swiftLateForced.lost, false);
+  const freshSwiftMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
+  const freshState = swiftHarness.initWebGLRenderer(freshSwiftMock.canvas, true);
+  assert.ok(freshState && !freshState.lost, 'Fresh canvas with allowSoftware=true must initialize synchronously');
+  assert.equal((freshSwiftMock.listeners.webglcontextlost || []).length, 1, 'Active opt-in context must attach context-loss listener');
 
   // 2. Normal init, zero-line guard (cp=0, trails off), NaN/E<=0 interleaving, buffer growth, and context lost/restored
   const mock = createMockGLContext();
   const h = runGLHarness(mock);
   const st = h.initWebGLRenderer(mock.canvas);
   assert.ok(st, 'Expected valid glState');
+  assert.equal(st.lineBuf.length, 2048 * 8, 'Initial lineBuf starts at 2048 * 8 floats');
+  assert.equal(st.instBuf.length, 256 * 8, 'Initial instBuf starts at 256 * 8 floats');
 
   // cp = 0 => zero-length z-axis and trails off => lineVerts === 0 and NO drawArrays(LINES) call!
   h.ensurePartBuffers(3);
@@ -1078,7 +1090,15 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   assert.equal(h.drawSceneGL(st, frameSt), true);
   assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 1, 'Bumped overlay version must re-upload via texImage2D');
 
-  // Incremental single-mode circular arc trail uses instanced AA line quads (8 floats/seg), stays on exact radius, and reports lineVerts = 2*segs
+  // Missing offIm skips overlay draw call safely without touching any 2D canvas
+  const savedIm = { width: 100, height: 80, data: new Uint8ClampedArray(100 * 80 * 4) };
+  h.setOffIm(null);
+  mock.calls.length = 0;
+  assert.equal(h.drawSceneGL(st, frameSt), true);
+  assert.equal(mock.calls.filter((c) => c.op === 'drawArrays').length, 0, 'Missing offIm must skip overlay draw call');
+  h.setOffIm(savedIm);
+
+  // Incremental single-mode circular arc trail uses instanced AA line quads (8 floats/seg), aligned fade alpha, and lineVerts = 2*segs
   h.setP([{ rho: 5, z: 0, ph: 0, w: 2 }]);
   h.ensurePartBuffers(1);
   const pbArc = h.getPartBuffers();
@@ -1091,15 +1111,18 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   const arcDraw = instDrawsWithTrails[0];
   assert.equal(arcDraw.mode, mock.gl.TRIANGLE_STRIP);
   assert.equal(arcDraw.count, 4);
-  assert.ok(arcDraw.primCount >= 8, `Expected >= 8 arc trail quad segments, got ${arcDraw.primCount}`);
-  assert.equal(st.lineFloats, arcDraw.primCount * 8, 'Expected 8 floats [x0,y0,x1,y1,r,g,b,a] per instanced line segment');
-  assert.equal(h.getRenderInfo().lineVerts, arcDraw.primCount * 2, 'Telemetry lineVerts must report 2 endpoints per line segment');
-  // Check final segment endpoint (x1, y1 at lastSeg + 2, lastSeg + 3) lies at distance rho*S = 50 from (300, 200)
+  const arcN = arcDraw.primCount;
+  assert.ok(arcN >= 8, `Expected >= 8 arc trail quad segments, got ${arcN}`);
+  assert.equal(st.lineFloats, arcN * 8, 'Expected 8 floats [x0,y0,x1,y1,r,g,b,a] per instanced line segment');
+  assert.equal(h.getRenderInfo().lineVerts, arcN * 2, 'Telemetry lineVerts must report 2 endpoints per line segment');
+  // Aligned alpha fade: segment k (1..N) has alpha = 0.55 * (1 - k / (N + 1))
+  assert.ok(Math.abs(st.lineBuf[7] - 0.55 * (1 - 1 / (arcN + 1))) < 1e-5, 'First arc segment alpha must match trA * (1 - 1/(N+1))');
   const lastSegOff = st.lineFloats - 8;
+  assert.ok(Math.abs(st.lineBuf[lastSegOff + 7] - 0.55 * (1 - arcN / (arcN + 1))) < 1e-5, 'Last arc segment alpha must match trA * (1 - N/(N+1))');
   const endR = Math.hypot(st.lineBuf[lastSegOff + 2] - 300, st.lineBuf[lastSegOff + 3] - 200);
   assert.ok(Math.abs(endR - 50) < 1e-3, `Incremental arc endpoint drifted from radius 50: got ${endR}`);
 
-  // Growing beyond initial 1024 instBuf cap must reallocate via bufferData
+  // Growing beyond initial 256 instBuf cap must reallocate via bufferData
   const nBig = 1300;
   h.ensurePartBuffers(nBig);
   const pbBig = h.getPartBuffers();

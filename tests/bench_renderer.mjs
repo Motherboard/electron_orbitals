@@ -19,12 +19,18 @@
  *   --help                Show this help message
  */
 
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
-import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  closeBrowserPage,
+  findBrowser,
+  launchBrowserPage,
+  trackTempDir,
+  untrackTempDir,
+} from './_cdp_helper.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const CURRENT_HTML = path.join(REPO_ROOT, 'electron_orbitals.html');
@@ -43,29 +49,6 @@ const SCENARIOS = [
   { key: 'sup_2000_on', label: '1s + 2p0', mode: 'sup1s2p0', n: 2000, trails: true },
   { key: 'sup_2000_off', label: '1s + 2p0', mode: 'sup1s2p0', n: 2000, trails: false },
 ];
-
-const activeSessions = new Set();
-const activeTempDirs = new Set();
-
-function cleanupSyncOnSignal(signal) {
-  for (const session of activeSessions) {
-    try { session.cdp?.ws?.close(); } catch { /* ignore */ }
-    try {
-      if (session.chrome && session.chrome.exitCode === null && session.chrome.signalCode === null) {
-        session.chrome.kill('SIGKILL');
-      }
-    } catch { /* ignore */ }
-  }
-  for (const dir of activeTempDirs) {
-    try {
-      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
-    } catch { /* ignore */ }
-  }
-  process.exit(signal === 'SIGINT' ? 130 : 143);
-}
-
-process.once('SIGINT', () => cleanupSyncOnSignal('SIGINT'));
-process.once('SIGTERM', () => cleanupSyncOnSignal('SIGTERM'));
 
 function printHelp() {
   console.log(`Usage: node tests/bench_renderer.mjs [options]
@@ -136,181 +119,15 @@ function parseArgs(argv) {
   return opts;
 }
 
-function findBrowser() {
-  if (process.env.CHROMIUM_BIN) return process.env.CHROMIUM_BIN;
-  for (const bin of ['chromium', 'chromium-browser', 'google-chrome']) {
-    try {
-      const resolved = execFileSync('which', [bin], { encoding: 'utf8' }).trim();
-      if (resolved) return resolved;
-    } catch {
-      // try next candidate
-    }
-  }
-  return null;
-}
-
-function getFreePort() {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer();
-    srv.unref();
-    srv.on('error', reject);
-    srv.listen(0, '127.0.0.1', () => {
-      const { port } = srv.address();
-      srv.close(() => resolve(port));
-    });
+function openPage(browserBin, targetUrl, extraFlags, dpr) {
+  return launchBrowserPage({
+    browserBin,
+    url: targetUrl,
+    flags: [...extraFlags, `--force-device-scale-factor=${dpr}`],
+    windowSize: '1280,960',
+    tempPrefix: 'orbitals-bench-chrome-',
+    colorScheme: 'light',
   });
-}
-
-async function waitForWs(port, chrome) {
-  for (let i = 0; i < 60; i++) {
-    if (chrome.exitCode !== null || chrome.signalCode !== null) {
-      throw new Error(`Chromium exited early with code=${chrome.exitCode} signal=${chrome.signalCode}`);
-    }
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json`);
-      const pages = await res.json();
-      const page = pages.find((p) => p.type === 'page');
-      if (page?.webSocketDebuggerUrl) return page.webSocketDebuggerUrl;
-    } catch {
-      // still booting
-    }
-    await new Promise((r) => setTimeout(r, 120));
-  }
-  throw new Error('Chromium DevTools WebSocket did not become ready');
-}
-
-function createCDP(wsUrl) {
-  const ws = new WebSocket(wsUrl);
-  let nextId = 1;
-  let opened = false;
-  const pending = new Map();
-
-  const rejectAll = (err) => {
-    for (const entry of pending.values()) {
-      entry.reject(err);
-    }
-    pending.clear();
-  };
-
-  ws.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
-    if (msg.id) {
-      const entry = pending.get(msg.id);
-      if (entry) {
-        pending.delete(msg.id);
-        if (msg.error) entry.reject(new Error(msg.error.message));
-        else entry.resolve(msg.result);
-      }
-    }
-  };
-
-  const ready = new Promise((resolve, reject) => {
-    ws.onopen = () => {
-      opened = true;
-      resolve();
-    };
-    ws.onerror = (ev) => {
-      const err = new Error(ev?.message || 'CDP WebSocket error');
-      rejectAll(err);
-      if (!opened) reject(err);
-    };
-    ws.onclose = () => {
-      const err = new Error('CDP WebSocket closed');
-      rejectAll(err);
-      if (!opened) reject(err);
-    };
-  });
-
-  const call = (method, params = {}) => {
-    if (ws.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error(`CDP WebSocket not open (state=${ws.readyState})`));
-    }
-    return new Promise((resolve, reject) => {
-      const id = nextId++;
-      pending.set(id, { resolve, reject });
-      try {
-        ws.send(JSON.stringify({ id, method, params }));
-      } catch (err) {
-        pending.delete(id);
-        reject(err);
-      }
-    });
-  };
-
-  return { ws, ready, call };
-}
-
-async function closeBrowser(session) {
-  if (!session) return;
-  activeSessions.delete(session);
-  try {
-    session.cdp?.ws?.close();
-  } catch {
-    // ignore
-  }
-  const { chrome, userDataDir } = session;
-  if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
-    const exited = new Promise((resolve) => chrome.once('exit', resolve));
-    chrome.kill('SIGKILL');
-    await Promise.race([exited, new Promise((r) => setTimeout(r, 2000))]);
-  }
-  await new Promise((r) => setTimeout(r, 80));
-  if (userDataDir) {
-    activeTempDirs.delete(userDataDir);
-    fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 120 });
-  }
-}
-
-async function openPage(browserBin, targetUrl, extraFlags, dpr) {
-  const port = await getFreePort();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-bench-chrome-'));
-  activeTempDirs.add(userDataDir);
-  const args = [
-    '--headless=new',
-    '--no-sandbox',
-    ...extraFlags,
-    `--force-device-scale-factor=${dpr}`,
-    `--remote-debugging-port=${port}`,
-    `--user-data-dir=${userDataDir}`,
-    '--window-size=1280,960',
-    targetUrl,
-  ];
-  const chrome = spawn(browserBin, args, { stdio: ['ignore', 'ignore', 'pipe'] });
-  let stderr = '';
-  chrome.stderr.on('data', (chunk) => {
-    if (stderr.length < 4096) stderr += chunk.toString();
-  });
-  const session = { chrome, userDataDir, cdp: null };
-  activeSessions.add(session);
-  try {
-    const wsUrl = await waitForWs(port, chrome);
-    const cdp = createCDP(wsUrl);
-    session.cdp = cdp;
-    await cdp.ready;
-    await cdp.call('Runtime.enable');
-    await cdp.call('Page.enable');
-    await cdp.call('Emulation.setEmulatedMedia', {
-      features: [{ name: 'prefers-color-scheme', value: 'light' }],
-    });
-
-    const evalJS = async (expression) => {
-      const res = await cdp.call('Runtime.evaluate', {
-        expression,
-        awaitPromise: true,
-        returnByValue: true,
-      });
-      if (res.exceptionDetails) {
-        const msg = res.exceptionDetails.exception?.description || res.exceptionDetails.text;
-        throw new Error(`Page JS exception: ${msg}`);
-      }
-      return res.result?.value;
-    };
-
-    return { ...session, evalJS };
-  } catch (err) {
-    await closeBrowser(session);
-    throw new Error(`${err.message}${stderr ? `\nChrome stderr: ${stderr.trim()}` : ''}`);
-  }
 }
 
 const SOFTWARE_RE = /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i;
@@ -341,7 +158,7 @@ async function probeWebGL2(browserBin, flags, dpr) {
   } catch (err) {
     return { ok: false, reason: err.message };
   } finally {
-    await closeBrowser(session);
+    await closeBrowserPage(session);
   }
 }
 
@@ -870,8 +687,7 @@ async function main() {
   try {
     let baselinePath = opts.baseline;
     if (!baselinePath) {
-      tmpBaselineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-base-'));
-      activeTempDirs.add(tmpBaselineDir);
+      tmpBaselineDir = trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'orbitals-base-')));
       baselinePath = exportBaseline(opts.rev, tmpBaselineDir);
     } else {
       let st;
@@ -899,15 +715,10 @@ async function main() {
     let newMeta = await installHarness(newPage);
     if (newMeta.backend !== 'webgl2' && gpu.probe.ok) {
       // Software GPU modes (e.g. --gpu-mode swiftshader) are skipped by failIfMajorPerformanceCaveat by default;
-      // opt in explicitly so the benchmark can still measure WebGL2 when requested (awaiting async restore if needed).
-      newMeta = await newPage.evalJS(`(async () => {
+      // opt in explicitly so the benchmark can still measure WebGL2 synchronously via #c-gl replacement.
+      newMeta = await newPage.evalJS(`(() => {
         window.__benchHarness.setForceRenderer('webgl2');
         frame(performance.now());
-        const deadline = performance.now() + 2000;
-        while (window.__renderInfo?.backend !== 'webgl2' && performance.now() < deadline) {
-          await window.__benchHarness.waitOrigRAF(1);
-          frame(performance.now());
-        }
         return window.__benchHarness.getMeta();
       })()`);
     }
@@ -1006,10 +817,10 @@ async function main() {
       for (const p of screenshotReport.saved) console.log(`- ${p}`);
     }
   } finally {
-    await closeBrowser(newPage);
-    await closeBrowser(basePage);
+    await closeBrowserPage(newPage);
+    await closeBrowserPage(basePage);
     if (tmpBaselineDir) {
-      activeTempDirs.delete(tmpBaselineDir);
+      untrackTempDir(tmpBaselineDir);
       fs.rmSync(tmpBaselineDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   }
