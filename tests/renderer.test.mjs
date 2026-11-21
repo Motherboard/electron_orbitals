@@ -824,7 +824,7 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   const r2dSrc = SCRIPT_SRC.slice(s2, e2);
   const rglSrc = SCRIPT_SRC.slice(sg, eg);
 
-  const createMockGLContext = ({ failLinkAt = -1, failBufAt = -1, startLost = false } = {}) => {
+  const createMockGLContext = ({ failLinkAt = -1, failBufAt = -1, startLost = false, rejectCaveat = false, rendererStr = 'Mock Hardware GPU' } = {}) => {
     const calls = [];
     const deleted = { prog: 0, vao: 0, buf: 0, tex: 0, sh: 0 };
     let nextId = 1, linkCount = 0, bufCount = 0, ctxLost = startLost;
@@ -835,8 +835,10 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       TEXTURE_WRAP_S: 0x2802, TEXTURE_WRAP_T: 0x2803, LINEAR: 0x2601, CLAMP_TO_EDGE: 0x812f,
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401, COLOR_BUFFER_BIT: 0x4000,
       DEPTH_TEST: 0x0b71, BLEND: 0x0be2, ONE: 1, ONE_MINUS_SRC_ALPHA: 0x0303,
-      LINES: 1, TRIANGLE_STRIP: 5,
+      LINES: 1, TRIANGLE_STRIP: 5, RENDERER: 0x1f01,
       isContextLost: () => ctxLost,
+      getExtension: (name) => (name === 'WEBGL_debug_renderer_info' ? { UNMASKED_RENDERER_WEBGL: 0x9246 } : null),
+      getParameter: (p) => (p === 0x1f01 || p === 0x9246 ? rendererStr : null),
       createShader: () => ({ id: nextId++ }),
       shaderSource: () => {},
       compileShader: () => {},
@@ -881,12 +883,18 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
       drawArraysInstanced: (mode, first, count, primCount) => calls.push({ op: 'drawArraysInstanced', mode, first, count, primCount }),
     };
     const listeners = {};
+    const contextOpts = [];
     const canvas = {
       width: 600, height: 400,
-      getContext: (kind) => (kind === 'webgl2' ? gl : null),
+      getContext: (kind, opts) => {
+        if (kind !== 'webgl2') return null;
+        contextOpts.push(opts || {});
+        if (rejectCaveat && opts && opts.failIfMajorPerformanceCaveat) return null;
+        return gl;
+      },
       addEventListener: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
     };
-    return { gl, canvas, calls, deleted, listeners, setLost: (v) => { ctxLost = v; } };
+    return { gl, canvas, calls, deleted, listeners, contextOpts, setLost: (v) => { ctxLost = v; } };
   };
 
   const runGLHarness = (mock) => {
@@ -925,17 +933,32 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   // 1a. Partial shader link failure cleans up compiled programs/shaders and returns null
   const failMock = createMockGLContext({ failLinkAt: 2 });
   const failHarness = runGLHarness(failMock);
-  assert.equal(failHarness.initWebGLRenderer(failMock.canvas), null);
+  assert.equal(failHarness.initWebGLRenderer(failMock.canvas) === null, true, 'Failed shader link must return null');
   assert.ok(failMock.deleted.prog >= 2 && failMock.deleted.sh >= 6, 'Failed shader link must dispose created programs and shaders');
 
   // 1b. Partial VBO creation failure disposes all programs, VAOs, buffers, and texture
   const failBufMock = createMockGLContext({ failBufAt: 4 });
   const failBufHarness = runGLHarness(failBufMock);
-  assert.equal(failBufHarness.initWebGLRenderer(failBufMock.canvas), null);
+  assert.equal(failBufHarness.initWebGLRenderer(failBufMock.canvas) === null, true, 'Failed VBO allocation must return null');
   assert.equal(failBufMock.deleted.prog, 3);
   assert.equal(failBufMock.deleted.vao, 3);
   assert.equal(failBufMock.deleted.buf, 3);
   assert.equal(failBufMock.deleted.tex, 1);
+
+  // 1c. Default init passes failIfMajorPerformanceCaveat:true & antialias:false, and skips SwiftShader/software renderers unless allowSoftware=true
+  const swMock = createMockGLContext({ rejectCaveat: true });
+  const swHarness = runGLHarness(swMock);
+  assert.equal(swHarness.initWebGLRenderer(swMock.canvas) === null, true, 'Software-only WebGL2 must fall back to null by default');
+  assert.equal(swMock.contextOpts[0]?.failIfMajorPerformanceCaveat, true);
+  assert.equal(swMock.contextOpts[0]?.antialias, false);
+  const swForced = swHarness.initWebGLRenderer(swMock.canvas, true);
+  assert.equal(Boolean(swForced), true, 'allowSoftware=true must allow WebGL2 init even when caveat is rejected');
+  assert.equal(swMock.contextOpts[1]?.failIfMajorPerformanceCaveat, false);
+
+  const swiftMock = createMockGLContext({ rendererStr: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)' });
+  const swiftHarness = runGLHarness(swiftMock);
+  assert.equal(swiftHarness.initWebGLRenderer(swiftMock.canvas) === null, true, 'SwiftShader renderer string must fall back to 2D by default');
+  assert.equal(Boolean(swiftHarness.initWebGLRenderer(swiftMock.canvas, true)), true, 'allowSoftware=true must allow SwiftShader WebGL2 opt-in');
 
   // 2. Normal init, zero-line guard (cp=0, trails off), NaN/E<=0 interleaving, buffer growth, and context lost/restored
   const mock = createMockGLContext();
@@ -953,8 +976,10 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   mock.calls.length = 0;
   const frameSt = { n: 3, singleMode: true, showOverlay: true, showTr: false, cp: 0, sp: 1, ca: 1, sa: 0, az: 0, cx: 300, cy: 200, S: 10, E: 0, Om: 0, span: 1 };
   assert.equal(h.drawSceneGL(st, frameSt), true);
-  assert.equal(mock.calls.filter((c) => c.op === 'drawArrays' && c.mode === mock.gl.LINES).length, 0, 'Must never call drawArrays(LINES) when lineVerts === 0');
-  const instDraw = mock.calls.find((c) => c.op === 'drawArraysInstanced');
+  assert.equal(mock.calls.filter((c) => c.op === 'drawArrays' && c.mode === mock.gl.LINES).length, 0, 'Must never call drawArrays(LINES)');
+  const zeroLineInstDraws = mock.calls.filter((c) => c.op === 'drawArraysInstanced');
+  assert.equal(zeroLineInstDraws.length, 1, 'With zero line segments, only the sphere instanced pass may draw');
+  const instDraw = zeroLineInstDraws[0];
   assert.equal(instDraw?.primCount, 3, 'Must draw 2 finite particles + interleaved nucleus (skipping NaN)');
   // Verify nucleus interleaved between index 0 (depth +5) and index 1 (depth -5) in instBuf (stride 8: rad at +2)
   assert.equal(st.instBuf[1 * 8 + 2], Math.fround(3.2), 'Nucleus (rad=3.2) must be interleaved at slot 1 between back (+5) and front (-5)');
@@ -973,18 +998,25 @@ test('RENDERER_GL unit invariants: zero-line guard, buffer growth, NaN/E<=0 inte
   assert.equal(h.drawSceneGL(st, frameSt), true);
   assert.equal(mock.calls.filter((c) => c.op === 'texImage2D').length, 1, 'Bumped overlay version must re-upload via texImage2D');
 
-  // Incremental single-mode circular arc trail stays on exact circle radius and respects lineVerts
+  // Incremental single-mode circular arc trail uses instanced AA line quads (8 floats/seg), stays on exact radius, and reports lineVerts = 2*segs
   h.setP([{ rho: 5, z: 0, ph: 0, w: 2 }]);
   h.ensurePartBuffers(1);
   const pbArc = h.getPartBuffers();
   pbArc.rx[0] = 5; pbArc.ry[0] = 0; pbArc.sx[0] = 350; pbArc.sy[0] = 200; pbArc.depth[0] = 0; pbArc.hueT[0] = 0.5;
   mock.calls.length = 0;
   assert.equal(h.drawSceneGL(st, { ...frameSt, n: 1, showOverlay: false, showTr: true, cp: 0, sp: 1, E: 20, span: 1 }), true);
-  const arcDraw = mock.calls.find((c) => c.op === 'drawArrays' && c.mode === mock.gl.LINES);
-  assert.ok(arcDraw && arcDraw.count >= 16, `Expected >= 16 arc trail vertices, got ${arcDraw?.count}`);
-  // Check final vertex lies at distance rho*S = 50 from (300, 200) within float32 tolerance
-  const lastOff = st.lineFloats - 6;
-  const endR = Math.hypot(st.lineBuf[lastOff] - 300, st.lineBuf[lastOff + 1] - 200);
+  assert.equal(mock.calls.filter((c) => c.op === 'drawArrays' && c.mode === mock.gl.LINES).length, 0, 'Trails must use instanced AA line quads instead of GL_LINES');
+  const instDrawsWithTrails = mock.calls.filter((c) => c.op === 'drawArraysInstanced');
+  assert.equal(instDrawsWithTrails.length, 2, 'Expected instanced line quad pass + instanced sphere pass');
+  const arcDraw = instDrawsWithTrails[0];
+  assert.equal(arcDraw.mode, mock.gl.TRIANGLE_STRIP);
+  assert.equal(arcDraw.count, 4);
+  assert.ok(arcDraw.primCount >= 8, `Expected >= 8 arc trail quad segments, got ${arcDraw.primCount}`);
+  assert.equal(st.lineFloats, arcDraw.primCount * 8, 'Expected 8 floats [x0,y0,x1,y1,r,g,b,a] per instanced line segment');
+  assert.equal(h.getRenderInfo().lineVerts, arcDraw.primCount * 2, 'Telemetry lineVerts must report 2 endpoints per line segment');
+  // Check final segment endpoint (x1, y1 at lastSeg + 2, lastSeg + 3) lies at distance rho*S = 50 from (300, 200)
+  const lastSegOff = st.lineFloats - 8;
+  const endR = Math.hypot(st.lineBuf[lastSegOff + 2] - 300, st.lineBuf[lastSegOff + 3] - 200);
   assert.ok(Math.abs(endR - 50) < 1e-3, `Incremental arc endpoint drifted from radius 50: got ${endR}`);
 
   // Growing beyond initial 1024 instBuf cap must reallocate via bufferData

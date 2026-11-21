@@ -1367,7 +1367,10 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
 
     const lumOf = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-    // 1. Verify WebGL2 is genuinely active and telemetry matches initial state
+    // 1. Verify failIfMajorPerformanceCaveat falls back to fast 2D under software SwiftShader by default,
+    //    and opting in via window.__forceRenderer = 'webgl2' initializes WebGL2 cleanly with full telemetry.
+    await waitUntil('Boolean(window.__renderInfo && window.__renderInfo.backend === "2d")', 6000);
+    await evalJS("window.__forceRenderer = 'webgl2';");
     await waitUntil('Boolean(window.__renderInfo && window.__renderInfo.backend === "webgl2")', 6000);
     await waitFrames(3);
     const initInfo = await evalJS(`({
@@ -1376,7 +1379,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
       glHidden: document.getElementById('c-gl').hidden,
       glVis: getComputedStyle(document.getElementById('c-gl')).visibility,
     })`);
-    assert.equal(initInfo.info.backend, 'webgl2', 'Expected WebGL2 backend under SwiftShader');
+    assert.equal(initInfo.info.backend, 'webgl2', 'Expected WebGL2 backend under SwiftShader after explicit opt-in');
     assert.equal(initInfo.info.sphereCount, initInfo.pLen + 1, 'sphereCount must equal P.length + nucleus');
     assert.ok(initInfo.info.drawCalls >= 1 && initInfo.info.drawCalls <= 3, `Expected drawCalls <= 3, got ${initInfo.info.drawCalls}`);
     assert.ok(Number.isFinite(initInfo.info.lastDrawMs) && initInfo.info.lastDrawMs >= 0, 'lastDrawMs must be finite >= 0');
@@ -1689,7 +1692,7 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
         const ang = (i / 2000) * Math.PI * 2;
         const r = (0.15 + 0.65 * ((i * 37) % 100) / 100) * E;
         const x = r * Math.cos(ang), y = r * Math.sin(ang), z = (((i * 19) % 100) / 50 - 1) * 0.4 * E;
-        arr.push({ x, y, z, col: colr(r), hist: [[x * 0.9, y * 0.9, z, 0], [x * 0.95, y * 0.95, z, 0.5], [x, y, z, 1]] });
+        arr.push({ x, y, z, col: colr(r), hist: [[x * 0.85, y * 0.85, z, 0], [x * 0.9, y * 0.9, z, 0.5], [x * 0.95, y * 0.95, z, 1]] });
       }
       P = arr;
       document.getElementById('tr').checked = true;
@@ -1703,6 +1706,43 @@ test('E2E WebGL2 shaded spheres, GPU overlay, context loss/restore, and 2D fallb
     assert.equal(growState.info.sphereCount, 2001, 'N=2000 + nucleus must render cleanly after instBuf growth');
     assert.ok(growState.info.lineVerts >= 12000, `Expected multi-state q.hist trail verts >= 12000, got ${growState.info.lineVerts}`);
     assert.equal(growState.glErr, 0, `Expected gl.NO_ERROR after N=2000 buffer growth, got ${growState.glErr}`);
+
+    // 5b-ii. Pixel-level WebGL2 trail antialiasing verification (analytical AA line quads + degenerate zero-length guard)
+    const aaTrailGeom = await evalJS(`(() => {
+      const ov = document.getElementById('ov');
+      if (ov.checked) { ov.checked = false; ov.dispatchEvent(new Event('change')); }
+      setViewAngles(0, 0);
+      const x0 = 0.15 * E, z0 = 0.15 * E, x1 = 0.55 * E, z1 = 0.35 * E;
+      // 3 identical tail points exercise zero-length segment guard while giving the main diagonal segment high alpha (0.44)
+      P = [{ x: x1, y: 0, z: z1, col: colr(x1), hist: [[x0, 0, z0, 0], [x0, 0, z0, 1], [x0, 0, z0, 2], [x0, 0, z0, 3]] }];
+      document.getElementById('tr').checked = true;
+      const S = Math.min(W, H * 1.15) / (2 * E);
+      return {
+        xMid: W / 2 + 0.35 * E * S,
+        yMid: H / 2 - 0.25 * E * S,
+        bgX: W / 2 + 0.35 * E * S,
+        bgY: H / 2 - 0.25 * E * S - 24,
+      };
+    })()`);
+    await waitFrames(4);
+    const aaTrailShot = await captureCanvasPng();
+    const aaBg = sampleCssPixel(aaTrailShot, aaTrailGeom.bgX, aaTrailGeom.bgY);
+    const pxDelta = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+    let aaColsWithMultiPx = 0, aaColsWithShoulder = 0, aaMaxPeak = 0;
+    for (let dx = -2; dx <= 2; dx++) {
+      const deltas = [];
+      for (let dy = -4; dy <= 4; dy++) {
+        deltas.push(pxDelta(sampleCssPixel(aaTrailShot, aaTrailGeom.xMid + dx, aaTrailGeom.yMid + dy), aaBg));
+      }
+      const peak = Math.max(...deltas);
+      if (peak > aaMaxPeak) aaMaxPeak = peak;
+      if (deltas.filter((d) => d >= 5).length >= 2) aaColsWithMultiPx++;
+      if (deltas.some((d) => d >= 4 && d <= peak * 0.8)) aaColsWithShoulder++;
+    }
+    assert.ok(aaMaxPeak >= 25, `Expected visible diagonal trail in WebGL2 (peak delta=${aaMaxPeak})`);
+    assert.ok(aaColsWithMultiPx >= 3, `Expected antialiased multi-pixel cross-section on diagonal trail, got ${aaColsWithMultiPx}/5 columns`);
+    assert.ok(aaColsWithShoulder >= 3, `Expected intermediate fractional AA shoulder pixels on diagonal trail, got ${aaColsWithShoulder}/5 columns`);
+    assert.equal(await evalJS('document.getElementById("c-gl").getContext("webgl2").getError()'), 0);
 
     // 5c. Batched trails (single-mode circular arcs) & dark theme pixel check under WebGL2
     await evalJS(`(() => {

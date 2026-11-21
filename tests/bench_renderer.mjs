@@ -888,7 +888,16 @@ async function main() {
     const baseMeta = await installHarness(basePage);
 
     newPage = await openPage(browserBin, currentUrl, gpu.flags, opts.dpr);
-    const newMeta = await installHarness(newPage);
+    let newMeta = await installHarness(newPage);
+    if (newMeta.backend !== 'webgl2' && gpu.probe.ok) {
+      // Software GPU modes (e.g. --gpu-mode swiftshader) are skipped by failIfMajorPerformanceCaveat by default;
+      // opt in explicitly so the benchmark can still measure WebGL2 when requested.
+      newMeta = await newPage.evalJS(`(() => {
+        window.__benchHarness.setForceRenderer('webgl2');
+        frame(performance.now());
+        return window.__benchHarness.getMeta();
+      })()`);
+    }
 
     if (baseMeta.cvWidth !== newMeta.cvWidth || baseMeta.cvHeight !== newMeta.cvHeight) {
       throw new Error(

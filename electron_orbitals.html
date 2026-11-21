@@ -4495,21 +4495,41 @@ void main(){
   fragColor=vec4(c.rgb*c.a,c.a);
 }`;
 const GL_LINE_VS=`#version 300 es
-layout(location=0) in vec2 a_pos;
-layout(location=1) in vec4 a_col;
+layout(location=0) in vec2 a_corner;
+layout(location=1) in vec4 a_seg;
+layout(location=2) in vec4 a_col;
 uniform vec2 u_viewport;
-out vec4 v_col;
+uniform vec2 u_lineHalf;
+out float v_perpDev;
+out vec4 v_pmCol;
 void main(){
-  vec2 ndc=vec2(a_pos.x/u_viewport.x*2.0-1.0,1.0-a_pos.y/u_viewport.y*2.0);
+  vec2 p0=a_seg.xy,p1=a_seg.zw;
+  vec2 d=p1-p0;
+  float len2=dot(d,d);
+  if(len2<1e-8){
+    gl_Position=vec4(2.0,2.0,0.0,1.0);
+    v_perpDev=0.0;
+    v_pmCol=vec4(0.0);
+    return;
+  }
+  vec2 dir=d*inversesqrt(len2);
+  vec2 perp=vec2(-dir.y,dir.x);
+  vec2 base=mix(p0,p1,a_corner.x*0.5+0.5);
+  vec2 pos=base+perp*(a_corner.y*u_lineHalf.y);
+  vec2 ndc=vec2(pos.x/u_viewport.x*2.0-1.0,1.0-pos.y/u_viewport.y*2.0);
   gl_Position=vec4(ndc,0.0,1.0);
-  v_col=a_col;
+  v_perpDev=a_corner.y*u_lineHalf.x;
+  v_pmCol=vec4(a_col.rgb*a_col.a,a_col.a);
 }`;
 const GL_LINE_FS=`#version 300 es
 precision mediump float;
-in vec4 v_col;
+uniform highp vec2 u_lineHalf;
+in float v_perpDev;
+in vec4 v_pmCol;
 out vec4 fragColor;
 void main(){
-  fragColor=vec4(v_col.rgb*v_col.a,v_col.a);
+  float cov=clamp(u_lineHalf.x-abs(v_perpDev),0.0,1.0);
+  fragColor=v_pmCol*cov;
 }`;
 const _glF=v=>Number.isInteger(v)?v+'.0':String(v);
 const GL_SPHERE_VS=`#version 300 es
@@ -4627,6 +4647,7 @@ s.uOvViewport=gl.getUniformLocation(ovProg,'u_viewport');
 s.uOvSize=gl.getUniformLocation(ovProg,'u_ovSize');
 s.uOvTex=gl.getUniformLocation(ovProg,'u_tex');
 s.uLineViewport=gl.getUniformLocation(lineProg,'u_viewport');
+s.uLineHalf=gl.getUniformLocation(lineProg,'u_lineHalf');
 s.uSphereViewport=gl.getUniformLocation(sphereProg,'u_viewport');
 s.uSphereDpr=gl.getUniformLocation(sphereProg,'u_dpr');
 s.uSphereBg=gl.getUniformLocation(sphereProg,'u_bgColor');
@@ -4657,16 +4678,23 @@ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
 
+gl.bindBuffer(gl.ARRAY_BUFFER,quadVbo);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+
 gl.bindVertexArray(lineVao);
-gl.bindBuffer(gl.ARRAY_BUFFER,lineVbo);
+gl.bindBuffer(gl.ARRAY_BUFFER,quadVbo);
 gl.enableVertexAttribArray(0);
-gl.vertexAttribPointer(0,2,gl.FLOAT,false,24,0);
+gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+gl.bindBuffer(gl.ARRAY_BUFFER,lineVbo);
 gl.enableVertexAttribArray(1);
-gl.vertexAttribPointer(1,4,gl.FLOAT,false,24,8);
+gl.vertexAttribPointer(1,4,gl.FLOAT,false,32,0);
+gl.vertexAttribDivisor(1,1);
+gl.enableVertexAttribArray(2);
+gl.vertexAttribPointer(2,4,gl.FLOAT,false,32,16);
+gl.vertexAttribDivisor(2,1);
 
 gl.bindVertexArray(sphereVao);
 gl.bindBuffer(gl.ARRAY_BUFFER,quadVbo);
-gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
 gl.enableVertexAttribArray(0);
 gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
 gl.bindBuffer(gl.ARRAY_BUFFER,instVbo);
@@ -4693,16 +4721,26 @@ s.lineGpuCapFloats=0;
 s.instGpuCapFloats=0;
 return true;}
 
-function initWebGLRenderer(canvas){
+function isSoftwareWebGL(gl){
+try{
+const dbg=typeof gl.getExtension==='function'?gl.getExtension('WEBGL_debug_renderer_info'):null;
+const uRen=dbg&&typeof gl.getParameter==='function'?gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL):'';
+const ren=typeof gl.getParameter==='function'?gl.getParameter(gl.RENDERER):'';
+return /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i.test(String(uRen||'')+' '+String(ren||''));
+}catch(_){return false;}}
+
+function initWebGLRenderer(canvas,allowSoftware=false){
 if(!canvas||typeof canvas.getContext!=='function')return null;
 if(canvas._glState){disposeGLResources(canvas._glState);canvas._glState=null;}
-// Spheres apply analytical per-pixel SDF edge AA and overlay uses LINEAR; antialias:false avoids 4x CPU MSAA resolve under software ANGLE/SwiftShader.
-const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false,depth:false,preserveDrawingBuffer:false});
+// Spheres and instanced trail quads both apply analytical per-pixel AA and overlay uses LINEAR;
+// antialias:false avoids 4x MSAA overhead, and skipping software WebGL (SwiftShader/llvmpipe) uses our faster batched 2D fallback.
+const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false,depth:false,preserveDrawingBuffer:false,failIfMajorPerformanceCaveat:!allowSoftware});
 if(!gl)return null;
+if(!allowSoftware&&isSoftwareWebGL(gl))return null;
 const state={
 canvas,gl,lost:false,
 ovProg:null,ovVao:null,ovVbo:null,ovTex:null,ovTexVersion:-1,uOvViewport:null,uOvSize:null,uOvTex:null,
-lineProg:null,lineVao:null,lineVbo:null,uLineViewport:null,lineBuf:new Float32Array(16384*6),lineFloats:0,lineGpuCapFloats:0,
+lineProg:null,lineVao:null,lineVbo:null,uLineViewport:null,uLineHalf:null,lineBuf:new Float32Array(8192*8),lineFloats:0,lineGpuCapFloats:0,
 sphereProg:null,sphereVao:null,quadVbo:null,instVbo:null,uSphereViewport:null,uSphereDpr:null,uSphereBg:null,
 instBuf:new Float32Array(1024*8),instGpuCapFloats:0};
 const ctxLost=typeof gl.isContextLost==='function'&&gl.isContextLost();
@@ -4728,7 +4766,7 @@ return state;}
 
 function ensureLineFloats(s,need){
 if(need<=s.lineBuf.length)return;
-let cap=s.lineBuf.length||1536;
+let cap=s.lineBuf.length||2048;
 while(cap<need)cap*=2;
 const next=new Float32Array(cap);
 if(s.lineFloats>0)next.set(s.lineBuf.subarray(0,s.lineFloats));
@@ -4737,17 +4775,18 @@ s.lineBuf=next;}
 function pushHistTrailGL(s,hh,sx0,sy0,cx,cy,S,cp,sp,ca,sa,r,g,b){
 const len=hh.length;
 if(!len||!Number.isFinite(sx0)||!Number.isFinite(sy0))return;
-ensureLineFloats(s,s.lineFloats+len*12);
+ensureLineFloats(s,s.lineFloats+len*8);
 const buf=s.lineBuf,trA=SPHERE_CFG.trailAlpha,invLen=1/(len+1),spS=sp*S,cpS=cp*S;
 let f=s.lineFloats,px=sx0,py=sy0;
 for(let j=0;j<len;j++){
 const pt=hh[len-1-j],rx=pt[0]*ca-pt[1]*sa,ry=pt[0]*sa+pt[1]*ca;
 const nx=cx+rx*S,ny=cy-(ry*spS+pt[2]*cpS);
 if(Number.isFinite(nx)&&Number.isFinite(ny)){
+const dx=nx-px,dy=ny-py;
+if(dx*dx+dy*dy>=1e-4){
 const al=trA*(1-(j+1)*invLen);
-buf[f]=px;buf[f+1]=py;buf[f+2]=r;buf[f+3]=g;buf[f+4]=b;buf[f+5]=al;
-buf[f+6]=nx;buf[f+7]=ny;buf[f+8]=r;buf[f+9]=g;buf[f+10]=b;buf[f+11]=al;
-f+=12;px=nx;py=ny;}}
+buf[f]=px;buf[f+1]=py;buf[f+2]=nx;buf[f+3]=ny;buf[f+4]=r;buf[f+5]=g;buf[f+6]=b;buf[f+7]=al;
+f+=8;px=nx;py=ny;}}}
 s.lineFloats=f;}
 
 function drawSceneGL(glState,st){
@@ -4779,20 +4818,21 @@ gl.uniform2f(glState.uOvSize,offW*cellSz,offH*cellSz);
 gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 drawCalls++;}
 
+const glDpr=W>0?cvEl.width/W:(_stageDpr||1);
 glState.lineFloats=0;
 const yAxis0=cy+E_val*cp*S,yAxis1=cy-E_val*cp*S;
 const axisDy=yAxis1-yAxis0,axisLen=Math.abs(axisDy);
 if(axisLen>=0.5&&Number.isFinite(cx)&&Number.isFinite(axisLen)){
 const segs=Math.ceil(axisLen/8);
-ensureLineFloats(glState,segs*12);
+ensureLineFloats(glState,segs*8);
 const buf=glState.lineBuf,dirY=axisDy>=0?1:-1;
 const gr=theme.gridR,gg=theme.gridG,gb=theme.gridB,ga=theme.gridA;
 let f=0;
 for(let pos=0;pos<axisLen;pos+=8){
 const segEnd=pos+4<axisLen?pos+4:axisLen;
-buf[f]=cx;buf[f+1]=yAxis0+dirY*pos;buf[f+2]=gr;buf[f+3]=gg;buf[f+4]=gb;buf[f+5]=ga;
-buf[f+6]=cx;buf[f+7]=yAxis0+dirY*segEnd;buf[f+8]=gr;buf[f+9]=gg;buf[f+10]=gb;buf[f+11]=ga;
-f+=12;}
+buf[f]=cx;buf[f+1]=yAxis0+dirY*pos;buf[f+2]=cx;buf[f+3]=yAxis0+dirY*segEnd;
+buf[f+4]=gr;buf[f+5]=gg;buf[f+6]=gb;buf[f+7]=ga;
+f+=8;}
 glState.lineFloats=f;}
 
 const rgbPrecomputed=showTr&&n>0;
@@ -4809,16 +4849,15 @@ pushHistTrailGL(glState,q.hist,partSX[i],partSY[i],cx,cy,S,cp,sp,ca,sa,trR,trG,t
 const sx0=partSX[i],sy0=partSY[i];
 if(!Number.isFinite(sx0)||!Number.isFinite(sy0))continue;
 const arc=Math.min(Math.abs(wt)*span,C.arcMax),dir=wt>0?1:-1,N=Math.max(C.arcMinSegs,Math.ceil(arc/C.arcStep));
-ensureLineFloats(glState,glState.lineFloats+N*12);
+ensureLineFloats(glState,glState.lineFloats+N*8);
 const buf=glState.lineBuf,qzS=q.z*cpS,invN=1/N;
 const dPhi=-dir*arc*invN,dc=Math.cos(dPhi),ds=Math.sin(dPhi);
 let f=glState.lineFloats,rx=partRX[i],ry=partRY[i],lx=sx0,ly=sy0;
 for(let k=1;k<=N;k++){
 const nrx=rx*dc-ry*ds;ry=rx*ds+ry*dc;rx=nrx;
 const nx=cx+rx*S,ny=cy-(ry*spS+qzS),al=trA*(1-(k-1)*invN);
-buf[f]=lx;buf[f+1]=ly;buf[f+2]=trR;buf[f+3]=trG;buf[f+4]=trB;buf[f+5]=al;
-buf[f+6]=nx;buf[f+7]=ny;buf[f+8]=trR;buf[f+9]=trG;buf[f+10]=trB;buf[f+11]=al;
-f+=12;lx=nx;ly=ny;}
+buf[f]=lx;buf[f+1]=ly;buf[f+2]=nx;buf[f+3]=ny;buf[f+4]=trR;buf[f+5]=trG;buf[f+6]=trB;buf[f+7]=al;
+f+=8;lx=nx;ly=ny;}
 glState.lineFloats=f;}}
 }else{
 for(let i=0;i<n;i++){
@@ -4827,17 +4866,20 @@ if(!hh||!hh.length)continue;
 const i3=i*3;
 pushHistTrailGL(glState,hh,partSX[i],partSY[i],cx,cy,S,cp,sp,ca,sa,partRgb[i3],partRgb[i3+1],partRgb[i3+2]);}}}
 
-const lineVerts=(glState.lineFloats/6)|0;
-if(lineVerts>0){
+const lineSegs=(glState.lineFloats/8)|0;
+const lineVerts=lineSegs*2;
+if(lineSegs>0){
+const effDpr=glDpr>1?glDpr:1,halfDev=0.5*effDpr+0.5;
 gl.useProgram(glState.lineProg);
 gl.bindVertexArray(glState.lineVao);
 gl.uniform2f(glState.uLineViewport,W,H);
+gl.uniform2f(glState.uLineHalf,halfDev,halfDev/effDpr);
 gl.bindBuffer(gl.ARRAY_BUFFER,glState.lineVbo);
 if(glState.lineFloats>glState.lineGpuCapFloats){
 glState.lineGpuCapFloats=glState.lineBuf.length;
 gl.bufferData(gl.ARRAY_BUFFER,glState.lineBuf.byteLength,gl.DYNAMIC_DRAW);}
 gl.bufferSubData(gl.ARRAY_BUFFER,0,glState.lineBuf,0,glState.lineFloats);
-gl.drawArrays(gl.LINES,0,lineVerts);
+gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,lineSegs);
 drawCalls++;}
 
 const needInstFloats=(n+1)*8;
@@ -4874,7 +4916,6 @@ instCount++;}
 
 if(instCount>0){
 const instFloats=instCount*8;
-const glDpr=W>0?cvEl.width/W:(_stageDpr||1);
 gl.useProgram(glState.sphereProg);
 gl.bindVertexArray(glState.sphereVao);
 gl.uniform2f(glState.uSphereViewport,W,H);
@@ -4894,7 +4935,7 @@ _renderStats.lineVerts=lineVerts;
 return true;}
 /* === RENDERER_GL_END === */
 
-let glState=null;
+let glState=null,_glForceTried=false;
 let _hudDirty=true,_hudStageVer=-1,_hudW=0,_hudH=0,_hudThemeVer=-1,_hudCp=2,_hudSp=2,_hudCa=2,_hudSa=2,_hudE=-1,_hudPulse=false;
 function frame(now){
 const curDpr=window.devicePixelRatio;
@@ -4953,6 +4994,7 @@ const st=_frameState;
 st.n=n;st.singleMode=singleMode;st.showOverlay=showOverlay;st.showTr=showTr;
 st.cp=cp;st.sp=sp;st.ca=ca;st.sa=sa;st.az=az;st.cx=cx;st.cy=cy;st.S=S;st.E=E;st.Om=Om;st.span=span;
 const force=typeof window!=='undefined'?(window.__forceRenderer||null):null;
+if(force==='webgl2'&&!glState&&!_glForceTried&&glCv){_glForceTried=true;glState=initWebGLRenderer(glCv,true);}
 const tDraw0=performance.now();
 if(force!=='2d'&&glState&&drawSceneGL(glState,st)){
 if(glCv){if(glCv.hidden)glCv.hidden=false;if(glCv.style.visibility==='hidden')glCv.style.visibility='';}
@@ -4976,7 +5018,7 @@ requestAnimationFrame(frame);}
 window.addEventListener('resize',()=>{resize();overlayDirty=true;requestOverlayNow();});
 window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{refreshTheme();key='';ovPaintedKey='';overlayDirty=true;requestOverlayNow();});
 initSimWorker();
-resize();glState=initWebGLRenderer(glCv);refresh(false,true);
+resize();glState=initWebGLRenderer(glCv,typeof window!=='undefined'&&window.__forceRenderer==='webgl2');refresh(false,true);
 requestAnimationFrame(frame);
 
 /* ---------- interactive tutorial sidepanel ---------- */
