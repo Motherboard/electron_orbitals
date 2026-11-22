@@ -369,7 +369,7 @@ For complex vectors the squared length uses the complex conjugate: \|**v**\|² =
 }
 ```
 
-Whereas the first five demos run in **Coherent EM wave** mode, the final demo below previews **Single photon** mode (§3.4) to excite a clean 45°-tilted *p* orbital with **ε** = (−**x̂** + **ẑ**)/√2. Why does that produce 0.5\|2p,+1⟩ − 0.5\|2p,−1⟩ + (1/√2)\|2p,0⟩? Recall from Chapter 1 (§1.2) that under the Condon–Shortley sign convention, −\|2p<sub>*x*</sub>⟩ = (\|2p,+1⟩ − \|2p,−1⟩)/√2 corresponds to spatial lobe −*x*, so adding \|2p,0⟩ (+*z*) aligns the excited orbital along −**x̂** + **ẑ** (transition selection rules are derived in Chapter 4). Notice also that after the pulse, the UI readout shows a common 270° (`−i`) global phase from resonant excitation, which cannot be observed: **270°** on \|2p,+1⟩ and \|2p,0⟩, and **90°** on \|2p,−1⟩, which preserves the 180° relative sign flip.
+Whereas the first five demos run in **Coherent EM wave** mode, the final demo below previews **Single photon** mode (§3.4) to excite a clean 45°-tilted *p* orbital with **ε** = (−**x̂** + **ẑ**)/√2. Why does that produce 0.5\|2p,+1⟩ − 0.5\|2p,−1⟩ + (1/√2)\|2p,0⟩? Recall from [Chapter 1 (§1.2)](tut:01#condon-shortley) that under the Condon–Shortley sign convention, −\|2p<sub>*x*</sub>⟩ = (\|2p,+1⟩ − \|2p,−1⟩)/√2 corresponds to spatial lobe −*x*, so adding \|2p,0⟩ (+*z*) aligns the excited orbital along −**x̂** + **ẑ** (transition selection rules are derived in Chapter 4). Notice also that after the pulse, the UI readout shows a common 270° (`−i`) global phase from resonant excitation, which cannot be observed: **270°** on \|2p,+1⟩ and \|2p,0⟩, and **90°** on \|2p,−1⟩, which preserves the 180° relative sign flip.
 
 ```demo
 {

@@ -130,8 +130,8 @@ Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 
 
 | Chapter | Core Chemistry & Quantum Concepts | Key Demos to Revisit |
 | :--- | :--- | :--- |
-| **1. Schrödinger, Superposition & Bohmian Mechanics** | Wavefunctions ψ<sub>*nlm*</sub>, radial vs. angular nodes, radial distribution *P*(*r*) vs. \|ψ\|², quantum beats, probability current **J** and Bohmian velocity **v** = Im(∇ψ/ψ), uncertainty | Circulating `2p,+1` vortex vs. static real `2p_x` lobes, `1s + 2p,0` breathing dipole |
-| **2. Magnetic Field, Zeeman & Precession** | Minimal coupling **p** − *q***A**, diamagnetic NMR/Lenz shielding, Zeeman shifts *mB*<sub>*z*</sub>/2, Larmor precession, intra-shell E1 and intra-orbital M1 | Rotating and reversing `2p_x`, competing flows in `2p,−1`, `B_z = 0.1` Zeeman E1 ladder and M1 resonance |
+| **1. Schrödinger, Superposition & Bohmian Mechanics** | Wavefunctions ψ<sub>*nlm*</sub>, radial vs. angular nodes, radial distribution *P*(*r*) vs. \|ψ\|², quantization axes (*z*, *x*, *y*) & spherical subshells, quantum beats, probability current **J** and Bohmian velocity **v** = Im(∇ψ/ψ), uncertainty | Circulating `2p,+1` / `m_x=+1` / `m_y=+1` vortices vs. static real `2p_x` lobes, `1s + 2p,0` breathing dipole |
+| **2. Magnetic Field, Zeeman & Precession** | Minimal coupling **p** − *q***A**, diamagnetic NMR/Lenz shielding, Zeeman shifts *mB*<sub>*z*</sub>/2, Larmor precession, intra-shell E1 and intra-orbital M1 | Rotating and reversing `2p_x`, precessing `|2p, m_x = +1⟩`, competing flows in `2p,−1`, `B_z = 0.1` Zeeman E1 ladder and M1 resonance |
 | **3. Light & Polarization** | *c* = λν, dipole limit *ka*₀ ≪ 1, complex **ε**, linear = (σ⁺ + σ⁻)/√2, elliptical helicity, *I* ∝ ℰ₀² vs. Ω<sub>R</sub> ∝ √*I* | Circular `σ⁺`/`σ⁻`, elliptical `1 : 0.4i`, tilted 3D `(−x+z)/√2` polarization |
 | **4. Light–Electron Interactions, Einstein & Selection Rules** | Transition dipoles ⟨ψ₂\|**r**\|ψ₁⟩, Lyman/Balmer/Paschen series, Einstein *A*<sub>21</sub>/*B*<sub>12</sub>, partial vs. total lifetimes, Δ*l* = ±1 & Δ*m* = 0, ±1 | Blocked vs. allowed `2p,+1 + σ⁻` (downward vs. `3d,0`), stimulated emission |
 | **5. Rabi Oscillations, Detuning & Bright/Dark States** | RWA, Bloch sphere, pulse area Θ = π√Power·(*T*/*T*<sub>ref</sub>) up to *T*<sub>ref</sub> (≈ √*T* growth beyond, at the ionization-safe field), bright/dark `2p_x`/`2p_y`, red vs. blue detuning, spin-1 SU(2) | `π/2`, `π`, `2π` *m*-flip (`~99.8%` at 400 cyc, Power 1), `-1.5 bw` red detuning, `B_z` M1 flip |
@@ -173,11 +173,12 @@ Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 
 | **Landau regime** | Fields so strong that the electron is held sideways mainly by the field (within the magnetic length) and the atom becomes a cigar along **B**. | Ch 9 |
 | **Larmor frequency** | Rate at which a magnetic field makes orbital motion precess: ω<sub>Larmor</sub> = *eB*/(2*m*<sub>e</sub>) in SI, = *B*<sub>*z*</sub>/2 in atomic units. | Ch 2 |
 | **Lorentzian** | The line shape 1/[1 + (Δω/half-width)²] produced by exponential decay. | Ch 3, 6, 8 |
-| **Mixed state / density matrix** | A statistical mixture ("this state OR that one") as opposed to a coherent superposition; written as a matrix ρ̂. | Ch 6 |
+| **Mixed state / density matrix** | A statistical mixture ("this state OR that one") as opposed to a coherent superposition; written as a matrix ρ̂. | Ch 6 (preview in Ch 1) |
 | **Oscillator strength *f*** | Dimensionless strength of an absorption line, proportional to the area under the band. | Ch 4 |
 | **Over-the-barrier ionization (OBI)** | Ionization when a strong field lowers the Coulomb barrier below the electron's level; estimated threshold ℰ<sub>OBI</sub> = 1/(16*n*⁴). | Ch 6 |
 | **Partial trace** | Averaging over (ignoring) one part of a joint system. | Ch 6 |
 | **Pulse area Θ** | Field strength × duration, scaled by the transition dipole; Θ = π fully inverts a two-level atom. | Ch 3, 5 |
+| **Quantization axis** | The chosen reference axis (conventionally *z*) whose angular-momentum component (*L*<sub>*z*</sub> = *mħ*) labels the basis states; arbitrary at *B* = 0, fixed by **B** when a magnetic field is on. | Ch 1, 2, 3, 5 |
 | **Quantum beats** | Time oscillation of \|ψ\|² in a superposition of different energies, at frequency Δ*E*/*h*. | Ch 1 |
 | **Rabi frequency / oscillation** | Rate at which resonant light cycles population between two levels. | Ch 5 |
 | **REMPI** | Resonance-enhanced multiphoton ionization: absorb one photon into a real level, then another to ionize. | Ch 6 |
@@ -187,6 +188,7 @@ Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 
 | **Spherical harmonic *Y*<sub>*l*</sub><sup>*m*</sup>** | The angular part of an orbital. | Ch 1 |
 | **SU(2)** | The mathematical group of quantum rotations; "spin-1 SU(2)" = three levels that rotate like *l* = 1. | Ch 5 |
 | **TDSE / TISE** | Time-dependent / time-independent Schrödinger equation. | Ch 1 |
+| **Unsöld's theorem** | Summing \|ψ\|² over all 2*l* + 1 orthogonal orbitals of any subshell (*p*, *d*, *f*, …) cancels all angles and yields a spherical cloud. | Ch 1 |
 | **Weisskopf–Wigner theory** | The QED calculation of the spontaneous emission rate Γ = *A*<sub>21</sub>. | Ch 4, 6 |
 | **Zeeman effect** | Splitting of energy levels by a magnetic field, by *m* μ<sub>B</sub> *B*. | Ch 2 |
 
