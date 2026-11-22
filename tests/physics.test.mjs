@@ -1697,10 +1697,59 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.ok(nested.endsWith('</details><p>After.</p>'));
   assert.equal(parseTutInline('`[x](tut:08#T1)` [y](http://e.x)'), '<code>[x](tut:08#T1)</code> [y](http://e.x)');
 
+  // 3b. HTML comments are stripped cleanly (inline code preserved), <summary> {#box-id} emits id/tabindex, and goAnchor opens target <details>
+  const withComments = renderTutMarkdown([
+    '<!-- lint-ignore: level-ref -->',
+    'Before paragraph.',
+    '<!-- lint-ignore: level-ref -->',
+    'After with trailing <!-- lint-ignore: bold-math --> and `<!-- keep -->`.',
+  ].join('\n'), []);
+  assert.ok(!withComments.includes('<!--'), `Raw HTML comment leaked: ${withComments}`);
+  assert.ok(!withComments.includes('lint-ignore'), `Lint comment text leaked: ${withComments}`);
+  assert.ok(!withComments.includes('<p></p>'), `Empty <p></p> emitted for standalone comment: ${withComments}`);
+  assert.ok(withComments.includes('<p>Before paragraph.</p>'), `Standalone comment must break paragraphs: ${withComments}`);
+  assert.ok(withComments.includes('<code>&lt;!-- keep --&gt;</code>'), `Inline code comment must be preserved: ${withComments}`);
+
+  const boxAnchored = renderTutMarkdown(
+    '<details>\n<summary>Level 2 · Key idea: Foo {#box-foo}</summary>\n\nBody.\n</details>\n',
+    []
+  );
+  assert.ok(
+    boxAnchored.startsWith('<details class="tut-details" id="tut-a-box-foo" tabindex="-1"><summary>Level 2 · Key idea: Foo</summary>'),
+    `Expected anchored <details> with stripped summary, got: ${boxAnchored}`
+  );
+  assert.ok(!boxAnchored.includes('{#box-foo}'), `Summary anchor syntax leaked into HTML: ${boxAnchored}`);
+
+  const goMatch = SCRIPT_SRC.match(/function goAnchor\(id\)\{[\s\S]*?focus\(\{preventScroll:true\}\);\}catch\(_\)\{\}\}/);
+  assert.ok(goMatch, 'Expected goAnchor(id) function inside initTutorial');
+  const outerDet = { tagName: 'DETAILS', open: false, parentElement: null };
+  const targetDet = {
+    tagName: 'DETAILS',
+    open: false,
+    parentElement: outerDet,
+    focused: false,
+    getBoundingClientRect: () => ({ top: 120 }),
+    focus() { this.focused = true; },
+  };
+  const mockBody = {
+    scrollTop: 0,
+    getBoundingClientRect: () => ({ top: 20 }),
+    querySelector: (sel) => (sel === '#tut-a-box-foo' ? targetDet : null),
+  };
+  outerDet.parentElement = mockBody;
+  const goSb = { body: mockBody, window: {} };
+  vm.runInNewContext(goMatch[0] + '\ngoAnchor("box-foo");', goSb);
+  assert.equal(targetDet.open, true, 'goAnchor must open the target <details> itself');
+  assert.equal(outerDet.open, true, 'goAnchor must open enclosing <details> ancestors');
+  assert.equal(targetDet.focused, true, 'goAnchor must focus the target <details>');
+
   // 4. Every registered kind has a widget, and every figure / link in the shipped chapters resolves
   for (const kind of Object.keys(TUT_FIG_KINDS)) assert.ok(SCRIPT_SRC.includes(`TF_MOUNT['${kind}']=`), `No widget for figure kind ${kind}`);
   const bundle = JSON.parse(HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/)[1]);
-  const anchors = new Map(bundle.map((ch) => [ch.file.slice(0, 2), new Set([...ch.md.matchAll(/^#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]))]));
+  const anchors = new Map(bundle.map((ch) => [ch.file.slice(0, 2), new Set([
+    ...[...ch.md.matchAll(/^#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]),
+    ...[...ch.md.matchAll(/^<summary>.*\{#([A-Za-z0-9_-]+)\}\s*<\/summary>$/gm)].map((m) => m[1]),
+  ])]));
   let figures = 0;
   for (const ch of bundle) {
     assert.ok(!/<details\s+open/i.test(ch.md), `${ch.file} has a <details open> box; zoom boxes must start closed`);
