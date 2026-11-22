@@ -35,7 +35,6 @@ DEFAULT_VECTORS = "r,p,J,X,v,L,A,B,E,F,k,φ,μ,Ω,ε,d,a,b,τ,s,ℰ"
 
 # Regex patterns
 FENCE_RE = re.compile(r"^\s*```")
-HTML_COMMENT_RE = re.compile(r"<!--.*?-->")
 IGNORE_RE = re.compile(r"<!--\s*lint-ignore:\s*([\w\-, ]+?)\s*-->")
 DETAILS_OPEN_RE = re.compile(r"^<details(?:\s+([^>]*))?>$", re.IGNORECASE)
 DETAILS_CLOSE_RE = re.compile(r"^</details>$", re.IGNORECASE)
@@ -52,14 +51,16 @@ TUT_LINK_RE = re.compile(r"\[([^\]\n]+)\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)")
 MD_LINK_URL_RE = re.compile(r"(\[[^\]]+\])\([^)]*\)")
 
 # Content & inline checks
-L1_COMPLEX_EXP_RE = re.compile(
-    r"\be\s*<sup>[^<]*(?:[±−+-]\s*i\b|\bi(?:\s*[A-Za-zωθφEt(]|\b))[^<]*</sup>"
-    r"|\be\^\(?\{?[±−+-]?i\b",
-    re.IGNORECASE,
+L1_SUP_EXP_RE = re.compile(r"\be\s*<sup>((?:(?!</sup>).)*)</sup>", re.IGNORECASE)
+L1_CARET_EXP_RE = re.compile(
+    r"\be\^(?:\{([^}]+)\}|\(([^)]+)\)|([±−+\-]?i(?=$|[\s}/*×·±−+\-0-9A-Zα-ωΑ-Ω]|[txkpmrφθωπδΔ])))"
+)
+IMAG_I_RE = re.compile(
+    r"(?:^|[±−+\-\s(/*×·0-9])i(?=$|[\s()/*×·±−+\-0-9A-Zα-ωΑ-Ω]|[txkpmrφθωπδΔ])"
 )
 L1_FORBIDDEN_RE = re.compile(
     r"[∇∂∫∑Ĥ]|[LpOρH]\u0302"
-    r"|\bd²?(?:[A-Za-zψΨΦRPu]|\([^)]+\))?/d[A-Za-zφθωΘ]+²?(?![A-Za-z])"
+    r"|\bd²?(?:[A-Za-zψΨΦRPu]{1,3}|\([^)]+\))?/d[trxyzφθωΘτλρξ]²?(?![A-Za-z])"
 )
 L1_LABEL_EQ_RE = re.compile(
     r"\b(?:n|l|m(?:_l|_[xyz])?|B(?:_z)?|r|t|s)\s*=\s*[±−+-]?(?:\d+(?:\.\d+)?|½)(?![A-Za-z/²³])"
@@ -88,15 +89,14 @@ FORWARD_DEFER_RE = re.compile(
 )
 CHAPTER_MENTION_RE = re.compile(r"\b(?:Chapter|Ch\.)\s+(\d+)\b", re.IGNORECASE)
 SECTION_REF_RE = re.compile(r"§\s*(\d+)\.(\d+)\b")
-CALLOUT_START_RE = re.compile(r"^>\s*\*\*(?:(?!\*\*).)+[:?]\*\*(?:\s|$)")
-EQ_LINE_RE = re.compile(r"^\s*>(?!\s*[-*]\s).*[=≈∝]")
+CALLOUT_START_RE = re.compile(r"^>\s*\*\*(?:(?!\*\*).)+[:?.]\*\*(?:\s|$)")
+EQ_LINE_RE = re.compile(r"^\s*>(?!\s*(?:[-*]|\d+\.)\s).*[=≈∝]")
 SI_SYM_RE = re.compile(r"ħ|m<[sS][uU][bB]>e</[sS][uU][bB]>|\bm_e\b|mₑ|ε₀")
 UNITS_TAG_EXEMPT_RE = re.compile(
-    r"\bSI\b|\(\s*a\.u\.|\(\s*atomic units|\ba\.u\.\s*[→↔]|ħ\s*=\s*(?:[^=\n]*=\s*)?1\b",
+    r"\bSI\b|\(\s*a\.u\.|\(\s*atomic units|\ba\.u\.\s*[→↔]|ħ\s*=\s*(?:[^=\n]*=\s*)*1\b",
     re.IGNORECASE,
 )
-CODE_SPAN_RE = re.compile(r"`[^`\n]+`")
-BOLD_SPAN_RE = re.compile(r"\*\*([^\n]+?)\*\*")
+BOLD_SPAN_RE = re.compile(r"\*\*([^\n]+?)\*\*(?!\*)")
 MATH_CHARS_RE = re.compile(r"[=∇∂∫∑ĤψΨΦ±×÷√∞≈∝≤≥≠⟨⟩]|<sup>")
 INLINE_TAG_RE = re.compile(r"<(/?)(sub|sup|summary)\b[^>]*>", re.IGNORECASE)
 
@@ -181,7 +181,7 @@ class Box:
         for ln, text, _, in_callout in self.own_lines:
             if in_callout:
                 continue
-            cleaned = re.sub(r"<[^>]+>", "", CODE_SPAN_RE.sub("CODE", text))
+            cleaned = re.sub(r"<[^>]+>", "", strip_code_placeholder(text))
             if EQ_LINE_RE.match(cleaned):
                 out.append((ln, text))
         return out
@@ -202,7 +202,51 @@ def chapter_num_for(path: str) -> Optional[int]:
 
 
 def strip_code_placeholder(s: str) -> str:
-    return CODE_SPAN_RE.sub("CODE", s)
+    """Replace matched single- or multi-backtick code spans with 'CODE'."""
+    out: List[str] = []
+    i = 0
+    n = len(s)
+    while i < n:
+        if s[i] == "`":
+            k = 0
+            while i + k < n and s[i + k] == "`":
+                k += 1
+            p = i + k
+            found = -1
+            while p < n:
+                if s[p] == "`":
+                    m = 0
+                    while p + m < n and s[p + m] == "`":
+                        m += 1
+                    if m == k:
+                        found = p + m
+                        break
+                    p += m
+                else:
+                    p += 1
+            if found > 0:
+                out.append("CODE")
+                i = found
+                continue
+            out.append(s[i : i + k])
+            i += k
+            continue
+        out.append(s[i])
+        i += 1
+    return "".join(out)
+
+
+def find_l1_complex_exp(no_stars: str) -> Optional[str]:
+    """Detect complex exponentials in Level 1 text, handling nested <sub> inside <sup>."""
+    for m in L1_SUP_EXP_RE.finditer(no_stars):
+        exp_body = re.sub(r"<[^>]+>", "", m.group(1)).strip()
+        if IMAG_I_RE.search(exp_body):
+            return m.group(0)
+    for m in L1_CARET_EXP_RE.finditer(no_stars):
+        exp_body = (m.group(1) or m.group(2) or m.group(3) or "").strip()
+        if IMAG_I_RE.search(exp_body):
+            return m.group(0)
+    return None
 
 
 def is_unit_hat_vector(inner: str) -> bool:
@@ -232,6 +276,8 @@ def is_prose_or_label_bold(inner: str) -> bool:
         return True
     if len(words) == 1 and len(words[0]) >= 3 and inner.rstrip().endswith((":", ".")):
         return True
+    if len(words) == 1 and len(words[0]) >= 4 and not re.search(r"[=±×÷√∞≈∝≤≥≠/]|<sup>", inner):
+        return True
     if len(words) == 1 and re.search(r"-\d+\b", s):
         return True
     return False
@@ -240,45 +286,73 @@ def is_prose_or_label_bold(inner: str) -> bool:
 def strip_line_comments_and_ignores(
     raw: str, in_comment: bool
 ) -> Tuple[str, Set[str], bool, bool]:
-    """Strip HTML comments (including multiline) while preserving inline backtick code spans.
+    """Single-pass per-line HTML comment & lint-ignore scanner matching the viewer.
 
+    - Inside comment mode: backticks and fences are ignored until `-->`.
+    - Outside comment mode: single- and multi-backtick code spans protect `<!--`
+      from starting a comment or triggering `lint-ignore`.
     Returns (clean_line, extracted_ignores, next_in_comment, had_comment).
     """
     ignores: Set[str] = set()
     had_comment = False
-    work = raw
+    out: List[str] = []
+    i = 0
+    n = len(raw)
 
-    if in_comment:
-        had_comment = True
-        end_idx = work.find("-->")
-        if end_idx < 0:
-            return "", ignores, True, True
-        work = work[end_idx + 3 :]
-        in_comment = False
+    while i < n:
+        if in_comment:
+            had_comment = True
+            end = raw.find("-->", i)
+            if end < 0:
+                return "".join(out), ignores, True, True
+            i = end + 3
+            in_comment = False
+            continue
 
-    # Protect inline backtick code spans BEFORE scanning/stripping HTML comments
-    codes: List[str] = []
+        ch = raw[i]
+        if ch == "`":
+            k = 0
+            while i + k < n and raw[i + k] == "`":
+                k += 1
+            p = i + k
+            found = -1
+            while p < n:
+                if raw[p] == "`":
+                    m = 0
+                    while p + m < n and raw[p + m] == "`":
+                        m += 1
+                    if m == k:
+                        found = p + m
+                        break
+                    p += m
+                else:
+                    p += 1
+            if found > 0:
+                out.append(raw[i:found])
+                i = found
+                continue
+            out.append(raw[i : i + k])
+            i += k
+            continue
 
-    def _mask(m: re.Match[str]) -> str:
-        codes.append(m.group(0))
-        return f"\x00C{len(codes) - 1}\x00"
-
-    masked = CODE_SPAN_RE.sub(_mask, work)
-
-    if "<!--" in masked:
-        had_comment = True
-        for im in IGNORE_RE.finditer(masked):
-            for tok in re.split(r"[,\s]+", im.group(1).strip()):
-                if tok:
-                    ignores.add(tok.lower())
-        masked = HTML_COMMENT_RE.sub("", masked)
-        open_idx = masked.find("<!--")
-        if open_idx >= 0:
-            masked = masked[:open_idx]
+        if raw.startswith("<!--", i):
+            had_comment = True
+            end = raw.find("-->", i + 4)
+            if end >= 0:
+                seg = raw[i : end + 3]
+                for im in IGNORE_RE.finditer(seg):
+                    for tok in re.split(r"[,\s]+", im.group(1).strip()):
+                        if tok:
+                            ignores.add(tok.lower())
+                i = end + 3
+                continue
             in_comment = True
+            break
 
-    clean = re.sub(r"\x00C(\d+)\x00", lambda m: codes[int(m.group(1))], masked)
-    return clean, ignores, in_comment, had_comment
+        out.append(ch)
+        i += 1
+
+    return "".join(out), ignores, in_comment, had_comment
 
 
 class Linter:
@@ -299,13 +373,14 @@ class Linter:
         line: int,
         message: str,
         ignored: Optional[Set[str]] = None,
-    ) -> None:
+    ) -> bool:
         r = rule.lower()
         if "all" in self.cfg.ignore or r in self.cfg.ignore:
-            return
+            return False
         if ignored and ("all" in ignored or r in ignored):
-            return
+            return False
         self.diags.append(Diagnostic(severity, rule, path, line, message))
+        return True
 
     def register_anchor(
         self,
@@ -340,20 +415,19 @@ class Linter:
         in_l2: bool = False,
         in_callout: bool = False,
     ) -> None:
-        # 1. Backtick balance (ignore escaped \`)
-        bt_line = clean_line.replace("\\`", "")
-        if bt_line.count("`") % 2 != 0:
+        # Strip inline code spans using non-empty placeholder so **`code`** stays **CODE**
+        nocode = strip_code_placeholder(clean_line)
+
+        # 1. Backtick balance (any leftover unescaped backticks after matching code spans)
+        if "`" in nocode.replace("\\`", ""):
             self.emit(
                 "WARN",
                 "backtick-balance",
                 path,
                 line_no,
-                "Odd number of backticks on line",
+                "Odd/unmatched backtick on line",
                 ignored,
             )
-
-        # Strip inline code spans using non-empty placeholder so **`code`** stays **CODE**
-        nocode = strip_code_placeholder(clean_line)
 
         # 2. Tag balance for <sub>, <sup>, <summary>
         tag_stack: List[str] = []
@@ -491,12 +565,13 @@ class Linter:
         zoom_stack: List[Box] = []
         in_fence = False
         in_html_comment = False
+        comment_open_line: Optional[int] = None
         in_callout = False
         pending_ignore: Set[str] = set()
         current_section: Optional[Tuple[int, int]] = None
 
         for line_no, raw in enumerate(lines, 1):
-            # Fenced code blocks
+            # Fenced code blocks (ignored while inside an HTML comment)
             if not in_html_comment and FENCE_RE.match(raw):
                 in_fence = not in_fence
                 in_callout = False
@@ -510,14 +585,20 @@ class Linter:
                 continue
 
             # Extract lint-ignore comments and strip HTML comments (preserving inline backticks)
+            prev_in_comment = in_html_comment
             clean_line, line_ignores, in_html_comment, had_comment = (
                 strip_line_comments_and_ignores(raw, in_html_comment)
             )
+            if not prev_in_comment and in_html_comment:
+                comment_open_line = line_no
+            elif not in_html_comment:
+                comment_open_line = None
+
             trim = clean_line.strip()
 
             # Pure comment line, blank line, or empty blockquote comment (`> <!-- ... -->`)
             if not trim or (trim == ">" and had_comment):
-                if not trim:
+                if not trim and not (had_comment and raw.lstrip().startswith(">")):
                     in_callout = False
                 if line_ignores:
                     pending_ignore |= line_ignores
@@ -527,7 +608,7 @@ class Linter:
                     all_stack[-1].total_own_lines += 1
                 continue
 
-            # Track prose callout blockquotes starting with `> **...[:?]**`
+            # Track prose callout blockquotes starting with `> **...[:?.]**`
             if trim.startswith(">"):
                 if CALLOUT_START_RE.match(trim):
                     in_callout = True
@@ -616,6 +697,7 @@ class Linter:
 
             # Handle </details>
             if DETAILS_CLOSE_RE.match(trim):
+                pending_ignore.clear()
                 if not all_stack:
                     self.emit(
                         "ERR",
@@ -734,6 +816,16 @@ class Linter:
                 in_callout=in_callout,
             )
 
+        # Unclosed HTML comment at EOF
+        if in_html_comment:
+            self.emit(
+                "ERR",
+                "comment-balance",
+                path,
+                comment_open_line or len(lines),
+                f"Unclosed HTML comment '<!--' opened at line {comment_open_line or len(lines)}",
+            )
+
         # Any unclosed <details> at EOF
         while all_stack:
             box = all_stack.pop()
@@ -826,14 +918,14 @@ class Linter:
             nocode = strip_code_placeholder(text)
             no_urls = MD_LINK_URL_RE.sub(r"\1", nocode)
             no_stars = no_urls.replace("*", "")
-            m_exp = L1_COMPLEX_EXP_RE.search(no_stars)
-            if m_exp:
+            exp_hit = find_l1_complex_exp(no_stars)
+            if exp_hit:
                 self.emit(
                     "ERR",
                     "l1-algebra",
                     b.path,
                     ln,
-                    f"Level 1 Picture box contains complex exponential {m_exp.group(0)!r}",
+                    f"Level 1 Picture box contains complex exponential {exp_hit!r}",
                     eff_ign,
                 )
             else:
@@ -891,7 +983,8 @@ class Linter:
             )
 
         own_text = "\n".join(text for _, text, _, _ in b.own_lines)
-        has_steps = bool(STEP_RE.search(own_text))
+        own_nocode = "\n".join(strip_code_placeholder(text) for _, text, _, _ in b.own_lines)
+        has_steps = bool(STEP_RE.search(own_nocode))
         if has_steps:
             self.emit(
                 "WARN",
@@ -915,7 +1008,7 @@ class Linter:
             )
             has_child_link = False
             if child_anchors:
-                for lm in TUT_LINK_RE.finditer(strip_code_placeholder(own_text)):
+                for lm in TUT_LINK_RE.finditer(own_nocode):
                     target_ch, anc = lm.group(2), lm.group(3) or ""
                     if anc in child_anchors and (cur_ch is None or target_ch == cur_ch):
                         has_child_link = True
@@ -975,15 +1068,16 @@ class Linter:
             nocode = strip_code_placeholder(text)
             m_def = FORWARD_DEFER_RE.search(nocode)
             if m_def:
-                self.emit(
+                if self.emit(
                     "WARN",
                     "l3-forward",
                     b.path,
                     ln,
                     f"Level 3 derivation defers proof forward ({m_def.group(0)!r})",
                     eff_ign,
-                )
-                break
+                ):
+                    break
+                continue
             if b.section is not None:
                 fwd_sec: Optional[str] = None
                 for sm in SECTION_REF_RE.finditer(nocode):
@@ -992,15 +1086,16 @@ class Linter:
                         fwd_sec = f"§{s_ch}.{s_sub}"
                         break
                 if fwd_sec is not None:
-                    self.emit(
+                    if self.emit(
                         "WARN",
                         "l3-forward",
                         b.path,
                         ln,
                         f"Level 3 derivation in §{b.section[0]}.{b.section[1]} references later section {fwd_sec}",
                         eff_ign,
-                    )
-                    break
+                    ):
+                        break
+                    continue
             if cur_num is not None and cur_num != 8:
                 fwd_ch: Optional[int] = None
                 for lm in TUT_LINK_RE.finditer(nocode):
@@ -1015,15 +1110,15 @@ class Linter:
                             fwd_ch = tgt
                             break
                 if fwd_ch is not None:
-                    self.emit(
+                    if self.emit(
                         "WARN",
                         "l3-forward",
                         b.path,
                         ln,
                         f"Level 3 derivation references later Chapter {fwd_ch} from Chapter {cur_num}",
                         eff_ign,
-                    )
-                    break
+                    ):
+                        break
 
     def resolve_refs(self) -> None:
         sibling_cache: Dict[Path, Set[str]] = {}

@@ -582,6 +582,124 @@ test('review regression checks: bold-math exemptions, EQ_LINE_RE bullets, commen
   }
 });
 
+test('second-review regression checks: comment-balance, nested sup/sub, callout multiline comments, *** bold, L2 inline Step, l3-forward ignore', () => {
+  // 1. Unclosed <!-- emits ERR [comment-balance]
+  const unclosedMd = [
+    '## Top {#top}',
+    '<!-- unclosed comment starts here',
+    'Never closed.',
+    '',
+  ].join('\n');
+  withTempChapter('01-unclosed-comment.md', unclosedMd, (filePath) => {
+    const res = runLinter([filePath]);
+    assert.equal(res.status, 1);
+    const errs = parseDiagnostics(res.stdout).filter((d) => d.severity === 'ERR' && d.rule === 'comment-balance');
+    assert.equal(errs.length, 1, `Expected 1 comment-balance ERR:\n${res.stdout}`);
+    assert.equal(errs[0].line, 2);
+  });
+
+  // 2. Comprehensive L1 algebra catches: *e*^*i*π, *e*^(-*i*ω_L*t*), literal e^{iωt}, *dL*_z/*dt*, dψ/dτ
+  const l1ExtMd = [
+    '<details>',
+    '<summary>Level 1 · Picture: extended calculus and complex exp</summary>',
+    'Euler: *e*<sup>*i*π</sup> here.',
+    'Nested sub in sup: *e*<sup>−*i*ω<sub>L</sub>*t*</sup> here.',
+    'Literal caret: e^{iωt} here.',
+    'Multi-char numerator: *dL*<sub>*z*</sub>/*dt* here.',
+    'Greek denominator: dψ/dτ here.',
+    'Benign: e<sup>th</sup> and e<sup>−2r</sup>.',
+    '</details>',
+    '',
+  ].join('\n');
+  withTempChapter('01-l1-ext.md', l1ExtMd, (filePath) => {
+    const res = runLinter([filePath]);
+    assert.equal(res.status, 1);
+    const errs = parseDiagnostics(res.stdout).filter((d) => d.severity === 'ERR' && d.rule === 'l1-algebra');
+    assert.equal(errs.length, 5, `Expected 5 l1-algebra ERR diagnostics:\n${res.stdout}`);
+  });
+
+  // 3. pending_ignore before </details> must NOT leak to line after </details>
+  const leakMd = [
+    '<details>',
+    '<summary>Level 1 · Picture: ignore leak test</summary>',
+    'Clean picture.',
+    '<!-- lint-ignore: level-ref -->',
+    '</details>',
+    'See Level 2 after box must STILL error.',
+    '',
+  ].join('\n');
+  withTempChapter('01-no-leak.md', leakMd, (filePath) => {
+    const res = runLinter([filePath]);
+    assert.equal(res.status, 1);
+    const lr = parseDiagnostics(res.stdout).filter((d) => d.rule === 'level-ref');
+    assert.equal(lr.length, 1, `Expected pending_ignore not to leak past </details>:\n${res.stdout}`);
+  });
+
+  // 4. Multiline comment with ```demo + lone backtick, double-backtick `` `<!-- keep -->` ``, callout multiline comment,
+  //    > **Title.**, > 1. a = b, ħ = m_e = e = 1, **Hamiltonian *Ĥ*** vs **1/√*B***, `Step 1` in L2, l3-forward ignore continuation
+  const reg2Md = [
+    '## 1.1 Parity Checks {#p11}',
+    '',
+    '<!--',
+    'Lone ` backtick and commented-out fence inside comment:',
+    '```demo',
+    '{"label": "commented"}',
+    '```',
+    'See Level 2 and **broken bold.',
+    '-->',
+    '',
+    'Double backticks `` `<!-- keep -->` `` stay valid with zero backtick-balance warning.',
+    'Glossary label **Hamiltonian *Ĥ*** stays silent, while **1/√*B*** still warns.',
+    '',
+    '> **Note:**',
+    '> <!--',
+    '> hidden multiline comment inside callout',
+    '> -->',
+    '> Continuation inside callout with *m*<sub>e</sub> and *E* = *p*²/(2*m*<sub>e</sub>) stays silent.',
+    '',
+    '> **How to use this appendix.**',
+    '> 1. *a* = *b* with *ħ* inside numbered callout list stays silent.',
+    '',
+    '> *ħ* = *m*<sub>e</sub> = *e* = 1',
+    '',
+    '<details>',
+    '<summary>Level 1 · Picture: wrapper</summary>',
+    'A clean picture.',
+    '',
+    '<details>',
+    '<summary>Level 2 · Key idea: inline code step</summary>',
+    'Mentioning `Step 1` inside inline code must NOT trigger l2-size. See full derivation.',
+    '',
+    '<details>',
+    '<summary>Level 3 · Full derivation: l3-forward ignore does not mask later line</summary>',
+    '**You need:** basics.',
+    'First forward ref §1.4 is ignored. <!-- lint-ignore: l3-forward -->',
+    'Second forward ref §1.5 is NOT ignored and MUST warn. Check ✓.',
+    '</details>',
+    '',
+    '</details>',
+    '',
+    '</details>',
+    '',
+  ].join('\n');
+
+  withTempChapter('01-reg2.md', reg2Md, (filePath) => {
+    const res = runLinter([filePath]);
+    assert.equal(res.status, 0, `Expected 0 ERR:\n${res.stdout}`);
+    const diags = parseDiagnostics(res.stdout);
+    assert.equal(diags.filter((d) => d.severity === 'ERR').length, 0, `Expected 0 ERR:\n${res.stdout}`);
+    assert.equal(diags.filter((d) => d.rule === 'backtick-balance').length, 0);
+    assert.equal(diags.filter((d) => d.rule === 'units-tag').length, 0, `Unexpected units-tag:\n${res.stdout}`);
+    assert.equal(diags.filter((d) => d.rule === 'l2-size').length, 0, `Inline \`Step 1\` must not trigger l2-size:\n${res.stdout}`);
+    const bm = diags.filter((d) => d.rule === 'bold-math');
+    assert.equal(bm.length, 1, `Expected ONLY **1/√*B*** to trigger bold-math:\n${res.stdout}`);
+    assert.ok(bm[0].msg.includes('**1/√*B***'), `Expected clean non-truncated span **1/√*B***, got: ${bm[0].msg}`);
+    const l3f = diags.filter((d) => d.rule === 'l3-forward');
+    assert.equal(l3f.length, 1, `Expected un-ignored §1.5 to trigger l3-forward after ignored §1.4:\n${res.stdout}`);
+    assert.match(l3f[0].msg, /§1\.5/);
+  });
+});
+
 test('real tutorial/*.md chapters work cleanly with --outline and --scheme legacy', () => {
   const mdFiles = fs
     .readdirSync(TUTORIAL_DIR)

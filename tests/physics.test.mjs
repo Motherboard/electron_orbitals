@@ -1300,6 +1300,24 @@ test('single-photon Fock cap, Zeeman partial WW rate, s-wave cusp, and markdown 
   vm.runInNewContext(SCRIPT_SRC.slice(tutStart, tutEnd) + '\nglobalThis.__tut={renderTutMarkdown,parseTutInline};', tutSb);
   const { renderTutMarkdown, parseTutInline } = tutSb.__tut;
 
+  const assertInlineTagNesting = (html, label) => {
+    const stack = [];
+    for (const m of html.matchAll(/<(\/?)(strong|em)>/g)) {
+      const isClose = !!m[1], tag = m[2];
+      if (!isClose) stack.push(tag);
+      else {
+        const top = stack.pop();
+        assert.equal(top, tag, `Misnested </${tag}> (expected </${top}>) in ${label}: ${html.slice(Math.max(0, m.index - 40), m.index + 40)}`);
+      }
+    }
+    assert.equal(stack.length, 0, `Unclosed inline tags [${stack.join(', ')}] in ${label}`);
+  };
+
+  assert.equal(parseTutInline('**Hamiltonian *Ĥ***'), '<strong>Hamiltonian <em>Ĥ</em></strong>');
+  assert.equal(parseTutInline('***n* = 0:**'), '<strong><em>n</em> = 0:</strong>');
+  assert.equal(parseTutInline('***xz*-plane**'), '<strong><em>xz</em>-plane</strong>');
+  assertInlineTagNesting(parseTutInline('**Hamiltonian *Ĥ*** ***n* = 0:** ***xz*-plane**'), 'nested-emphasis');
+
   const bundle = JSON.parse(HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/)[1]);
   for (const ch of bundle) {
     const demos = [];
@@ -1310,6 +1328,7 @@ test('single-photon Fock cap, Zeeman partial WW rate, s-wave cusp, and markdown 
       const closes = (rendered.match(new RegExp(`</${tag}>`, 'g')) || []).length;
       assert.equal(opens, closes, `Unbalanced <${tag}> in ${ch.file}`);
     }
+    assertInlineTagNesting(rendered, ch.file);
   }
   assert.ok(renderTutMarkdown('  - orphan indented bullet\n\n  - spaced bullet\n', []).includes('<ul>'));
   assert.equal(parseTutInline('z\\* and *em*'), 'z* and <em>em</em>');
@@ -1697,14 +1716,17 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.ok(nested.endsWith('</details><p>After.</p>'));
   assert.equal(parseTutInline('`[x](tut:08#T1)` [y](http://e.x)'), '<code>[x](tut:08#T1)</code> [y](http://e.x)');
 
-  // 3b. HTML comments are stripped cleanly (multiline/inline/block openers, preserving code), <summary> {#box-id} emits id/tabindex, and goAnchor/backBtn work
+  // 3b. HTML comments are stripped cleanly (multiline/inline/block openers/fences/lone backticks, preserving code), <summary> {#box-id} emits id/tabindex, and goAnchor/backBtn work
   const withComments = renderTutMarkdown([
     '<!-- lint-ignore: level-ref -->',
     'Before paragraph.',
     '<!--',
-    'multiline hidden comment',
+    'multiline hidden comment with lone ` backtick and fenced block:',
+    '```demo',
+    '{"label": "disabled"}',
+    '```',
     '-->',
-    'After with trailing <!-- lint-ignore: bold-math --> and `<!-- keep -->`.',
+    'After with trailing <!-- lint-ignore: bold-math --> and `<!-- keep -->` and `` `<!-- keep2 -->` ``.',
     '',
     '## Heading {#h1} <!-- lint-ignore: level-ref -->',
     '',
@@ -1726,9 +1748,11 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.ok(!withComments.includes('<!--'), `Raw HTML comment leaked: ${withComments}`);
   assert.ok(!withComments.includes('lint-ignore'), `Lint comment text leaked: ${withComments}`);
   assert.ok(!withComments.includes('multiline hidden comment'), `Multiline comment text leaked: ${withComments}`);
+  assert.ok(!withComments.includes('disabled'), `Commented-out demo block leaked: ${withComments}`);
   assert.ok(!withComments.includes('<p></p>'), `Empty <p></p> emitted for standalone comment: ${withComments}`);
   assert.ok(withComments.includes('<p>Before paragraph.</p>'), `Standalone comment must break paragraphs: ${withComments}`);
   assert.ok(withComments.includes('<code>&lt;!-- keep --&gt;</code>'), `Inline code comment must be preserved: ${withComments}`);
+  assert.ok(withComments.includes('<code>`&lt;!-- keep2 --&gt;`</code>'), `Double-backtick inline code comment must be preserved: ${withComments}`);
   assert.ok(withComments.includes('&lt;!-- keep-fenced --&gt;'), `Fenced code comment must be preserved: ${withComments}`);
   assert.ok(withComments.includes('<h3 id="tut-a-h1" tabindex="-1">Heading</h3>'), `Trailing comment on heading broke anchor: ${withComments}`);
   assert.equal((withComments.match(/<blockquote/g) || []).length, 1, `Blockquote comment must not split callout: ${withComments}`);
@@ -1771,7 +1795,7 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.equal(outerDet.open, true, 'goAnchor must open enclosing <details> ancestors');
   assert.equal(targetDet.focused, true, 'goAnchor must focus the target <details>');
 
-  // Verify backBtn.onclick closes <details> opened after navStack push (same-chapter back navigation)
+  // Verify backBtn.onclick closes <details> opened after navStack push (same-chapter and cross-chapter back navigation)
   const backMatch = SCRIPT_SRC.match(/backBtn\.onclick=\(\)=>\{[\s\S]*?if\(!navStack\.length\)sel\.focus\(\);\};/);
   assert.ok(backMatch, 'Expected backBtn.onclick handler inside initTutorial');
   const d0 = { open: true }, d1 = { open: true };
@@ -1790,28 +1814,83 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.equal(d1.open, false, 'backBtn must re-close <details> that goAnchor opened');
   assert.equal(backSb.body.scrollTop, 42);
 
+  // Cross-chapter back navigation: calls renderChapter(b.idx), clears pendingAnchor, restores details and scrollTop
+  const c0 = { open: false }, c1 = { open: true };
+  let renderedIdx = -1;
+  const crossBackSb = {
+    backBtn: {},
+    navStack: [{ idx: 2, top: 180, open: [0] }],
+    curIdx: 7,
+    pendingAnchor: 'T3',
+    renderChapter(idx) { renderedIdx = idx; crossBackSb.curIdx = idx; },
+    updateBack() {},
+    sel: { focus() {} },
+    body: { scrollTop: 999, querySelectorAll: () => [c0, c1] },
+  };
+  vm.runInNewContext(backMatch[0] + '\nbackBtn.onclick();', crossBackSb);
+  assert.equal(renderedIdx, 2, 'Cross-chapter backBtn must call renderChapter(b.idx)');
+  assert.equal(crossBackSb.pendingAnchor, '', 'Cross-chapter backBtn must clear pendingAnchor');
+  assert.equal(c0.open, true, 'Cross-chapter backBtn must restore saved open <details>');
+  assert.equal(c1.open, false, 'Cross-chapter backBtn must close unsaved <details>');
+  assert.equal(crossBackSb.body.scrollTop, 180);
+
   // 4. Every registered kind has a widget, and every figure / link in the shipped chapters resolves
   for (const kind of Object.keys(TUT_FIG_KINDS)) assert.ok(SCRIPT_SRC.includes(`TF_MOUNT['${kind}']=`), `No widget for figure kind ${kind}`);
   const bundle = JSON.parse(HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/)[1]);
   const stripMdForScan = (md) => {
-    const out = [];
-    let inFence = false;
-    for (const ln of md.replace(/\r\n?/g, '\n').split('\n')) {
-      if (ln.trim().startsWith('```')) { inFence = !inFence; continue; }
-      if (!inFence) out.push(ln);
+    const s = String(md).replace(/\r\n?/g, '\n');
+    let out = '', i = 0, n = s.length, inFence = false, inCom = false, sol = true;
+    while (i < n) {
+      if (inCom) {
+        const end = s.indexOf('-->', i);
+        if (end < 0) break;
+        i = end + 3; inCom = false; sol = false; continue;
+      }
+      if (sol) {
+        let j = i; while (j < n && (s[j] === ' ' || s[j] === '\t')) j++;
+        if (s.startsWith('```', j)) {
+          inFence = !inFence;
+          const nl = s.indexOf('\n', i);
+          if (nl < 0) break;
+          i = nl + 1; sol = true; continue;
+        }
+      }
+      if (inFence) {
+        const nl = s.indexOf('\n', i);
+        if (nl < 0) break;
+        i = nl + 1; sol = true; continue;
+      }
+      const ch = s[i];
+      if (ch === '`') {
+        let k = 0; while (i + k < n && s[i + k] === '`') k++;
+        const nl = s.indexOf('\n', i), lim = nl < 0 ? n : nl;
+        let p = i + k, found = -1;
+        while (p < lim) {
+          if (s[p] === '`') {
+            let m = 0; while (p + m < lim && s[p + m] === '`') m++;
+            if (m === k) { found = p + m; break; }
+            p += m;
+          } else p++;
+        }
+        if (found > 0) { i = found; sol = false; continue; }
+        i += k; sol = false; continue;
+      }
+      if (s.startsWith('<!--', i) && s.indexOf('-->', i + 4) >= 0) { inCom = true; i += 4; continue; }
+      out += ch; sol = (ch === '\n'); i++;
     }
-    return out.join('\n').replace(/`[^`\n]+`/g, '').replace(/<!--[\s\S]*?-->/g, '');
+    return out;
   };
   const anchors = new Map(bundle.map((ch) => {
     const clean = stripMdForScan(ch.md);
     return [ch.file.slice(0, 2), new Set([
-      ...[...clean.matchAll(/^#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]),
-      ...[...clean.matchAll(/^\s*<summary>.*\{#([A-Za-z0-9_-]+)\}\s*<\/summary>\s*$/gm)].map((m) => m[1]),
+      ...[...clean.matchAll(/^\s*#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]),
+      ...[...clean.matchAll(/^\s*<summary>.*\{#([A-Za-z0-9_-]+)\}\s*<\/summary>\s*$/gim)].map((m) => m[1]),
     ])];
   }));
   let figures = 0;
   for (const ch of bundle) {
-    assert.ok(!/<details\s+open/i.test(ch.md), `${ch.file} has a <details open> box; zoom boxes must start closed`);
+    const cleanMd = stripMdForScan(ch.md);
+    assert.ok(!/<details\s+open/i.test(cleanMd), `${ch.file} has a <details open> box; zoom boxes must start closed`);
     for (const m of ch.md.matchAll(/```figure\s*\n([\s\S]*?)\n```/g)) {
       figures++;
       const spec = JSON.parse(m[1]);
@@ -1819,8 +1898,7 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
     }
     const html = renderTutMarkdown(ch.md, []);
     assert.ok(!html.includes('tut-fig-err'), `Broken figure block in ${ch.file}`);
-    const cleanMd = stripMdForScan(ch.md);
-    for (const m of cleanMd.matchAll(/\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g)) {
+    for (const m of cleanMd.matchAll(/\[[^\]\n]+\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g)) {
       assert.ok(anchors.has(m[1]), `Link to missing chapter ${m[1]} in ${ch.file}`);
       if (m[2]) assert.ok(anchors.get(m[1]).has(m[2]), `Link to missing anchor ${m[1]}#${m[2]} in ${ch.file}`);
     }

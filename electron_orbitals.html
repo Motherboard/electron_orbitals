@@ -5403,7 +5403,7 @@ requestAnimationFrame(frame);
 /* ---------- interactive tutorial sidepanel ---------- */
 function parseTutInline(src){
   const codes=[],links=[];
-  let s=String(src).replace(/`([^`]+)`/g,(_,c)=>{codes.push(c);return '\x00C'+(codes.length-1)+'\x00';});
+  let s=String(src).replace(/(?<!`)(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)/g,(_,bt,c)=>{codes.push(bt.length>1&&c.length>=2&&c[0]===' '&&c[c.length-1]===' '?c.slice(1,-1):c);return '\x00C'+(codes.length-1)+'\x00';});
   s=s.replace(/<!--[\s\S]*?-->/g,'');
   s=s.replace(/\[([^\]\n]+)\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g,(_,lbl,ch,an)=>{links.push({lbl:lbl.replace(/\x00C(\d+)\x00/g,(_,i)=>'`'+codes[+i]+'`'),ch,an:an||''});return '\x00L'+(links.length-1)+'\x00';});
   s=s.replace(/\\\*/g,'\x01').replace(/\\\|/g,'|');
@@ -5437,8 +5437,8 @@ function parseTutInline(src){
         if(found<0)break;
         const o=openers[found],use=(d.len>=2&&o.len>=2)?2:1,tag=use===2?'strong':'em';
         o.len-=use;d.len-=use;
-        nodes[o.nodeIdx].open+='<'+tag+'>';
-        nodes[d.nodeIdx].close='</'+tag+'>'+nodes[d.nodeIdx].close;
+        nodes[o.nodeIdx].open='<'+tag+'>'+nodes[o.nodeIdx].open;
+        nodes[d.nodeIdx].close+='</'+tag+'>';
         nodes[o.nodeIdx].count-=use;nodes[d.nodeIdx].count-=use;
         if(o.len===0)openers.splice(found,1);}}
     if(d.canOpen&&d.len>0)openers.push(d);}
@@ -5501,25 +5501,39 @@ function renderFigureHtml(jsonText){
 function stripTutHtmlComments(md){
   const s=String(md).replace(/\r\n?/g,'\n');
   if(!s.includes('<!--'))return s;
-  const lines=s.split('\n'),parts=[];
-  let inFence=false,chunk=[];
-  const flush=()=>{
-    if(!chunk.length)return;
-    let txt=chunk.join('\n');
-    const codes=[];
-    txt=txt.replace(/`([^`\n]+)`/g,m=>{codes.push(m);return '\x00K'+(codes.length-1)+'\x00';});
-    txt=txt.replace(/<!--[\s\S]*?-->/g,'');
-    txt=txt.replace(/\x00K(\d+)\x00/g,(_,i)=>codes[+i]);
-    parts.push(txt);
-    chunk=[];};
-  for(const ln of lines){
-    if(ln.trim().startsWith('```')){
-      if(!inFence){flush();inFence=true;parts.push(ln);}
-      else{parts.push(ln);inFence=false;}
-    }else if(inFence)parts.push(ln);
-    else chunk.push(ln);}
-  flush();
-  return parts.join('\n');}
+  let out='',i=0,n=s.length,inFence=false,inCom=false,sol=true;
+  while(i<n){
+    if(inCom){
+      const end=s.indexOf('-->',i);
+      if(end<0){out+=s.slice(i);break;}
+      i=end+3;inCom=false;sol=false;continue;}
+    if(sol){
+      let j=i;while(j<n&&(s[j]===' '||s[j]==='\t'))j++;
+      if(s.startsWith('```',j)){
+        inFence=!inFence;
+        const nl=s.indexOf('\n',i);
+        if(nl<0){out+=s.slice(i);break;}
+        out+=s.slice(i,nl+1);i=nl+1;sol=true;continue;}}
+    if(inFence){
+      const nl=s.indexOf('\n',i);
+      if(nl<0){out+=s.slice(i);break;}
+      out+=s.slice(i,nl+1);i=nl+1;sol=true;continue;}
+    const ch=s[i];
+    if(ch==='`'){
+      let k=0;while(i+k<n&&s[i+k]==='`')k++;
+      const nl=s.indexOf('\n',i),lim=nl<0?n:nl;
+      let p=i+k,found=-1;
+      while(p<lim){
+        if(s[p]==='`'){
+          let m=0;while(p+m<lim&&s[p+m]==='`')m++;
+          if(m===k){found=p+m;break;}
+          p+=m;
+        }else p++;}
+      if(found>0){out+=s.slice(i,found);i=found;sol=false;continue;}
+      out+=s.slice(i,i+k);i+=k;sol=false;continue;}
+    if(s.startsWith('<!--',i)&&s.indexOf('-->',i+4)>=0){inCom=true;i+=4;continue;}
+    out+=ch;sol=(ch==='\n');i++;}
+  return out;}
 
 function renderTutMarkdown(md,demosOut){
   const lines=stripTutHtmlComments(md).split('\n');
