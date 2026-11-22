@@ -25,15 +25,16 @@ Whenever the UI shows energies, durations, magnetic fields, or intensities, it m
 
 ## 7.2 3D Projection, Slice Overlay & Visual Controls
 
-### How `Tilt` Maps 3D Orbitals onto Your Screen
-Call the viewing tilt angle *p* (the `Tilt` slider, 0° ≤ *p* ≤ 90°). The canvas maps 3D Cartesian coordinates (*x*, *y*, *z*) using basic trigonometry:
+### How `Tilt` and `Rotate` Map 3D Orbitals onto Your Screen
+The `Rotate` slider turns the atom around the *z*-axis by an azimuth angle (`−180°` to `+180°`), and the `Tilt` slider tilts it by angle *p* (`−90° ≤ p ≤ +90°`). At `Rotate = 0°`, the canvas maps 3D Cartesian coordinates (*x*, *y*, *z*) using basic trigonometry:
 - **Screen horizontal** = *x*
 - **Screen vertical** = *y* sin *p* + *z* cos *p*
 - **Depth away from the camera** = *y* cos *p* − *z* sin *p* (larger values are farther away and are drawn smaller and dimmer; at Tilt = 90° the camera sits on the +*z* side, so points at −*z* are farthest)
 
-Thus:
+Thus (at `Rotate = 0°`):
 - **Tilt = 0°** (cos *p* = 1, sin *p* = 0): displays the ***xz*-plane** with the *z*-axis vertical—best for radial nodes, polar nodal cones, and *z*-oscillating dipoles.
-- **Tilt = 90°** (cos *p* = 0, sin *p* = 1): looks straight down from +*z* onto the ***xy*-plane**—best for circular *m* ≠ 0 currents, Larmor rotation, 2p<sub>*x*</sub> precession, and circular σ⁺/σ⁻ polarization.
+- **Tilt = 90°** (cos *p* = 0, sin *p* = 1): looks straight down from +*z* onto the ***xy*-plane**—best for circular *m* ≠ 0 currents, Larmor rotation, 2p<sub>*x*</sub> rotation, and circular σ⁺/σ⁻ polarization.
+- Changing `Rotate` swings the camera horizontally around the *z*-axis (for example, `Rotate = −75°` views nearly down +*x* onto the *yz*-plane, and `Rotate = 165°` views nearly down +*y* onto the *xz*-plane).
 
 ### How the Density Overlay Works: Column Projection vs. 2D Slice
 When **Density overlay** is checked, the canvas shades probability density with an **indigo glow** whose **opacity** is **0** at nodes and empty vacuum and rises monotonically to **0.54** at peak density, so bright orbital lobes stand out cleanly without hiding the colored Bohmian electron dots inside. (Opacity runs from 0 = fully transparent to 1 = fully solid.) The mode selector beside **Density overlay** offers two complementary views:
@@ -81,10 +82,11 @@ Where a radial nodal sphere, a nodal cone, or a nodal plane cuts the depth = 0 s
 }
 ```
 
-### Particle Colors, Depth & Time Scaling
-- **Color by cylindrical radius ρ<sub>cyl</sub> = √(*x*² + *y*²) (distance from the *z*-axis):** Dots grade from orange-red near the *z*-axis through green/cyan to blue-violet near the outer boundary.
+### Particle Colors, Depth, Time Scaling & UI Ranges
+- **Color by cylindrical radius ρ<sub>cyl</sub> = √(*x*² + *y*²) (distance from the *z*-axis):** Dots grade from orange-red near the *z*-axis through green/cyan to blue-violet near the outer boundary. *(The status bar abbreviates ρ<sub>cyl</sub> as `ρ`.)*
 - **Depth cueing:** Dots closer to the viewer appear slightly larger and brighter.
 - **Adaptive `Speed`:** Larger shells (*n* = 5–7) evolve much more slowly than *n* = 1–2, while superpositions beat at the angular frequency Δ*E*/*ħ* (just Δ*E* in atomic units). The simulator scales atomic time per frame using box size *R*<sub>box</sub> and the fastest active frequency so motion always stays readable.
+- **Superposition & ensemble controls:** The orbital selectors span *n* = 1–7, and the `Electrons` slider sets the sampled ensemble size (`50–600`, default `220`). Each component row displays weights normalized from your raw slider values, while internally the simulator interferes any duplicate (*n*, *l*, *m*) rows together first and renormalizes the distinct effective states (adding two equal-amplitude copies of the same state at `0°` and `180°` cancels everywhere and displays `ψ = 0`).
 
 ```demo
 {
