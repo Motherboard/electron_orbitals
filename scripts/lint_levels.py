@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,7 +31,7 @@ SCHEMES: Dict[str, Dict[int, Set[str]]] = {
     },
 }
 
-DEFAULT_VECTORS = "r,p,J,X,v,L,A,B,E,F,k,φ"
+DEFAULT_VECTORS = "r,p,J,X,v,L,A,B,E,F,k,φ,μ,Ω,ε,d,a,b,τ,s,ℰ"
 
 # Regex patterns
 FENCE_RE = re.compile(r"^\s*```")
@@ -41,18 +42,42 @@ DETAILS_CLOSE_RE = re.compile(r"^</details>$", re.IGNORECASE)
 SUMMARY_LINE_RE = re.compile(r"^<summary>(.*)</summary>$", re.IGNORECASE)
 ANCHOR_SUFFIX_RE = re.compile(r"\s*\{#([A-Za-z0-9_-]+)\}\s*$")
 HEADING_ANCHOR_RE = re.compile(r"^#{1,4}\s+.*\{#([A-Za-z0-9_-]+)\}\s*$")
+SECTION_HEADING_RE = re.compile(r"^##\s+(\d+)\.(\d+)\b")
 AUX_SUMMARY_RE = re.compile(
     r"^(?:answers?|app details:.*|.*\(app details\))$",
     re.IGNORECASE,
 )
 SUMMARY_FMT_RE = re.compile(r"^Level\s+([123])\s+·\s+([^:]+?):\s*(.+)$")
 TUT_LINK_RE = re.compile(r"\[([^\]\n]+)\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)")
+MD_LINK_URL_RE = re.compile(r"(\[[^\]]+\])\([^)]*\)")
 
 # Content & inline checks
-L1_FORBIDDEN_RE = re.compile(r"[∇∂∫∑Ĥ]|\bd[A-Za-zψΨΦRPu]?/d[trφθx]\b")
+L1_COMPLEX_EXP_RE = re.compile(
+    r"\be\s*<sup>[^<]*(?:[±−+-]\s*i\b|\bi(?:\s*[A-Za-zωθφEt(]|\b))[^<]*</sup>"
+    r"|\be\^\(?\{?[±−+-]?i\b",
+    re.IGNORECASE,
+)
+L1_FORBIDDEN_RE = re.compile(
+    r"[∇∂∫∑Ĥ]|[LpOρH]\u0302"
+    r"|\bd²?(?:[A-Za-zψΨΦRPu]|\([^)]+\))?/d[A-Za-zφθωΘ]+²?(?![A-Za-z])"
+)
+L1_LABEL_EQ_RE = re.compile(
+    r"\b(?:n|l|m(?:_l|_[xyz])?|B(?:_z)?|r|t|s)\s*=\s*[±−+-]?(?:\d+(?:\.\d+)?|½)(?![A-Za-z/²³])"
+)
 STEP_RE = re.compile(r"\bStep\s+\d+\b", re.IGNORECASE)
 LEVEL_REF_RE = re.compile(r"\bLevel\s*[123]\b", re.IGNORECASE)
-YOUNEED_RE = re.compile(r"^\s*(?:\*\*You need:?\*\*|You need:)", re.IGNORECASE)
+REL_BOX_REF_RE = re.compile(
+    r"\b(?:derived below|in the box below|computed in the box|proofs?\s+in\s+the\s+[^.\n]{0,30}box)\b",
+    re.IGNORECASE,
+)
+L2_POINTER_PHRASE_RE = re.compile(
+    r"\b(?:full algebra|full derivation|step-by-step derivation)\b",
+    re.IGNORECASE,
+)
+YOUNEED_RE = re.compile(
+    r"^\s*(?:[-*]\s+)?(?:\*\*You need:?\*\*:?|You need:)",
+    re.IGNORECASE,
+)
 CHECK_RE = re.compile(r"✓|\b(?:check|verify|limiting case|sanity)\b", re.IGNORECASE)
 FORWARD_DEFER_RE = re.compile(
     r"\b(?:proved|derived|shown)\s+later\b"
@@ -62,14 +87,39 @@ FORWARD_DEFER_RE = re.compile(
     re.IGNORECASE,
 )
 CHAPTER_MENTION_RE = re.compile(r"\b(?:Chapter|Ch\.)\s+(\d+)\b", re.IGNORECASE)
-EQ_LINE_RE = re.compile(r"^\s*>\s*(?![-*]\s).*[=≈∝]")
-SI_SYM_RE = re.compile(r"ħ|m<sub>e</sub>|mₑ|ε₀")
-SI_TAG_RE = re.compile(r"\bSI\b")
-CODE_SPAN_RE = re.compile(r"`[^`]*`")
+SECTION_REF_RE = re.compile(r"§\s*(\d+)\.(\d+)\b")
+CALLOUT_START_RE = re.compile(r"^>\s*\*\*(?:(?!\*\*).)+[:?]\*\*(?:\s|$)")
+EQ_LINE_RE = re.compile(r"^\s*>(?!\s*[-*]\s).*[=≈∝]")
+SI_SYM_RE = re.compile(r"ħ|m<[sS][uU][bB]>e</[sS][uU][bB]>|\bm_e\b|mₑ|ε₀")
+UNITS_TAG_EXEMPT_RE = re.compile(
+    r"\bSI\b|\(\s*a\.u\.|\(\s*atomic units|\ba\.u\.\s*[→↔]|ħ\s*=\s*(?:[^=\n]*=\s*)?1\b",
+    re.IGNORECASE,
+)
+CODE_SPAN_RE = re.compile(r"`[^`\n]+`")
 BOLD_SPAN_RE = re.compile(r"\*\*([^\n]+?)\*\*")
-SINGLE_LETTER_RE = re.compile(r"^[A-Za-zα-ωΑ-Ω]$")
 MATH_CHARS_RE = re.compile(r"[=∇∂∫∑ĤψΨΦ±×÷√∞≈∝≤≥≠⟨⟩]|<sup>")
 INLINE_TAG_RE = re.compile(r"<(/?)(sub|sup|summary)\b[^>]*>", re.IGNORECASE)
+
+# Bold-math exemptions (prose lead-ins, UI settings, kets, numeric dimensions/units)
+MATH_FUNC_WORDS = {
+    "sin", "cos", "tan", "cot", "sec", "csc", "exp", "log", "ln", "det",
+    "lim", "max", "min", "re", "im", "arg", "tr", "mod", "sgn", "grad",
+    "div", "curl", "au", "si", "dr", "dt", "dx", "dy", "dz", "dv", "ef", "kx",
+}
+PURE_KET_RE = re.compile(
+    r"^(?:[±−+-]|\d+(?:\.\d+)?%\s+)?(?:\\?\|[^|⟩]+⟩|⟨[^|⟩]+\\?\|)"
+    r"(?:\s*(?:→|↔|,|and|or|\+|−|-)\s*(?:[±−+-]|\d+(?:\.\d+)?%\s+)?(?:\\?\|[^|⟩]+⟩|⟨[^|⟩]+\\?\|))*$"
+)
+UI_SETTING_RE = re.compile(
+    r"^[A-Z][a-z]+(?:\s+[A-Za-z]+)*\s*=\s*[±−+-]?\d+(?:\.\d+)?[°%×]?"
+    r"(?:\s*,\s*[A-Z][a-z]+(?:\s+[A-Za-z]+)*\s*=\s*[±−+-]?\d+(?:\.\d+)?[°%×]?)*$"
+)
+NUMERIC_QTY_RE = re.compile(
+    r"^[~±−+-]?\d+(?:\.\d+)?"
+    r"(?:\s*(?:a\.u\.|eV|T|kT|nm|Hz)\s*=\s*[~±−+-]?\d+(?:\.\d+)?)?"
+    r"(?:\s*[×x]\s*(?:10(?:[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+|<sup>[^<]+</sup>)|\d+(?:\.\d+)?)|\s*×)?"
+    r"(?:\s*(?:T|kT|eV|nm|Hz|fs|ps|ns|s|a\.u\.|Ha|%|°|K|V/m|W/cm²|a₀|cycles?))?\.?$"
+)
 
 
 @dataclass
@@ -116,18 +166,21 @@ class Box:
     anchor: Optional[str] = None
     is_aux: bool = False
     awaiting_summary: bool = True
+    section: Optional[Tuple[int, int]] = None
     parent_all: Optional["Box"] = None
     zoom_parent: Optional["Box"] = None
     children_all: List["Box"] = field(default_factory=list)
     zoom_children: List["Box"] = field(default_factory=list)
-    own_lines: List[Tuple[int, str, Set[str]]] = field(default_factory=list)
+    own_lines: List[Tuple[int, str, Set[str], bool]] = field(default_factory=list)
     total_own_lines: int = 0
     ignored_rules: Set[str] = field(default_factory=set)
 
     def eqs(self) -> List[Tuple[int, str]]:
-        """Return display equation lines belonging directly to this box."""
+        """Return display equation lines belonging directly to this box (excluding prose callouts)."""
         out: List[Tuple[int, str]] = []
-        for ln, text, _ in self.own_lines:
+        for ln, text, _, in_callout in self.own_lines:
+            if in_callout:
+                continue
             cleaned = re.sub(r"<[^>]+>", "", CODE_SPAN_RE.sub("CODE", text))
             if EQ_LINE_RE.match(cleaned):
                 out.append((ln, text))
@@ -148,21 +201,84 @@ def chapter_num_for(path: str) -> Optional[int]:
     return None
 
 
-def parse_ignore_rules(raw: str) -> Set[str]:
-    rules: Set[str] = set()
-    for m in IGNORE_RE.finditer(raw):
-        for tok in re.split(r"[,\s]+", m.group(1).strip()):
-            if tok:
-                rules.add(tok.lower())
-    return rules
-
-
-def strip_comments(raw: str) -> str:
-    return HTML_COMMENT_RE.sub("", raw)
-
-
 def strip_code_placeholder(s: str) -> str:
     return CODE_SPAN_RE.sub("CODE", s)
+
+
+def is_unit_hat_vector(inner: str) -> bool:
+    """Return True for unit-vector hat symbols such as x̂, ŷ, ẑ, k̂, r̂."""
+    nfd = unicodedata.normalize("NFD", inner)
+    return len(nfd) == 2 and nfd[0].isalpha() and nfd[1] == "\u0302"
+
+
+def is_prose_or_label_bold(inner: str) -> bool:
+    """Return True for legitimate bold prose lead-ins, UI settings, kets, or numeric units."""
+    if re.match(r"^Step\s+\d+\b", inner, re.IGNORECASE):
+        return True
+    if PURE_KET_RE.match(inner):
+        return True
+    if UI_SETTING_RE.match(inner):
+        return True
+    if NUMERIC_QTY_RE.match(inner):
+        return True
+    # Strip HTML tags/super/subscripts, Dirac kets, parenthetical math, and italics
+    s = re.sub(r"<su[bp]>.*?</su[bp]>", " ", inner, flags=re.IGNORECASE)
+    s = re.sub(r"<[^>]+>", " ", s)
+    s = re.sub(r"\\?\|[^|⟩]+⟩", " ", s)
+    s = re.sub(r"\([^)]*[=∇∂∫∑ĤψΨΦ±×÷√∞≈∝≤≥≠][^)]*\)", " ", s)
+    s = s.replace("*", "")
+    words = [w for w in re.findall(r"[A-Za-z]{2,}", s) if w.lower() not in MATH_FUNC_WORDS]
+    if len(words) >= 2:
+        return True
+    if len(words) == 1 and len(words[0]) >= 3 and inner.rstrip().endswith((":", ".")):
+        return True
+    if len(words) == 1 and re.search(r"-\d+\b", s):
+        return True
+    return False
+
+
+def strip_line_comments_and_ignores(
+    raw: str, in_comment: bool
+) -> Tuple[str, Set[str], bool, bool]:
+    """Strip HTML comments (including multiline) while preserving inline backtick code spans.
+
+    Returns (clean_line, extracted_ignores, next_in_comment, had_comment).
+    """
+    ignores: Set[str] = set()
+    had_comment = False
+    work = raw
+
+    if in_comment:
+        had_comment = True
+        end_idx = work.find("-->")
+        if end_idx < 0:
+            return "", ignores, True, True
+        work = work[end_idx + 3 :]
+        in_comment = False
+
+    # Protect inline backtick code spans BEFORE scanning/stripping HTML comments
+    codes: List[str] = []
+
+    def _mask(m: re.Match[str]) -> str:
+        codes.append(m.group(0))
+        return f"\x00C{len(codes) - 1}\x00"
+
+    masked = CODE_SPAN_RE.sub(_mask, work)
+
+    if "<!--" in masked:
+        had_comment = True
+        for im in IGNORE_RE.finditer(masked):
+            for tok in re.split(r"[,\s]+", im.group(1).strip()):
+                if tok:
+                    ignores.add(tok.lower())
+        masked = HTML_COMMENT_RE.sub("", masked)
+        open_idx = masked.find("<!--")
+        if open_idx >= 0:
+            masked = masked[:open_idx]
+            in_comment = True
+
+    clean = re.sub(r"\x00C(\d+)\x00", lambda m: codes[int(m.group(1))], masked)
+    return clean, ignores, in_comment, had_comment
 
 
 class Linter:
@@ -221,6 +337,8 @@ class Linter:
         ignored: Set[str],
         *,
         is_summary: bool = False,
+        in_l2: bool = False,
+        in_callout: bool = False,
     ) -> None:
         # 1. Backtick balance (ignore escaped \`)
         bt_line = clean_line.replace("\\`", "")
@@ -271,23 +389,38 @@ class Linter:
                 ignored,
             )
 
-        # 4. Units tag on SI display equations
-        if (
-            not is_summary
-            and EQ_LINE_RE.match(re.sub(r"<[^>]+>", "", nocode))
-            and SI_SYM_RE.search(nocode)
-            and not SI_TAG_RE.search(nocode)
-        ):
-            self.emit(
-                "WARN",
-                "units-tag",
-                path,
-                line_no,
-                "Display equation uses SI constants (ħ, m_e, ε₀) without an explicit (SI) tag",
-                ignored,
+        # 4. Leftover relative box references (outside L2 pointer lines)
+        if not is_summary and REL_BOX_REF_RE.search(nocode):
+            is_l2_pointer_line = in_l2 and (
+                bool(L2_POINTER_PHRASE_RE.search(nocode))
+                or bool(TUT_LINK_RE.search(nocode))
             )
+            if not is_l2_pointer_line:
+                self.emit(
+                    "WARN",
+                    "rel-box-ref",
+                    path,
+                    line_no,
+                    "Relative box reference; link to a box by title/anchor instead",
+                    ignored,
+                )
 
-        # 5. Bold balance, bold-nested, bold-math
+        # 5. Units tag on SI display equations (skip prose callouts)
+        if not is_summary and not in_callout and EQ_LINE_RE.match(re.sub(r"<[^>]+>", "", nocode)):
+            si_check_text = nocode.replace("*", "")
+            if SI_SYM_RE.search(si_check_text) and not UNITS_TAG_EXEMPT_RE.search(
+                si_check_text
+            ):
+                self.emit(
+                    "WARN",
+                    "units-tag",
+                    path,
+                    line_no,
+                    "Display equation uses SI constants (ħ, m_e, ε₀) without an explicit (SI) tag",
+                    ignored,
+                )
+
+        # 6. Bold balance, bold-nested, bold-math
         no_esc = nocode.replace("\\*", "")
         stars_count = len(re.findall(r"\*\*", no_esc))
         if stars_count % 2 != 0:
@@ -325,9 +458,9 @@ class Linter:
             if idx in nested_indices:
                 continue
             inner = m.group(1).strip()
-            if not inner:
+            if not inner or is_unit_hat_vector(inner):
                 continue
-            if SINGLE_LETTER_RE.match(inner):
+            if len(inner) == 1 and (inner.isalpha() or inner in self.cfg.vectors):
                 if inner not in self.cfg.vectors:
                     self.emit(
                         "WARN",
@@ -337,7 +470,7 @@ class Linter:
                         f"Bold single non-vector letter '**{inner}**'; use '*{inner}*' for scalars or add to --vectors",
                         ignored,
                     )
-            elif MATH_CHARS_RE.search(inner):
+            elif MATH_CHARS_RE.search(inner) and not is_prose_or_label_bold(inner):
                 self.emit(
                     "WARN",
                     "bold-math",
@@ -357,12 +490,16 @@ class Linter:
         all_stack: List[Box] = []
         zoom_stack: List[Box] = []
         in_fence = False
+        in_html_comment = False
+        in_callout = False
         pending_ignore: Set[str] = set()
+        current_section: Optional[Tuple[int, int]] = None
 
         for line_no, raw in enumerate(lines, 1):
             # Fenced code blocks
-            if FENCE_RE.match(raw):
+            if not in_html_comment and FENCE_RE.match(raw):
                 in_fence = not in_fence
+                in_callout = False
                 if all_stack:
                     all_stack[-1].total_own_lines += 1
                 pending_ignore.clear()
@@ -372,24 +509,38 @@ class Linter:
                     all_stack[-1].total_own_lines += 1
                 continue
 
-            # Extract lint-ignore comments and strip HTML comments before checks
-            line_ignores = parse_ignore_rules(raw)
-            clean_line = strip_comments(raw)
+            # Extract lint-ignore comments and strip HTML comments (preserving inline backticks)
+            clean_line, line_ignores, in_html_comment, had_comment = (
+                strip_line_comments_and_ignores(raw, in_html_comment)
+            )
             trim = clean_line.strip()
 
-            # Pure comment line (or blank line)
-            if not trim:
+            # Pure comment line, blank line, or empty blockquote comment (`> <!-- ... -->`)
+            if not trim or (trim == ">" and had_comment):
+                if not trim:
+                    in_callout = False
                 if line_ignores:
                     pending_ignore |= line_ignores
                 elif not raw.strip():
-                    # Blank line resets pending single-line ignore
                     pending_ignore.clear()
                 if all_stack and not all_stack[-1].awaiting_summary:
                     all_stack[-1].total_own_lines += 1
                 continue
 
+            # Track prose callout blockquotes starting with `> **...[:?]**`
+            if trim.startswith(">"):
+                if CALLOUT_START_RE.match(trim):
+                    in_callout = True
+            else:
+                in_callout = False
+
             active_ignore = pending_ignore | line_ignores
             pending_ignore = set()
+
+            # Track section heading (e.g. `## 1.2 ...`)
+            sec_m = SECTION_HEADING_RE.match(trim)
+            if sec_m:
+                current_section = (int(sec_m.group(1)), int(sec_m.group(2)))
 
             # Collect tut: links outside backticks on all non-fenced lines
             nocode_for_links = strip_code_placeholder(clean_line)
@@ -424,13 +575,14 @@ class Linter:
                         prev.ignored_rules,
                     )
 
-                attrs = dm.group(1) or ""
+                attrs = (dm.group(1) or "").strip()
                 parent_all = all_stack[-1] if all_stack else None
                 zoom_parent = zoom_stack[-1] if zoom_stack else None
                 box = Box(
                     path=path,
                     chapter_key=ch_key,
                     start_line=line_no,
+                    section=current_section,
                     parent_all=parent_all,
                     zoom_parent=zoom_parent,
                     ignored_rules=set(active_ignore),
@@ -442,6 +594,16 @@ class Linter:
                         path,
                         line_no,
                         "<details open> is forbidden; boxes must start closed",
+                        box.ignored_rules,
+                    )
+                extra_attrs = re.sub(r"\bopen\b", "", attrs, flags=re.IGNORECASE).strip()
+                if extra_attrs:
+                    self.emit(
+                        "ERR",
+                        "details-attr",
+                        path,
+                        line_no,
+                        f"Unsupported <details> attribute(s) {extra_attrs!r}; put {{#id}} on <summary> instead",
                         box.ignored_rules,
                     )
                 if parent_all is not None:
@@ -555,13 +717,22 @@ class Linter:
                     # Fall through to process current line normally as body line
 
             # Record body line in innermost open box
+            in_l2 = False
             if all_stack:
                 cur_box = all_stack[-1]
-                cur_box.own_lines.append((line_no, clean_line, set(active_ignore)))
+                cur_box.own_lines.append((line_no, clean_line, set(active_ignore), in_callout))
                 cur_box.total_own_lines += 1
+                in_l2 = (not cur_box.is_aux) and (cur_box.level == 2)
 
             # Per-line inline checks
-            self.check_line_inline(path, line_no, clean_line, active_ignore)
+            self.check_line_inline(
+                path,
+                line_no,
+                clean_line,
+                active_ignore,
+                in_l2=in_l2,
+                in_callout=in_callout,
+            )
 
         # Any unclosed <details> at EOF
         while all_stack:
@@ -585,29 +756,30 @@ class Linter:
             )
 
     def check_boxes(self) -> None:
-        seen_titles: Dict[str, Tuple[str, int]] = {}
+        seen_titles: Dict[Tuple[str, str], Tuple[str, int]] = {}
 
         for b in self.boxes:
             if b.is_aux or b.level is None:
                 continue
 
-            # Duplicate title check
+            # Per-chapter duplicate title check
             norm_title = b.title.strip().lower()
             if norm_title:
-                if norm_title in seen_titles:
-                    p_path, p_line = seen_titles[norm_title]
+                tkey = (b.chapter_key, norm_title)
+                if tkey in seen_titles:
+                    p_path, p_line = seen_titles[tkey]
                     self.emit(
                         "WARN",
                         "dup-title",
                         b.path,
                         b.summary_line or b.start_line,
-                        f"Duplicate box title {b.title!r} (first seen at {p_path}:{p_line})",
+                        f"Duplicate box title {b.title!r} in chapter {b.chapter_key} (first seen at {p_path}:{p_line})",
                         b.ignored_rules,
                     )
                 else:
-                    seen_titles[norm_title] = (b.path, b.summary_line or b.start_line)
+                    seen_titles[tkey] = (b.path, b.summary_line or b.start_line)
 
-            # Hierarchy / nesting checks (Fix 3)
+            # Hierarchy / nesting checks
             zp = b.zoom_parent
             if b.level == 1 and zp is not None:
                 self.emit(
@@ -649,42 +821,60 @@ class Linter:
 
     def _check_l1(self, b: Box) -> None:
         equals_count = 0
-        for ln, text, line_ign in b.own_lines:
+        for ln, text, line_ign, in_callout in b.own_lines:
             eff_ign = b.ignored_rules | line_ign
             nocode = strip_code_placeholder(text)
-            no_stars = nocode.replace("*", "")
-            m_forb = L1_FORBIDDEN_RE.search(no_stars)
-            if m_forb:
+            no_urls = MD_LINK_URL_RE.sub(r"\1", nocode)
+            no_stars = no_urls.replace("*", "")
+            m_exp = L1_COMPLEX_EXP_RE.search(no_stars)
+            if m_exp:
                 self.emit(
                     "ERR",
                     "l1-algebra",
                     b.path,
                     ln,
-                    f"Level 1 Picture box contains algebra/calculus token {m_forb.group(0)!r}",
+                    f"Level 1 Picture box contains complex exponential {m_exp.group(0)!r}",
                     eff_ign,
                 )
-            elif STEP_RE.search(no_stars):
-                self.emit(
-                    "ERR",
-                    "l1-algebra",
-                    b.path,
-                    ln,
-                    "Level 1 Picture box contains step-by-step derivation ('Step N')",
-                    eff_ign,
+            else:
+                no_tags = re.sub(r"<[^>]+>", "", no_stars)
+                m_forb = L1_FORBIDDEN_RE.search(no_tags)
+                if m_forb:
+                    self.emit(
+                        "ERR",
+                        "l1-algebra",
+                        b.path,
+                        ln,
+                        f"Level 1 Picture box contains algebra/calculus token {m_forb.group(0)!r}",
+                        eff_ign,
+                    )
+                elif STEP_RE.search(no_tags):
+                    self.emit(
+                        "ERR",
+                        "l1-algebra",
+                        b.path,
+                        ln,
+                        "Level 1 Picture box contains step-by-step derivation ('Step N')",
+                        eff_ign,
+                    )
+
+            # Count '=' signs outside prose callouts, tags, link URLs, inline code, and benign state labels
+            if not in_callout:
+                eq_text = re.sub(
+                    r"<sub\b[^>]*>([^<]*)</sub>", r"_\1", no_stars, flags=re.IGNORECASE
                 )
+                eq_text = re.sub(r"<[^>]+>", "", eq_text)
+                eq_text = L1_LABEL_EQ_RE.sub("", eq_text)
+                equals_count += eq_text.count("=")
 
-            # Count '=' signs outside tags, links, and inline code
-            no_links = re.sub(r"\[[^\]]*\]\([^)]*\)", "", nocode)
-            no_tags = re.sub(r"<[^>]+>", "", no_links)
-            equals_count += no_tags.count("=")
-
-        if equals_count > self.cfg.max_l1_equals:
+        n_eq = len(b.eqs())
+        if n_eq > 0 or equals_count > self.cfg.max_l1_equals:
             self.emit(
                 "WARN",
                 "l1-equations",
                 b.path,
                 b.summary_line or b.start_line,
-                f"Level 1 box has {equals_count} '=' signs (max {self.cfg.max_l1_equals})",
+                f"Level 1 box has {n_eq} displayed equation(s) and {equals_count} '=' signs (max 0 displayed, {self.cfg.max_l1_equals} inline)",
                 b.ignored_rules,
             )
 
@@ -700,14 +890,29 @@ class Linter:
                 b.ignored_rules,
             )
 
-        own_text = "\n".join(text for _, text, _ in b.own_lines)
+        own_text = "\n".join(text for _, text, _, _ in b.own_lines)
+        has_steps = bool(STEP_RE.search(own_text))
+        if has_steps:
+            self.emit(
+                "WARN",
+                "l2-size",
+                b.path,
+                b.summary_line or b.start_line,
+                "Level 2 box contains step-by-step derivation ('Step N'); move detailed algebra into a Level 3 box",
+                b.ignored_rules,
+            )
+
         l3_children = [c for c in b.zoom_children if c.level == 3]
         has_l3 = len(l3_children) > 0
 
         if has_l3:
-            has_phrase = "full algebra" in own_text.lower()
+            has_phrase = bool(L2_POINTER_PHRASE_RE.search(own_text))
             child_anchors = {c.anchor for c in l3_children if c.anchor}
-            cur_ch = b.chapter_key if len(b.chapter_key) == 2 and b.chapter_key.isdigit() else None
+            cur_ch = (
+                b.chapter_key
+                if len(b.chapter_key) == 2 and b.chapter_key.isdigit()
+                else None
+            )
             has_child_link = False
             if child_anchors:
                 for lm in TUT_LINK_RE.finditer(strip_code_placeholder(own_text)):
@@ -721,11 +926,11 @@ class Linter:
                     "l2-pointer",
                     b.path,
                     b.summary_line or b.start_line,
-                    "Level 2 box has a child Level 3 box but neither mentions 'full algebra' nor links to a child Level 3 anchor",
+                    "Level 2 box has a child Level 3 box but neither mentions 'full algebra'/'full derivation'/'step-by-step derivation' nor links to a child Level 3 anchor",
                     b.ignored_rules,
                 )
         else:
-            if len(eqs) > 4 or STEP_RE.search(own_text):
+            if len(eqs) > 4 or has_steps:
                 self.emit(
                     "WARN",
                     "l2-pointer",
@@ -738,6 +943,7 @@ class Linter:
     def _check_l3(self, b: Box) -> None:
         # 1. l3-youneed: first non-blank, non-comment own line
         first_line = b.own_lines[0][1] if b.own_lines else ""
+        first_ign = b.own_lines[0][2] if b.own_lines else set()
         if not YOUNEED_RE.match(first_line):
             sev = "ERR" if self.cfg.scheme == "new" else "WARN"
             self.emit(
@@ -746,10 +952,10 @@ class Linter:
                 b.path,
                 b.summary_line or b.start_line,
                 "Level 3 box must begin with '**You need:**' (or 'You need:')",
-                b.ignored_rules,
+                b.ignored_rules | first_ign,
             )
 
-        own_text = "\n".join(text for _, text, _ in b.own_lines)
+        own_text = "\n".join(text for _, text, _, _ in b.own_lines)
 
         # 2. l3-check: sanity check / verification
         if not CHECK_RE.search(own_text):
@@ -762,9 +968,9 @@ class Linter:
                 b.ignored_rules,
             )
 
-        # 3. l3-forward: forward deferral or forward chapter reference (excluding Ch 8 Math Toolkit)
+        # 3. l3-forward: forward deferral, same-chapter forward §X.Y, or forward chapter ref (Ch 8 exempt from Ch 9)
         cur_num = chapter_num_for(b.path)
-        for ln, text, line_ign in b.own_lines:
+        for ln, text, line_ign, _ in b.own_lines:
             eff_ign = b.ignored_rules | line_ign
             nocode = strip_code_placeholder(text)
             m_def = FORWARD_DEFER_RE.search(nocode)
@@ -778,7 +984,24 @@ class Linter:
                     eff_ign,
                 )
                 break
-            if cur_num is not None:
+            if b.section is not None:
+                fwd_sec: Optional[str] = None
+                for sm in SECTION_REF_RE.finditer(nocode):
+                    s_ch, s_sub = int(sm.group(1)), int(sm.group(2))
+                    if s_ch == b.section[0] and s_sub > b.section[1]:
+                        fwd_sec = f"§{s_ch}.{s_sub}"
+                        break
+                if fwd_sec is not None:
+                    self.emit(
+                        "WARN",
+                        "l3-forward",
+                        b.path,
+                        ln,
+                        f"Level 3 derivation in §{b.section[0]}.{b.section[1]} references later section {fwd_sec}",
+                        eff_ign,
+                    )
+                    break
+            if cur_num is not None and cur_num != 8:
                 fwd_ch: Optional[int] = None
                 for lm in TUT_LINK_RE.finditer(nocode):
                     tgt = int(lm.group(2))
@@ -803,18 +1026,55 @@ class Linter:
                     break
 
     def resolve_refs(self) -> None:
+        sibling_cache: Dict[Path, Set[str]] = {}
+
+        def _siblings_for(dir_path: Path) -> Set[str]:
+            if dir_path not in sibling_cache:
+                found: Set[str] = set()
+                if dir_path.is_dir():
+                    for p in dir_path.glob("*.md"):
+                        if len(p.name) >= 3 and p.name[:2].isdigit() and p.name[2] == "-":
+                            found.add(p.name[:2])
+                sibling_cache[dir_path] = found
+            return sibling_cache[dir_path]
+
         for ref in self.links:
-            if ref.target_ch in self.passed_chapters and ref.anchor:
-                ch_anchors = self.anchors_by_ch.get(ref.target_ch, {})
-                if ref.anchor not in ch_anchors:
+            if ref.target_ch in self.passed_chapters:
+                if ref.anchor:
+                    ch_anchors = self.anchors_by_ch.get(ref.target_ch, {})
+                    if ref.anchor not in ch_anchors:
+                        self.emit(
+                            "ERR",
+                            "box-ref",
+                            ref.path,
+                            ref.line,
+                            f"Broken tutorial anchor tut:{ref.target_ch}#{ref.anchor}",
+                            ref.ignored,
+                        )
+            else:
+                sibs = _siblings_for(Path(ref.path).parent)
+                if ref.target_ch in sibs:
+                    continue
+                if len(self.passed_chapters) >= 2 or len(sibs) >= 2:
                     self.emit(
                         "ERR",
                         "box-ref",
                         ref.path,
                         ref.line,
-                        f"Broken tutorial anchor tut:{ref.target_ch}#{ref.anchor}",
+                        f"Link references nonexistent tutorial chapter tut:{ref.target_ch}",
                         ref.ignored,
                     )
+                else:
+                    tgt_num = int(ref.target_ch)
+                    if tgt_num < 1 or tgt_num > 9:
+                        self.emit(
+                            "ERR",
+                            "box-ref",
+                            ref.path,
+                            ref.line,
+                            f"Link references nonexistent tutorial chapter tut:{ref.target_ch}",
+                            ref.ignored,
+                        )
 
     def print_outline(self) -> None:
         def _walk(box: Box, depth: int) -> None:

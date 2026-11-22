@@ -191,14 +191,19 @@ test('all error rules trigger ERR diagnostics and exit code 1', () => {
     assert.equal(nestErrs.length, 3, `Expected 3 nest-parent ERR diagnostics (nested L1 + 2 orphan L3s):\n${res.stdout}`);
   });
 
-  // 3. l1-algebra for ∇, Ĥ, dP/dr, Step 1
+  // 3. l1-algebra for ∇, Ĥ, L̂, dP/dr, d²u/dr², d(mv)/dt, e^{iωt}, Step 1
   const l1AlgMd = [
     '<details>',
     '<summary>Level 1 · Picture: bad algebra inside picture</summary>',
     'Here is ∇²ψ in a picture.',
     'And operator Ĥ acting on a state.',
+    'Angular momentum operator L\u0302 along z.',
     'Derivative *dP*/*dr* and plain dP/dr.',
+    'Second derivative d²u/dr² here.',
+    'Parenthesized derivative d(mv)/dt here.',
+    'Complex exponential *e*<sup>*i*ω*t*</sup> here.',
     '**Step 1 — solve.** Do algebra.',
+    'Benign real exponential e<sup>−r</sup> and *n* = 1, *l* = 0, *m* = +1, *B* = 0 are fine.',
     '</details>',
     '',
   ].join('\n');
@@ -206,20 +211,23 @@ test('all error rules trigger ERR diagnostics and exit code 1', () => {
   withTempChapter('01-l1alg.md', l1AlgMd, (filePath) => {
     const res = runLinter([filePath]);
     assert.equal(res.status, 1);
-    const errs = parseDiagnostics(res.stdout).filter((d) => d.severity === 'ERR' && d.rule === 'l1-algebra');
-    assert.equal(errs.length, 4, `Expected 4 l1-algebra errors (∇, Ĥ, dP/dr, Step 1), got:\n${res.stdout}`);
+    const diags = parseDiagnostics(res.stdout);
+    const errs = diags.filter((d) => d.severity === 'ERR' && d.rule === 'l1-algebra');
+    assert.equal(errs.length, 8, `Expected 8 l1-algebra errors (∇, Ĥ, L̂, dP/dr, d²u/dr², d(mv)/dt, e^{iωt}, Step 1), got:\n${res.stdout}`);
+    assert.equal(diags.filter((d) => d.rule === 'l1-equations').length, 0, 'Benign n=1, l=0, m=+1, B=0 labels must not trigger l1-equations');
   });
 
-  // 4. l3-youneed (ERR in new, WARN in legacy), level-ref, box-ref, dup-anchor, bold-balance, tag-balance
+  // 4. l3-youneed (ERR in new, WARN in legacy), level-ref, box-ref (broken anchor + nonexistent chapter), details-attr, dup-anchor, bold-balance, tag-balance
   const miscErrMd = [
     '## Section {#same-id}',
     '',
     'Do not write see Level 2 in prose, though L2 laser labels are fine.',
-    'Broken link [Nowhere](tut:01#missing-anchor) and valid external [T1](tut:08#T1).',
+    'Broken link [Nowhere](tut:01#missing-anchor), bad chapter [Ghost](tut:99#foo) and [Ghost2](tut:99), valid external [T1](tut:08#T1).',
     'Unbalanced **bold marker on this line.',
     'Unbalanced <sup>tag</sub> and unclosed <sub>tag.',
+    'Inline code `<!-- lint-ignore: level-ref -->` must NOT suppress Level 3 here.',
     '',
-    '<details>',
+    '<details id="bad-attr">',
     '<summary>Level 1 · Picture: holder</summary>',
     '',
     '<details>',
@@ -242,11 +250,13 @@ test('all error rules trigger ERR diagnostics and exit code 1', () => {
     assert.equal(resNew.status, 1);
     const diagsNew = parseDiagnostics(resNew.stdout);
     const errRules = new Set(diagsNew.filter((d) => d.severity === 'ERR').map((d) => d.rule));
-    for (const r of ['l3-youneed', 'level-ref', 'box-ref', 'dup-anchor', 'bold-balance', 'tag-balance']) {
+    for (const r of ['l3-youneed', 'level-ref', 'box-ref', 'details-attr', 'dup-anchor', 'bold-balance', 'tag-balance']) {
       assert.ok(errRules.has(r), `Expected ERR [${r}], got:\n${resNew.stdout}`);
     }
-    // Verify level-ref fired only once (not on L2)
-    assert.equal(diagsNew.filter((d) => d.rule === 'level-ref').length, 1);
+    // level-ref fired twice: line 3 and line 7 (backticked lint-ignore did NOT suppress it), NOT on L2
+    assert.equal(diagsNew.filter((d) => d.rule === 'level-ref').length, 2);
+    // box-ref fired three times: tut:01#missing-anchor, tut:99#foo, tut:99 (not tut:08#T1)
+    assert.equal(diagsNew.filter((d) => d.rule === 'box-ref').length, 3);
 
     // In legacy scheme, l3-youneed downgrades to WARN
     const resLeg = runLinter([filePath, '--scheme', 'legacy']);
@@ -407,6 +417,169 @@ test('all warning rules trigger WARN diagnostics, respect thresholds and --stric
     assert.equal(nestWarns.length, 2, `Expected 2 standalone L2 nest-parent warnings:\n${res.stdout}`);
     assert.equal(ptrWarns.length, 1, `Expected only stepped standalone L2 to warn l2-pointer:\n${res.stdout}`);
   });
+});
+
+test('review regression checks: bold-math exemptions, EQ_LINE_RE bullets, comments, L2/L3 alignment, per-chapter dup-title, rel-box-ref', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lint-levels-reg-'));
+  try {
+    const ch1 = path.join(dir, '01-alpha.md');
+    const ch2 = path.join(dir, '02-beta.md');
+    const ch8 = path.join(dir, '08-math-toolkit.md');
+
+    fs.writeFileSync(
+      ch1,
+      [
+        '## 1.1 Intro {#s11}',
+        '',
+        '<!--',
+        'Multiline comment mentioning Level 2 and **unbalanced bold.',
+        '-->',
+        '',
+        '> - **Selection rules:** Δ*l* = ±1 and *iħ* in a callout bullet must NOT trigger units-tag or EQ_LINE_RE.',
+        '> <!-- lint-ignore: level-ref -->',
+        '> - Callout bullet mentioning Level 2 is suppressed cleanly.',
+        '',
+        '> **Resolving the Paradox:**',
+        '>',
+        '> A multi-sentence prose callout mentioning *m*<sub>e</sub> and *E* = *p*²/(2*m*<sub>e</sub>) must NOT trigger units-tag.',
+        '',
+        'Prose bold lead-ins and labels must stay silent:',
+        '**Hamiltonian *Ĥ*:** **Degenerate superposition (*E*₁ = *E*₂):** **Worked example (3×3).** **Multiplication = rotation.**',
+        '**Tilt = 90°** and **Branch match = 50%** and **\\|2p, +1⟩** and **2.35052 × 10⁵ T** and **±20 T** and **2×2**.',
+        'Vectors **μ**, **Ω**, **ε**, **ℰ**, **ŷ**, **ẑ** are allowed.',
+        'True bold scalar math **μ = −(e/2m<sub>e</sub>) L** and **1/√*B*** MUST still warn.',
+        'Relative ref derived below should warn.',
+        '',
+        '> *E* = *p*² / (2*m*<sub>e</sub>)',
+        '',
+        '> *ħ* = *m*<sub>e</sub> = 1 (atomic units)',
+        '',
+        '> *L*² / (2*m*<sub>e</sub>*r*²) → *l*(*l*+1) / (2*r*²) (SI → a.u.)',
+        '',
+        '<details>',
+        '<summary>Level 1 · Picture: shared natural title</summary>',
+        'A picture.',
+        '',
+        '<details>',
+        '<summary>Level 2 · Key idea: stepped L2 with child L3</summary>',
+        '**Step 1 — inline step** inside L2 should still trigger l2-size even with child L3.',
+        'Open the full derivation in the box below.',
+        '',
+        '<details>',
+        '<summary>Level 3 · Full derivation: valid you-need variants and forward section</summary>',
+        '- **You need:** algebra.',
+        'Forward reference to §1.5 inside §1.1 should warn l3-forward. Check ✓.',
+        '</details>',
+        '',
+        '</details>',
+        '',
+        '</details>',
+        '',
+        '<details>',
+        '<summary>Level 1 · Picture: displayed equation in L1</summary>',
+        'Even a single displayed equation triggers l1-equations:',
+        '',
+        '> *V*<sub>eff</sub> = −1/*r*',
+        '',
+        '</details>',
+        '',
+        '<details>',
+        '<summary>Level 1 · Picture: prose callout in L1</summary>',
+        '> **Note:**',
+        '> A prose callout with *a* = 1, *b* = 2, *c* = 3 does NOT trigger l1-equations.',
+        '</details>',
+        '',
+        '<details>',
+        '<summary>Level 1 · Picture: you-need inner ignore test</summary>',
+        '<details>',
+        '<summary>Level 2 · Key idea: step-by-step pointer test</summary>',
+        'See step-by-step derivation below.',
+        '<details>',
+        '<summary>Level 3 · Full derivation: suppressed you-need</summary>',
+        '<!-- lint-ignore: l3-youneed -->',
+        'Body without you-need is ignored via inner comment. Check ✓.',
+        '</details>',
+        '</details>',
+        '</details>',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    fs.writeFileSync(
+      ch2,
+      [
+        '## 2.1 Second {#s21}',
+        '<details>',
+        '<summary>Level 1 · Picture: shared natural title</summary>',
+        'Same title in a different chapter must NOT trigger dup-title.',
+        '</details>',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    fs.writeFileSync(
+      ch8,
+      [
+        '## T1 Toolkit {#T1}',
+        '<details>',
+        '<summary>Level 1 · Picture: toolkit pic</summary>',
+        '<details>',
+        '<summary>Level 2 · Key idea: toolkit key</summary>',
+        'See full derivation.',
+        '<details>',
+        '<summary>Level 3 · Full derivation: toolkit derivation</summary>',
+        '**You need**: basics.',
+        'Used in Chapter 9 strong fields. Check ✓.',
+        '</details>',
+        '</details>',
+        '</details>',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    const res = runLinter([ch1, ch2, ch8]);
+    assert.equal(res.status, 0, `Expected 0 errors:\n${res.stdout}`);
+    const diags = parseDiagnostics(res.stdout);
+    assert.equal(diags.filter((d) => d.severity === 'ERR').length, 0, `Expected 0 ERR:\n${res.stdout}`);
+
+    // bold-math: ONLY the 2 true bold scalar math items on the bold-math test line (zero on prose lead-ins/UI/kets/vectors)
+    const bm = diags.filter((d) => d.rule === 'bold-math');
+    assert.equal(bm.length, 2, `Expected exactly 2 bold-math warnings:\n${res.stdout}`);
+    assert.ok(bm.every((d) => d.msg.includes('μ =') || d.msg.includes('1/√*B*')));
+
+    // units-tag: ONLY the untagged *m*<sub>e</sub> display equation (not callout bullet, prose callout continuation, a.u., or SI->a.u.)
+    const ut = diags.filter((d) => d.rule === 'units-tag');
+    assert.equal(ut.length, 1, `Expected exactly 1 units-tag warning (*m*<sub>e</sub>):\n${res.stdout}`);
+
+    // l1-equations: ONLY the L1 box with a single displayed equation (NOT the L1 box with a prose callout)
+    const l1e = diags.filter((d) => d.rule === 'l1-equations');
+    assert.equal(l1e.length, 1, `Expected exactly 1 l1-equations warning (displayed eq in L1, not prose callout):\n${res.stdout}`);
+    assert.match(l1e[0].msg, /1 displayed equation/);
+
+    // l2-size: fired for Step 1 inside L2 even with child L3
+    const l2s = diags.filter((d) => d.rule === 'l2-size');
+    assert.equal(l2s.length, 1, `Expected l2-size for Step 1 in L2 with child L3:\n${res.stdout}`);
+
+    // l2-pointer: 0 warnings (both "full derivation" and "step-by-step derivation" accepted)
+    assert.equal(diags.filter((d) => d.rule === 'l2-pointer').length, 0);
+
+    // l3-forward: ONLY 1 warning (same-chapter §1.5 in §1.1; Ch 8 referencing Chapter 9 is exempt)
+    const l3f = diags.filter((d) => d.rule === 'l3-forward');
+    assert.equal(l3f.length, 1, `Expected exactly 1 l3-forward warning (§1.5 in §1.1):\n${res.stdout}`);
+    assert.match(l3f[0].msg, /§1\.5/);
+
+    // dup-title: 0 warnings (shared title is in different chapters)
+    assert.equal(diags.filter((d) => d.rule === 'dup-title').length, 0);
+
+    // rel-box-ref: ONLY 1 warning (prose "derived below", NOT L2 pointer line)
+    const rbr = diags.filter((d) => d.rule === 'rel-box-ref');
+    assert.equal(rbr.length, 1, `Expected exactly 1 rel-box-ref warning:\n${res.stdout}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('real tutorial/*.md chapters work cleanly with --outline and --scheme legacy', () => {

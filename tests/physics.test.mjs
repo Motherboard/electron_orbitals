@@ -1697,18 +1697,47 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.ok(nested.endsWith('</details><p>After.</p>'));
   assert.equal(parseTutInline('`[x](tut:08#T1)` [y](http://e.x)'), '<code>[x](tut:08#T1)</code> [y](http://e.x)');
 
-  // 3b. HTML comments are stripped cleanly (inline code preserved), <summary> {#box-id} emits id/tabindex, and goAnchor opens target <details>
+  // 3b. HTML comments are stripped cleanly (multiline/inline/block openers, preserving code), <summary> {#box-id} emits id/tabindex, and goAnchor/backBtn work
   const withComments = renderTutMarkdown([
     '<!-- lint-ignore: level-ref -->',
     'Before paragraph.',
-    '<!-- lint-ignore: level-ref -->',
+    '<!--',
+    'multiline hidden comment',
+    '-->',
     'After with trailing <!-- lint-ignore: bold-math --> and `<!-- keep -->`.',
+    '',
+    '## Heading {#h1} <!-- lint-ignore: level-ref -->',
+    '',
+    '> - First bullet',
+    '> <!-- lint-ignore: level-ref -->',
+    '> - Second bullet',
+    '',
+    '<details> <!-- lint-ignore: nest-parent -->',
+    '  <summary>Level 2 · Key idea: Foo {#box-foo} <!-- c --></summary>',
+    '',
+    '```',
+    '<!-- keep-fenced -->',
+    '</details>',
+    '```',
+    '',
+    'Body after fence.',
+    '</details> <!-- end -->',
   ].join('\n'), []);
   assert.ok(!withComments.includes('<!--'), `Raw HTML comment leaked: ${withComments}`);
   assert.ok(!withComments.includes('lint-ignore'), `Lint comment text leaked: ${withComments}`);
+  assert.ok(!withComments.includes('multiline hidden comment'), `Multiline comment text leaked: ${withComments}`);
   assert.ok(!withComments.includes('<p></p>'), `Empty <p></p> emitted for standalone comment: ${withComments}`);
   assert.ok(withComments.includes('<p>Before paragraph.</p>'), `Standalone comment must break paragraphs: ${withComments}`);
   assert.ok(withComments.includes('<code>&lt;!-- keep --&gt;</code>'), `Inline code comment must be preserved: ${withComments}`);
+  assert.ok(withComments.includes('&lt;!-- keep-fenced --&gt;'), `Fenced code comment must be preserved: ${withComments}`);
+  assert.ok(withComments.includes('<h3 id="tut-a-h1" tabindex="-1">Heading</h3>'), `Trailing comment on heading broke anchor: ${withComments}`);
+  assert.equal((withComments.match(/<blockquote/g) || []).length, 1, `Blockquote comment must not split callout: ${withComments}`);
+  assert.ok(
+    withComments.includes('<details class="tut-details" id="tut-a-box-foo" tabindex="-1"><summary>Level 2 · Key idea: Foo</summary>'),
+    `Expected indented/commented <summary> anchor to render cleanly: ${withComments}`
+  );
+  assert.ok(!withComments.includes('{#box-foo}'), `Summary anchor syntax leaked into HTML: ${withComments}`);
+  assert.ok(withComments.includes('<p>Body after fence.</p></div></details>'), `Fenced </details> closed outer <details> early: ${withComments}`);
 
   const boxAnchored = renderTutMarkdown(
     '<details>\n<summary>Level 2 · Key idea: Foo {#box-foo}</summary>\n\nBody.\n</details>\n',
@@ -1718,7 +1747,6 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
     boxAnchored.startsWith('<details class="tut-details" id="tut-a-box-foo" tabindex="-1"><summary>Level 2 · Key idea: Foo</summary>'),
     `Expected anchored <details> with stripped summary, got: ${boxAnchored}`
   );
-  assert.ok(!boxAnchored.includes('{#box-foo}'), `Summary anchor syntax leaked into HTML: ${boxAnchored}`);
 
   const goMatch = SCRIPT_SRC.match(/function goAnchor\(id\)\{[\s\S]*?focus\(\{preventScroll:true\}\);\}catch\(_\)\{\}\}/);
   assert.ok(goMatch, 'Expected goAnchor(id) function inside initTutorial');
@@ -1743,13 +1771,44 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   assert.equal(outerDet.open, true, 'goAnchor must open enclosing <details> ancestors');
   assert.equal(targetDet.focused, true, 'goAnchor must focus the target <details>');
 
+  // Verify backBtn.onclick closes <details> opened after navStack push (same-chapter back navigation)
+  const backMatch = SCRIPT_SRC.match(/backBtn\.onclick=\(\)=>\{[\s\S]*?if\(!navStack\.length\)sel\.focus\(\);\};/);
+  assert.ok(backMatch, 'Expected backBtn.onclick handler inside initTutorial');
+  const d0 = { open: true }, d1 = { open: true };
+  const backSb = {
+    backBtn: {},
+    navStack: [{ idx: 0, top: 42, open: [0] }],
+    curIdx: 0,
+    pendingAnchor: 'box-foo',
+    renderChapter() {},
+    updateBack() {},
+    sel: { focus() {} },
+    body: { scrollTop: 300, querySelectorAll: () => [d0, d1] },
+  };
+  vm.runInNewContext(backMatch[0] + '\nbackBtn.onclick();', backSb);
+  assert.equal(d0.open, true, 'backBtn must keep previously open <details> open');
+  assert.equal(d1.open, false, 'backBtn must re-close <details> that goAnchor opened');
+  assert.equal(backSb.body.scrollTop, 42);
+
   // 4. Every registered kind has a widget, and every figure / link in the shipped chapters resolves
   for (const kind of Object.keys(TUT_FIG_KINDS)) assert.ok(SCRIPT_SRC.includes(`TF_MOUNT['${kind}']=`), `No widget for figure kind ${kind}`);
   const bundle = JSON.parse(HTML_SRC.match(/<script type="application\/json" id="tut-bundle">([\s\S]*?)<\/script>/)[1]);
-  const anchors = new Map(bundle.map((ch) => [ch.file.slice(0, 2), new Set([
-    ...[...ch.md.matchAll(/^#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]),
-    ...[...ch.md.matchAll(/^<summary>.*\{#([A-Za-z0-9_-]+)\}\s*<\/summary>$/gm)].map((m) => m[1]),
-  ])]));
+  const stripMdForScan = (md) => {
+    const out = [];
+    let inFence = false;
+    for (const ln of md.replace(/\r\n?/g, '\n').split('\n')) {
+      if (ln.trim().startsWith('```')) { inFence = !inFence; continue; }
+      if (!inFence) out.push(ln);
+    }
+    return out.join('\n').replace(/`[^`\n]+`/g, '').replace(/<!--[\s\S]*?-->/g, '');
+  };
+  const anchors = new Map(bundle.map((ch) => {
+    const clean = stripMdForScan(ch.md);
+    return [ch.file.slice(0, 2), new Set([
+      ...[...clean.matchAll(/^#{1,4}\s.*\{#([A-Za-z0-9_-]+)\}\s*$/gm)].map((m) => m[1]),
+      ...[...clean.matchAll(/^\s*<summary>.*\{#([A-Za-z0-9_-]+)\}\s*<\/summary>\s*$/gm)].map((m) => m[1]),
+    ])];
+  }));
   let figures = 0;
   for (const ch of bundle) {
     assert.ok(!/<details\s+open/i.test(ch.md), `${ch.file} has a <details open> box; zoom boxes must start closed`);
@@ -1760,7 +1819,8 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
     }
     const html = renderTutMarkdown(ch.md, []);
     assert.ok(!html.includes('tut-fig-err'), `Broken figure block in ${ch.file}`);
-    for (const m of ch.md.matchAll(/\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g)) {
+    const cleanMd = stripMdForScan(ch.md);
+    for (const m of cleanMd.matchAll(/\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g)) {
       assert.ok(anchors.has(m[1]), `Link to missing chapter ${m[1]} in ${ch.file}`);
       if (m[2]) assert.ok(anchors.get(m[1]).has(m[2]), `Link to missing anchor ${m[1]}#${m[2]} in ${ch.file}`);
     }

@@ -5498,16 +5498,39 @@ function renderFigureHtml(jsonText){
   const cap=typeof spec.caption==='string'?spec.caption.trim():'';
   return '<figure class="tut-fig" data-fig-kind="'+escHtml(spec.kind)+'" data-fig-spec="'+escHtml(JSON.stringify(spec))+'"><div class="tut-fig-stage"><p class="tut-fig-alt">'+escHtml(alt)+'</p></div>'+(cap?'<figcaption>'+escHtml(cap)+'</figcaption>':'')+'</figure>';}
 
+function stripTutHtmlComments(md){
+  const s=String(md).replace(/\r\n?/g,'\n');
+  if(!s.includes('<!--'))return s;
+  const lines=s.split('\n'),parts=[];
+  let inFence=false,chunk=[];
+  const flush=()=>{
+    if(!chunk.length)return;
+    let txt=chunk.join('\n');
+    const codes=[];
+    txt=txt.replace(/`([^`\n]+)`/g,m=>{codes.push(m);return '\x00K'+(codes.length-1)+'\x00';});
+    txt=txt.replace(/<!--[\s\S]*?-->/g,'');
+    txt=txt.replace(/\x00K(\d+)\x00/g,(_,i)=>codes[+i]);
+    parts.push(txt);
+    chunk=[];};
+  for(const ln of lines){
+    if(ln.trim().startsWith('```')){
+      if(!inFence){flush();inFence=true;parts.push(ln);}
+      else{parts.push(ln);inFence=false;}
+    }else if(inFence)parts.push(ln);
+    else chunk.push(ln);}
+  flush();
+  return parts.join('\n');}
+
 function renderTutMarkdown(md,demosOut){
-  const lines=md.replace(/\r\n?/g,'\n').split('\n');
+  const lines=stripTutHtmlComments(md).split('\n');
   let html='',i=0;
   while(i<lines.length){
     const startI=i,raw=lines[i],trim=raw.trim();
-    if(!trim||/^(?:<!--[\s\S]*?-->\s*)+$/.test(trim)){i++;continue;}
+    if(!trim){i++;continue;}
     if(/^<details(\s+open)?\s*>$/i.test(trim)){
       const isOpen=/\bopen\b/i.test(trim);
       i++;
-      while(i<lines.length&&(!lines[i].trim()||/^(?:<!--[\s\S]*?-->\s*)+$/.test(lines[i].trim())))i++;
+      while(i<lines.length&&!lines[i].trim())i++;
       let sumHtml='Details',detId='';
       if(i<lines.length&&/^<summary>[\s\S]*<\/summary>$/i.test(lines[i].trim())){
         let sTxt=lines[i].trim().replace(/^<summary>|<\/summary>$/gi,'').trim();
@@ -5515,11 +5538,13 @@ function renderTutMarkdown(md,demosOut){
         if(am){detId=am[1];sTxt=sTxt.slice(0,am.index);}
         sumHtml=parseTutInline(sTxt);
         i++;}
-      const dBuf=[];let depth=1;
+      const dBuf=[];let depth=1,dFence=false;
       while(i<lines.length){
         const dt=lines[i].trim();
-        if(/^<details(\s+open)?\s*>$/i.test(dt))depth++;
-        else if(/^<\/details>$/i.test(dt)){depth--;if(depth<=0){i++;break;}}
+        if(dt.startsWith('```'))dFence=!dFence;
+        else if(!dFence){
+          if(/^<details(\s+open)?\s*>$/i.test(dt))depth++;
+          else if(/^<\/details>$/i.test(dt)){depth--;if(depth<=0){i++;break;}}}
         dBuf.push(lines[i]);i++;}
       html+='<details class="tut-details"'+(detId?' id="tut-a-'+detId+'" tabindex="-1"':'')+(isOpen?' open':'')+'><summary>'+sumHtml+'</summary><div class="tut-det-inner">'+renderTutMarkdown(dBuf.join('\n'),demosOut)+'</div></details>';
       continue;}
@@ -5711,7 +5736,7 @@ function initTutorial(){
     const b=navStack.pop();if(!b)return;
     pendingAnchor='';
     if(b.idx!==curIdx)renderChapter(b.idx);
-    const ds=body.querySelectorAll('details');(b.open||[]).forEach(i=>{if(ds[i])ds[i].open=true;});
+    const ds=body.querySelectorAll('details'),openSet=new Set(b.open||[]);ds.forEach((d,i)=>{d.open=openSet.has(i);});
     body.scrollTop=b.top;updateBack();
     if(!navStack.length)sel.focus();};
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&tutOpen&&!desktopMql.matches)setTutOpen(false,true);});
