@@ -215,6 +215,8 @@ Every (*n*, *l*) subshell splits into **2*l* + 1** equally spaced **Zeeman suble
 - *m* = 0 is **unchanged**
 - *m* < 0 shifts **down** in energy (−\|*m*\|*B*<sub>*z*</sub>/2)
 
+This also resolves the quantization-axis choice from [§1.2 · Choosing a quantization axis](tut:01#axis-eigenstates): at *B*<sub>*z*</sub> = 0 all three axes (*x*, *y*, *z*) were equivalent, but turning on *B*<sub>*z*</sub> breaks spherical symmetry and locks the stationary eigenstates to *L̂*<sub>*z*</sub>, while *L̂*<sub>*x*</sub> and *L̂*<sub>*y*</sub> eigenstates become non-degenerate superpositions whose orbital patterns rotate (2p<sub>*x*</sub>, 2p<sub>*y*</sub>) or Larmor-precess (\|2p, *m*<sub>*x*</sub> = +1⟩) around the *z*-axis (§2.3).
+
 <details>
 <summary>Level 1 · Picture: a compass needle that points the wrong way</summary>
 
@@ -297,7 +299,7 @@ You can check both directly with ∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>
 
 Now watch how Zeeman energy splitting connects quantum phase evolution directly to Larmor rotation!
 
-**The result.** Start in the real **2p<sub>*x*</sub>** orbital, an equal mix of *m* = +1 and *m* = −1. In a field *B*<sub>*z*</sub> the state becomes
+**The result.** Start in the real **2p<sub>*x*</sub>** orbital, an equal mix of *m* = +1 and *m* = −1 (with `0°` on `+1` and `180°` on `−1`, giving −2p<sub>*x*</sub>, which differs from +2p<sub>*x*</sub> only by an unobservable global minus sign). In a field *B*<sub>*z*</sub> the state becomes
 
 > Ψ(*r*, θ, φ, *t*) = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*), &nbsp;&nbsp; ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2
 
@@ -378,6 +380,25 @@ again using *e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a*. Notice that 
   ],
   "B": -0.12,
   "tilt": 80,
+  "speed": 0.8,
+  "trails": true,
+  "overlay": true
+}
+```
+
+Unlike 2p<sub>*x*</sub>—whose equal *m* = +1 and *m* = −1 mix has **zero** average angular momentum (⟨**L**⟩ = **0**), so only its density pattern rotates—starting from the rotated vortex **\|2p, *m*<sub>*x*</sub> = +1⟩** ([§1.4](tut:01#rotated-vortices)) gives **true gyroscopic Larmor precession**: its average angular momentum ⟨**L**⟩ starts pointing along +**x̂** with magnitude *ħ*, and turning on *B*<sub>*z*</sub> > 0 sweeps both the vortex axis and the tilted torus smoothly around the *z*-axis at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2:
+
+```demo
+{
+  "label": "True Larmor precession: |2p, m_x = +1⟩ in B_z > 0",
+  "caption": "Unlike 2p_x (⟨L⟩ = 0), |2p, m_x = +1⟩ carries real angular momentum ⟨L⟩ = +ħ x̂. In B_z = 0.12 a.u., its three m_l sublevels beat so the swirling torus and its axis precess smoothly around +z at ω_Larmor = B_z/2!",
+  "states": [
+    {"n": 2, "l": 1, "m": 1, "amp": 0.5, "phaseDeg": 0},
+    {"n": 2, "l": 1, "m": 0, "amp": 0.7071, "phaseDeg": 0},
+    {"n": 2, "l": 1, "m": -1, "amp": 0.5, "phaseDeg": 0}
+  ],
+  "B": 0.12,
+  "tilt": 35,
   "speed": 0.8,
   "trails": true,
   "overlay": true

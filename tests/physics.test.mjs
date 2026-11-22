@@ -1719,6 +1719,104 @@ test('tutorial figure blocks, toolkit links and heading anchors render safely', 
   console.log(`[figures] ${figures} figure blocks across ${bundle.length} chapters`);
 });
 
+test('orbital-axis-eigenstates figure kind is registered and renders safely', () => {
+  const tutStart = SCRIPT_SRC.indexOf('function parseTutInline(');
+  const tutEnd = SCRIPT_SRC.indexOf('function initTutorial(');
+  const sb = { Math, Number, Array, Object, JSON, String };
+  vm.runInNewContext(SCRIPT_SRC.slice(tutStart, tutEnd) + '\nglobalThis.__tut={renderTutMarkdown,TUT_FIG_KINDS};', sb);
+  const { renderTutMarkdown, TUT_FIG_KINDS } = sb.__tut;
+
+  assert.ok(Object.prototype.hasOwnProperty.call(TUT_FIG_KINDS, 'orbital-axis-eigenstates'), 'Expected orbital-axis-eigenstates in TUT_FIG_KINDS');
+  assert.ok(SCRIPT_SRC.includes("TF_MOUNT['orbital-axis-eigenstates']="), 'Expected TF_MOUNT[\'orbital-axis-eigenstates\'] widget');
+  const html = renderTutMarkdown('```figure\n{"kind":"orbital-axis-eigenstates","caption":"All nine 2p eigenstates"}\n```\n', []);
+  assert.match(html, /^<figure class="tut-fig" data-fig-kind="orbital-axis-eigenstates"/);
+  assert.ok(html.includes('<figcaption>All nine 2p eigenstates</figcaption>'));
+  assert.ok(!html.includes('tut-fig-err'));
+});
+
+test('2p L_x and L_y eigenstates built from L_z basis have exact nodal axes, circulation, and B=0 superposition vs mixture behavior', () => {
+  api.setBau(0);
+  const bases = [api.getBasis(2, 1, 1), api.getBasis(2, 1, 0), api.getBasis(2, 1, -1)];
+  const makeAlphas = (specs) => {
+    const a = new Float64Array(6);
+    specs.forEach(([amp, deg], i) => {
+      const r = (deg * Math.PI) / 180;
+      a[2 * i] = amp * Math.cos(r);
+      a[2 * i + 1] = amp * Math.sin(r);
+    });
+    return a;
+  };
+  const densityAt = (alphas, x, y, z) => {
+    let re = 0, im = 0;
+    for (let k = 0; k < 3; k++) {
+      const [pr, pi] = api.evalBasisPsi(bases[k], x, y, z);
+      const ar = alphas[2 * k], ai = alphas[2 * k + 1];
+      re += ar * pr - ai * pi;
+      im += ar * pi + ai * pr;
+    }
+    return re * re + im * im;
+  };
+
+  const mxP = makeAlphas([[0.5, 0], [Math.SQRT1_2, 0], [0.5, 0]]);
+  const mxM = makeAlphas([[0.5, 0], [Math.SQRT1_2, 180], [0.5, 0]]);
+  const myP = makeAlphas([[0.5, 0], [Math.SQRT1_2, 90], [0.5, 180]]);
+  const myM = makeAlphas([[0.5, 0], [Math.SQRT1_2, 270], [0.5, 180]]);
+  const v = new Float64Array(3);
+
+  // |2p, m_x = +-1>: nodal line along x, symmetric torus in yz-plane, L_x = +-1 circulation (y*v_z - z*v_y = +-1)
+  assert.ok(densityAt(mxP, 2, 0, 0) < 1e-12, '|2p, m_x=+1> must vanish along x-axis');
+  assert.ok(Math.abs(densityAt(mxP, 0, 2, 0) - densityAt(mxP, 0, 0, 2)) < 1e-10, '|2p, m_x=+1> must be symmetric in yz-plane');
+  api.evalVel(bases, 0, 2, 0, mxP, v);
+  assert.ok(Math.abs(v[0]) < 1e-10 && Math.abs(v[1]) < 1e-10 && Math.abs(2 * v[2] - 1) < 1e-10, `Expected CCW flow around +x, got v=[${v}]`);
+  api.evalVel(bases, 0, 2, 0, mxM, v);
+  assert.ok(Math.abs(v[0]) < 1e-10 && Math.abs(v[1]) < 1e-10 && Math.abs(2 * v[2] + 1) < 1e-10, `Expected CW flow around +x, got v=[${v}]`);
+
+  // |2p, m_y = +-1>: nodal line along y, symmetric torus in xz-plane, L_y = +-1 circulation (z*v_x - x*v_z = +-1)
+  assert.ok(densityAt(myP, 0, 2, 0) < 1e-12, '|2p, m_y=+1> must vanish along y-axis');
+  assert.ok(Math.abs(densityAt(myP, 2, 0, 0) - densityAt(myP, 0, 0, 2)) < 1e-10, '|2p, m_y=+1> must be symmetric in xz-plane');
+  api.evalVel(bases, 0, 0, 2, myP, v);
+  assert.ok(Math.abs(v[1]) < 1e-10 && Math.abs(v[2]) < 1e-10 && Math.abs(2 * v[0] - 1) < 1e-10, `Expected CCW flow around +y, got v=[${v}]`);
+  api.evalVel(bases, 0, 0, 2, myM, v);
+  assert.ok(Math.abs(v[1]) < 1e-10 && Math.abs(v[2]) < 1e-10 && Math.abs(2 * v[0] + 1) < 1e-10, `Expected CW flow around +y, got v=[${v}]`);
+
+  // B=0 coherent sum (2p_x + 2p_y + 2p_z)/sqrt(3) is a tilted dumbbell (nodal plane x+y+z=0), NOT a sphere
+  // 2p_x = (|-1> - |+1>)/sqrt(2), 2p_y = i(|+1> + |-1>)/sqrt(2), 2p_z = |0>
+  const px = makeAlphas([[Math.SQRT1_2, 180], [0, 0], [Math.SQRT1_2, 0]]);
+  const py = makeAlphas([[Math.SQRT1_2, 90], [0, 0], [Math.SQRT1_2, 90]]);
+  const pz = makeAlphas([[0, 0], [1, 0], [0, 0]]);
+  const coh = new Float64Array(6);
+  const invS3 = 1 / Math.sqrt(3);
+  for (let i = 0; i < 6; i++) coh[i] = (px[i] + py[i] + pz[i]) * invS3;
+  assert.ok(densityAt(coh, 1, 1, 1) > 1e-4, 'Coherent 2p_x+2p_y+2p_z must peak along (1,1,1)');
+  assert.ok(densityAt(coh, 1, -1, 0) < 1e-12, 'Coherent 2p_x+2p_y+2p_z must vanish on nodal plane x+y+z=0');
+
+  // Incoherent mixture (|2p_x|^2 + |2p_y|^2 + |2p_z|^2)/3 IS spherically symmetric (Unsöld's theorem)
+  const mix = (x, y, z) => (densityAt(px, x, y, z) + densityAt(py, x, y, z) + densityAt(pz, x, y, z)) / 3;
+  const r = 2, d = r / Math.sqrt(3);
+  const mX = mix(r, 0, 0), mY = mix(0, r, 0), mZ = mix(0, 0, r), mDiag = mix(d, d, d);
+  assert.ok(Math.abs(mX - mY) < 1e-10 && Math.abs(mX - mZ) < 1e-10 && Math.abs(mX - mDiag) < 1e-10, 'Incoherent 2p mixture must be spherically symmetric');
+
+  // Unsöld's theorem generalizes to all higher l (check 3d: l=2 and 4f: l=3 subshell sums)
+  for (const [n, l, rad] of [[3, 2, 6], [4, 3, 12]]) {
+    const subBases = [];
+    for (let m = -l; m <= l; m++) subBases.push(api.getBasis(n, l, m));
+    const subSum = (x, y, z) => {
+      let s = 0;
+      for (const b of subBases) { const [re, im] = api.evalBasisPsi(b, x, y, z); s += re * re + im * im; }
+      return s;
+    };
+    const s0 = subSum(rad, 0, 0);
+    const s1 = subSum(0, rad, 0);
+    const s2 = subSum(0, 0, rad);
+    const s3 = subSum(rad / Math.sqrt(3), rad / Math.sqrt(3), rad / Math.sqrt(3));
+    const s4 = subSum(rad * 0.6, rad * 0.8, 0);
+    assert.ok(s0 > 0, `Expected positive subshell density for n=${n},l=${l}`);
+    for (const sv of [s1, s2, s3, s4]) {
+      assert.ok(Math.abs(sv - s0) / s0 < 1e-10, `Unsöld sum for n=${n},l=${l} must be spherically symmetric: ${sv} vs ${s0}`);
+    }
+  }
+});
+
 test('Bohmian equivariance through a long 2pi m-flip: electrons follow |psi|^2 into 1s and back out to |2p,-1>', () => {
   // 2p,+1 -> 1s -> 2p,-1 (x-polarized, 397 cycles at Power 1, Theta = 2pi). The flow is optically driven for ~20k particle steps; the
   // adaptive substeps must see psi at their own times (evalGridVelT), else the half-step lag rectifies into a radial drift (KS ~0.35).

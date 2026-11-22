@@ -187,7 +187,7 @@ Three milestone pulse areas stand out:
 
 The note beneath the Coherent EM controls mentions: *"2π flips phase/m across dark & bright states."* Our exact formula *c*₁ = cos(Θ/2) = −1 at Θ = 2π explains why!
 
-Suppose the atom begins in **\|2p, +1⟩**, and we shine **x-polarized** light resonant with **2p ↔ 1s**. Because *x*-polarized light connects \|1s, 0⟩ only to the *x*-aligned orbital **\|bright⟩ = \|2p<sub>*x*</sub>⟩ = (1/√2)(\|2p, +1⟩ − \|2p, −1⟩)**, we call \|bright⟩ the **bright state**. Meanwhile, the perpendicular orbital **\|dark⟩ = \|2p<sub>*y*</sub>⟩ = (1/√2)(\|2p, +1⟩ + \|2p, −1⟩)** has a zero *x*-dipole matrix element with \|1s, 0⟩, so *x*-polarized light cannot touch it—it is a **dark state**! (Each is written up to an overall phase factor, which never changes any probability.)
+Suppose the atom begins in **\|2p, +1⟩**, and we shine **x-polarized** light resonant with **2p ↔ 1s**. Because *x*-polarized light connects \|1s, 0⟩ only to the *x*-aligned orbital **\|bright⟩ = \|2p<sub>*x*</sub>⟩ = (1/√2)(\|2p, +1⟩ − \|2p, −1⟩)**, we call \|bright⟩ the **bright state**. Meanwhile, the perpendicular orbital **\|dark⟩ = \|2p<sub>*y*</sub>⟩ = (1/√2)(\|2p, +1⟩ + \|2p, −1⟩)** has a zero *x*-dipole matrix element with \|1s, 0⟩, so *x*-polarized light cannot touch it—it is a **dark state**! (These are the *m*<sub>*x*</sub> = 0 and *m*<sub>*y*</sub> = 0 eigenstates of [§1.2](tut:01#axis-eigenstates), each written up to an overall phase factor, which never changes any probability.)
 
 Decompose the initial state \|2p, +1⟩ in terms of \|bright⟩ and \|dark⟩ (add the two definitions and divide by √2):
 

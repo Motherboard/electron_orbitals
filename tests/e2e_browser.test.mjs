@@ -1034,6 +1034,7 @@ test('E2E browser simulation: superposition builder, single photon, coherent 2pi
   }
 });
 
+
 test('E2E tutorial figures: toolkit widgets mount, animate only while visible, honour reduced motion, fit 320px', async () => {
   const browserBin = findBrowser();
   assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
@@ -1092,6 +1093,112 @@ test('E2E tutorial figures: toolkit widgets mount, animate only while visible, h
       await new Promise((r) => setTimeout(r, 300));
       const br = b.getBoundingClientRect();
       const wide = [...b.querySelectorAll('figure.tut-fig, figure.tut-fig *')].filter((e) => e.getBoundingClientRect().right > br.right + 1).length;
+      return { docOverflow: document.documentElement.scrollWidth > window.innerWidth, wide };
+    })()`);
+    assert.deepEqual(narrow, { docOverflow: false, wide: 0 });
+
+    const errors = collectSessionErrors(cdp);
+    assert.deepEqual(errors, [], `Expected 0 console/runtime errors, got: ${JSON.stringify(errors)}`);
+  } finally {
+    await closeBrowserPage(session);
+  }
+});
+
+test('E2E orbital-axis-eigenstates figure: 9 cells mount, respond to click/keyboard, demos load, fits 320px dark mode', async () => {
+  const browserBin = findBrowser();
+  assert.ok(browserBin, 'A Chromium/Chrome binary is required for E2E browser tests');
+  const session = await launchBrowserPage({
+    browserBin,
+    url: HTML_URL,
+    flags: ['--disable-gpu'],
+    windowSize: '1200,1000',
+    tempPrefix: 'orbitals-e2e-axis-fig-',
+    settleMs: 600,
+  });
+  const { cdp, evalJS } = session;
+  try {
+    const res = await evalJS(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      if (document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      await wait(250);
+      const fig = document.querySelector('#tut-body figure.tut-fig[data-fig-kind="orbital-axis-eigenstates"]');
+      if (!fig) return { found: false };
+      const cells = [...fig.querySelectorAll('.tf-cell[data-axis][data-m]')];
+      const rd = fig.querySelector('.tf-read');
+      const pressed = () => cells.filter((c) => c.getAttribute('aria-pressed') === 'true').map((c) => c.dataset.axis + '|' + c.dataset.m);
+      const initPressed = pressed();
+      const initText = rd ? rd.textContent : '';
+
+      // Click |2p, m_y = +1>
+      const cyP = fig.querySelector('.tf-cell[data-axis="y"][data-m="1"]');
+      cyP.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      const afterClickPressed = pressed();
+      const afterClickText = rd ? rd.textContent : '';
+
+      // Keyboard Enter on |2p, m_x = +1>
+      const cxP = fig.querySelector('.tf-cell[data-axis="x"][data-m="1"]');
+      cxP.focus();
+      cxP.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      const afterEnterPressed = pressed();
+      const afterEnterText = rd ? rd.textContent : '';
+
+      // Keyboard Space (keyup) on |2p, m_y = -1>
+      const cyM = fig.querySelector('.tf-cell[data-axis="y"][data-m="-1"]');
+      cyM.focus();
+      cyM.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      cyM.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true }));
+      const afterSpacePressed = pressed();
+      const afterSpaceText = rd ? rd.textContent : '';
+
+      // Load the |2p, m_x = +1> demo card and verify 3 superposition rows
+      const demoBtns = [...document.querySelectorAll('#tut-body .tut-demo')];
+      const mxDemo = demoBtns.find((d) => d.textContent.includes('m_x = +1'));
+      const myDemo = demoBtns.find((d) => d.textContent.includes('m_y = +1'));
+      let mxRows = 0, myRows = 0;
+      if (mxDemo) { mxDemo.querySelector('.tut-demo-btn').click(); await wait(150); mxRows = document.querySelectorAll('#comp-list .comp').length; }
+      if (myDemo) { myDemo.querySelector('.tut-demo-btn').click(); await wait(150); myRows = document.querySelectorAll('#comp-list .comp').length; }
+
+      return {
+        found: true,
+        isLive: fig.classList.contains('is-live'),
+        errs: fig.querySelectorAll('.tut-fig-err').length,
+        cellCount: cells.length,
+        initPressed, initText,
+        afterClickPressed, afterClickText,
+        afterEnterPressed, afterEnterText,
+        afterSpacePressed, afterSpaceText,
+        mxRows, myRows,
+      };
+    })()`);
+
+    assert.equal(res.found, true, 'Expected orbital-axis-eigenstates figure in Chapter 1');
+    assert.equal(res.isLive, true, 'Expected orbital-axis-eigenstates figure to mount live');
+    assert.equal(res.errs, 0);
+    assert.equal(res.cellCount, 9, 'Expected 9 eigenstate cells (3 axes × 3 m values)');
+    assert.deepEqual(res.initPressed, ['x|0']);
+    assert.ok(res.initText.includes('2p') && res.initText.includes('dumbbell along ±x'));
+    assert.deepEqual(res.afterClickPressed, ['y|1']);
+    assert.ok(res.afterClickText.includes('i/√2') && res.afterClickText.includes('90°'));
+    assert.deepEqual(res.afterEnterPressed, ['x|1']);
+    assert.ok(res.afterEnterText.includes('|2p,+1⟩') && res.afterEnterText.includes('|2p,0⟩') && res.afterEnterText.includes('|2p,−1⟩'));
+    assert.deepEqual(res.afterSpacePressed, ['y|-1']);
+    assert.ok(res.afterSpaceText.includes('270°'));
+    assert.equal(res.mxRows, 3, 'Expected |2p, m_x=+1> demo to load 3 m_z components');
+    assert.equal(res.myRows, 3, 'Expected |2p, m_y=+1> demo to load 3 m_z components');
+
+    // Verify 320px dark mode + reduced motion has zero overflow
+    await cdp.call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }, { name: 'prefers-color-scheme', value: 'dark' }] });
+    await cdp.call('Emulation.setDeviceMetricsOverride', { width: 320, height: 760, deviceScaleFactor: 1, mobile: true });
+    await new Promise((r) => setTimeout(r, 400));
+    const narrow = await evalJS(`(async () => {
+      const b = document.getElementById('tut-body');
+      if (document.getElementById('tut-panel').hidden) document.getElementById('tut-toggle').click();
+      await new Promise((r) => setTimeout(r, 250));
+      const fig = b.querySelector('figure.tut-fig[data-fig-kind="orbital-axis-eigenstates"]');
+      fig.scrollIntoView();
+      await new Promise((r) => setTimeout(r, 150));
+      const br = b.getBoundingClientRect();
+      const wide = [...fig.querySelectorAll('*')].concat([fig]).filter((e) => e.getBoundingClientRect().right > br.right + 1).length;
       return { docOverflow: document.documentElement.scrollWidth > window.innerWidth, wide };
     })()`);
     assert.deepEqual(narrow, { docOverflow: false, wide: 0 });
@@ -1734,3 +1841,4 @@ test('E2E smooth curved trails: 3p,0 + 3p,+1 at 500 T under live Web Worker play
     await closeBrowserPage(session);
   }
 });
+
