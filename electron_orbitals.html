@@ -5403,7 +5403,8 @@ requestAnimationFrame(frame);
 /* ---------- interactive tutorial sidepanel ---------- */
 function parseTutInline(src){
   const codes=[],links=[];
-  let s=String(src).replace(/`([^`]+)`/g,(_,c)=>{codes.push(c);return '\x00C'+(codes.length-1)+'\x00';});
+  let s=String(src).replace(/(?<!`)(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)/g,(_,bt,c)=>{codes.push(bt.length>1&&c.length>=2&&c[0]===' '&&c[c.length-1]===' '?c.slice(1,-1):c);return '\x00C'+(codes.length-1)+'\x00';});
+  s=s.replace(/<!--[\s\S]*?-->/g,'');
   s=s.replace(/\[([^\]\n]+)\]\(tut:(\d{2})(?:#([A-Za-z0-9_-]+))?\)/g,(_,lbl,ch,an)=>{links.push({lbl:lbl.replace(/\x00C(\d+)\x00/g,(_,i)=>'`'+codes[+i]+'`'),ch,an:an||''});return '\x00L'+(links.length-1)+'\x00';});
   s=s.replace(/\\\*/g,'\x01').replace(/\\\|/g,'|');
   s=s.replace(/<(?!\/?(?:sub|sup)>)/g,'&lt;');
@@ -5436,8 +5437,8 @@ function parseTutInline(src){
         if(found<0)break;
         const o=openers[found],use=(d.len>=2&&o.len>=2)?2:1,tag=use===2?'strong':'em';
         o.len-=use;d.len-=use;
-        nodes[o.nodeIdx].open+='<'+tag+'>';
-        nodes[d.nodeIdx].close='</'+tag+'>'+nodes[d.nodeIdx].close;
+        nodes[o.nodeIdx].open='<'+tag+'>'+nodes[o.nodeIdx].open;
+        nodes[d.nodeIdx].close+='</'+tag+'>';
         nodes[o.nodeIdx].count-=use;nodes[d.nodeIdx].count-=use;
         if(o.len===0)openers.splice(found,1);}}
     if(d.canOpen&&d.len>0)openers.push(d);}
@@ -5497,8 +5498,45 @@ function renderFigureHtml(jsonText){
   const cap=typeof spec.caption==='string'?spec.caption.trim():'';
   return '<figure class="tut-fig" data-fig-kind="'+escHtml(spec.kind)+'" data-fig-spec="'+escHtml(JSON.stringify(spec))+'"><div class="tut-fig-stage"><p class="tut-fig-alt">'+escHtml(alt)+'</p></div>'+(cap?'<figcaption>'+escHtml(cap)+'</figcaption>':'')+'</figure>';}
 
+function stripTutHtmlComments(md){
+  const s=String(md).replace(/\r\n?/g,'\n');
+  if(!s.includes('<!--'))return s;
+  let out='',i=0,n=s.length,inFence=false,inCom=false,sol=true;
+  while(i<n){
+    if(inCom){
+      const end=s.indexOf('-->',i);
+      if(end<0){out+=s.slice(i);break;}
+      i=end+3;inCom=false;sol=false;continue;}
+    if(sol){
+      let j=i;while(j<n&&(s[j]===' '||s[j]==='\t'))j++;
+      if(s.startsWith('```',j)){
+        inFence=!inFence;
+        const nl=s.indexOf('\n',i);
+        if(nl<0){out+=s.slice(i);break;}
+        out+=s.slice(i,nl+1);i=nl+1;sol=true;continue;}}
+    if(inFence){
+      const nl=s.indexOf('\n',i);
+      if(nl<0){out+=s.slice(i);break;}
+      out+=s.slice(i,nl+1);i=nl+1;sol=true;continue;}
+    const ch=s[i];
+    if(ch==='`'){
+      let k=0;while(i+k<n&&s[i+k]==='`')k++;
+      const nl=s.indexOf('\n',i),lim=nl<0?n:nl;
+      let p=i+k,found=-1;
+      while(p<lim){
+        if(s[p]==='`'){
+          let m=0;while(p+m<lim&&s[p+m]==='`')m++;
+          if(m===k){found=p+m;break;}
+          p+=m;
+        }else p++;}
+      if(found>0){out+=s.slice(i,found);i=found;sol=false;continue;}
+      out+=s.slice(i,i+k);i+=k;sol=false;continue;}
+    if(s.startsWith('<!--',i)&&s.indexOf('-->',i+4)>=0){inCom=true;i+=4;continue;}
+    out+=ch;sol=(ch==='\n');i++;}
+  return out;}
+
 function renderTutMarkdown(md,demosOut){
-  const lines=md.replace(/\r\n?/g,'\n').split('\n');
+  const lines=stripTutHtmlComments(md).split('\n');
   let html='',i=0;
   while(i<lines.length){
     const startI=i,raw=lines[i],trim=raw.trim();
@@ -5507,17 +5545,22 @@ function renderTutMarkdown(md,demosOut){
       const isOpen=/\bopen\b/i.test(trim);
       i++;
       while(i<lines.length&&!lines[i].trim())i++;
-      let sumHtml='Details';
+      let sumHtml='Details',detId='';
       if(i<lines.length&&/^<summary>[\s\S]*<\/summary>$/i.test(lines[i].trim())){
-        sumHtml=parseTutInline(lines[i].trim().replace(/^<summary>|<\/summary>$/gi,'').trim());
+        let sTxt=lines[i].trim().replace(/^<summary>|<\/summary>$/gi,'').trim();
+        const am=sTxt.match(/\s*\{#([A-Za-z0-9_-]+)\}\s*$/);
+        if(am){detId=am[1];sTxt=sTxt.slice(0,am.index);}
+        sumHtml=parseTutInline(sTxt);
         i++;}
-      const dBuf=[];let depth=1;
+      const dBuf=[];let depth=1,dFence=false;
       while(i<lines.length){
         const dt=lines[i].trim();
-        if(/^<details(\s+open)?\s*>$/i.test(dt))depth++;
-        else if(/^<\/details>$/i.test(dt)){depth--;if(depth<=0){i++;break;}}
+        if(dt.startsWith('```'))dFence=!dFence;
+        else if(!dFence){
+          if(/^<details(\s+open)?\s*>$/i.test(dt))depth++;
+          else if(/^<\/details>$/i.test(dt)){depth--;if(depth<=0){i++;break;}}}
         dBuf.push(lines[i]);i++;}
-      html+='<details class="tut-details"'+(isOpen?' open':'')+'><summary>'+sumHtml+'</summary><div class="tut-det-inner">'+renderTutMarkdown(dBuf.join('\n'),demosOut)+'</div></details>';
+      html+='<details class="tut-details"'+(detId?' id="tut-a-'+detId+'" tabindex="-1"':'')+(isOpen?' open':'')+'><summary>'+sumHtml+'</summary><div class="tut-det-inner">'+renderTutMarkdown(dBuf.join('\n'),demosOut)+'</div></details>';
       continue;}
     if(trim.startsWith('```')){
       const kind=trim.slice(3).trim();
@@ -5569,7 +5612,7 @@ function renderTutMarkdown(md,demosOut){
     const pLines=[];
     while(i<lines.length){
       const pt=lines[i].trim();
-      if(!pt||pt.startsWith('```')||pt.startsWith('>')||/^---+$/.test(pt)||/^#{1,4}\s+/.test(pt)||/^[-*]\s+/.test(pt)||/^\d+\.\s+/.test(pt)||/^<\/?details(\s+open)?\s*>$/i.test(pt)||(pt.startsWith('|')&&i+1<lines.length&&/^\|\s*:?-+:?/.test(lines[i+1].trim())))break;
+      if(!pt||/^(?:<!--[\s\S]*?-->\s*)+$/.test(pt)||pt.startsWith('```')||pt.startsWith('>')||/^---+$/.test(pt)||/^#{1,4}\s+/.test(pt)||/^[-*]\s+/.test(pt)||/^\d+\.\s+/.test(pt)||/^<\/?details(\s+open)?\s*>$/i.test(pt)||(pt.startsWith('|')&&i+1<lines.length&&/^\|\s*:?-+:?/.test(lines[i+1].trim())))break;
       pLines.push(lines[i].replace(/\s{2,}$/,'<br>'));
       i++;}
     if(pLines.length)html+='<p>'+parseTutInline(pLines.join(' ')).replace(/&lt;br>/g,'<br>')+'</p>';
@@ -5668,6 +5711,7 @@ function initTutorial(){
   function goAnchor(id){
     const el=id?body.querySelector('#tut-a-'+(window.CSS&&CSS.escape?CSS.escape(id):id)):null;
     if(!el)return;
+    if(el.tagName==='DETAILS')el.open=true;
     for(let d=el.parentElement;d&&d!==body;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;
     body.scrollTop+=el.getBoundingClientRect().top-body.getBoundingClientRect().top-8;
     try{el.focus({preventScroll:true});}catch(_){}}
@@ -5706,7 +5750,7 @@ function initTutorial(){
     const b=navStack.pop();if(!b)return;
     pendingAnchor='';
     if(b.idx!==curIdx)renderChapter(b.idx);
-    const ds=body.querySelectorAll('details');(b.open||[]).forEach(i=>{if(ds[i])ds[i].open=true;});
+    const ds=body.querySelectorAll('details'),openSet=new Set(b.open||[]);ds.forEach((d,i)=>{d.open=openSet.has(i);});
     body.scrollTop=b.top;updateBack();
     if(!navStack.length)sel.focus();};
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&tutOpen&&!desktopMql.matches)setTutOpen(false,true);});
