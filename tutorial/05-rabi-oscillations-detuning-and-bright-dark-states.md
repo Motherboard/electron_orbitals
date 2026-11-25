@@ -8,7 +8,7 @@ Einstein's rate equations (coefficients *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<
 > - If the laser is off resonance (**detuned**), the transfer is incomplete and faster. The farther off, the less gets excited.
 > - Combinations of orbitals that the light cannot "see" are **dark states**. Mixing bright and dark parts produces surprising results, such as flipping *m* = +1 to *m* = −1 with linearly polarized light.
 >
-> **First read:** the boxed results (*P*₂ = sin²(Θ/2), the Bloch sphere, the generalized Rabi formula) and the demos matter more than the step-by-step derivations, which sit in the Level 1 → Level 2 → Level 3 boxes.
+> **First read:** the boxed results (*P*₂ = sin²(Θ/2), the Bloch sphere, the generalized Rabi formula) and the demos matter more than the derivations, which sit in collapsible **Level 1 · Picture** → **Level 2 · Key idea** → **Level 3 · Full derivation** boxes. <!-- lint-ignore: level-ref -->
 
 ---
 
@@ -16,19 +16,19 @@ Einstein's rate equations (coefficients *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<
 
 Take two levels \|1⟩ and \|2⟩ (orbitals ψ₁, ψ₂) with energies *E*₁ < *E*₂ and Bohr frequency ω₀ = *E*₂ − *E*₁ (atomic units, *ħ* = 1). A laser of angular frequency ω<sub>L</sub>, polarization vector **ε** and slowly varying field envelope ℰ(*t*) (peak value ℰ₀) drives them. Write the electron's state with time-varying coefficients *c*₁(*t*) and *c*₂(*t*):
 
-> Ψ(**r**, *t*) = *c*₁(*t*) *e*<sup>−*iE*₁*t*</sup> ψ₁(**r**) + *c*₂(*t*) *e*<sup>−*iE*₂*t*</sup> ψ₂(**r**)
+> Ψ(**r**, *t*) = *c*₁(*t*) *e*<sup>−*iE*₁*t*</sup> ψ₁(**r**) + *c*₂(*t*) *e*<sup>−*iE*₂*t*</sup> ψ₂(**r**) &nbsp;&nbsp; (a.u.)
 
-The populations are *P*₁ = \|*c*₁\|² and *P*₂ = \|*c*₂\|². On resonance (ω<sub>L</sub> = ω₀), and after the rotating-wave approximation explained below, the Schrödinger equation reduces to two coupled equations:
+The populations are *P*₁ = \|*c*₁\|² and *P*₂ = \|*c*₂\|². On resonance (ω<sub>L</sub> = ω₀), and after the rotating-wave approximation (RWA, explained in the next subsection), the Schrödinger equation reduces to two coupled equations:
 
-> *ċ*₁(*t*) = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₂(*t*), &nbsp;&nbsp; *ċ*₂(*t*) = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₁(*t*)
+> *ċ*₁(*t*) = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₂(*t*), &nbsp;&nbsp; *ċ*₂(*t*) = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₁(*t*) &nbsp;&nbsp; (a.u.)
 
 Here the dot means *d*/*dt*. The **Rabi frequency** Ω<sub>R</sub>(*t*) = *d* ℰ(*t*) is the transition dipole along the polarization, *d* = \|⟨ψ₂\| **r**·**ε** \|ψ₁⟩\| (Chapter 4), times the field envelope. Define the **pulse area** Θ(*t*) = ∫₀<sup>*t*</sup> Ω<sub>R</sub>(*t*′) *dt*′. Starting from *c*₁(0) = 1, *c*₂(0) = 0:
 
 > *c*₁(*t*) = cos(Θ(*t*) / 2), &nbsp;&nbsp; *c*₂(*t*) = −*i* sin(Θ(*t*) / 2), &nbsp;&nbsp; *P*₂ = sin²(Θ / 2)
 
-**Meaning:** population swings smoothly between the two levels, and only the accumulated area Θ matters, not the detailed pulse shape. For the sin²(π*t*/*T*) envelope, whose average over [0, *T*] is ½, the total area at a **fixed** peak field ℰ₀ is Θ = ½ *d* ℰ₀ *T* (how the app chooses ℰ₀ for each Duration is explained in "How the App Sets Θ" below).
+**Meaning:** population swings smoothly between the two levels, and only the accumulated area Θ matters, not the detailed pulse shape. For the sin²(π*t*/*T*) envelope, whose average over [0, *T*] is ½, the total area at a **fixed** peak field ℰ₀ is Θ = ½ *d* ℰ₀ *T* (how the app chooses ℰ₀ for each Duration is explained in the subsection "How the App Sets Θ").
 
-> **The Bloch Sphere Picture (NMR & Quantum Optics Intuition):** Imagine the two-level quantum state as a unit arrow pointing **North** (\|1⟩) on a sphere. A resonant pulse rotates that arrow continuously downward by angle Θ: **Θ = π/2** stops on the equator (maximum coherence between \|1⟩ and \|2⟩, just like an NMR 90° RF pulse creating free-induction decay), **Θ = π** flips to the South Pole (\|2⟩), and **Θ = 2π** completes a full 360° turn back North—where spin-½ geometry attaches a minus sign cos(π) = **−1**!
+> **The Bloch Sphere Picture (NMR & Quantum Optics Intuition):** Imagine the two-level quantum state as a unit arrow pointing **North** (\|1⟩) on a sphere. A resonant pulse rotates that arrow continuously downward by angle Θ: Θ = π/2 stops on the equator (maximum coherence between \|1⟩ and \|2⟩, just like an NMR 90° RF pulse creating free-induction decay), Θ = π flips to the South Pole (\|2⟩), and Θ = 2π completes a full 360° turn back North—where spin-½ geometry attaches a minus sign, cos(π) = −1!
 
 ### The Rotating-Wave Approximation (RWA)
 A linearly polarized field ℰ(*t*) cos(ω<sub>L</sub>*t*) can be split with Euler's formula, cos *x* = (*e*<sup>*ix*</sup> + *e*<sup>−*ix*</sup>)/2 ([T1 · Complex numbers & Euler's formula](tut:08#T1)), into two pieces that rotate in opposite directions in the complex plane. One piece turns along with the atom's own phase, leaving only the slow difference ω₀ − ω<sub>L</sub>. The other turns against it, at the fast sum ω₀ + ω<sub>L</sub> ≈ 2ω₀, and averages to nearly zero over every optical cycle. Dropping that fast **counter-rotating** piece is the **Rotating-Wave Approximation (RWA)**. It is excellent near resonance whenever Ω<sub>R</sub> ≪ ω₀.
@@ -49,78 +49,100 @@ A linearly polarized field ℰ(*t*) cos(ω<sub>L</sub>*t*) can be split with Eul
 ```
 
 <details>
-<summary>Level 2 · Full derivation: from the Schrödinger equation to P₂ = sin²(Θ/2)</summary>
+<summary>Level 2 · Key idea: rotating-wave approximation and P₂ = sin²(Θ/2)</summary>
+
+Put the two-level Ψ into the time-dependent Schrödinger equation *i* ∂Ψ/∂*t* = [*Ĥ*₀ + **r**·**ℰ**(*t*)] Ψ, where *Ĥ*₀ is the field-free hydrogen Hamiltonian (*Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>) and **r**·**ℰ** is the dipole energy of Chapter 4 in the field vector **ℰ**(*t*). The *Ĥ*₀ part exactly cancels the phase clocks *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>. Projecting onto ψ₂ (multiply by ψ₂<sup>∗</sup> and integrate) leaves only the light's coupling to ψ₁, because no single orbital has a permanent dipole:
+
+> *i* *ċ*₂ = *e*<sup>+*i*ω₀*t*</sup> ⟨2\| **r**·**ℰ**(*t*) \|1⟩ *c*₁ &nbsp;&nbsp; (a.u.)
+
+Here ⟨2\|…\|1⟩ = ∫ ψ₂<sup>∗</sup> (…) ψ₁ *d*³*r*, and projecting onto ψ₁ gives the mirror equation for *c*₁. The real field is the sum of two pieces rotating in opposite directions (**ε**<sup>∗</sup> is the complex conjugate of the polarization vector):
+
+> **ℰ**(*t*) = ½ ℰ(*t*) ( **ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> + **ε**<sup>∗</sup> *e*<sup>+*i*ω<sub>L</sub>*t*</sup> )
+
+Multiplied by *e*<sup>+*i*ω₀*t*</sup>, the first piece leaves the slow phase *e*<sup>−*i*Δω*t*</sup>, with **detuning** Δω = ω<sub>L</sub> − ω₀; the second spins at ω₀ + ω<sub>L</sub> ≈ 2ω₀ and averages away, so the RWA drops it. With the Rabi frequency Ω<sub>R</sub>(*t*) = *d* ℰ(*t*), *d* = \|⟨2\|**r**·**ε**\|1⟩\| (the matrix element's constant phase is absorbed into *c*₂, which changes no population):
+
+> *i* *ċ*₁ = ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *c*₂, &nbsp;&nbsp; *i* *ċ*₂ = ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *c*₁ &nbsp;&nbsp; (a.u.)
+
+On resonance (Δω = 0), measure time with the pulse area Θ(*t*) = ∫₀<sup>*t*</sup> Ω<sub>R</sub>(*t*′)*dt*′ instead of *t*. The equations become *dc*₁/*d*Θ = −(*i*/2)*c*₂ and *dc*₂/*d*Θ = −(*i*/2)*c*₁, a harmonic oscillator in Θ, and the start values *c*₁(0) = 1, *c*₂(0) = 0 pick one solution:
+
+> *d*²*c*₁/*d*Θ² = −¼ *c*₁ &nbsp; ⇒ &nbsp; *c*₁ = cos(Θ/2), &nbsp;&nbsp; *c*₂ = −*i* sin(Θ/2), &nbsp;&nbsp; *P*₂ = sin²(Θ/2)
+
+For the sin²(π*t*/*T*) envelope, sin² averages to ½ over the pulse, so the total area is Θ(*T*) = ½*d*ℰ₀*T*. Full algebra: [From the Schrödinger equation to P₂ = sin²(Θ/2)](tut:05#box-rabi-rwa).
+
+<details>
+<summary>Level 3 · Full derivation: from the Schrödinger equation to P₂ = sin²(Θ/2) {#box-rabi-rwa}</summary>
+
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (complex conjugates, polar form *z* = \|*z*\| *e*<sup>*i*φ</sup>, and Re *z* = (*z* + *z*<sup>∗</sup>)/2), [T3 · First-order linear ODEs](tut:08#T3) (the phase clocks *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> solve *i ċ* = *E c*), [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (a coupled 2×2 system becomes the oscillator *ẍ* = −ω²*x*), [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (bra-kets, matrix elements, orthonormality), and the single-variable product and chain rules.
 
 Shorthand: ⟨2\|…\|1⟩ means ⟨ψ₂\|…\|ψ₁⟩ = ∫ ψ₂<sup>∗</sup> (…) ψ₁ *d*³*r*. The light adds the dipole energy **r**·**ℰ**(*t*) of Chapter 4 to the Hamiltonian, where **ℰ**(*t*) is the field vector.
 
-**Step 1 · Substitute the two-level Ψ into the Schrödinger equation** *i* ∂Ψ/∂*t* = [*Ĥ*₀ + **r**·**ℰ**(*t*)] Ψ:
+**Step 1 — Substitute the two-level Ψ into the Schrödinger equation** *i* ∂Ψ/∂*t* = [*Ĥ*₀ + **r**·**ℰ**(*t*)] Ψ:
 
-> *i* ∂/∂*t* [ *c*₁*e*<sup>−*iE*₁*t*</sup>ψ₁ + *c*₂*e*<sup>−*iE*₂*t*</sup>ψ₂ ] = [ *Ĥ*₀ + **r**·**ℰ**(*t*) ] [ *c*₁*e*<sup>−*iE*₁*t*</sup>ψ₁ + *c*₂*e*<sup>−*iE*₂*t*</sup>ψ₂ ]
+> *i* ∂/∂*t* [ *c*₁*e*<sup>−*iE*₁*t*</sup>ψ₁ + *c*₂*e*<sup>−*iE*₂*t*</sup>ψ₂ ] = [ *Ĥ*₀ + **r**·**ℰ**(*t*) ] [ *c*₁*e*<sup>−*iE*₁*t*</sup>ψ₁ + *c*₂*e*<sup>−*iE*₂*t*</sup>ψ₂ ] &nbsp;&nbsp; (a.u.)
 
-**Step 2 · Left side, product rule.** For each term, *i* *d*/*dt* (*c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>) = *i* *ċ*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> + *i*(−*iE*<sub>*k*</sub>) *c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> = (*i* *ċ*<sub>*k*</sub> + *E*<sub>*k*</sub>*c*<sub>*k*</sub>) *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>, using *i* · (−*i*) = 1. (ψ<sub>*k*</sub> does not depend on time.)
+**Step 2 — Left side, product rule.** For each term, *i* *d*/*dt* (*c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>) = *i* *ċ*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> + *i*(−*iE*<sub>*k*</sub>) *c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> = (*i* *ċ*<sub>*k*</sub> + *E*<sub>*k*</sub>*c*<sub>*k*</sub>) *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>, using *i* · (−*i*) = 1. (ψ<sub>*k*</sub> does not depend on time.)
 
-**Step 3 · Right side.** *Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>, so the *Ĥ*₀ part gives *E*<sub>*k*</sub>*c*<sub>*k*</sub>*e*<sup>−*iE*<sub>*k*</sub>*t*</sup>ψ<sub>*k*</sub>, exactly the second term of step 2. These cancel on both sides, leaving:
+**Step 3 — Right side.** *Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>, so the *Ĥ*₀ part gives *E*<sub>*k*</sub>*c*<sub>*k*</sub>*e*<sup>−*iE*<sub>*k*</sub>*t*</sup>ψ<sub>*k*</sub>, exactly the second term of step 2. These cancel on both sides, leaving:
 
-> *i* *ċ*₁ *e*<sup>−*iE*₁*t*</sup> ψ₁ + *i* *ċ*₂ *e*<sup>−*iE*₂*t*</sup> ψ₂ = *c*₁ *e*<sup>−*iE*₁*t*</sup> (**r**·**ℰ**) ψ₁ + *c*₂ *e*<sup>−*iE*₂*t*</sup> (**r**·**ℰ**) ψ₂
+> *i* *ċ*₁ *e*<sup>−*iE*₁*t*</sup> ψ₁ + *i* *ċ*₂ *e*<sup>−*iE*₂*t*</sup> ψ₂ = *c*₁ *e*<sup>−*iE*₁*t*</sup> (**r**·**ℰ**) ψ₁ + *c*₂ *e*<sup>−*iE*₂*t*</sup> (**r**·**ℰ**) ψ₂ &nbsp;&nbsp; (a.u.)
 
-**Step 4 · Project onto ψ₂.** Multiply both sides by ψ₂<sup>∗</sup> and integrate over all space. Use orthonormality, ⟨2\|1⟩ = 0 and ⟨2\|2⟩ = 1, and the fact that a single orbital has no permanent dipole, ⟨2\|**r**\|2⟩ = **0** (\|ψ₂\|² is even under **r** → −**r** while **r** is odd: the parity argument of Chapter 4, §4.3). Only two terms survive:
+**Step 4 — Project onto ψ₂.** Multiply both sides by ψ₂<sup>∗</sup> and integrate over all space. Use orthonormality, ⟨2\|1⟩ = 0 and ⟨2\|2⟩ = 1, and the fact that a single orbital has no permanent dipole, ⟨2\|**r**\|2⟩ = **0** (\|ψ₂\|² is even under **r** → −**r** while **r** is odd: the parity argument of Chapter 4, §4.3). Only two terms survive:
 
-> *i* *ċ*₂ *e*<sup>−*iE*₂*t*</sup> = *c*₁ *e*<sup>−*iE*₁*t*</sup> ⟨2\| **r**·**ℰ** \|1⟩ &nbsp; ⇒ &nbsp; *i* *ċ*₂ = *e*<sup>+*i*ω₀*t*</sup> ⟨2\| **r**·**ℰ**(*t*) \|1⟩ *c*₁
+> *i* *ċ*₂ *e*<sup>−*iE*₂*t*</sup> = *c*₁ *e*<sup>−*iE*₁*t*</sup> ⟨2\| **r**·**ℰ** \|1⟩ &nbsp; ⇒ &nbsp; *i* *ċ*₂ = *e*<sup>+*i*ω₀*t*</sup> ⟨2\| **r**·**ℰ**(*t*) \|1⟩ *c*₁ &nbsp;&nbsp; (a.u.)
 
 (multiply by *e*<sup>+*iE*₂*t*</sup> and use *E*₂ − *E*₁ = ω₀).
 
-**Step 5 · Project onto ψ₁** the same way (multiply by ψ₁<sup>∗</sup>, integrate, now ⟨1\|1⟩ = 1, ⟨1\|2⟩ = 0, ⟨1\|**r**\|1⟩ = **0**):
+**Step 5 — Project onto ψ₁** the same way (multiply by ψ₁<sup>∗</sup>, integrate, now ⟨1\|1⟩ = 1, ⟨1\|2⟩ = 0, ⟨1\|**r**\|1⟩ = **0**, and multiply by *e*<sup>+*iE*₁*t*</sup>):
 
-> *i* *ċ*₁ = *e*<sup>−*i*ω₀*t*</sup> ⟨1\| **r**·**ℰ**(*t*) \|2⟩ *c*₂
+> *i* *ċ*₁ = *e*<sup>−*i*ω₀*t*</sup> ⟨1\| **r**·**ℰ**(*t*) \|2⟩ *c*₂ &nbsp;&nbsp; (a.u.)
 
-**Step 6 · Write the field as two rotating pieces.** The field is **ℰ**(*t*) = ℰ(*t*) Re(**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup>). Since Re *z* = (*z* + *z*<sup>∗</sup>)/2,
+**Step 6 — Write the field as two rotating pieces.** The field is **ℰ**(*t*) = ℰ(*t*) Re(**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup>). Since Re *z* = (*z* + *z*<sup>∗</sup>)/2,
 
 > **ℰ**(*t*) = ½ ℰ(*t*) ( **ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> + **ε**<sup>∗</sup> *e*<sup>+*i*ω<sub>L</sub>*t*</sup> )
 
 For real **ε** (linear polarization) this is just ℰ(*t*) **ε** cos(ω<sub>L</sub>*t*), by cos *x* = (*e*<sup>*ix*</sup> + *e*<sup>−*ix*</sup>)/2. The atom is far smaller than the wavelength, so the field is the same across it and comes out of the integral (the **dipole approximation**).
 
-**Step 7 · Insert into steps 4 and 5:**
+**Step 7 — Insert into steps 4 and 5:**
 
-> *i* *ċ*₂ = ½ ℰ(*t*) [ ⟨2\|**r**·**ε**\|1⟩ *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> + ⟨2\|**r**·**ε**<sup>∗</sup>\|1⟩ *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup> ] *c*₁
+> *i* *ċ*₂ = ½ ℰ(*t*) [ ⟨2\|**r**·**ε**\|1⟩ *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> + ⟨2\|**r**·**ε**<sup>∗</sup>\|1⟩ *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup> ] *c*₁ &nbsp;&nbsp; (a.u.)
 
-> *i* *ċ*₁ = ½ ℰ(*t*) [ ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩ *e*<sup>−*i*(ω₀ − ω<sub>L</sub>)*t*</sup> + ⟨1\|**r**·**ε**\|2⟩ *e*<sup>−*i*(ω₀ + ω<sub>L</sub>)*t*</sup> ] *c*₂
+> *i* *ċ*₁ = ½ ℰ(*t*) [ ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩ *e*<sup>−*i*(ω₀ − ω<sub>L</sub>)*t*</sup> + ⟨1\|**r**·**ε**\|2⟩ *e*<sup>−*i*(ω₀ + ω<sub>L</sub>)*t*</sup> ] *c*₂ &nbsp;&nbsp; (a.u.)
 
-**Step 8 · Rotating-wave approximation.** The (ω₀ + ω<sub>L</sub>) terms spin at about twice the optical frequency and average away; drop them. With the **detuning** Δω = ω<sub>L</sub> − ω₀ (so ω₀ − ω<sub>L</sub> = −Δω):
+**Step 8 — Rotating-wave approximation.** The (ω₀ + ω<sub>L</sub>) terms spin at about twice the optical frequency and average away; drop them. With the **detuning** Δω = ω<sub>L</sub> − ω₀ (so ω₀ − ω<sub>L</sub> = −Δω):
 
-> *i* *ċ*₂ = ½ ℰ(*t*) ⟨2\|**r**·**ε**\|1⟩ *e*<sup>−*i*Δω*t*</sup> *c*₁, &nbsp;&nbsp; *i* *ċ*₁ = ½ ℰ(*t*) ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩ *e*<sup>+*i*Δω*t*</sup> *c*₂
+> *i* *ċ*₂ = ½ ℰ(*t*) ⟨2\|**r**·**ε**\|1⟩ *e*<sup>−*i*Δω*t*</sup> *c*₁, &nbsp;&nbsp; *i* *ċ*₁ = ½ ℰ(*t*) ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩ *e*<sup>+*i*Δω*t*</sup> *c*₂ &nbsp;&nbsp; (a.u.)
 
-**Step 9 · The two matrix elements are complex conjugates.** Take the complex conjugate of ⟨2\|**r**·**ε**\|1⟩. The conjugate of a product is the product of the conjugates, and **r** is real:
+**Step 9 — The two matrix elements are complex conjugates.** Take the complex conjugate of ⟨2\|**r**·**ε**\|1⟩. The conjugate of a product is the product of the conjugates, and **r** is real:
 
 > ⟨2\|**r**·**ε**\|1⟩<sup>∗</sup> = ∫ ψ₂ (**r**·**ε**<sup>∗</sup>) ψ₁<sup>∗</sup> *d*³*r* = ∫ ψ₁<sup>∗</sup> (**r**·**ε**<sup>∗</sup>) ψ₂ *d*³*r* = ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩
 
 So both equations contain the same number, once plain and once conjugated.
 
-**Step 10 · One real Rabi frequency.** Write ⟨2\|**r**·**ε**\|1⟩ = *d* *e*<sup>*i*φ<sub>d</sub></sup> in polar form (*d* ≥ 0 is its size, φ<sub>d</sub> its phase), so ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩ = *d* *e*<sup>−*i*φ<sub>d</sub></sup>. Absorb the constant phase into the upper amplitude: write the old *c*₂ as *e*<sup>*i*φ<sub>d</sub></sup> times a new *c*₂ (this does not change \|*c*₂\|², so no population changes). Both phases cancel, and with Ω<sub>R</sub>(*t*) = *d* ℰ(*t*):
+**Step 10 — One real Rabi frequency.** Write ⟨2\|**r**·**ε**\|1⟩ = *d* *e*<sup>*i*φ<sub>d</sub></sup> in polar form (*d* ≥ 0 is its size, φ<sub>d</sub> its phase), so ⟨1\|**r**·**ε**<sup>∗</sup>\|2⟩ = *d* *e*<sup>−*i*φ<sub>d</sub></sup>. Absorb the constant phase into the upper amplitude: write the old *c*₂ as *e*<sup>*i*φ<sub>d</sub></sup> times a new *c*₂ (this does not change \|*c*₂\|², so no population changes). Both phases cancel, and with Ω<sub>R</sub>(*t*) = *d* ℰ(*t*):
 
-> *i* *ċ*₁ = ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *c*₂, &nbsp;&nbsp; *i* *ċ*₂ = ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *c*₁
+> *i* *ċ*₁ = ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *c*₂, &nbsp;&nbsp; *i* *ċ*₂ = ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *c*₁ &nbsp;&nbsp; (a.u.)
 
 Both equations share the **same** Ω<sub>R</sub>, thanks to step 9.
 
-**Step 11 · On resonance (Δω = 0)** the exponentials become 1. Divide by *i* (1/*i* = −*i*):
+**Step 11 — On resonance (Δω = 0)** the exponentials become 1. Divide by *i* (1/*i* = −*i*):
 
-> *ċ*₁ = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₂, &nbsp;&nbsp; *ċ*₂ = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₁
+> *ċ*₁ = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₂, &nbsp;&nbsp; *ċ*₂ = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₁ &nbsp;&nbsp; (a.u.)
 
-**Step 12 · Check the solution.** By the fundamental theorem of calculus, *d*Θ/*dt* = Ω<sub>R</sub>(*t*). Try *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2). Chain rule: *ċ*₁ = −½ Ω<sub>R</sub> sin(Θ/2), and −(*i*/2) Ω<sub>R</sub> *c*₂ = −(*i*/2)(−*i*) Ω<sub>R</sub> sin(Θ/2) = (*i*²/2) Ω<sub>R</sub> sin(Θ/2) = −½ Ω<sub>R</sub> sin(Θ/2). ✓ Likewise *ċ*₂ = −(*i*/2) Ω<sub>R</sub> cos(Θ/2) = −(*i*/2) Ω<sub>R</sub> *c*₁. ✓ At *t* = 0, Θ = 0 gives *c*₁ = 1, *c*₂ = 0. ✓ So *P*₂ = \|*c*₂\|² = sin²(Θ/2).
+**Step 12 — Constant Ω<sub>R</sub>: a harmonic oscillator.** Differentiate *ċ*₁ = −(*i*Ω<sub>R</sub>/2) *c*₂ once more and insert the *ċ*₂ equation:
 
-**Step 13 · Area of a sin² pulse.** With Ω<sub>R</sub>(*t*) = *d* ℰ₀ sin²(π*t*/*T*) and sin² *u* = (1 − cos 2*u*)/2, Θ(*T*) = *d* ℰ₀ ∫₀<sup>*T*</sup> ½ (1 − cos(2π*t*/*T*)) *dt* = *d* ℰ₀ (*T*/2 − 0) = ½ *d* ℰ₀ *T*, because the cosine integrates to zero over one full period.
+> *c̈*₁ = −(*i*Ω<sub>R</sub>/2) *ċ*₂ = −(*i*Ω<sub>R</sub>/2)(−*i*Ω<sub>R</sub>/2) *c*₁ = (*i*²Ω<sub>R</sub>²/4) *c*₁ = −(Ω<sub>R</sub>/2)² *c*₁ &nbsp;&nbsp; (a.u.)
 
-<details>
-<summary>Level 3 · Toolkit: the coupled 2×2 equations are a harmonic oscillator</summary>
+This is the mass-on-a-spring equation *ẍ* = −ω²*x* with ω = Ω<sub>R</sub>/2, so *c*₁ = *A* cos(Ω<sub>R</sub>*t*/2) + *B* sin(Ω<sub>R</sub>*t*/2). The start values *c*₁(0) = 1 and *ċ*₁(0) = −(*i*Ω<sub>R</sub>/2)*c*₂(0) = 0 give *A* = 1 and *B* = 0. Then, using 1/(−*i*) = *i*, *c*₂ = *ċ*₁/(−*i*Ω<sub>R</sub>/2) = (2*i*/Ω<sub>R</sub>) · (−(Ω<sub>R</sub>/2) sin(Ω<sub>R</sub>*t*/2)) = −*i* sin(Ω<sub>R</sub>*t*/2).
 
-**Constant Ω<sub>R</sub>:** differentiate *ċ*₁ = −(*i*Ω<sub>R</sub>/2) *c*₂ once more and insert the *ċ*₂ equation:
+**Step 13 — Time-varying Ω<sub>R</sub>(*t*): use Θ as the clock.** By the fundamental theorem of calculus, *d*Θ/*dt* = Ω<sub>R</sub>(*t*), so the chain rule gives *dc*/*d*Θ = *ċ*/Ω<sub>R</sub>. Dividing both equations of step 11 by Ω<sub>R</sub>:
 
-> *c̈*₁ = −(*i*Ω<sub>R</sub>/2) *ċ*₂ = −(*i*Ω<sub>R</sub>/2)(−*i*Ω<sub>R</sub>/2) *c*₁ = (*i*²Ω<sub>R</sub>²/4) *c*₁ = −(Ω<sub>R</sub>/2)² *c*₁
+> *dc*₁/*d*Θ = −(*i*/2) *c*₂, &nbsp;&nbsp; *dc*₂/*d*Θ = −(*i*/2) *c*₁
 
-This is the mass-on-a-spring equation *ẍ* = −ω²*x* with ω = Ω<sub>R</sub>/2, so *c*₁ = *A* cos(Ω<sub>R</sub>*t*/2) + *B* sin(Ω<sub>R</sub>*t*/2). The start values *c*₁(0) = 1 and *ċ*₁(0) = −(*i*Ω<sub>R</sub>/2)*c*₂(0) = 0 give *A* = 1, *B* = 0. Then *c*₂ = *ċ*₁/(−*i*Ω<sub>R</sub>/2) = (2*i*/Ω<sub>R</sub>) *ċ*₁ = −*i* sin(Ω<sub>R</sub>*t*/2), using 1/(−*i*) = *i*.
+These have constant coefficients, with Θ in the place of Ω<sub>R</sub>*t*. Repeating step 12 gives *d*²*c*₁/*d*Θ² = −¼ *c*₁, and the start values at Θ = 0 (that is, *t* = 0) give *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2). So *P*₂ = \|*c*₂\|² = sin²(Θ/2): only the area matters, not the pulse shape.
 
-**Time-varying Ω<sub>R</sub>(*t*):** use Θ as the clock. By the chain rule *dc*/*d*Θ = *ċ*/Ω<sub>R</sub>, so *dc*₁/*d*Θ = −(*i*/2)*c*₂ and *dc*₂/*d*Θ = −(*i*/2)*c*₁, now with constant coefficients. The same steps give *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2): only the area matters.
+**Step 14 — Area of a sin² pulse.** With Ω<sub>R</sub>(*t*) = *d* ℰ₀ sin²(π*t*/*T*) and sin² *u* = (1 − cos 2*u*)/2, Θ(*T*) = *d* ℰ₀ ∫₀<sup>*T*</sup> ½ (1 − cos(2π*t*/*T*)) *dt* = *d* ℰ₀ (*T*/2 − 0) = ½ *d* ℰ₀ *T*, because the cosine integrates to zero over one full period.
 
-More on this: [T4 · Coupled 2×2 ODEs and 3×3 eigenvalues](tut:08#T4). The phase factors *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> are the solutions of *iċ* = *Ec*: [T3 · First-order ODEs](tut:08#T3). Complex exponentials and Re *z*: [T1 · Complex numbers & Euler's formula](tut:08#T1).
+**Check:** put the result back into step 11 with the chain rule. *ċ*₁ = −½ Ω<sub>R</sub> sin(Θ/2), and −(*i*/2) Ω<sub>R</sub> *c*₂ = −(*i*/2)(−*i*) Ω<sub>R</sub> sin(Θ/2) = (*i*²/2) Ω<sub>R</sub> sin(Θ/2) = −½ Ω<sub>R</sub> sin(Θ/2) ✓. Likewise *ċ*₂ = −(*i*/2) Ω<sub>R</sub> cos(Θ/2) = −(*i*/2) Ω<sub>R</sub> *c*₁ ✓, and \|*c*₁\|² + \|*c*₂\|² = cos²(Θ/2) + sin²(Θ/2) = 1 ✓. Numerically, stepping the step-11 equations through a sin² pulse whose peak is chosen so that ½ *d* ℰ₀ *T* = π gives *P*₂(*T*) = 1.000000, and with ½ *d* ℰ₀ *T* = π/2 it gives 0.500000, exactly sin²(Θ/2). ✓
 
 </details>
 
@@ -133,9 +155,9 @@ More on this: [T4 · Coupled 2×2 ODEs and 3×3 eigenvalues](tut:08#T4). The pha
 The UI reports Θ = π √Power · (Duration / *T*<sub>ref</sub>) · (ℰ<sub>unit</sub> / ℰ<sub>π,ref</sub>). Here ℰ<sub>π,ref</sub> is the peak field of a resonant π-pulse lasting exactly *T*<sub>ref</sub>, and ℰ<sub>unit</sub> = min(ℰ<sub>π,ref</sub>, ℰ<sub>safe</sub>(Duration)) is the peak field the app uses at Power = 1; the reference *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** for the selected line: the Duration at which a resonant π-pulse's peak field drops to the level that keeps the estimated continuum loss below ~0.6% (one-photon ionization of every populated shell, computed from exact Coulomb continuum waves, plus a multiphoton guard). For `1s → 2p`, *T*<sub>ref</sub> = 54 cycles; weak or Rydberg lines need longer (the Duration slider reaches 400 cycles), M1 Zeeman lines use 10. Up to *T*<sub>ref</sub> the last factor is 1, so Θ grows **linearly** with Duration. Longer than *T*<sub>ref</sub>, the field is clamped to the ionization-safe level ℰ<sub>safe</sub>, and that safe level itself **falls** (roughly as 1/√Duration, because a longer pulse has more time to ionize), so Θ ∝ field × Duration grows only about as √Duration: doubling Θ at fixed Power then takes about **4×** the Duration (2π near 4 *T*<sub>ref</sub>, ≈ 216 cycles for `1s → 2p`); Power > 1 exceeds that level and the readout warns about continuum loss. The **1π** button always picks Power ≤ 1 and stretches the Duration when needed.
 
 Three milestone pulse areas stand out:
-- **Θ = π/2** (`Duration = 27 cyc, Power = 1` on `1s → 2p`): *P*₁ = ½, *P*₂ = ½ — creates an exact **50/50 coherent superposition** that keeps beating after the pulse ends!
-- **Θ = π** (`Duration = 54 cyc, Power = 1`): *P*₂ = 1 — **complete population inversion** (or complete stimulated de-excitation).
-- **Θ = 2π** (`Duration = 216 cyc, Power = 1`, since Θ ∝ √Duration beyond *T*<sub>ref</sub>; or `Duration = 54, Power = 4` with a ~2% continuum-loss warning): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, **multiplied by cos(π) = −1**! That quantum minus sign is real and physically observable whenever an uncoupled **dark state** stands alongside it (§5.2).
+- Θ = π/2 (`Duration = 27 cyc, Power = 1` on `1s → 2p`): *P*₁ = ½, *P*₂ = ½ — creates an exact **50/50 coherent superposition** that keeps beating after the pulse ends!
+- Θ = π (`Duration = 54 cyc, Power = 1`): *P*₂ = 1 — **complete population inversion** (or complete stimulated de-excitation).
+- Θ = 2π (`Duration = 216 cyc, Power = 1`, since Θ ∝ √Duration beyond *T*<sub>ref</sub>; or `Duration = 54, Power = 4` with a ~2% continuum-loss warning): *P*₁ = 1, *P*₂ = 0 — returns completely to the initial state, but *multiplied by* cos(π) = −1! That quantum minus sign is real and physically observable whenever an uncoupled **dark state** stands alongside it (§5.2).
 
 ```demo
 {
@@ -187,19 +209,19 @@ Three milestone pulse areas stand out:
 
 The note beneath the Coherent EM controls mentions: *"2π flips phase/m across dark & bright states."* Our exact formula *c*₁ = cos(Θ/2) = −1 at Θ = 2π explains why!
 
-Suppose the atom begins in **\|2p, +1⟩**, and we shine **x-polarized** light resonant with **2p ↔ 1s**. Because *x*-polarized light connects \|1s, 0⟩ only to the *x*-aligned orbital **\|bright⟩ = \|2p<sub>*x*</sub>⟩ = (1/√2)(\|2p, +1⟩ − \|2p, −1⟩)**, we call \|bright⟩ the **bright state**. Meanwhile, the perpendicular orbital **\|dark⟩ = \|2p<sub>*y*</sub>⟩ = (1/√2)(\|2p, +1⟩ + \|2p, −1⟩)** has a zero *x*-dipole matrix element with \|1s, 0⟩, so *x*-polarized light cannot touch it—it is a **dark state**! (These are the *m*<sub>*x*</sub> = 0 and *m*<sub>*y*</sub> = 0 eigenstates of [§1.2](tut:01#axis-eigenstates), each written up to an overall phase factor, which never changes any probability.)
+Suppose the atom begins in **\|2p, +1⟩**, and we shine **x-polarized** light resonant with **2p ↔ 1s**. Because *x*-polarized light connects \|1s, 0⟩ only to the *x*-aligned orbital \|bright⟩ = \|2p<sub>*x*</sub>⟩ = (1/√2)(\|2p, +1⟩ − \|2p, −1⟩), we call \|bright⟩ the **bright state**. Meanwhile, the perpendicular orbital \|dark⟩ = \|2p<sub>*y*</sub>⟩ = (1/√2)(\|2p, +1⟩ + \|2p, −1⟩) has a zero *x*-dipole matrix element with \|1s, 0⟩, so *x*-polarized light cannot touch it—it is a **dark state**! (These are the *m*<sub>*x*</sub> = 0 and *m*<sub>*y*</sub> = 0 eigenstates of [§1.2 · Choosing a quantization axis](tut:01#axis-eigenstates), each written up to an overall phase factor, which never changes any probability.)
 
 Decompose the initial state \|2p, +1⟩ in terms of \|bright⟩ and \|dark⟩ (add the two definitions and divide by √2):
 
 > \|2p, +1⟩ = (1/√2)( \|bright⟩ + \|dark⟩ )
 
 Now apply a **2π** *x*-polarized pulse (Θ = 2.00π):
-- The dark component \|dark⟩ does not couple to the laser and stays **+\|dark⟩**.
-- The bright component \|bright⟩ cycles down to \|1s, 0⟩ at Θ = π and back up at Θ = 2π, picking up cos(π) = **−1** to become **−\|bright⟩**!
+- The dark component \|dark⟩ does not couple to the laser and stays +\|dark⟩, unchanged.
+- The bright component \|bright⟩ cycles down to \|1s, 0⟩ at Θ = π and back up at Θ = 2π, picking up cos(π) = −1 to become *minus* \|bright⟩!
 
 Recombine them at *t* = *T*:
 
-> (1/√2)( −\|bright⟩ + \|dark⟩ ) = ½(−\|2p, +1⟩ + \|2p, −1⟩ + \|2p, +1⟩ + \|2p, −1⟩) = **\|2p, −1⟩** !
+> (1/√2)( −\|bright⟩ + \|dark⟩ ) = ½(−\|2p, +1⟩ + \|2p, −1⟩ + \|2p, +1⟩ + \|2p, −1⟩) = \|2p, −1⟩
 
 Without any magnetic field, a 2π linear pulse changes the electron's *L*<sub>*z*</sub> by −2*ħ* (from +*ħ* to −*ħ*) by routing the bright half of the wavefunction down through \|1s, 0⟩ and back with a −1 phase flip!
 
@@ -231,14 +253,14 @@ Without any magnetic field, a 2π linear pulse changes the electron's *L*<sub>*z
 
 ## 5.3 Detuning & Off-Resonant Rabi Suppression
 
-When the laser frequency is detuned from resonance by Δω = ω<sub>L</sub> − ω₀ ≠ 0, the RWA equations keep their oscillating phases *e*<sup>±*i*Δω*t*</sup> (step 10 of the Level 2 box in §5.1). For a constant-amplitude pulse starting in \|1⟩ they give the **generalized Rabi formula** (quoted here; the Level 2 box below derives it):
+When the laser frequency is detuned from resonance by Δω = ω<sub>L</sub> − ω₀ ≠ 0, the RWA equations keep their oscillating phases *e*<sup>±*i*Δω*t*</sup> (step 10 of [From the Schrödinger equation to P₂ = sin²(Θ/2)](tut:05#box-rabi-rwa)). For a constant-amplitude pulse starting in \|1⟩ they give the **generalized Rabi formula** (derived in [Deriving the generalized Rabi formula](tut:05#box-gen-rabi)):
 
-> *P*₂(*t*) = [ Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²) ] sin²( ½ √(Ω<sub>R</sub>² + Δω²) *t* )
+> *P*₂(*t*) = [ Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²) ] sin²( ½ √(Ω<sub>R</sub>² + Δω²) *t* ) &nbsp;&nbsp; (a.u.)
 
 **Check at resonance:** with Δω = 0 the prefactor is Ω<sub>R</sub>²/Ω<sub>R</sub>² = 1 and the formula becomes sin²(Ω<sub>R</sub>*t*/2) = sin²(Θ/2), since Θ = Ω<sub>R</sub>*t* for a constant field. That is exactly the result of §5.1. (The smooth sin²(π*t*/*T*) envelope shows the same qualitative suppression.)
 
 Notice two effects of detuning:
-1. The oscillation speeds up to **Ω̃ = √(Ω<sub>R</sub>² + Δω²)**.
+1. The oscillation speeds up to Ω̃ = √(Ω<sub>R</sub>² + Δω²).
 2. The peak transfer probability shrinks by the **Lorentzian factor** Ω<sub>R</sub>² / (Ω<sub>R</sub>² + Δω²): because the driving field drifts out of phase with the atom's natural Bohr beat ω₀, it pulls probability partway up and then stimulates it right back down before reaching 100%.
 
 <details>
@@ -251,30 +273,50 @@ If you push a swing a little faster or slower than its natural rhythm, your push
 ```
 
 <details>
-<summary>Level 2 · Full derivation (optional): the generalized Rabi formula</summary>
+<summary>Level 2 · Key idea: rotating frame and the generalized Rabi frequency Ω̃</summary>
 
-Start from step 10 of §5.1 with constant Ω<sub>R</sub>: *i* *ċ*₁ = ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *c*₂ and *i* *ċ*₂ = ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *c*₁.
+Start from the detuned RWA equations *i* *ċ*₁ = ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *c*₂ and *i* *ċ*₂ = ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *c*₁ with a constant Rabi frequency Ω<sub>R</sub>. Their trouble is the explicit time dependence. Remove it by giving each level half of the detuning phase, which defines the **rotating-frame amplitudes** *b*₁, *b*₂ (same sizes as *c*₁, *c*₂, so the same populations):
 
-**Step 1 · Remove the time-dependent phases.** Write *c*₁ = *b*₁ *e*<sup>+*i*Δω*t*/2</sup> and *c*₂ = *b*₂ *e*<sup>−*i*Δω*t*/2</sup> (so \|*b*<sub>*k*</sub>\| = \|*c*<sub>*k*</sub>\|). By the product rule, *i* *ċ*₁ = (*i* *ḃ*₁ − (Δω/2) *b*₁) *e*<sup>*i*Δω*t*/2</sup>, and the right side is ½ Ω<sub>R</sub> *b*₂ *e*<sup>*i*Δω*t*/2</sup>. Doing the same for *c*₂ and cancelling the common exponentials:
+> *c*₁ = *b*₁ *e*<sup>+*i*Δω*t*/2</sup>, &nbsp;&nbsp; *c*₂ = *b*₂ *e*<sup>−*i*Δω*t*/2</sup>
 
-> *i* *ḃ*₁ = (Δω/2) *b*₁ + ½ Ω<sub>R</sub> *b*₂, &nbsp;&nbsp; *i* *ḃ*₂ = ½ Ω<sub>R</sub> *b*₁ − (Δω/2) *b*₂
+The equations for *b*₁, *b*₂ have constant coefficients; the detuning now acts like an energy offset of ±Δω/2 on the two levels:
 
-Now every coefficient is constant.
+> *i* *ḃ*₁ = (Δω/2)*b*₁ + ½Ω<sub>R</sub>*b*₂, &nbsp;&nbsp; *i* *ḃ*₂ = ½Ω<sub>R</sub>*b*₁ − (Δω/2)*b*₂ &nbsp;&nbsp; (a.u.)
 
-**Step 2 · Differentiate the second equation and multiply by *i*:** *i*·*i* *b̈*₂ = ½ Ω<sub>R</sub> (*i* *ḃ*₁) − (Δω/2)(*i* *ḃ*₂). Insert both equations of step 1 on the right; the *b*₁ terms cancel:
+Differentiating the second equation once more and eliminating *b*₁ gives a harmonic oscillator, now at the faster **generalized Rabi frequency** Ω̃:
 
-> −*b̈*₂ = ½Ω<sub>R</sub>[(Δω/2)*b*₁ + ½Ω<sub>R</sub>*b*₂] − (Δω/2)[½Ω<sub>R</sub>*b*₁ − (Δω/2)*b*₂] = ¼(Ω<sub>R</sub>² + Δω²) *b*₂
+> *b̈*₂ = −(Ω̃/2)² *b*₂, &nbsp;&nbsp; Ω̃ = √(Ω<sub>R</sub>² + Δω²) &nbsp;&nbsp; (a.u.)
+
+Starting in \|1⟩, *b*₂(0) = 0 and the second equation gives the initial slope *ḃ*₂(0) = −*i*Ω<sub>R</sub>/2. A sine of angular frequency Ω̃/2 with that slope has amplitude Ω<sub>R</sub>/Ω̃, smaller than 1:
+
+> *P*₂(*t*) = (Ω<sub>R</sub>² / Ω̃²) sin²(Ω̃ *t* / 2) &nbsp;&nbsp; (a.u.)
+
+Full algebra: [Deriving the generalized Rabi formula](tut:05#box-gen-rabi).
+
+<details>
+<summary>Level 3 · Full derivation: deriving the generalized Rabi formula {#box-gen-rabi}</summary>
+
+**You need:** [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (reducing a coupled 2×2 system to *ẍ* = −ω²*x* and fixing the two constants from the start values), the single-variable product rule, and the detuned RWA equations of step 10 of [From the Schrödinger equation to P₂ = sin²(Θ/2)](tut:05#box-rabi-rwa).
+
+Start from step 10 of [From the Schrödinger equation to P₂ = sin²(Θ/2)](tut:05#box-rabi-rwa) with constant Ω<sub>R</sub>: *i* *ċ*₁ = ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *c*₂ and *i* *ċ*₂ = ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *c*₁, with *c*₁(0) = 1, *c*₂(0) = 0.
+
+**Step 1 — Remove the time-dependent phases.** Write *c*₁ = *b*₁ *e*<sup>+*i*Δω*t*/2</sup> and *c*₂ = *b*₂ *e*<sup>−*i*Δω*t*/2</sup> (so \|*b*<sub>*k*</sub>\| = \|*c*<sub>*k*</sub>\|). By the product rule, *i* *ċ*₁ = *i*(*ḃ*₁ + (*i*Δω/2) *b*₁) *e*<sup>*i*Δω*t*/2</sup> = (*i* *ḃ*₁ − (Δω/2) *b*₁) *e*<sup>*i*Δω*t*/2</sup>, and the right side is ½ Ω<sub>R</sub> *e*<sup>+*i*Δω*t*</sup> *b*₂ *e*<sup>−*i*Δω*t*/2</sup> = ½ Ω<sub>R</sub> *b*₂ *e*<sup>*i*Δω*t*/2</sup>. In the same way, *i* *ċ*₂ = (*i* *ḃ*₂ + (Δω/2) *b*₂) *e*<sup>−*i*Δω*t*/2</sup> and its right side is ½ Ω<sub>R</sub> *e*<sup>−*i*Δω*t*</sup> *b*₁ *e*<sup>+*i*Δω*t*/2</sup> = ½ Ω<sub>R</sub> *b*₁ *e*<sup>−*i*Δω*t*/2</sup>. Cancelling the common exponentials:
+
+> *i* *ḃ*₁ = (Δω/2) *b*₁ + ½ Ω<sub>R</sub> *b*₂, &nbsp;&nbsp; *i* *ḃ*₂ = ½ Ω<sub>R</sub> *b*₁ − (Δω/2) *b*₂ &nbsp;&nbsp; (a.u.)
+
+Now every coefficient is constant. At *t* = 0 the exponentials equal 1, so *b*₁(0) = 1 and *b*₂(0) = 0.
+
+**Step 2 — Differentiate the second equation and multiply by *i*:** *i*·*i* *b̈*₂ = ½ Ω<sub>R</sub> (*i* *ḃ*₁) − (Δω/2)(*i* *ḃ*₂). Insert both equations of step 1 on the right; the *b*₁ terms cancel:
+
+> −*b̈*₂ = ½Ω<sub>R</sub>[(Δω/2)*b*₁ + ½Ω<sub>R</sub>*b*₂] − (Δω/2)[½Ω<sub>R</sub>*b*₁ − (Δω/2)*b*₂] = ¼(Ω<sub>R</sub>² + Δω²) *b*₂ &nbsp;&nbsp; (a.u.)
 
 So *b̈*₂ = −(Ω̃/2)² *b*₂ with Ω̃ = √(Ω<sub>R</sub>² + Δω²): a harmonic oscillator again.
 
-**Step 3 · Start values.** *b*₂(0) = 0 picks *b*₂ = *C* sin(Ω̃*t*/2). From step 1 with *b*₁(0) = 1, *b*₂(0) = 0: *ḃ*₂(0) = −*i* Ω<sub>R</sub>/2. Since *ḃ*₂(0) = *C* Ω̃/2, *C* = −*i* Ω<sub>R</sub>/Ω̃.
+**Step 3 — Start values.** The general solution is *b*₂ = *A* cos(Ω̃*t*/2) + *C* sin(Ω̃*t*/2), and *b*₂(0) = 0 gives *A* = 0. The second equation of step 1 at *t* = 0 reads *i* *ḃ*₂(0) = ½ Ω<sub>R</sub> · 1 − (Δω/2) · 0, so *ḃ*₂(0) = −*i* Ω<sub>R</sub>/2. Since *ḃ*₂(0) = *C* Ω̃/2, *C* = −*i* Ω<sub>R</sub>/Ω̃.
 
-**Step 4 · Population.** *P*₂ = \|*c*₂\|² = \|*b*₂\|² = (Ω<sub>R</sub>²/Ω̃²) sin²(Ω̃*t*/2), the generalized Rabi formula.
+**Step 4 — Population.** *P*₂ = \|*c*₂\|² = \|*b*₂\|² = \|*C*\|² sin²(Ω̃*t*/2) = (Ω<sub>R</sub>²/Ω̃²) sin²(Ω̃*t*/2), the generalized Rabi formula.
 
-<details>
-<summary>Level 3 · Toolkit: second-order equations with constant coefficients</summary>
-
-Steps 2–3 are the same "differentiate once more to get *ẍ* = −ω²*x*" trick as in §5.1, followed by fixing the two constants from the start values. See [T4 · Coupled 2×2 ODEs and 3×3 eigenvalues](tut:08#T4).
+**Check:** at Δω = 0, Ω̃ = Ω<sub>R</sub> and the formula is sin²(Ω<sub>R</sub>*t*/2) = sin²(Θ/2), the resonant result ✓. For Δω = Ω<sub>R</sub>, Ω̃ = √2 Ω<sub>R</sub> and the peak is ½, first reached at *t* = π/Ω̃ ≈ 2.2214/Ω<sub>R</sub>; stepping the original *c*₁, *c*₂ equations numerically with Ω<sub>R</sub> = 1, Δω = 1 gives *P*₂ = 0.500000 at that time ✓. For large detuning the peak Ω<sub>R</sub>²/(Ω<sub>R</sub>² + Δω²) falls off like (Ω<sub>R</sub>/Δω)² → 0; Δω = 3Ω<sub>R</sub> already gives 1/10. ✓
 
 </details>
 
@@ -314,39 +356,64 @@ When *B*<sub>*z*</sub> ≠ 0, the three Zeeman levels **\|2p, +1⟩, \|2p, 0⟩,
 
 In the ordered basis {\|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩}, the *x*-component of the Zeeman interaction matrix ½ *L*<sub>*x*</sub> is an explicit 3×3 tridiagonal matrix:
 
-> ½ *L*<sub>*x*</sub> = (1 / 2√2) *M*, &nbsp;&nbsp; *M* = [ [0, 1, 0], [1, 0, 1], [0, 1, 0] ]
+> ½ *L*<sub>*x*</sub> = (1 / 2√2) *M*, &nbsp;&nbsp; *M* = [ [0, 1, 0], [1, 0, 1], [0, 1, 0] ] &nbsp;&nbsp; (a.u.)
 
-**Why Θ = √2 π, not π, for the full flip?** The UI calibrates Θ as if a *single* adjacent pair (say \|2p, +1⟩ ↔ \|2p, 0⟩) were an isolated two-level system: Θ = π would fully invert that pair. But in the three-level ladder, both steps are driven at once with equal coupling, and the whole ladder behaves like a rotating angular-momentum vector. Its rotation angle is β = Θ/√2. (The √2 comes from the ladder's coupling matrix *M* above, whose eigenvalues are 0 and ±√2 times the single-step coupling; see the box below.) Turning **L** completely upside down, from \|2p, +1⟩ to \|2p, −1⟩, needs β = π, so **Θ = √2 π ≈ 1.414π**. That is `Duration = 10 cyc` and `Power = 2`, which gives 100.0% transfer into \|2p, −1⟩. The same √2 appears for the E1 ladder in Chapter 2 (§2.4). *(**SU(2)** is the mathematicians' name for the group of quantum rotations; "spin-1 SU(2)" simply means "three-level system that rotates exactly like an *l* = 1 angular momentum".)*
+**Why Θ = √2 π, not π, for the full flip?** The UI calibrates Θ as if a *single* adjacent pair (say \|2p, +1⟩ ↔ \|2p, 0⟩) were an isolated two-level system: Θ = π would fully invert that pair. But in the three-level ladder, both steps are driven at once with equal coupling, and the whole ladder behaves like a rotating angular-momentum vector. Its rotation angle is β = Θ/√2. (The √2 comes from the ladder's coupling matrix *M* above, whose eigenvalues are 0 and ±√2 times the single-step coupling; see [Eigenvalues and populations of the ladder matrix M](tut:05#box-spin1-ladder).) Turning **L** completely upside down, from \|2p, +1⟩ to \|2p, −1⟩, needs β = π, so Θ = √2 π ≈ 1.414π. That is `Duration = 10 cyc` and `Power = 2`, which gives 100.0% transfer into \|2p, −1⟩. The same √2 appears for the E1 ladder in Chapter 2 (§2.4). *(**SU(2)** is the mathematicians' name for the group of quantum rotations; "spin-1 SU(2)" simply means "three-level system that rotates exactly like an *l* = 1 angular momentum".)*
 
 <details>
 <summary>Level 1 · Picture: a ladder turns more slowly than a single rung</summary>
 
-In a two-level pair, the drive moves amplitude along one rung. In the ladder, the middle level \|2p, 0⟩ is coupled to **both** neighbours, so amplitude passes through it on the way from top to bottom. The natural "speeds" of the ladder are its eigenvalues: 0 and ±√2 in units of the single-rung coupling. The whole state turns like an arrow by an angle β = Θ/√2, and the top-to-bottom flip needs the arrow turned by β = π.
+In a two-level pair, the drive moves amplitude back and forth along a single rung. In a three-level ladder, the middle level \|2p, 0⟩ is coupled to **both** neighbours at once, so amplitude passes through it on the way from top to bottom. The three levels together behave like one angular-momentum arrow that the drive tips over steadily, and because the drive is shared across two linked rungs, the arrow tips more slowly than an isolated pair would flip, by a factor of √2. Turning the arrow fully upside down, from \|2p, +1⟩ to \|2p, −1⟩, therefore takes √2 times the pulse area of a single-rung flip. Halfway through, when the arrow lies on its side, the middle level holds half of the population and the two outer levels a quarter each.
 
 <details>
-<summary>Level 2 · Full derivation: eigenvalues of the ladder matrix M</summary>
+<summary>Level 2 · Key idea: why the 3-level ladder rotates at β = Θ/√2</summary>
+
+Write the drive as *g M*, where *g* is the coupling on a single rung. An isolated pair driven this way would Rabi-flop at 2*g*, which is how the UI defines the pulse area, Θ = ∫ 2*g* *dt*. The ladder's natural rates are the eigenvalues λ of *M* (*I* is the 3×3 identity matrix):
+
+> det(*M* − λ*I*) = −λ(λ² − 2) = 0 &nbsp; ⇒ &nbsp; λ = 0, ±√2
+
+So *L*<sub>*x*</sub> = *M*/√2 has the exact *l* = 1 eigenvalues 0, ±1, and the drive *g M* = √2 *g L*<sub>*x*</sub> rotates the ladder about *x* by the angle
+
+> β = √2 ∫ *g* *dt* = Θ/√2
+
+To follow the flip, split the start state into the three eigenvectors of *M*, *v*<sub>+</sub> = ½(1, √2, 1), *v*<sub>0</sub> = (1/√2)(1, 0, −1) and *v*<sub>−</sub> = ½(1, −√2, 1) (amplitudes in \|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩, for λ = √2, 0, −√2):
+
+> \|2p, +1⟩ = ½ *v*<sub>+</sub> + (1/√2) *v*<sub>0</sub> + ½ *v*<sub>−</sub>
+
+Each piece only picks up its own phase, *e*<sup>−*i*β</sup>, 1 and *e*<sup>+*i*β</sup>. Adding them back and squaring gives the spin-1 populations:
+
+> *P*<sub>+1</sub> = cos⁴(β/2), &nbsp;&nbsp; *P*<sub>0</sub> = ½ sin²β, &nbsp;&nbsp; *P*<sub>−1</sub> = sin⁴(β/2)
+
+At β = π (Θ = √2 π), *P*<sub>−1</sub> = 1 and the flip is 100% complete. Full algebra: [Eigenvalues and populations of the ladder matrix M](tut:05#box-spin1-ladder).
+
+<details>
+<summary>Level 3 · Full derivation: eigenvalues and populations of the ladder matrix M {#box-spin1-ladder}</summary>
+
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β), [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (expanding 3×3 determinants, solving det(*M* − λ*I*) = 0, and splitting a start state into eigenvectors that each spin at their own rate), and [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (eigenvalues and stationary-state phases).
 
 Eigenvalues λ solve det(*M* − λ*I*) = 0, where *I* is the 3×3 identity matrix:
 
 > *M* − λ*I* = [ [−λ, 1, 0], [1, −λ, 1], [0, 1, −λ] ]
 
-**Step 1 · Expand along the first row** (each entry times its 2×2 minor, with signs +, −, +):
+**Step 1 — Expand along the first row** (each entry times its 2×2 minor, with signs +, −, +):
 
 > det(*M* − λ*I*) = (−λ) · det[ [−λ, 1], [1, −λ] ] − 1 · det[ [1, 1], [0, −λ] ] + 0 · (…)
 
-**Step 2 · The 2×2 determinants** (det[[*a*, *b*], [*c*, *d*]] = *ad* − *bc*): det[[−λ, 1], [1, −λ]] = λ² − 1 and det[[1, 1], [0, −λ]] = −λ − 0 = −λ.
+**Step 2 — The 2×2 determinants** (det[[*a*, *b*], [*c*, *d*]] = *ad* − *bc*): det[[−λ, 1], [1, −λ]] = λ² − 1 and det[[1, 1], [0, −λ]] = −λ − 0 = −λ.
 
-**Step 3 · Combine:** det(*M* − λ*I*) = (−λ)(λ² − 1) − (−λ) = −λ³ + λ + λ = −λ³ + 2λ = −λ(λ² − 2).
+**Step 3 — Combine:** det(*M* − λ*I*) = (−λ)(λ² − 1) − (−λ) = −λ³ + λ + λ = −λ³ + 2λ = −λ(λ² − 2).
 
-**Step 4 · Roots:** λ = 0 or λ² = 2, so **λ = 0, +√2, −√2**. Check: *M* (1, √2, 1) = (√2, 2, √2) = √2 · (1, √2, 1). ✓
+**Step 4 — Roots:** λ = 0 or λ² = 2, so λ = 0, +√2, −√2. Spot check: *M* (1, √2, 1) = (√2, 2, √2) = √2 · (1, √2, 1).
 
-**Step 5 · Meaning.** Since ½ *L*<sub>*x*</sub> = *M*/(2√2), the eigenvalues of *L*<sub>*x*</sub> = *M*/√2 are 0 and ±1: the three possible values of *m* along *x*, just as they must be for *l* = 1. Writing the drive as (single-rung coupling) × *M* = (single-rung coupling) × √2 *L*<sub>*x*</sub> shows that the ladder rotates about *x* at a rate set by the single-rung Rabi frequency divided by √2, hence β = Θ/√2.
+**Step 5 — Meaning.** Since ½ *L*<sub>*x*</sub> = *M*/(2√2), the eigenvalues of *L*<sub>*x*</sub> = *M*/√2 are 0 and ±1: the three possible values of *m* along *x*, just as they must be for *l* = 1. Writing the drive as (single-rung coupling) × *M* = (single-rung coupling) × √2 *L*<sub>*x*</sub> shows that the ladder rotates about *x* at a rate set by the single-rung Rabi frequency divided by √2, hence β = Θ/√2.
 
-**Step 6 · The populations during the flip.** Call the single-rung coupling *g*, so the drive is *g M*, the isolated-pair Rabi frequency is 2*g*, Θ = ∫ 2*g* *dt* and β = √2 ∫ *g* *dt* = Θ/√2. Normalized eigenvectors of *M*, written as (amplitude in \|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩):
+**Step 6 — Eigenvectors and the start state.** Call the single-rung coupling *g*, so the drive is *g M*, the isolated-pair Rabi frequency is 2*g*, Θ = ∫ 2*g* *dt* and β = √2 ∫ *g* *dt* = Θ/√2. Multiplying *M* onto each column verifies the normalized eigenvectors, written as (amplitude in \|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩):
 
-> **v**<sub>+</sub> = ½(1, √2, 1) for λ = √2, &nbsp;&nbsp; **v**<sub>0</sub> = (1/√2)(1, 0, −1) for λ = 0, &nbsp;&nbsp; **v**<sub>−</sub> = ½(1, −√2, 1) for λ = −√2
+> *v*<sub>+</sub> = ½(1, √2, 1) for λ = √2, &nbsp;&nbsp; *v*<sub>0</sub> = (1/√2)(1, 0, −1) for λ = 0, &nbsp;&nbsp; *v*<sub>−</sub> = ½(1, −√2, 1) for λ = −√2
 
-The start state \|2p,+1⟩ = (1, 0, 0) equals ½**v**<sub>+</sub> + (1/√2)**v**<sub>0</sub> + ½**v**<sub>−</sub> (add them up to check). Each eigenvector only picks up a phase, just like *e*<sup>−*iEt*</sup> for a stationary state: **v**<sub>±</sub> gets *e*<sup>∓*i*β</sup> and **v**<sub>0</sub> gets 1. Adding the three pieces component by component, with *e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β:
+The start state \|2p,+1⟩ = (1, 0, 0) equals ½*v*<sub>+</sub> + (1/√2)*v*<sub>0</sub> + ½*v*<sub>−</sub>: the first components add to ¼ + ½ + ¼ = 1, the second to (√2/4) + 0 − (√2/4) = 0, the third to ¼ − ½ + ¼ = 0.
+
+**Step 7 — Let each piece spin and add back up.** Each eigenvector only picks up a phase, just like *e*<sup>−*iEt*</sup> for a stationary state: *v*<sub>±</sub> gets *e*<sup>∓*i*β</sup> and *v*<sub>0</sub> gets 1. Adding the three pieces component by component, with *e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β:
 
 > amplitude in \|2p,+1⟩ = ¼ *e*<sup>−*i*β</sup> + ½ + ¼ *e*<sup>*i*β</sup> = ½(1 + cos β) = cos²(β/2)
 
@@ -354,16 +421,13 @@ The start state \|2p,+1⟩ = (1, 0, 0) equals ½**v**<sub>+</sub> + (1/√2)**v*
 
 > amplitude in \|2p,−1⟩ = ¼ *e*<sup>−*i*β</sup> − ½ + ¼ *e*<sup>*i*β</sup> = −½(1 − cos β) = −sin²(β/2)
 
-(using 1 ± cos β = 2 cos²(β/2) or 2 sin²(β/2)). Squaring gives the spin-1 rotation populations quoted in Chapter 2 (§2.4):
+(using 1 ± cos β = 2 cos²(β/2) or 2 sin²(β/2)).
+
+**Step 8 — Populations.** Squaring the three amplitudes gives the spin-1 rotation populations quoted in Chapter 2 (§2.4):
 
 > *P*<sub>+1</sub> = cos⁴(β/2), &nbsp;&nbsp; *P*<sub>0</sub> = ½ sin²β, &nbsp;&nbsp; *P*<sub>−1</sub> = sin⁴(β/2)
 
-They add to 1: with sin β = 2 sin(β/2) cos(β/2), the sum is cos⁴ + 2 sin² cos² + sin⁴ = (cos² + sin²)² = 1, every function taken at β/2. At β = π/2 (mid-flip) the middle level peaks at *P*<sub>0</sub> = ½; at β = π everything sits in \|2p,−1⟩.
-
-<details>
-<summary>Level 3 · Toolkit: 3×3 determinants and eigenvalues</summary>
-
-Expanding a 3×3 determinant along a row, and finding eigenvalues from det(*M* − λ*I*) = 0, are worked through step by step in [T4 · Coupled 2×2 ODEs and 3×3 eigenvalues](tut:08#T4). Operators, eigenvalues and Dirac notation in general: [T7 · Operators & Dirac notation](tut:08#T7).
+**Check:** with sin β = 2 sin(β/2) cos(β/2), the populations sum to cos⁴ + 2 sin² cos² + sin⁴ = (cos² + sin²)² = 1 at every β (all taken at β/2). At β = π/2 (mid-flip) they are (¼, ½, ¼), so the middle level peaks at *P*<sub>0</sub> = ½; at β = π everything sits in \|2p,−1⟩. Numerically, diagonalizing *M* and evolving (1, 0, 0) to β = π/3 gives populations (0.5625, 0.3750, 0.0625), the same as cos⁴(π/6) = 9/16, ½ sin²(π/3) = 3/8 and sin⁴(π/6) = 1/16. ✓
 
 </details>
 

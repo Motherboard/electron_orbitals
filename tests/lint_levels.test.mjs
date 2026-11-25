@@ -72,7 +72,7 @@ test('clean new-scheme synthetic chapter passes --strict with exit code 0', () =
     '',
     '> *f*(*t*) = *e*<sup>−*iEt*</sup>',
     '',
-    'See [Separating variables](tut:01#box-sep-vars) for the derivation.',
+    'Full algebra: [Separating variables](tut:01#box-sep-vars).',
     '',
     '<details>',
     '<summary>Level 3 · Full derivation: separating variables {#box-sep-vars}</summary>',
@@ -91,7 +91,7 @@ test('clean new-scheme synthetic chapter passes --strict with exit code 0', () =
     '',
     '</details>',
     '',
-    '<!-- lint-ignore: nest-parent -->',
+    '<!-- lint-ignore: nest-parent — a deliberately standalone fixture -->',
     '<details>',
     '<summary>Level 2 · Key idea: standalone short proof</summary>',
     '',
@@ -387,7 +387,8 @@ test('all warning rules trigger WARN diagnostics, respect thresholds and --stric
     assert.equal(thrRules.has('l2-size'), false);
   });
 
-  // Standalone top-level short L2 emits WARN [nest-parent] only (no l2-pointer); Step 1 triggers l2-pointer; App details: is aux
+  // Standalone top-level L2 is now ERR [nest-parent] (every Key idea needs a Picture parent);
+  // Step 1 still triggers l2-pointer only on the stepped one; App details: is aux
   const standMd = [
     '<details>',
     '<summary>Level 2 · Key idea: concise standalone</summary>',
@@ -409,12 +410,12 @@ test('all warning rules trigger WARN diagnostics, respect thresholds and --stric
 
   withTempChapter('01-standalone.md', standMd, (filePath) => {
     const res = runLinter([filePath]);
-    assert.equal(res.status, 0);
+    assert.equal(res.status, 1);
     const diags = parseDiagnostics(res.stdout);
-    assert.equal(diags.filter((d) => d.severity === 'ERR').length, 0);
-    const nestWarns = diags.filter((d) => d.severity === 'WARN' && d.rule === 'nest-parent');
+    const nestErrs = diags.filter((d) => d.severity === 'ERR' && d.rule === 'nest-parent');
     const ptrWarns = diags.filter((d) => d.severity === 'WARN' && d.rule === 'l2-pointer');
-    assert.equal(nestWarns.length, 2, `Expected 2 standalone L2 nest-parent warnings:\n${res.stdout}`);
+    assert.equal(nestErrs.length, 2, `Expected 2 standalone L2 nest-parent errors:\n${res.stdout}`);
+    assert.equal(diags.filter((d) => d.severity === 'ERR').length, 2, `Expected no other errors:\n${res.stdout}`);
     assert.equal(ptrWarns.length, 1, `Expected only stepped standalone L2 to warn l2-pointer:\n${res.stdout}`);
   });
 });
@@ -563,8 +564,11 @@ test('review regression checks: bold-math exemptions, EQ_LINE_RE bullets, commen
     const l2s = diags.filter((d) => d.rule === 'l2-size');
     assert.equal(l2s.length, 1, `Expected l2-size for Step 1 in L2 with child L3:\n${res.stdout}`);
 
-    // l2-pointer: 0 warnings (both "full derivation" and "step-by-step derivation" accepted)
-    assert.equal(diags.filter((d) => d.rule === 'l2-pointer').length, 0);
+    // l2-pointer: phrases alone ("full derivation", "step-by-step derivation") no longer count;
+    // each L2 with a child L3 must end with "Full algebra: [Title](tut:NN#anchor)"
+    const l2p = diags.filter((d) => d.rule === 'l2-pointer');
+    assert.equal(l2p.length, 3, `Expected 3 l2-pointer warnings for phrase-only pointers:\n${res.stdout}`);
+    assert.ok(l2p.every((d) => /Full algebra|anchor/.test(d.msg)), `Unexpected l2-pointer message:\n${res.stdout}`);
 
     // l3-forward: ONLY 1 warning (same-chapter §1.5 in §1.1; Ch 8 referencing Chapter 9 is exempt)
     const l3f = diags.filter((d) => d.rule === 'l3-forward');
@@ -700,7 +704,40 @@ test('second-review regression checks: comment-balance, nested sup/sub, callout 
   });
 });
 
-test('real tutorial/*.md chapters work cleanly with --outline and --scheme legacy', () => {
+const MIGRATED_CHAPTERS = [
+  '01-schrodinger-superposition-and-bohmian-mechanics.md',
+  '02-magnetic-field-zeeman-and-precession.md',
+  '03-light-and-polarization.md',
+  '04-light-electron-interactions-einstein-and-angular-momentum.md',
+  '05-rabi-oscillations-detuning-and-bright-dark-states.md',
+  '06-single-photon-wavepackets-ionization-and-tdse-solver.md',
+  '07-atomic-units-canvas-guide-and-model-scope.md',
+  '08-math-toolkit.md',
+  '09-strong-magnetic-fields-and-the-diamagnetic-term.md',
+];
+
+test('all tutorial/*.md chapters pass default --scheme new --strict with 0 errors and 0 warnings', () => {
+  const allMdFiles = fs
+    .readdirSync(TUTORIAL_DIR)
+    .filter((f) => f.endsWith('.md'))
+    .sort();
+  assert.deepEqual(
+    allMdFiles,
+    [...MIGRATED_CHAPTERS].sort(),
+    'MIGRATED_CHAPTERS must stay in sync with tutorial/*.md'
+  );
+  const migratedPaths = MIGRATED_CHAPTERS.map((f) => path.join(TUTORIAL_DIR, f));
+  const res = runLinter([...migratedPaths, '--strict']);
+  assert.equal(
+    res.status,
+    0,
+    `Expected all migrated chapters to pass --scheme new --strict with exit code 0:\n${res.stdout}\n${res.stderr}`
+  );
+  const diags = parseDiagnostics(res.stdout);
+  assert.equal(diags.length, 0, `Expected 0 diagnostics on migrated chapters:\n${res.stdout}`);
+});
+
+test('real tutorial/*.md chapters work cleanly with --outline', () => {
   const mdFiles = fs
     .readdirSync(TUTORIAL_DIR)
     .filter((f) => f.endsWith('.md'))
@@ -708,36 +745,140 @@ test('real tutorial/*.md chapters work cleanly with --outline and --scheme legac
     .map((f) => path.join(TUTORIAL_DIR, f));
   assert.equal(mdFiles.length, 9, 'Expected 9 tutorial markdown files');
 
-  // 1. --outline exits 0 and lists boxes for all 9 chapters
+  // --outline exits 0 and lists boxes for all 9 chapters
   const outRes = runLinter([...mdFiles, '--outline']);
   assert.equal(outRes.status, 0, `Expected --outline exit 0:\n${outRes.stderr}`);
   assert.match(outRes.stdout, /L1\s+.*01-schrodinger-superposition-and-bohmian-mechanics\.md:\d+/);
+  assert.match(outRes.stdout, /L2\s+.*Key idea:/);
+  assert.match(outRes.stdout, /L3\s+.*Full derivation:/);
   assert.match(outRes.stdout, /AUX\s+.*Answers\s+\[eq:\d+ lines:\d+\]/);
   assert.match(outRes.stdout, /AUX\s+.*\(app details\)\s+\[eq:\d+ lines:\d+\]/);
+});
 
-  // 2. --scheme legacy across all 9 chapters: zero summary-format, box-ref, details-*, tag/bold-balance errors
-  const legRes = runLinter([...mdFiles, '--scheme', 'legacy']);
-  const diags = parseDiagnostics(legRes.stdout);
-  for (const forbidden of [
-    'summary-format',
-    'summary-missing',
-    'details-balance',
-    'details-open',
-    'box-ref',
-    'dup-anchor',
-    'bold-balance',
-    'tag-balance',
-    'backtick-balance',
-    'label-name',
-    'dup-title',
-  ]) {
-    const hits = diags.filter((d) => d.rule === forbidden);
-    assert.equal(
-      hits.length,
-      0,
-      `Expected zero [${forbidden}] diagnostics on shipped tutorial/*.md under --scheme legacy, got:\n${hits
-        .map((h) => `${h.file}:${h.line} ${h.msg}`)
-        .join('\n')}`
-    );
-  }
+test('third-review rules: multi-line bold, units on later quote line, ***x***, Σ, box below/above, title level-ref, ✓ checks, forward links, wiki links, link labels, reasoned nest-parent, opt-in units/min-L2', () => {
+  const md = [
+    '# 1. Third review',
+    '',
+    '## 1.1 First',
+    '',
+    'A paragraph with **bold that starts here',
+    'and ends on the next line** renders fine.',
+    '',
+    '> **A callout with bold that wraps',
+    '> onto the next quote line** is fine too.',
+    '',
+    '- A list item with **bold that never',
+    '  closes** breaks in the renderer.',
+    '',
+    '> *E* = *ħ*ω',
+    '>',
+    '> = *ħ*²*k*²/(2*m*<sub>e</sub>) &nbsp;&nbsp; (SI)',
+    '',
+    'The lobe lies along ***x*** here.',
+    '',
+    'See the box below for details. The boxes above also help.',
+    '',
+    'Wiki links like [[Some box title]] are not supported, but matrices [[0, 1], [1, 0]] are fine.',
+    '',
+    'Labels: [Wrong label](tut:01#box-later), [§1.4](tut:01#box-later), [Later picture](tut:01#box-later).',
+    '',
+    '<details>',
+    '<summary>Level 1 · Picture: sums in words</summary>',
+    '',
+    'Adding Σ<sub>k</sub> terms is not allowed here.',
+    '',
+    '<details>',
+    '<summary>Level 2 · Key idea: pointer present</summary>',
+    '',
+    '> *a* = *b* &nbsp;&nbsp; (a.u.)',
+    '',
+    'Full algebra: [Forward-looking derivation](tut:01#box-fwd).',
+    '',
+    '<details>',
+    '<summary>Level 3 · Full derivation: forward-looking derivation {#box-fwd}</summary>',
+    '',
+    '**You need:** to check the algebra.',
+    '',
+    '**Step 1 — use later material.** As in [Later picture](tut:01#box-later), and the demo below.',
+    '',
+    '</details>',
+    '',
+    '</details>',
+    '',
+    '</details>',
+    '',
+    '<details>',
+    '<summary>Level 1 · Picture: see the Level 3 box</summary>',
+    '',
+    'Words.',
+    '',
+    '</details>',
+    '',
+    '<!-- lint-ignore: nest-parent -->',
+    '<details>',
+    '<summary>Level 2 · Key idea: unreasoned suppression</summary>',
+    '',
+    '> *c* = *d* &nbsp;&nbsp; (a.u.)',
+    '',
+    '</details>',
+    '',
+    '<!-- lint-ignore: nest-parent — kept standalone deliberately for this fixture -->',
+    '<details>',
+    '<summary>Level 2 · Key idea: reasoned suppression</summary>',
+    '',
+    '> *u* = *w*',
+    '',
+    '</details>',
+    '',
+    '## 1.4 Later',
+    '',
+    '<details>',
+    '<summary>Level 1 · Picture: later picture {#box-later}</summary>',
+    '',
+    'Words.',
+    '',
+    '</details>',
+    '',
+  ].join('\n');
+
+  withTempChapter('01-third.md', md, (filePath) => {
+    const res = runLinter([filePath]);
+    const diags = parseDiagnostics(res.stdout);
+    const at = (rule) => diags.filter((d) => d.rule === rule).map((d) => d.line);
+
+    // bold-balance: only the list item (bold cannot continue past it); paragraph and quote wraps are fine
+    assert.deepEqual(at('bold-balance'), [11, 12], `bold-balance:\n${res.stdout}`);
+    // units-tag: the (SI) tag on the last line of the multi-line quote covers line 14
+    assert.deepEqual(at('units-tag'), [], `units-tag:\n${res.stdout}`);
+    assert.deepEqual(at('bold-italic'), [18], `bold-italic:\n${res.stdout}`);
+    assert.deepEqual(at('rel-box-ref'), [20], `rel-box-ref:\n${res.stdout}`);
+    assert.deepEqual(at('wiki-link'), [22], `wiki-link (matrix must not fire):\n${res.stdout}`);
+    // box-link-label: wrong label and §-label fire; exact title (case-insensitive) passes
+    assert.deepEqual(at('box-link-label'), [24, 24], `box-link-label:\n${res.stdout}`);
+    assert.deepEqual(at('l1-algebra'), [29], `l1-algebra for Σ:\n${res.stdout}`);
+    // l3-check: the word "check" in You need no longer counts; ✓ or **Check:** is required
+    assert.equal(at('l3-check').length, 1, `l3-check:\n${res.stdout}`);
+    // l3-forward: link to an anchor defined later in the chapter
+    assert.deepEqual(at('l3-forward'), [43], `l3-forward:\n${res.stdout}`);
+    // level-ref in a box title
+    assert.ok(at('level-ref').includes(52), `level-ref in title:\n${res.stdout}`);
+    // nest-parent: unreasoned suppression is not applied (ERR) and is reported; reasoned one is honoured
+    assert.deepEqual(at('lint-ignore-reason'), [58], `lint-ignore-reason:\n${res.stdout}`);
+    const nest = diags.filter((d) => d.rule === 'nest-parent');
+    assert.equal(nest.length, 1, `Expected only the unreasoned standalone L2 to fail nest-parent:\n${res.stdout}`);
+    assert.equal(nest[0].severity, 'ERR');
+    assert.equal(nest[0].line, 60);
+
+    // Opt-in: --require-units flags the untagged equation in the reasoned box; --min-l2-eq 2 flags 1-eq Key ideas
+    const resUnits = runLinter([filePath, '--require-units']);
+    const uLines = parseDiagnostics(resUnits.stdout).filter((d) => d.rule === 'units-tag').map((d) => d.line);
+    assert.deepEqual(uLines, [70], `--require-units:\n${resUnits.stdout}`);
+    const resMin = runLinter([filePath, '--min-l2-eq', '2']);
+    const minHits = parseDiagnostics(resMin.stdout).filter((d) => d.rule === 'l2-size' && /min 2/.test(d.msg));
+    assert.equal(minHits.length, 3, `--min-l2-eq 2:\n${resMin.stdout}`);
+
+    // Legacy scheme skips l3-check entirely
+    const resLegacy = runLinter([filePath, '--scheme', 'legacy']);
+    assert.equal(parseDiagnostics(resLegacy.stdout).filter((d) => d.rule === 'l3-check').length, 0);
+  });
 });

@@ -8,7 +8,7 @@ Everything in atomic and molecular spectroscopy—UV-Vis absorption, fluorescenc
 > - Light is absorbed, causes **stimulated emission**, or is emitted **spontaneously**. Einstein's coefficients *A*<sub>21</sub>, *B*<sub>12</sub> and *B*<sub>21</sub> link the three. *A*<sub>21</sub> sets the excited-state **lifetime**; *B*<sub>12</sub> sets how strongly the line shows up in an absorption spectrum.
 > - **Selection rules:** Δ*l* = ±1 (parity) and Δ*m* = 0, ±1 (angular momentum), plus Δ*S* = 0 for spin in molecules. Each photon carries one unit *ħ* of angular momentum, and circular polarization decides its sign.
 
-**How to read this chapter:** the main text gives each result and what it means. Click a **Level 1** box for the picture, the **Level 2** box inside it for the full step-by-step derivation, and **Level 3** for the math tool it uses (with a link to the [Math Toolkit](tut:08)).
+**How to read this chapter:** the main text gives each result and what it means. Click a **Level 1 · Picture** box for the physical picture without algebra, a **Level 2 · Key idea** box inside it for the argument in a few key equations, and a **Level 3 · Full derivation** box for every algebraic step starting from the tools you need (linking to the [Math Toolkit](tut:08)). <!-- lint-ignore: level-ref -->
 
 ---
 
@@ -16,41 +16,60 @@ Everything in atomic and molecular spectroscopy—UV-Vis absorption, fluorescenc
 
 In an oscillating electric field **ℰ**(*t*), an electron of charge *q* = −*e* gains potential energy *U* = −*q***r** · **ℰ**(*t*) = +*e* **r** · **ℰ**(*t*) relative to the nucleus (**r** is the electron's position measured from the nucleus). In atomic units (*e* = 1, *ħ* = 1):
 
-> *i* ∂ψ/∂*t* = [ *Ĥ*₀ + **r** · **ℰ**(*t*) ] ψ &nbsp;&nbsp; (Electric dipole, E1)
+> *i* ∂ψ/∂*t* = [ *Ĥ*₀ + **r** · **ℰ**(*t*) ] ψ &nbsp;&nbsp; (electric dipole, E1) &nbsp;&nbsp; (a.u.)
 
 When *B*<sub>*z*</sub> ≠ 0 unlocks intra-orbital transitions (Δ*n* = 0, Δ*l* = 0), an oscillating magnetic field **B**₁(*t*) couples to the orbit's magnetic moment. [Chapter 2](tut:02) (§2.0 and §2.2) showed that the orbiting electron is a tiny magnet with **μ** = −**L**/2 in atomic units (−(*e*/2*m*<sub>e</sub>)**L** in SI). Its energy in the field is *U* = −**μ** · **B**₁ = +½ **B**₁ · **L**, so:
 
-> *i* ∂ψ/∂*t* = [ *Ĥ*₀ + ½ **B**₁(*t*) · **L** ] ψ &nbsp;&nbsp; (Magnetic dipole, M1)
+> *i* ∂ψ/∂*t* = [ *Ĥ*₀ + ½ **B**₁(*t*) · **L** ] ψ &nbsp;&nbsp; (magnetic dipole, M1) &nbsp;&nbsp; (a.u.)
 
 How strongly does light connect initial state ψ₁ = \|*n*₁*l*₁*m*₁⟩ to final state ψ₂ = \|*n*₂*l*₂*m*₂⟩? The coupling strength is the **transition dipole matrix element** **d**<sub>21</sub>. It is a vector: one integral over all space for each of the components *x*, *y*, *z* of **r**.
 
-> **d**<sub>21</sub> ≡ ⟨ψ₂\| **r** \|ψ₁⟩ = ∫<sub>all space</sub> ψ₂<sup>∗</sup>(**r**) **r** ψ₁(**r**) *d*³*r*
+> **d**<sub>21</sub> ≡ ⟨ψ₂\| **r** \|ψ₁⟩ = ∫<sub>all space</sub> ψ₂<sup>∗</sup>(**r**) **r** ψ₁(**r**) *d*³*r* &nbsp;&nbsp; (a.u.)
 
 **Meaning:** **d**<sub>21</sub> measures how much "pushing ψ₁ along **r**" (which is what the light's electric field does) produces something that looks like ψ₂. If **d**<sub>21</sub> = **0**, light of any polarization cannot drive the transition in the E1 approximation.
 
-> **Dirac notation, compact cheat sheet** (the full version, merged with the Chapter 1 glossary, is [T7 · Operators & Dirac notation](tut:08#T7)):
+> **Dirac notation, compact cheat sheet** (the full version, merged with the Chapter 1 glossary, is [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7)):
 > - **Ket** \|ψ₁⟩ means the function ψ₁(**r**). **Bra** ⟨ψ₂\| means its complex conjugate ψ₂<sup>∗</sup>(**r**), ready to be multiplied in and integrated.
 > - **Sandwich** ⟨ψ₂\| *Ô* \|ψ₁⟩ is shorthand for ∫<sub>all space</sub> ψ₂<sup>∗</sup>(**r**) (*Ô*ψ₁(**r**)) *d*³*r*: apply the operator *Ô* to ψ₁, multiply by ψ₂<sup>∗</sup>, integrate.
 > - **Kronecker delta** δ<sub>*a*,*b*</sub> = 1 if *a* = *b* and 0 otherwise. Hydrogen eigenstates are orthonormal: ⟨*n*₂*l*₂*m*₂ \| *n*₁*l*₁*m*₁⟩ = δ<sub>*n*₂,*n*₁</sub> δ<sub>*l*₂,*l*₁</sub> δ<sub>*m*₂,*m*₁</sub>.
 
 Because ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) and *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ, this 3D integral separates cleanly into two pieces:
 
-1. **Radial dipole integral:** ∫₀<sup>∞</sup> *r*³ *R*<sub>*n*₂*l*₂</sub>(*r*) *R*<sub>*n*₁*l*₁</sub>(*r*) *dr*. It sets the **size** of the coupling. For **1s ↔ 2p** it equals 256/(81√6) ≈ **1.2903 *a*₀** (worked out in the Level 2 box below).
+1. **Radial dipole integral:** ∫₀<sup>∞</sup> *r*³ *R*<sub>*n*₂*l*₂</sub>(*r*) *R*<sub>*n*₁*l*₁</sub>(*r*) *dr*. It sets the **size** of the coupling. For **1s ↔ 2p** it equals 256/(81√6) ≈ **1.2903 *a*₀** (worked out in [Splitting the integral and evaluating the 1s–2p radial part](tut:04#box-radial-dipole)).
 2. **Angular integral:** ∫₀<sup>π</sup> sin θ *d*θ ∫₀<sup>2π</sup> *d*φ [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>(θ, φ)]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup>(θ, φ), where **r̂** = **r**/*r* is the unit vector pointing along **r**. It decides **whether** the coupling is zero: it vanishes unless the **selection rules** of §4.3 hold.
 
 <details>
 <summary>Level 1 · Picture: what the transition dipole measures</summary>
 
-- The light's electric field pushes the electron cloud back and forth. In the integrand ψ₂<sup>∗</sup> **r** ψ₁, the factor **r** is "how far from the nucleus, and in which direction". Far-out parts of the cloud get the biggest push.
-- The integral asks two separate questions. **Radial:** do the two orbitals have electron density at the same distances from the nucleus? (This sets the size.) **Angular:** do their shapes fit together once you multiply by one "unit of direction" **r̂**? (This decides yes or no.)
-- For 1s → 2p the radial integrand is proportional to *r*⁴*e*<sup>−3*r*/2</sup>, which peaks at *r* = 4/(3/2) = 8/3 ≈ 2.7 *a*₀: the coupling is collected mostly a few Bohr radii out, where the 1s cloud thins out and the 2p cloud builds up.
+- The light's electric field pushes the electron cloud back and forth. In the overlap between the two orbitals, the distance factor **r** weights outer regions more heavily: far-out parts of the cloud get the biggest push.
+- The integral asks two separate questions. **Radial:** do the two orbitals have electron density at the same distances from the nucleus? (This sets the size.) **Angular:** do their shapes fit together once you multiply by one unit of direction **r̂**? (This decides yes or no.)
+- For 1s → 2p, the radial overlap peaks near 2.7 *a*₀: the coupling is collected mostly a few Bohr radii out, where the 1s cloud thins out and the 2p cloud builds up.
 
 ```figure
 {"kind": "radial-distribution", "state": "2p", "caption": "Switch between 1s and 2p: the two clouds share the region around 1 to 4 bohr, which is where the radial dipole integral collects most of its value."}
 ```
 
 <details>
-<summary>Level 2 · Full derivation: splitting the integral and evaluating the 1s–2p radial part</summary>
+<summary>Level 2 · Key idea: factoring the dipole integral into radial and angular parts</summary>
+
+Writing **r** = *r* **r̂** and using the spherical volume element *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ collects *r* × *r*² = *r*³ and separates the 3D transition dipole into a radial overlap times an angular integral (*R*<sub>*nl*</sub> are the real radial functions, *Y*<sub>*l*</sub><sup>*m*</sup> the spherical harmonics):
+
+> **d**<sub>21</sub> = [ ∫₀<sup>∞</sup> *r*³ *R*<sub>*n*₂*l*₂</sub> *R*<sub>*n*₁*l*₁</sub> *dr* ] × [ ∫₀<sup>π</sup>∫₀<sup>2π</sup> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ ] &nbsp;&nbsp; (a.u.)
+
+Every hydrogen radial function is a polynomial times an exponential, so the radial factor always reduces to the standard integral (*a* > 0, *n* = 0, 1, 2, …)
+
+> ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* = *n*! / *a*<sup>*n*+1</sup>
+
+For **1s ↔ 2p** (*R*<sub>10</sub> = 2*e*<sup>−*r*</sup>, *R*<sub>21</sub> = *r e*<sup>−*r*/2</sup>/(2√6), *r* in Bohr radii *a*₀) it is the case *n* = 4, *a* = 3/2:
+
+> (1/√6) ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−3*r*/2</sup> *dr* = (1/√6) · 4!/(3/2)⁵ = 256 / (81√6) ≈ 1.2903 *a*₀ &nbsp;&nbsp; (a.u.)
+
+Full algebra: [Splitting the integral and evaluating the 1s–2p radial part](tut:04#box-radial-dipole).
+
+<details>
+<summary>Level 3 · Full derivation: splitting the integral and evaluating the 1s–2p radial part {#box-radial-dipole}</summary>
+
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (volume element *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (the standard integral ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* = *n*!/*a*<sup>*n*+1</sup>), and single-variable integration by parts, ∫ *u* *dv* = [*uv*] − ∫ *v* *du* (used in Step 7 to re-derive that integral).
 
 **Step 1 · Write the position vector as length × direction:** **r** = *r* **r̂**.
 
@@ -58,35 +77,34 @@ Because ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</
 
 **Step 3 · Substitute** ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) (the radial functions *R* are real):
 
-> **d**<sub>21</sub> = ∫∫∫ *R*<sub>*n*₂*l*₂</sub> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> · *r* **r̂** · *R*<sub>*n*₁*l*₁</sub> *Y*<sub>*l*₁</sub><sup>*m*₁</sup> · *r*² sin θ *dr* *d*θ *d*φ
+> **d**<sub>21</sub> = ∫∫∫ *R*<sub>*n*₂*l*₂</sub> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> · *r* **r̂** · *R*<sub>*n*₁*l*₁</sub> *Y*<sub>*l*₁</sub><sup>*m*₁</sup> · *r*² sin θ *dr* *d*θ *d*φ &nbsp;&nbsp; (a.u.)
 
 **Step 4 · Collect the powers of *r*:** one *r* comes from the operator **r** = *r* **r̂**, and *r*² comes from the volume element, giving *r* × *r*² = *r*³.
 
 **Step 5 · Split the integral:** the integrand is (a function of *r* only) × (a function of θ, φ only), so the triple integral is a product of two separate integrals:
 
-> **d**<sub>21</sub> = [ ∫₀<sup>∞</sup> *r*³ *R*<sub>*n*₂*l*₂</sub> *R*<sub>*n*₁*l*₁</sub> *dr* ] × [ ∫₀<sup>π</sup>∫₀<sup>2π</sup> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ ]
+> **d**<sub>21</sub> = [ ∫₀<sup>∞</sup> *r*³ *R*<sub>*n*₂*l*₂</sub> *R*<sub>*n*₁*l*₁</sub> *dr* ] × [ ∫₀<sup>π</sup>∫₀<sup>2π</sup> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ ] &nbsp;&nbsp; (a.u.)
 
 **Step 6 · Worked example, 1s ↔ 2p.** In atomic units (*r* in *a*₀), *R*<sub>10</sub> = 2*e*<sup>−*r*</sup> and *R*<sub>21</sub> = *r e*<sup>−*r*/2</sup>/(2√6). The radial integral is
 
-> ∫₀<sup>∞</sup> *r*³ · 2*e*<sup>−*r*</sup> · *r e*<sup>−*r*/2</sup>/(2√6) *dr* = (1/√6) ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−3*r*/2</sup> *dr*
+> ∫₀<sup>∞</sup> *r*³ · 2*e*<sup>−*r*</sup> · *r e*<sup>−*r*/2</sup>/(2√6) *dr* = (1/√6) ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−3*r*/2</sup> *dr* &nbsp;&nbsp; (a.u.)
 
 (the 2 cancels the 2 in 2√6; *r*³ · *r* = *r*⁴; and *e*<sup>−*r*</sup>*e*<sup>−*r*/2</sup> = *e*<sup>−3*r*/2</sup> because exponents add).
 
-**Step 7 · Use the standard integral** ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* = *n*!/*a*<sup>*n*+1</sup> with *n* = 4 and *a* = 3/2:
+**Step 7 · Where *n*!/*a*<sup>*n*+1</sup> comes from.** Call *I*<sub>*n*</sub> = ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* (with *a* > 0).
+- *n* = 0: *I*₀ = [−*e*<sup>−*ar*</sup>/*a*]₀<sup>∞</sup> = 0 − (−1/*a*) = 1/*a*.
+- Integration by parts with *u* = *r*<sup>*n*</sup>, *dv* = *e*<sup>−*ar*</sup>*dr* (so *du* = *n r*<sup>*n*−1</sup>*dr* and *v* = −*e*<sup>−*ar*</sup>/*a*): *I*<sub>*n*</sub> = [−*r*<sup>*n*</sup>*e*<sup>−*ar*</sup>/*a*]₀<sup>∞</sup> + (*n*/*a*) *I*<sub>*n*−1</sub>. The bracket is 0 at both ends (at *r* = 0 because of *r*<sup>*n*</sup>, at ∞ because the exponential wins), so *I*<sub>*n*</sub> = (*n*/*a*) *I*<sub>*n*−1</sub>.
+- Repeating: *I*<sub>*n*</sub> = (*n*/*a*)((*n* − 1)/*a*) ⋯ (1/*a*)(1/*a*) = *n*!/*a*<sup>*n*+1</sup>.
+
+**Step 8 · Use *I*<sub>*n*</sub> = *n*!/*a*<sup>*n*+1</sup>** with *n* = 4 and *a* = 3/2:
 
 > ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−3*r*/2</sup> *dr* = 4!/(3/2)⁵ = 24 × 32/243 = 768/243 = 256/81 ≈ 3.1605
 
-**Step 8 · Result:** radial integral = 256/(81√6) ≈ 3.1605/2.4495 ≈ **1.2903 *a*₀**. The same recipe with *R*<sub>31</sub> and *R*<sub>41</sub> gives the 0.5167 *a*₀ and 0.3046 *a*₀ quoted below for 1s ↔ 3p and 1s ↔ 4p.
+so the radial integral is 256/(81√6) ≈ 3.1605/2.4495 ≈ **1.2903 *a*₀**. The same recipe with *R*<sub>31</sub> and *R*<sub>41</sub> gives 0.5167 *a*₀ for 1s ↔ 3p and 0.3046 *a*₀ for 1s ↔ 4p.
 
-<details>
-<summary>Level 3 · Toolkit: ∫ r<sup>n</sup> e<sup>−ar</sup> dr = n!/a<sup>n+1</sup></summary>
+**Step 9 · Where the integral is collected.** The integrand is proportional to *r*⁴*e*<sup>−3*r*/2</sup>. Its slope (4*r*³ − (3/2)*r*⁴)*e*<sup>−3*r*/2</sup> vanishes at *r* = 4/(3/2) = 8/3 ≈ 2.7 *a*₀, so that is where the integrand peaks; about 70% of the total comes from 1 *a*₀ ≤ *r* ≤ 4 *a*₀, where the 1s cloud thins out and the 2p cloud builds up.
 
-Call *I*<sub>*n*</sub> = ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* (with *a* > 0).
-- *n* = 0: *I*₀ = [−*e*<sup>−*ar*</sup>/*a*]₀<sup>∞</sup> = 0 − (−1/*a*) = 1/*a*.
-- Integration by parts with *u* = *r*<sup>*n*</sup>, *dv* = *e*<sup>−*ar*</sup>*dr* (so *v* = −*e*<sup>−*ar*</sup>/*a*): *I*<sub>*n*</sub> = [−*r*<sup>*n*</sup>*e*<sup>−*ar*</sup>/*a*]₀<sup>∞</sup> + (*n*/*a*) *I*<sub>*n*−1</sub>. The bracket is 0 at both ends (at *r* = 0 because of *r*<sup>*n*</sup>, at ∞ because the exponential wins), so *I*<sub>*n*</sub> = (*n*/*a*) *I*<sub>*n*−1</sub>.
-- Repeating: *I*<sub>*n*</sub> = (*n*/*a*)((*n*−1)/*a*)⋯(1/*a*)(1/*a*) = *n*!/*a*<sup>*n*+1</sup>.
-
-More practice: [T6 · Radial integrals and odd/even symmetry](tut:08#T6). Spherical coordinates and the volume element *r*² sin θ: [T5 · Spherical coordinates](tut:08#T5).
+**Check:** normalized *R* has units *a*₀<sup>−3/2</sup>, so *r*³*R*²*dr* has units of length (*a*₀), and 1.29 *a*₀ sits right at the atomic scale between 1s and 2p. Summing *r*³ *R*<sub>10</sub> *R*<sub>21</sub> numerically on a fine grid out to *r* = 200 *a*₀ gives 1.29027 *a*₀, matching 256/(81√6) = 1.29027 *a*₀. ✓
 
 </details>
 
@@ -97,7 +115,7 @@ More practice: [T6 · Radial integrals and odd/even symmetry](tut:08#T6). Spheri
 ### Hydrogen Spectral Series & Why Δ*n* Is Unrestricted
 Because hydrogen orbital energies follow *E*<sub>*n*</sub> = −13.6057/*n*² eV (independent of *l* and *m* when *B* = 0), the photon emitted in a jump from *n*<sub>upper</sub> to *n*<sub>lower</sub> obeys the **Rydberg formula** from general chemistry:
 
-> 1/λ = *R*<sub>H</sub> (1/*n*<sub>lower</sub>² − 1/*n*<sub>upper</sub>²), &nbsp;&nbsp; *R*<sub>H</sub> = 13.6057 eV / *hc* ≈ 1.097 × 10⁷ m⁻¹ = 109,737 cm⁻¹
+> 1/λ = *R*<sub>H</sub> (1/*n*<sub>lower</sub>² − 1/*n*<sub>upper</sub>²), &nbsp;&nbsp; *R*<sub>H</sub> = 13.6057 eV / *hc* ≈ 1.097 × 10⁷ m⁻¹ = 109,737 cm⁻¹ &nbsp;&nbsp; (SI)
 
 *(Worked example, H<sub>α</sub>: 1/λ = 109,737 × (1/4 − 1/9) ≈ 15,241 cm⁻¹, so λ ≈ 656 nm. With the proton's finite mass, R<sub>H</sub> = 109,678 cm⁻¹ and λ = 656.47 nm in vacuum (656.28 nm in air, the "656.3 nm" of most tables). This simulator uses the clamped-nucleus value, §7.3.)*
 
@@ -115,14 +133,14 @@ Unlike molecular vibrational IR spectroscopy (where a harmonic potential restric
 In 1917, before Schrödinger's equation even existed, Albert Einstein analyzed a two-level atom (*E*₂ > *E*₁, level degeneracies *g*₂, *g*₁, Bohr frequency ω₀ = (*E*₂ − *E*₁)/*ħ*) bathed in thermal blackbody radiation at temperature *T*<sub>th</sub>, with energy density ρ(ω₀) per unit angular frequency. *N*₁ and *N*₂ are the numbers of atoms in levels 1 and 2.
 
 He showed that **three** radiative processes must operate simultaneously:
-1. **Absorption** (1 → 2): upward transition rate = *N*₁ *B*<sub>12</sub> ρ(ω₀) (in chemistry, *B*<sub>12</sub> sets the integrated UV-Vis molar absorptivity / oscillator strength; see the box below).
+1. **Absorption** (1 → 2): upward transition rate = *N*₁ *B*<sub>12</sub> ρ(ω₀) (in chemistry, *B*<sub>12</sub> sets the integrated UV-Vis molar absorptivity / oscillator strength; see the UV-Vis callout below).
 2. **Stimulated emission** (2 → 1): downward rate = *N*₂ *B*<sub>21</sub> ρ(ω₀); an incoming photon triggers the atom to emit a clone photon with the same frequency, phase, direction, and polarization.
 3. **Spontaneous emission** (2 → 1): downward rate = *N*₂ *A*<sub>21</sub>, occurring even in dark vacuum (ρ = 0); it sets the natural **fluorescence lifetime** τ = 1/*A*<sub>21</sub>.
 
 ### Einstein's Relations
 The three coefficients are not independent. Requiring that the atoms and the blackbody light stay in thermal equilibrium at every temperature forces **Einstein's two laws**:
 
-> *g*₁ *B*<sub>12</sub> = *g*₂ *B*<sub>21</sub>, &nbsp;&nbsp;&nbsp;&nbsp; *A*<sub>21</sub> = (*ħ* ω₀³ / π² *c*³) *B*<sub>21</sub>
+> *g*₁ *B*<sub>12</sub> = *g*₂ *B*<sub>21</sub>, &nbsp;&nbsp;&nbsp;&nbsp; *A*<sub>21</sub> = (*ħ* ω₀³ / π² *c*³) *B*<sub>21</sub> &nbsp;&nbsp; (SI)
 
 **Meaning:** absorption and stimulated emission are the same process run in opposite directions (equally strong per quantum state), and once you know how strongly a line absorbs you also know how fast its upper level emits spontaneously. *(If written per ordinary frequency ν = ω/2π, A<sub>21</sub> / B<sub>21</sub><sup>(ν)</sup> = 8πhν³/c³.)*
 
@@ -132,47 +150,62 @@ The three coefficients are not independent. Requiring that the atoms and the bla
 Think of the atoms as people on two floors of a building. They go **up** only when light pushes them (absorption). They come **down** either when light pushes them (stimulated emission) or on their own (spontaneous emission). In thermal equilibrium the number going up each second equals the number coming down each second (**detailed balance**).
 
 Two clues then fix everything:
-- **Very hot (*T*<sub>th</sub> → ∞):** the cavity is flooded with light, so the light-pushed traffic dwarfs the spontaneous trickle, and Boltzmann statistics fills every quantum state equally (*N*₁/*g*₁ = *N*₂/*g*₂). Pushed-up and pushed-down traffic must then balance on their own, which is only possible if *g*₁*B*<sub>12</sub> = *g*₂*B*<sub>21</sub>.
+- **Very hot (*T*<sub>th</sub> → ∞):** the cavity is flooded with light, so the light-pushed traffic dwarfs the spontaneous trickle, and Boltzmann statistics fills every quantum state equally. Pushed-up and pushed-down traffic must then balance on their own, fixing the ratio of absorption to stimulated emission.
 - **Any temperature:** Planck's law says exactly how much light there is. The gap between pushed-up and pushed-down traffic must be filled by spontaneous emission, and matching to Planck's law fixes how big *A*<sub>21</sub> must be.
 
 <details>
-<summary>Level 2 · Full derivation: from detailed balance and Planck's law to Einstein's relations</summary>
+<summary>Level 2 · Key idea: matching detailed balance to Planck's law</summary>
+
+Balancing upward and downward rates *N*₁*B*<sub>12</sub>ρ(ω₀) = *N*₂[*A*<sub>21</sub> + *B*<sub>21</sub>ρ(ω₀)] and inserting Boltzmann's ratio *N*₁/*N*₂ = (*g*₁/*g*₂)*e*<sup>*x*</sup> (with *x* = *ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>)) gives:
+
+> ρ(ω₀) = *A*<sub>21</sub> / [ (*g*₁*B*<sub>12</sub> / *g*₂) *e*<sup>*x*</sup> − *B*<sub>21</sub> ] &nbsp;&nbsp; (SI)
+
+In the high-temperature limit (*x* → 0), Planck's blackbody law ρ(ω) = (*ħ*ω³/π²*c*³)/(*e*<sup>*x*</sup> − 1) diverges, forcing the denominator of this expression for ρ(ω₀) to vanish when *e*<sup>*x*</sup> → 1; matching the numerators at all temperatures then gives both relations:
+
+> *g*₁ *B*<sub>12</sub> = *g*₂ *B*<sub>21</sub>, &nbsp;&nbsp; *A*<sub>21</sub> / *B*<sub>21</sub> = *ħ*ω₀³ / (π²*c*³) &nbsp;&nbsp; (SI)
+
+Full algebra: [From detailed balance and Planck's law to Einstein's relations](tut:04#box-einstein-relations).
+
+<details>
+<summary>Level 3 · Full derivation: from detailed balance and Planck's law to Einstein's relations {#box-einstein-relations}</summary>
+
+**You need:** Boltzmann populations *N*₂/*N*₁ = (*g*₂/*g*₁)*e*<sup>−*ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>)</sup>, Planck's blackbody law (quoted in Step 4), and the small-*x* expansion *e*<sup>*x*</sup> ≈ 1 + *x* for \|*x*\| ≪ 1.
 
 **Step 1 · Balance the rates** (up = down):
 
-> *N*₁ *B*<sub>12</sub> ρ(ω₀) = *N*₂ [ *A*<sub>21</sub> + *B*<sub>21</sub> ρ(ω₀) ]
+> *N*₁ *B*<sub>12</sub> ρ(ω₀) = *N*₂ [ *A*<sub>21</sub> + *B*<sub>21</sub> ρ(ω₀) ] &nbsp;&nbsp; (SI)
 
 **Step 2 · Solve for ρ.** Move the stimulated term to the left: ρ (*N*₁*B*<sub>12</sub> − *N*₂*B*<sub>21</sub>) = *N*₂*A*<sub>21</sub>. Divide both sides by *N*₂ and by the bracket:
 
-> ρ(ω₀) = *A*<sub>21</sub> / [ (*N*₁/*N*₂) *B*<sub>12</sub> − *B*<sub>21</sub> ]
+> ρ(ω₀) = *A*<sub>21</sub> / [ (*N*₁/*N*₂) *B*<sub>12</sub> − *B*<sub>21</sub> ] &nbsp;&nbsp; (SI)
 
 **Step 3 · Insert Boltzmann statistics** (general chemistry): *N*₂/*N*₁ = (*g*₂/*g*₁) *e*<sup>−*ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>)</sup>, so *N*₁/*N*₂ = (*g*₁/*g*₂) *e*<sup>*x*</sup> with the shorthand *x* = *ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>):
 
-> ρ(ω₀) = *A*<sub>21</sub> / [ (*g*₁*B*<sub>12</sub> / *g*₂) *e*<sup>*x*</sup> − *B*<sub>21</sub> ]
+> ρ(ω₀) = *A*<sub>21</sub> / [ (*g*₁*B*<sub>12</sub> / *g*₂) *e*<sup>*x*</sup> − *B*<sub>21</sub> ] &nbsp;&nbsp; (SI)
 
 **Step 4 · Planck's law** (quoted result, not derived here; Planck found it in 1900 by assuming light energy comes in packets *ħ*ω):
 
-> ρ(ω) = (*ħ*ω³ / π²*c*³) / (*e*<sup>*x*</sup> − 1), &nbsp;&nbsp; *x* = *ħ*ω/(*k*<sub>B</sub>*T*<sub>th</sub>)
+> ρ(ω) = (*ħ*ω³ / π²*c*³) / (*e*<sup>*x*</sup> − 1), &nbsp;&nbsp; *x* = *ħ*ω/(*k*<sub>B</sub>*T*<sub>th</sub>) &nbsp;&nbsp; (SI)
 
-**Step 5 · Match at very high temperature (*T*<sub>th</sub> → ∞).** Then *x* → 0 and *e*<sup>*x*</sup> → 1. In Planck's law the denominator *e*<sup>*x*</sup> − 1 → 0, so ρ → ∞ (a very hot cavity is flooded with light). In step 3 the denominator tends to (*g*₁*B*<sub>12</sub>/*g*₂) − *B*<sub>21</sub>, a fixed number, because *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub> are properties of the atom and do not depend on temperature. The only way the step-3 expression can also blow up is if that fixed number is zero:
+**Step 5 · Match at very high temperature (*T*<sub>th</sub> → ∞).** Then *x* → 0 and *e*<sup>*x*</sup> → 1. In Planck's law the denominator *e*<sup>*x*</sup> − 1 ≈ *x* → 0, so ρ ≈ (*ħ*ω³/π²*c*³)(*k*<sub>B</sub>*T*<sub>th</sub>/*ħ*ω) = ω²*k*<sub>B</sub>*T*<sub>th</sub>/(π²*c*³), the classical **Rayleigh–Jeans law**, which grows without bound as *T*<sub>th</sub> grows (a very hot cavity is flooded with light). In step 3 the denominator tends to (*g*₁*B*<sub>12</sub>/*g*₂) − *B*<sub>21</sub>, a fixed number, because *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub> are properties of the atom and do not depend on temperature. The only way the step-3 expression can also blow up is if that fixed number is zero:
 
-> *g*₁*B*<sub>12</sub>/*g*₂ − *B*<sub>21</sub> = 0 &nbsp; ⇒ &nbsp; *g*₁ *B*<sub>12</sub> = *g*₂ *B*<sub>21</sub>
+> *g*₁*B*<sub>12</sub>/*g*₂ − *B*<sub>21</sub> = 0 &nbsp; ⇒ &nbsp; *g*₁ *B*<sub>12</sub> = *g*₂ *B*<sub>21</sub> &nbsp;&nbsp; (SI)
 
 Physically: at huge light intensity the stimulated terms dominate, and they must balance by themselves.
 
 **Step 6 · Put this back into step 3.** Replace *g*₁*B*<sub>12</sub>/*g*₂ by *B*<sub>21</sub> and factor it out:
 
-> ρ(ω₀) = *A*<sub>21</sub> / [ *B*<sub>21</sub> *e*<sup>*x*</sup> − *B*<sub>21</sub> ] = (*A*<sub>21</sub>/*B*<sub>21</sub>) / (*e*<sup>*x*</sup> − 1)
+> ρ(ω₀) = *A*<sub>21</sub> / [ *B*<sub>21</sub> *e*<sup>*x*</sup> − *B*<sub>21</sub> ] = (*A*<sub>21</sub>/*B*<sub>21</sub>) / (*e*<sup>*x*</sup> − 1) &nbsp;&nbsp; (SI)
 
 **Step 7 · Compare with Planck's law at any temperature.** Both have the same denominator *e*<sup>*x*</sup> − 1, so the numerators must be equal:
 
-> *A*<sub>21</sub> / *B*<sub>21</sub> = *ħ*ω₀³ / π²*c*³
+> *A*<sub>21</sub> / *B*<sub>21</sub> = *ħ*ω₀³ / (π²*c*³) &nbsp;&nbsp; (SI)
 
-<details>
-<summary>Level 3 · Toolkit: the high-temperature limit and the per-frequency version</summary>
+**Step 8 · The same law per ordinary frequency.** The energy in a small band is the same whichever variable you use, ρ<sub>ν</sub> *d*ν = ρ<sub>ω</sub> *d*ω. Since *d*ω = 2π *d*ν, ρ<sub>ν</sub> = 2πρ<sub>ω</sub>. The absorption rate must also be the same, *B*<sup>(ν)</sup>ρ<sub>ν</sub> = *B*ρ<sub>ω</sub>, so *B*<sup>(ν)</sup> = *B*/(2π) and
 
-- **Small-*x* limit:** for small *x*, *e*<sup>*x*</sup> ≈ 1 + *x*, so Planck's law becomes ρ ≈ (*ħ*ω³/π²*c*³)(*k*<sub>B</sub>*T*<sub>th</sub>/*ħ*ω) = ω²*k*<sub>B</sub>*T*<sub>th</sub>/(π²*c*³). This classical **Rayleigh–Jeans law** grows without bound as *T*<sub>th</sub> grows, which is what step 5 uses.
-- **Per ordinary frequency:** the energy in a small band is the same whichever variable you use, ρ<sub>ν</sub> *d*ν = ρ<sub>ω</sub> *d*ω. Since *d*ω = 2π *d*ν, ρ<sub>ν</sub> = 2πρ<sub>ω</sub>. The absorption rate must also be the same, *B*<sup>(ν)</sup>ρ<sub>ν</sub> = *B*ρ<sub>ω</sub>, so *B*<sup>(ν)</sup> = *B*/(2π). Then *A*<sub>21</sub>/*B*<sub>21</sub><sup>(ν)</sup> = 2π · *ħ*ω³/(π²*c*³) = 2π · (*h*/2π)(2πν)³/(π²*c*³) = **8π*h*ν³/*c*³**.
+> *A*<sub>21</sub>/*B*<sub>21</sub><sup>(ν)</sup> = 2π · *ħ*ω₀³/(π²*c*³) = 2π · (*h*/2π)(2πν)³/(π²*c*³) = 8π*h*ν³/*c*³ &nbsp;&nbsp; (SI)
+
+**Check:** 8π*h*ν³/*c*³ is the standard textbook form of Einstein's *A*/*B* ratio. ✓ And the Step 5 limit is sound numerically: at *x* = 0.01 Planck's factor 1/(*e*<sup>*x*</sup> − 1) = 99.50, within 0.5% of the Rayleigh–Jeans value 1/*x* = 100, and both grow without bound as *x* → 0. ✓
 
 </details>
 
@@ -189,7 +222,7 @@ Physically: at huge light intensity the stimulated terms dominate, and they must
 ### Exact Weisskopf–Wigner Spontaneous Decay Rate Γ = *A*<sub>21</sub>
 Quantum electrodynamics (**Weisskopf–Wigner theory**) evaluates *A*<sub>21</sub> directly from the atom's dipole coupling to vacuum electromagnetic modes. In `electron_orbitals.html`, the **Single photon** panel calculates and displays the upper level's exact spontaneous decay rate (summed over its channels, Γ<sub>tot</sub>), natural lifetime τ = 1/Γ<sub>tot</sub>, linewidth Δν = Γ<sub>tot</sub>/2π, natural optical cycles *N* = ω₀/(2πΓ<sub>tot</sub>), and the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel. Each channel's rate is (quoted result):
 
-> *A*<sub>21</sub> = Γ = ω₀³ \|*d*\|² / (3π ε₀ *ħ* *c*³) = (4/3) α³ ω₀³ [ max(*l*<sub>u</sub>, *l*<sub>l</sub>) / (2*l*<sub>u</sub> + 1) ] \|⟨*n*<sub>l</sub>*l*<sub>l</sub> \|*r*\| *n*<sub>u</sub>*l*<sub>u</sub>⟩\|² &nbsp;&nbsp; *(atomic units)*
+> *A*<sub>21</sub> = Γ = ω₀³ \|*d*\|² / (3π ε₀ *ħ* *c*³) = (4/3) α³ ω₀³ [ max(*l*<sub>u</sub>, *l*<sub>l</sub>) / (2*l*<sub>u</sub> + 1) ] \|⟨*n*<sub>l</sub>*l*<sub>l</sub> \|*r*\| *n*<sub>u</sub>*l*<sub>u</sub>⟩\|² &nbsp;&nbsp; (a.u.)
 
 Here \|*d*\|² is *e*²\|**d**<sub>21</sub>\|² summed over all final *m* sublevels (*e* = 1 in atomic units), the subscripts u and l mean upper and lower level, the last factor is the squared radial integral of §4.1, and α ≈ 1/137.036 is the fine-structure constant (1/*c* in atomic units, where also 4πε₀ = 1 and *ħ* = 1). The angular factor max(*l*<sub>u</sub>, *l*<sub>l</sub>)/(2*l*<sub>u</sub> + 1) is also a quoted result. **Intuition:** the total angular coupling between the two levels, summed over all their sublevels, is max(*l*<sub>u</sub>, *l*<sub>l</sub>) (in units of the squared radial integral), and it is shared equally among the 2*l*<sub>u</sub> + 1 upper sublevels. So it is the fraction of the upper level's angular structure that can couple down. For 2p → 1s the factor is 1/3: a 2p<sub>*z*</sub> electron, for example, can reach 1s only through the *z* component of **r**, one direction out of three. For 3d → 2p it is 2/5.
 
@@ -199,8 +232,8 @@ Plugging in **Lyman-α (2p → 1s)** (ω₀ = 3/8 Ha, factor 1/3, radial integra
 - Natural oscillations *N* ≈ 3.94 × 10⁶ cycles!
 
 > **Partial vs. Total Excited-State Lifetime:** For **2p**, **1s** is the *only* lower E1-allowed level, so the single channel rate *A*<sub>2p→1s</sub> equals the total decay rate and τ<sub>2p</sub> = 1.595 ns. Above *n* = 2, multiple downward channels compete (for example, **3p** decays mainly to **1s** in the UV at Ly-β, ≈ 102.6 nm, and more slowly to **2s** at Balmer H<sub>α</sub>, 656.3 nm in air); the total decay rate sums all lower channels, Γ<sub>tot</sub> = ∑<sub>*f*<*i*</sub> *A*<sub>*i*→*f*</sub>. **Single photon** mode reports Γ<sub>tot</sub> and τ = 1/Γ<sub>tot</sub>, because the ideal photon is the time-reversed emission of the whole upper level. It also reports the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> of the selected channel, which caps how often that photon can be absorbed. Even within the same Balmer H<sub>α</sub> energy (656.3 nm), the **3s → 2p** channel (*A* = 6.317 × 10⁶ s⁻¹, partial lifetime 1/*A* = 158.3 ns) is ~3.5× slower than the **3p → 2s** channel (*A* = 2.246 × 10⁷ s⁻¹, partial lifetime 44.5 ns). Be careful which number is the real lifetime:
-> - **3s** can only decay to 2p, so its partial lifetime *is* its true lifetime: **τ(3s) = 158 ns**.
-> - **3p** decays mostly to 1s (*A* = 1.67 × 10⁸ s⁻¹) and only sometimes to 2s, so Γ<sub>tot</sub> = 1.673 × 10⁸ + 0.225 × 10⁸ ≈ 1.90 × 10⁸ s⁻¹ and **τ(3p) ≈ 5.3 ns**—much shorter than the 44.5 ns partial value. About 12% of 3p atoms emit the red H<sub>α</sub> photon (the **branching ratio** 0.225/1.90 ≈ 0.12).
+> - **3s** can only decay to 2p, so its partial lifetime *is* its true lifetime: τ(3s) = **158 ns**.
+> - **3p** decays mostly to 1s (*A* = 1.67 × 10⁸ s⁻¹) and only sometimes to 2s, so Γ<sub>tot</sub> = 1.673 × 10⁸ + 0.225 × 10⁸ ≈ 1.90 × 10⁸ s⁻¹ and τ(3p) ≈ **5.3 ns**—much shorter than the 44.5 ns partial value. About 12% of 3p atoms emit the red H<sub>α</sub> photon (the **branching ratio** 0.225/1.90 ≈ 0.12).
 
 *(For Zeeman M1 transitions, the rate carries α⁵ instead of α³. That extra α² ≈ 5 × 10⁻⁵, together with differences in the matrix elements, makes spontaneous M1 decay typically 10⁴–10⁶ times slower than an E1 transition of the same energy.)*
 
@@ -228,27 +261,42 @@ Why are some transitions bright and others strictly forbidden? The angular integ
 **Meaning:** a photon carries one unit of angular momentum and is "odd" under turning space inside out, so it can only connect orbitals whose *l* differ by one and whose *m* differ by the photon's own *m*.
 
 ### 1. Parity (Laporte) Rule: Why Δ*l* = ±1
-Every hydrogen orbital is either **even** or **odd** when you turn space inside out (**r** → −**r**): ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). The position vector **r** itself is odd. An integrand that is odd overall integrates to zero over all space, so ψ₁ and ψ₂ must have **opposite parity** (*l*₁ + *l*₂ odd). Combined with the triangle rule (step 7 of the Level 2 box below), only **Δ*l* = ±1** is electric-dipole allowed (so **1s → 2s** and **1s → 3d** are E1-forbidden!).
+Every hydrogen orbital is either **even** or **odd** when you turn space inside out (**r** → −**r**): ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). The position vector **r** itself is odd. An integrand that is odd overall integrates to zero over all space, so ψ₁ and ψ₂ must have **opposite parity** (*l*₁ + *l*₂ odd). Combined with the triangle rule (see [Parity of the spherical harmonics and the **r** → −**r** relabelling](tut:04#box-parity-rule)), only Δ*l* = ±1 is electric-dipole allowed (so **1s → 2s** and **1s → 3d** are E1-forbidden!).
 
 <details>
 <summary>Level 1 · Picture: odd integrands cancel</summary>
 
-In one dimension, ∫<sub>−*a*</sub><sup>*a*</sup> *x* *dx* = 0: the negative area on the left exactly cancels the positive area on the right. The same happens in 3D. If the integrand at −**r** is always minus the integrand at **r**, every little bit of the integral has a partner on the opposite side of the nucleus that cancels it.
+In one dimension, the signed area under an odd curve over any symmetric interval around zero is always zero: the negative area on the left exactly cancels the positive area on the right. The same happens in 3D. If the integrand at −**r** is always minus its value at **r**, every little patch has a partner on the opposite side of the nucleus that cancels it completely.
 
-For 1s → 2s, both orbitals are even (spherical), but the extra factor **r** makes the product odd: the electron is pushed "up" on one side and "down" on the other by exactly the same amount, and nothing is left over. For 1s → 2p, the odd 2p orbital times the odd **r** gives an even product, which survives.
+For 1s → 2s, both orbitals are even (spherical), so the odd position vector **r** makes the whole product odd: the uniform field pushes the whole cloud the same way, but the energy it adds is raised on one side of the nucleus and lowered by the exact same amount on the other, so nothing is left over. For 1s → 2p, the odd 2p orbital times the odd **r** gives an even product, which survives.
 
 ```figure
 {"kind": "odd-even", "fn": "x3gauss", "caption": "For an odd function the shaded positive and negative areas are mirror images and the integral is exactly zero; switch to an even function and the areas add up instead."}
 ```
 
-More examples: [T6 · Radial integrals and odd/even symmetry](tut:08#T6).
+More examples: [T6 · Radial integrals & odd/even symmetry](tut:08#T6).
 
 <details>
-<summary>Level 2 · Full derivation: parity of the spherical harmonics and the **r** → −**r** relabelling</summary>
+<summary>Level 2 · Key idea: why same-parity orbitals have zero transition dipole</summary>
 
-**Step 1 · Inversion in spherical coordinates.** Sending **r** → −**r** keeps the distance *r* the same and points the opposite way: θ → π − θ and φ → φ + π.
+Under spatial inversion **r** → −**r** (every point sent through the nucleus to the opposite side), every orbital scales by its parity (−1)<sup>*l*</sup> while **r** flips sign, so the dipole integrand *f*(**r**) = ψ₂<sup>∗</sup>(**r**) **r** ψ₁(**r**) obeys:
 
-**Step 2 · Parity of the spherical harmonics** (quoted, but easy to check): *Y*<sub>*l*</sub><sup>*m*</sup>(−**r̂**) = (−1)<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>(**r̂**). Checks: *Y*<sub>0</sub><sup>0</sup> is a constant (even, *l* = 0). *Y*<sub>1</sub><sup>0</sup> ∝ cos θ and cos(π − θ) = −cos θ (odd, *l* = 1). *Y*<sub>1</sub><sup>±1</sup> ∝ sin θ *e*<sup>±*i*φ</sup>: sin(π − θ) = sin θ but *e*<sup>±*i*(φ+π)</sup> = −*e*<sup>±*i*φ</sup> (odd). *Y*<sub>2</sub><sup>0</sup> ∝ 3cos²θ − 1 (even, *l* = 2).
+> *f*(−**r**) = (−1)<sup>*l*₁ + *l*₂ + 1</sup> *f*(**r**)
+
+Call the transition dipole *I* = ∫ *f*(**r**) *d*³*r* (all space). Renaming the integration variable **r** = −**r**′ changes nothing (inversion keeps the volume element), so whenever *l*₁ and *l*₂ share the same parity, *f*(−**r**′) = −*f*(**r**′) and
+
+> *I* = ∫ *f*(−**r**′) *d*³*r*′ = −*I* &nbsp; ⇒ &nbsp; *I* = 0
+
+So a nonzero dipole needs *l*₁ + *l*₂ odd. The angular-momentum triangle rule (\|*l*₁ − 1\| ≤ *l*₂ ≤ *l*₁ + 1, because **r̂** carries *l* = 1) allows only Δ*l* = −1, 0, +1; parity removes Δ*l* = 0 and leaves only Δ*l* = ±1. Full algebra: [Parity of the spherical harmonics and the **r** → −**r** relabelling](tut:04#box-parity-rule).
+
+<details>
+<summary>Level 3 · Full derivation: parity of the spherical harmonics and the **r** → −**r** relabelling {#box-parity-rule}</summary>
+
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = *r* sin θ cos φ, *y* = *r* sin θ sin φ, *z* = *r* cos θ), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (odd and even functions; an odd function integrates to zero over a symmetric range), and [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*π</sup> = −1).
+
+**Step 1 · Inversion in spherical coordinates.** Sending **r** → −**r** keeps the distance *r* the same and points the opposite way: θ → π − θ and φ → φ + π. Check with the coordinate formulas: sin(π − θ) = sin θ, cos(π − θ) = −cos θ, cos(φ + π) = −cos φ and sin(φ + π) = −sin φ, so *x* → −*x*, *y* → −*y*, *z* → −*z*.
+
+**Step 2 · Parity of the spherical harmonics** (quoted, but easy to check): *Y*<sub>*l*</sub><sup>*m*</sup>(−**r̂**) = (−1)<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>(**r̂**). Checks: *Y*<sub>0</sub><sup>0</sup> is a constant (even, *l* = 0). *Y*<sub>1</sub><sup>0</sup> ∝ cos θ and cos(π − θ) = −cos θ (odd, *l* = 1). *Y*<sub>1</sub><sup>±1</sup> ∝ sin θ *e*<sup>±*i*φ</sup>: sin(π − θ) = sin θ but *e*<sup>±*i*(φ+π)</sup> = *e*<sup>±*i*π</sup>*e*<sup>±*i*φ</sup> = −*e*<sup>±*i*φ</sup> (odd). *Y*<sub>2</sub><sup>0</sup> ∝ 3cos²θ − 1 (even, *l* = 2).
 
 **Step 3 · Parity of the whole orbital.** *R*<sub>*nl*</sub>(*r*) depends only on the distance, which does not change, so ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). Complex conjugation does not change this, because (−1)<sup>*l*</sup> is real.
 
@@ -256,21 +304,23 @@ More examples: [T6 · Radial integrals and odd/even symmetry](tut:08#T6).
 
 > *f*(−**r**) = (−1)<sup>*l*₂</sup> · (−1) · (−1)<sup>*l*₁</sup> *f*(**r**) = (−1)<sup>*l*₁ + *l*₂ + 1</sup> *f*(**r**)
 
-**Step 5 · The relabelling trick.** Let *I* = ∫ *f*(**r**) *d*³*r* over all space. Rename the integration variable: **r** = −**r**′. As **r** runs over all of space, so does **r**′, and a tiny box flipped through the origin has the same volume, so *d*³*r* = *d*³*r*′. Therefore *I* = ∫ *f*(−**r**′) *d*³*r*′. If *l*₁ and *l*₂ have the **same** parity, *l*₁ + *l*₂ + 1 is odd and *f*(−**r**′) = −*f*(**r**′), so
+**Step 5 · Warm-up in one dimension.** If *g*(−*x*) = −*g*(*x*), substitute *x* = −*u* (so *dx* = −*du*, and the limits −*a*, *a* become *a*, −*a*):
+
+> ∫<sub>−*a*</sub><sup>*a*</sup> *g*(*x*) *dx* = ∫<sub>*a*</sub><sup>−*a*</sup> *g*(−*u*)(−*du*) = ∫<sub>−*a*</sub><sup>*a*</sup> *g*(−*u*) *du* = −∫<sub>−*a*</sub><sup>*a*</sup> *g*(*u*) *du*
+
+so the integral equals minus itself and is zero.
+
+**Step 6 · The same relabelling trick in 3D.** Let *I* = ∫ *f*(**r**) *d*³*r* over all space. Rename the integration variable: **r** = −**r**′. As **r** runs over all of space, so does **r**′, and a tiny box flipped through the origin has the same volume, so *d*³*r* = *d*³*r*′ (in 3D the volume element never changes sign, so this is even simpler than Step 5). Therefore *I* = ∫ *f*(−**r**′) *d*³*r*′. If *l*₁ and *l*₂ have the **same** parity, *l*₁ + *l*₂ + 1 is odd and *f*(−**r**′) = −*f*(**r**′), so
 
 > *I* = −∫ *f*(**r**′) *d*³*r*′ = −*I* &nbsp; ⇒ &nbsp; 2*I* = 0 &nbsp; ⇒ &nbsp; *I* = 0
 
 (The name of the integration variable does not matter, so ∫ *f*(**r**′) *d*³*r*′ is the same number *I*.)
 
-**Step 6 · So a nonzero dipole needs *l*₁ + *l*₂ odd:** Δ*l* = ±1, ±3, ….
+**Step 7 · So a nonzero dipole needs *l*₁ + *l*₂ odd:** Δ*l* = ±1, ±3, ….
 
-**Step 7 · Triangle rule** (quoted result): the angular integral ∫ [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ vanishes unless *l*₂ lies between \|*l*₁ − 1\| and *l*₁ + 1. **Intuition:** the components of **r̂** (*x*/*r*, *y*/*r*, *z*/*r*) are themselves *l* = 1 functions, and multiplying an *l*₁ shape by an *l* = 1 shape can only produce shapes with *l* from \|*l*₁ − 1\| to *l*₁ + 1, just as adding a vector of length 1 to a vector of length *l*₁ gives a length between \|*l*₁ − 1\| and *l*₁ + 1. This allows Δ*l* = −1, 0, +1; parity removes 0, leaving **Δ*l* = ±1**.
+**Step 8 · Triangle rule** (quoted result): the angular integral ∫ [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ vanishes unless *l*₂ lies between \|*l*₁ − 1\| and *l*₁ + 1. **Intuition:** the components of **r̂** (*x*/*r*, *y*/*r*, *z*/*r*) are themselves *l* = 1 functions, and multiplying an *l*₁ shape by an *l* = 1 shape can only produce shapes with *l* from \|*l*₁ − 1\| to *l*₁ + 1, just as adding a vector of length 1 to a vector of length *l*₁ gives a length between \|*l*₁ − 1\| and *l*₁ + 1. This allows Δ*l* = −1, 0, +1; parity removes 0, leaving Δ*l* = ±1.
 
-<details>
-<summary>Level 3 · Toolkit: odd and even integrals in one and three dimensions</summary>
-
-One-dimensional version of step 5: if *g*(−*x*) = −*g*(*x*), substitute *x* = −*u* (so *dx* = −*du*, and the limits −*a*, *a* become *a*, −*a*):
-∫<sub>−*a*</sub><sup>*a*</sup> *g*(*x*) *dx* = ∫<sub>*a*</sub><sup>−*a*</sup> *g*(−*u*)(−*du*) = ∫<sub>−*a*</sub><sup>*a*</sup> *g*(−*u*) *du* = −∫<sub>−*a*</sub><sup>*a*</sup> *g*(*u*) *du*, so the integral equals minus itself and is zero. In 3D the volume element *d*³*r* never changes sign, so the step is even simpler. See [T6 · Radial integrals and odd/even symmetry](tut:08#T6) and, for θ → π − θ and φ → φ + π, [T5 · Spherical coordinates](tut:08#T5).
+**Check:** with *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>1</sub><sup>0</sup> = √(3/(4π)) cos θ, the *z*-component of the 1s → 2p angular integral is (√3/(4π)) ∫₀<sup>π</sup> cos²θ sin θ *d*θ ∫₀<sup>2π</sup> *d*φ = (√3/(4π)) · (2/3) · 2π = 1/√3 ≈ 0.577, nonzero (*l*: 0 → 1, odd sum). For 1s → 2s it is (1/(4π)) ∫₀<sup>π</sup> cos θ sin θ *d*θ · 2π = 0, and for 1s → 3d (0 → 2) the integrand cos θ (3cos²θ − 1) is odd under θ → π − θ, so it vanishes too. ✓
 
 </details>
 
@@ -290,29 +340,67 @@ Look at the φ-dependence of the Cartesian components of **r** = (*x*, *y*, *z*)
 - *x* + *iy* = *r* sin θ (cos φ + *i* sin φ) = *r* sin θ *e*<sup>+*i*φ</sup>
 - *x* − *iy* = *r* sin θ (cos φ − *i* sin φ) = *r* sin θ *e*<sup>−*i*φ</sup>
 
-Each orbital carries a factor *e*<sup>*im*φ</sup>, and the φ-integral is zero unless all the *e*<sup>*i*(…)φ</sup> factors cancel. **Result:** *z* (π) light gives **Δ*m* = 0**, σ⁺ absorption (**r** · **ε**<sub>+</sub> ∝ *x* + *iy*) gives **Δ*m* = +1**, and σ⁻ absorption (**r** · **ε**<sub>−</sub> ∝ *x* − *iy*) gives **Δ*m* = −1**.
+Each orbital carries a factor *e*<sup>*im*φ</sup>, and the φ-integral is zero unless all the *e*<sup>*i*(…)φ</sup> factors cancel. **Result:** *z* (π) light gives Δ*m* = 0, σ⁺ absorption (**r** · **ε**<sub>+</sub> ∝ *x* + *iy*) gives Δ*m* = +1, and σ⁻ absorption (**r** · **ε**<sub>−</sub> ∝ *x* − *iy*) gives Δ*m* = −1.
 
 <details>
 <summary>Level 1 · Picture: the φ-integral as a spinning clock hand</summary>
 
-As φ runs from 0 to 2π, *e*<sup>*ik*φ</sup> is a clock hand that goes around the unit circle *k* times. Added up all the way around, the hand points in every direction equally often, so the sum is zero. Only when *k* = 0 does the hand stand still and the integral survive (it then equals 2π).
+- Each orbital's φ-factor is a phase arrow that turns *m* times as you walk once around the *z*-axis. The final orbital enters the integral mirrored (complex-conjugated), so its arrow turns backwards. The light adds an arrow of its own: it turns once one way for σ⁺, once the other way for σ⁻, and not at all for *z*-polarized π light.
+- Multiplying the three arrows simply adds up their turns.
+- As φ runs once around the circle, an arrow that makes one or more full turns points in every direction equally often, so all its arrows add up to zero. Only when the turns cancel exactly and the combined arrow stands completely still does the sum survive.
+- So the light must change *m* by exactly its own number of turns: none for π, one up for σ⁺, one down for σ⁻.
 
 ```figure
 {"kind": "euler-phasor", "caption": "As the angle runs once around the circle, the cosine and sine shadows spend equal time positive and negative, so each averages to zero.", "omega": 1}
 ```
 
 <details>
-<summary>Level 2 · Full derivation: the φ-integral forces Δm = 0, ±1</summary>
+<summary>Level 2 · Key idea: the φ-integral forces Δm = 0, ±1</summary>
 
-The φ-part of the integrand is ψ₂<sup>∗</sup> ∝ *e*<sup>−*im*₂φ</sup> times the light's factor times ψ₁ ∝ *e*<sup>*im*₁φ</sup>. Use the antiderivative ∫₀<sup>2π</sup> *e*<sup>*ik*φ</sup> *d*φ = [*e*<sup>*ik*φ</sup> / (*ik*)]₀<sup>2π</sup> = 0 for any nonzero integer *k*, and 2π if *k* = 0:
-- For **z (π polarization):** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁</sub> ⇒ **Δ*m* = 0**!
-- For **σ⁺ circular**, **ε**<sub>+</sub> = (x̂ + *i*ŷ)/√2: in absorption **r** · **ε**<sub>+</sub> = (*x* + *iy*)/√2 ∝ *e*<sup>+*i*φ</sup>, and the integral is ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂ + 1)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁ + 1</sub> ⇒ **Δ*m* = +1**!
-- For **σ⁻ circular**, **ε**<sub>−</sub> = (x̂ − *i*ŷ)/√2: in absorption **r** · **ε**<sub>−</sub> = (*x* − *iy*)/√2 ∝ *e*<sup>−*i*φ</sup>, and the integral forces *m*₁ − *m*₂ − 1 = 0 ⇒ **Δ*m* = −1**!
+In absorption the light enters the dipole integral through **r** · **ε**, where **ε** is the polarization vector: **ẑ** for π light and **ε**<sub>±</sub> = (x̂ ± *i*ŷ)/√2 for σ<sup>±</sup> light. In spherical coordinates each choice is a single phase factor *e*<sup>*im*<sub>γ</sub>φ</sup>, where *m*<sub>γ</sub> is the light's own turn number:
+
+> **r** · **ẑ** = *r* cos θ &nbsp;(*m*<sub>γ</sub> = 0), &nbsp;&nbsp; **r** · **ε**<sub>±</sub> = (*x* ± *iy*)/√2 = *r* sin θ *e*<sup>±*i*φ</sup>/√2 &nbsp;(*m*<sub>γ</sub> = ±1)
+
+The orbitals contribute *e*<sup>*im*₁φ</sup> (initial, ψ₁) and *e*<sup>−*im*₂φ</sup> (final, conjugated ψ₂<sup>∗</sup>), so the whole φ-dependence of the integrand is one phase factor with integer *k* = *m*₁ + *m*<sub>γ</sub> − *m*₂:
+
+> ψ₂<sup>∗</sup> (**r** · **ε**) ψ₁ ∝ *e*<sup>−*im*₂φ</sup> *e*<sup>*im*<sub>γ</sub>φ</sup> *e*<sup>*im*₁φ</sup> = *e*<sup>*ik*φ</sup>
+
+A whole number of full turns integrates to zero, so only *k* = 0 survives:
+
+> ∫₀<sup>2π</sup> *e*<sup>*ik*φ</sup> *d*φ = 2π δ<sub>*k*,0</sub> &nbsp; ⇒ &nbsp; Δ*m* = *m*₂ − *m*₁ = *m*<sub>γ</sub>
+
+That is Δ*m* = 0 for π, +1 for σ⁺ and −1 for σ⁻ absorption. Full algebra: [The φ-integral for π, σ⁺ and σ⁻ light](tut:04#box-phi-integral).
 
 <details>
-<summary>Level 3 · Toolkit: why the full-turn integral vanishes</summary>
+<summary>Level 3 · Full derivation: the φ-integral for π, σ⁺ and σ⁻ light {#box-phi-integral}</summary>
 
-By Euler's formula, *e*<sup>*i*2π*k*</sup> = cos 2π*k* + *i* sin 2π*k* = 1 for every integer *k*. So [*e*<sup>*ik*φ</sup>/(*ik*)]₀<sup>2π</sup> = (1 − 1)/(*ik*) = 0 whenever *k* ≠ 0. See [T1 · Complex numbers & Euler's formula](tut:08#T1).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*α</sup> = cos α + *i* sin α, *e*<sup>*i*α</sup>*e*<sup>*i*β</sup> = *e*<sup>*i*(α+β)</sup>, and the conjugate (*e*<sup>*i*α</sup>)<sup>∗</sup> = *e*<sup>−*i*α</sup>) and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = *r* sin θ cos φ, *y* = *r* sin θ sin φ, *z* = *r* cos θ).
+
+**Step 1 · φ-dependence of the orbitals.** Every spherical harmonic is (a function of θ) × *e*<sup>*im*φ</sup>, so ψ₁ ∝ *e*<sup>*im*₁φ</sup>. Conjugating flips the sign of every *i*, so ψ₂<sup>∗</sup> ∝ *e*<sup>−*im*₂φ</sup>.
+
+**Step 2 · φ-dependence of the light's factor.** For absorption the coupling is **r** · **ε**:
+- π light, **ε** = **ẑ**: **r** · **ẑ** = *z* = *r* cos θ, with no φ at all (*e*<sup>*i*·0·φ</sup>, so *m*<sub>γ</sub> = 0).
+- σ⁺ light, **ε**<sub>+</sub> = (x̂ + *i*ŷ)/√2: **r** · **ε**<sub>+</sub> = (*x* + *iy*)/√2 = *r* sin θ (cos φ + *i* sin φ)/√2 = *r* sin θ *e*<sup>+*i*φ</sup>/√2 (*m*<sub>γ</sub> = +1).
+- σ⁻ light, **ε**<sub>−</sub> = (x̂ − *i*ŷ)/√2: **r** · **ε**<sub>−</sub> = (*x* − *iy*)/√2 = *r* sin θ (cos φ − *i* sin φ)/√2 = *r* sin θ *e*<sup>−*i*φ</sup>/√2 (*m*<sub>γ</sub> = −1).
+
+**Step 3 · Collect the φ-factors.** The *r*- and θ-parts form separate integrals (as in the radial–angular split of §4.1), and the three φ-factors multiply by adding exponents:
+
+> *e*<sup>−*im*₂φ</sup> · *e*<sup>*im*<sub>γ</sub>φ</sup> · *e*<sup>*im*₁φ</sup> = *e*<sup>*i*(*m*₁ + *m*<sub>γ</sub> − *m*₂)φ</sup> = *e*<sup>*ik*φ</sup>, &nbsp;&nbsp; *k* = *m*₁ + *m*<sub>γ</sub> − *m*₂ (an integer)
+
+**Step 4 · The full-turn integral.** If *k* = 0 the integrand is 1 and ∫₀<sup>2π</sup> 1 *d*φ = 2π. If *k* ≠ 0, use the antiderivative *e*<sup>*ik*φ</sup>/(*ik*):
+
+> ∫₀<sup>2π</sup> *e*<sup>*ik*φ</sup> *d*φ = [*e*<sup>*ik*φ</sup>/(*ik*)]₀<sup>2π</sup> = (*e*<sup>*i*2π*k*</sup> − 1)/(*ik*) = (1 − 1)/(*ik*) = 0
+
+because Euler's formula gives *e*<sup>*i*2π*k*</sup> = cos 2π*k* + *i* sin 2π*k* = 1 for every integer *k*. Together: ∫₀<sup>2π</sup> *e*<sup>*ik*φ</sup> *d*φ = 2π δ<sub>*k*,0</sub>.
+
+**Step 5 · Read off the rule for each polarization.** The integral survives only if *k* = 0, i.e. *m*₂ = *m*₁ + *m*<sub>γ</sub>:
+- **π (*z*) polarization:** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁</sub> ⇒ Δ*m* = 0.
+- **σ⁺ circular:** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂ + 1)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁ + 1</sub> ⇒ Δ*m* = +1.
+- **σ⁻ circular:** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂ − 1)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁ − 1</sub> ⇒ Δ*m* = −1.
+
+**Step 6 · Linear *x* light.** Using cos φ = (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>)/2, *x* = *r* sin θ cos φ = *r* sin θ (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>)/2 contains both *m*<sub>γ</sub> = +1 and *m*<sub>γ</sub> = −1 with equal weight, so *x*-polarized light drives Δ*m* = +1 and Δ*m* = −1 equally (and likewise for *y*).
+
+**Check:** from 1s (*m*₁ = 0) to \|2p, +1⟩ (*m*₂ = +1): σ⁺ gives *k* = 0 + 1 − 1 = 0, so the integral is 2π ≈ 6.283 and the transition is allowed; σ⁻ gives *k* = 0 − 1 − 1 = −2, and ∫₀<sup>2π</sup> *e*<sup>−2*i*φ</sup> *d*φ = ∫₀<sup>2π</sup> cos 2φ *d*φ − *i* ∫₀<sup>2π</sup> sin 2φ *d*φ = [sin 2φ/2]₀<sup>2π</sup> + *i* [cos 2φ/2]₀<sup>2π</sup> = 0 + 0 = 0, so it is forbidden. ✓
 
 </details>
 
@@ -327,10 +415,10 @@ By Euler's formula, *e*<sup>*i*2π*k*</sup> = cos 2π*k* + *i* sin 2π*k* = 1 fo
 Those azimuthal integrals express a deep physical conservation law: **every photon carries intrinsic spin angular momentum of magnitude 1*ħ***!
 
 - **σ⁺ light** carries **+*ħ*** along the +*z*-axis:
-  - **Absorption (1s → 2p):** The atom absorbs the +*ħ* photon, so *L*<sub>*z*</sub> rises by +1*ħ* (**Δ*m* = +1**).
-  - **Stimulated emission (2p → 1s):** Remember what stimulated emission means! An incoming σ⁺ photon (+*ħ*) stimulates the atom to emit a **second identical σ⁺ photon** carrying +*ħ* away. By conservation of angular momentum (*L*<sub>*z*,before</sub> = *L*<sub>*z*,after</sub> + *ħ*), the atom's *L*<sub>*z*</sub> must **drop by 1*ħ*** (**Δ*m* = −1**)! That is why σ⁺ stimulates emission from **\|2p, +1⟩ → \|1s, 0⟩**, whereas **σ⁻ cannot stimulate emission from \|2p, +1⟩ → \|1s, 0⟩** (it would require *m*<sub>f</sub> = +2, which does not exist in *s* orbitals!).
-- **σ⁻ light** carries **−*ħ*** along +*z*: **Δ*m* = −1** in absorption and **Δ*m* = +1** in stimulated emission.
-- **z (π) light** carries **0** angular momentum along *z*. It travels along some direction **k** in the *xy*-plane, and its spin along **k** is an equal 50/50 superposition of +*ħ* and −*ħ* (equivalently, it is a *j* = 1, *m* = 0 dipole photon). So **Δ*m* = 0**: the photon still brings one unit of angular momentum (it raises *l* from 0 to 1), but its *z*-component is zero, so ⟨*L*<sub>*z*</sub>⟩ stays 0.
+  - **Absorption (1s → 2p):** The atom absorbs the +*ħ* photon, so *L*<sub>*z*</sub> rises by +1*ħ* (Δ*m* = +1).
+  - **Stimulated emission (2p → 1s):** Remember what stimulated emission means! An incoming σ⁺ photon (+*ħ*) stimulates the atom to emit a **second identical σ⁺ photon** carrying +*ħ* away. By conservation of angular momentum (*L*<sub>*z*,before</sub> = *L*<sub>*z*,after</sub> + *ħ*), the atom's *L*<sub>*z*</sub> must **drop by 1*ħ*** (Δ*m* = −1)! That is why σ⁺ stimulates emission from **\|2p, +1⟩ → \|1s, 0⟩**, whereas **σ⁻ cannot stimulate emission from \|2p, +1⟩ → \|1s, 0⟩** (it would require *m*<sub>f</sub> = +2, which does not exist in *s* orbitals!).
+- **σ⁻ light** carries **−*ħ*** along +*z*: Δ*m* = −1 in absorption and Δ*m* = +1 in stimulated emission.
+- **z (π) light** carries **0** angular momentum along *z*. It travels along some direction **k** in the *xy*-plane, and its spin along **k** is an equal 50/50 superposition of +*ħ* and −*ħ* (equivalently, it is a *j* = 1, *m* = 0 dipole photon). So Δ*m* = 0: the photon still brings one unit of angular momentum (it raises *l* from 0 to 1), but its *z*-component is zero, so ⟨*L*<sub>*z*</sub>⟩ stays 0.
 - **x or y linear light** is a 50/50 superposition of σ⁺ and σ⁻: x̂ = (**ε**<sub>+</sub> + **ε**<sub>−</sub>)/√2 and ŷ = (**ε**<sub>+</sub> − **ε**<sub>−</sub>)/(*i*√2), exciting both *m* = +1 and *m* = −1 equally into a standing orbital with ⟨*L*<sub>*z*</sub>⟩ = 0!
 
 Watch conservation of angular momentum literally spin up—and spin down—the Bohmian electrons in real time:
