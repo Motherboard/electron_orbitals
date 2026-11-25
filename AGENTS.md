@@ -158,7 +158,7 @@ State these wherever they matter, and keep them consistent across chapters:
 
 - The renderer strips `<!-- … -->` comments.
 - `<!-- lint-ignore: level-ref -->` is acceptable only on prose that explains the level labels themselves (the "First read" and "How to read the boxes" notes, the Chapter 7 roadmap, glossary rows that say "level 1/2").
-- Any other suppression needs a written reason next to it. `nest-parent` must never be suppressed.
+- Any other suppression needs a written reason next to it. `nest-parent` should never be suppressed. The linter ignores a bare `<!-- lint-ignore: nest-parent -->` and reports it; it only honours `<!-- lint-ignore: nest-parent — reason -->`.
 
 ### Demos and figures
 
@@ -175,7 +175,9 @@ State these wherever they matter, and keep them consistent across chapters:
    ```bash
    python3 scripts/lint_levels.py tutorial/*.md --strict
    ```
-   It must report `0 error(s), 0 warning(s)`. `--outline` prints the box tree, which is handy for checking nesting.
+   It must report `0 error(s), 0 warning(s)`. `--outline` prints the box tree, which is handy for checking nesting. Two stricter checks are opt-in because they are not yet clean across the chapters:
+   - `--require-units` flags every display equation without `(SI)`/`(a.u.)`, including pure math identities.
+   - `--min-l2-eq 3` flags Key ideas with fewer than 3 displayed equations.
 5. **Rebuild the embedded bundle** so `electron_orbitals.html` matches the Markdown:
    ```bash
    node -e "const fs=require('fs');const p='electron_orbitals.html';const h=fs.readFileSync(p,'utf8');const re=/(<script type=\"application\/json\" id=\"tut-bundle\">)([\s\S]*?)(<\/script>)/;const b=JSON.parse(h.match(re)[2]);for(const c of b)c.md=fs.readFileSync('tutorial/'+c.file,'utf8');fs.writeFileSync(p,h.replace(re,(_,a,_m,z)=>a+JSON.stringify(b).replace(/<\//g,'<\\\\/')+z));"

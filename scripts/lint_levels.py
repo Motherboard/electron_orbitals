@@ -35,7 +35,12 @@ DEFAULT_VECTORS = "r,p,J,X,v,L,A,B,E,F,k,φ,μ,Ω,ε,d,a,b,τ,s,ℰ"
 
 # Regex patterns
 FENCE_RE = re.compile(r"^\s*```")
-IGNORE_RE = re.compile(r"<!--\s*lint-ignore:\s*([\w\-, ]+?)\s*-->")
+IGNORE_RE = re.compile(
+    r"<!--\s*lint-ignore:\s*([\w\-, ]+?)\s*(?:(?:—|\breason:)\s*(.*?))?\s*-->"
+)
+# Rules that may only be suppressed inline together with a written reason:
+#   <!-- lint-ignore: nest-parent — why this box has no parent -->
+NEEDS_REASON_RULES = {"nest-parent"}
 DETAILS_OPEN_RE = re.compile(r"^<details(?:\s+([^>]*))?>$", re.IGNORECASE)
 DETAILS_CLOSE_RE = re.compile(r"^</details>$", re.IGNORECASE)
 SUMMARY_LINE_RE = re.compile(r"^<summary>(.*)</summary>$", re.IGNORECASE)
@@ -59,7 +64,7 @@ IMAG_I_RE = re.compile(
     r"(?:^|[±−+\-\s(/*×·0-9])i(?=$|[\s()/*×·±−+\-0-9A-Zα-ωΑ-Ω]|[txkpmrφθωπδΔ])"
 )
 L1_FORBIDDEN_RE = re.compile(
-    r"[∇∂∫∑Ĥ]|[LpOρH]\u0302"
+    r"[∇∂∫∑ΣĤ]|[LpOρH]\u0302"
     r"|\bd²?(?:[A-Za-zψΨΦRPu]{1,3}|\([^)]+\))?/d[trxyzφθωΘτλρξ]²?(?![A-Za-z])"
 )
 L1_LABEL_EQ_RE = re.compile(
@@ -68,7 +73,8 @@ L1_LABEL_EQ_RE = re.compile(
 STEP_RE = re.compile(r"\bStep\s+\d+\b", re.IGNORECASE)
 LEVEL_REF_RE = re.compile(r"\bLevel\s*[123]\b", re.IGNORECASE)
 REL_BOX_REF_RE = re.compile(
-    r"\b(?:derived below|in the box below|computed in the box|proofs?\s+in\s+the\s+[^.\n]{0,30}box)\b",
+    r"\b(?:derived below|in the box below|computed in the box|proofs?\s+in\s+the\s+[^.\n]{0,30}box"
+    r"|box(?:es)?\s+(?:below|above))\b",
     re.IGNORECASE,
 )
 L2_POINTER_PHRASE_RE = re.compile(
@@ -79,7 +85,14 @@ YOUNEED_RE = re.compile(
     r"^\s*(?:[-*]\s+)?(?:\*\*You need:?\*\*:?|You need:)",
     re.IGNORECASE,
 )
-CHECK_RE = re.compile(r"✓|\b(?:check|verify|limiting case|sanity)\b", re.IGNORECASE)
+CHECK_RE = re.compile(r"✓|\*\*Check\b[^*\n]*\*\*|^\s*Check:", re.MULTILINE)
+FULL_ALGEBRA_LINK_RE = re.compile(
+    r"Full algebra:\s*\[[^\]\n]+\]\(tut:(\d{2})#([A-Za-z0-9_-]+)\)"
+)
+FWD_BELOW_RE = re.compile(r"\b(?:demo|figure|example|section|table)s?\s+below\b", re.IGNORECASE)
+BOLD_ITALIC_RE = re.compile(r"(?<!\*)\*\*\*([^*\s][^*]{0,15}?)\*\*\*(?!\*)")
+WIKI_LINK_RE = re.compile(r"(?<!\[)\[\[([^\[\]\n]+)\]\](?!\()")
+LIST_ITEM_RE = re.compile(r"^(?:[-*+]|\d+\.)\s")
 FORWARD_DEFER_RE = re.compile(
     r"\b(?:proved|derived|shown)\s+later\b"
     r"|\bwe\s+(?:will|'ll)\s+(?:prove|derive|show)\b"
@@ -129,7 +142,9 @@ class Config:
     outline: bool = False
     ignore: Set[str] = field(default_factory=set)
     max_l2_eq: int = 5
+    min_l2_eq: int = 0
     max_l1_equals: int = 2
+    require_units: bool = False
     vectors: Set[str] = field(
         default_factory=lambda: set(DEFAULT_VECTORS.split(","))
     )
@@ -151,6 +166,7 @@ class LinkRef:
     target_ch: str
     anchor: str
     ignored: Set[str]
+    label: str = ""
 
 
 @dataclass
@@ -199,6 +215,20 @@ def chapter_num_for(path: str) -> Optional[int]:
     if len(name) >= 2 and name[:2].isdigit():
         return int(name[:2])
     return None
+
+
+def block_kind(trim: str) -> str:
+    """Classify a stripped line by the Markdown block the renderer puts it in."""
+    if trim.startswith(">"):
+        body = trim[1:].strip()
+        if not body:
+            return "quote-blank"
+        return "quote-item" if LIST_ITEM_RE.match(body) else "quote"
+    if LIST_ITEM_RE.match(trim):
+        return "item"
+    if trim.startswith(("#", "|", "<", "```")):
+        return "other"
+    return "para"
 
 
 def strip_code_placeholder(s: str) -> str:
@@ -284,7 +314,7 @@ def is_prose_or_label_bold(inner: str) -> bool:
 
 
 def strip_line_comments_and_ignores(
-    raw: str, in_comment: bool
+    raw: str, in_comment: bool, unreasoned: Optional[Set[str]] = None
 ) -> Tuple[str, Set[str], bool, bool]:
     """Single-pass per-line HTML comment & lint-ignore scanner matching the viewer.
 
@@ -292,6 +322,9 @@ def strip_line_comments_and_ignores(
     - Outside comment mode: single- and multi-backtick code spans protect `<!--`
       from starting a comment or triggering `lint-ignore`.
     Returns (clean_line, extracted_ignores, next_in_comment, had_comment).
+    Rules in NEEDS_REASON_RULES are only honoured when the comment carries a
+    reason ("— reason" or "reason: ..."); otherwise they are added to the
+    optional `unreasoned` set instead of the returned ignores.
     """
     ignores: Set[str] = set()
     had_comment = False
@@ -341,9 +374,16 @@ def strip_line_comments_and_ignores(
             if end >= 0:
                 seg = raw[i : end + 3]
                 for im in IGNORE_RE.finditer(seg):
+                    has_reason = bool((im.group(2) or "").strip())
                     for tok in re.split(r"[,\s]+", im.group(1).strip()):
-                        if tok:
-                            ignores.add(tok.lower())
+                        if not tok:
+                            continue
+                        tok = tok.lower()
+                        if tok in NEEDS_REASON_RULES and not has_reason:
+                            if unreasoned is not None:
+                                unreasoned.add(tok)
+                            continue
+                        ignores.add(tok)
                 i = end + 3
                 continue
             in_comment = True
@@ -364,6 +404,7 @@ class Linter:
         self.anchors_by_ch: Dict[str, Dict[str, Tuple[str, int]]] = {}
         self.links: List[LinkRef] = []
         self.passed_chapters: Set[str] = set()
+        self.box_titles: Dict[Tuple[str, str], str] = {}
 
     def emit(
         self,
@@ -414,7 +455,18 @@ class Linter:
         is_summary: bool = False,
         in_l2: bool = False,
         in_callout: bool = False,
-    ) -> None:
+        defer_bold: bool = False,
+        eq_context: str = "",
+    ) -> bool:
+        """Run per-line inline checks.
+
+        Returns True when the line has an odd number of ``**`` markers. With
+        ``defer_bold`` the caller decides whether that bold continues onto the
+        next line of the same paragraph/blockquote (the renderer joins those
+        lines); otherwise an odd count is reported immediately.
+        `eq_context` holds the following lines of the same blockquote, so a units
+        tag on a later line of a multi-line display equation is recognised.
+        """
         # Strip inline code spans using non-empty placeholder so **`code`** stays **CODE**
         nocode = strip_code_placeholder(clean_line)
 
@@ -479,12 +531,13 @@ class Linter:
                     ignored,
                 )
 
-        # 5. Units tag on SI display equations (skip prose callouts)
+        # 5. Units tag on display equations (skip prose callouts). The tag may sit
+        #    on a later line of the same multi-line blockquote equation.
         if not is_summary and not in_callout and EQ_LINE_RE.match(re.sub(r"<[^>]+>", "", nocode)):
             si_check_text = nocode.replace("*", "")
-            if SI_SYM_RE.search(si_check_text) and not UNITS_TAG_EXEMPT_RE.search(
-                si_check_text
-            ):
+            tag_text = si_check_text + "\n" + eq_context.replace("*", "")
+            has_tag = bool(UNITS_TAG_EXEMPT_RE.search(tag_text))
+            if SI_SYM_RE.search(si_check_text) and not has_tag:
                 self.emit(
                     "WARN",
                     "units-tag",
@@ -493,20 +546,55 @@ class Linter:
                     "Display equation uses SI constants (ħ, m_e, ε₀) without an explicit (SI) tag",
                     ignored,
                 )
+            elif self.cfg.require_units and not has_tag:
+                self.emit(
+                    "WARN",
+                    "units-tag",
+                    path,
+                    line_no,
+                    "Display equation has no (SI) or (a.u.) tag (pure math identities may be exempted with lint-ignore)",
+                    ignored,
+                )
+
+        # 5b. [[Title]] wiki-style links are not supported by the renderer
+        if not is_summary:
+            for wm in WIKI_LINK_RE.finditer(nocode):
+                inner = wm.group(1)
+                if re.search(r"[A-Za-z]{3,}\s+[A-Za-z]{2,}", inner) and "," not in inner:
+                    self.emit(
+                        "ERR",
+                        "wiki-link",
+                        path,
+                        line_no,
+                        f"'[[{inner}]]' is not a supported link; use [Box title](tut:NN#anchor)",
+                        ignored,
+                    )
+
+        # 5c. ***x*** renders as bold-italic; bold marks 3D vectors only
+        for bm in BOLD_ITALIC_RE.finditer(nocode.replace("\\*", "")):
+            self.emit(
+                "WARN",
+                "bold-italic",
+                path,
+                line_no,
+                f"'***{bm.group(1)}***' renders bold-italic; use *{bm.group(1)}* for scalars or **{bm.group(1)}** for vectors",
+                ignored,
+            )
 
         # 6. Bold balance, bold-nested, bold-math
         no_esc = nocode.replace("\\*", "")
         stars_count = len(re.findall(r"\*\*", no_esc))
         if stars_count % 2 != 0:
-            self.emit(
-                "ERR",
-                "bold-balance",
-                path,
-                line_no,
-                "Unbalanced ** bold markers on line",
-                ignored,
-            )
-            return
+            if not defer_bold:
+                self.emit(
+                    "ERR",
+                    "bold-balance",
+                    path,
+                    line_no,
+                    "Unbalanced ** bold markers on line",
+                    ignored,
+                )
+            return True
 
         spans = list(BOLD_SPAN_RE.finditer(no_esc))
         nested_indices: Set[int] = set()
@@ -553,6 +641,7 @@ class Linter:
                     f"Math expression inside bold ('**{inner}**'); use italics for scalars and bold only for vectors/prose",
                     ignored,
                 )
+        return False
 
     def lint_file(self, path: str) -> None:
         text = Path(path).read_text(encoding="utf-8")
@@ -569,10 +658,39 @@ class Linter:
         in_callout = False
         pending_ignore: Set[str] = set()
         current_section: Optional[Tuple[int, int]] = None
+        # Bold opened on one line may close on a later line of the same plain
+        # paragraph or blockquote (the renderer joins those lines); list items
+        # and other blocks do not continue.
+        bold_open: Optional[Tuple[int, Set[str], str]] = None
+
+        def _flush_bold() -> None:
+            nonlocal bold_open
+            if bold_open is not None:
+                b_line, b_ign, _ = bold_open
+                self.emit(
+                    "ERR",
+                    "bold-balance",
+                    path,
+                    b_line,
+                    "Unbalanced ** bold markers (bold opened here is not closed in the same paragraph)",
+                    b_ign,
+                )
+                bold_open = None
+
+        # For each blockquote line, the text of the following lines of the same blockquote
+        quote_tail: Dict[int, str] = {}
+        tail_acc = ""
+        for idx in range(len(lines) - 1, -1, -1):
+            if lines[idx].lstrip().startswith(">"):
+                quote_tail[idx + 1] = tail_acc
+                tail_acc = lines[idx] + "\n" + tail_acc
+            else:
+                tail_acc = ""
 
         for line_no, raw in enumerate(lines, 1):
             # Fenced code blocks (ignored while inside an HTML comment)
             if not in_html_comment and FENCE_RE.match(raw):
+                _flush_bold()
                 in_fence = not in_fence
                 in_callout = False
                 if all_stack:
@@ -586,9 +704,18 @@ class Linter:
 
             # Extract lint-ignore comments and strip HTML comments (preserving inline backticks)
             prev_in_comment = in_html_comment
+            unreasoned: Set[str] = set()
             clean_line, line_ignores, in_html_comment, had_comment = (
-                strip_line_comments_and_ignores(raw, in_html_comment)
+                strip_line_comments_and_ignores(raw, in_html_comment, unreasoned)
             )
+            for rule in sorted(unreasoned):
+                self.emit(
+                    "WARN",
+                    "lint-ignore-reason",
+                    path,
+                    line_no,
+                    f"'lint-ignore: {rule}' needs a reason ('<!-- lint-ignore: {rule} — why -->'); suppression not applied",
+                )
             if not prev_in_comment and in_html_comment:
                 comment_open_line = line_no
             elif not in_html_comment:
@@ -597,6 +724,8 @@ class Linter:
             trim = clean_line.strip()
 
             # Pure comment line, blank line, or empty blockquote comment (`> <!-- ... -->`)
+            if not trim and not had_comment:
+                _flush_bold()
             if not trim or (trim == ">" and had_comment):
                 if not trim and not (had_comment and raw.lstrip().startswith(">")):
                     in_callout = False
@@ -607,6 +736,10 @@ class Linter:
                 if all_stack and not all_stack[-1].awaiting_summary:
                     all_stack[-1].total_own_lines += 1
                 continue
+
+            kind = block_kind(trim)
+            if bold_open is not None and not (kind == bold_open[2] and kind in ("para", "quote")):
+                _flush_bold()
 
             # Track prose callout blockquotes starting with `> **...[:?.]**`
             if trim.startswith(">"):
@@ -633,6 +766,7 @@ class Linter:
                         target_ch=lm.group(2),
                         anchor=lm.group(3) or "",
                         ignored=set(active_ignore),
+                        label=lm.group(1),
                     )
                 )
 
@@ -767,6 +901,17 @@ class Linter:
                             box.level = int(fm.group(1))
                             box.label = fm.group(2).strip()
                             box.title = fm.group(3).strip()
+                            if box.anchor:
+                                self.box_titles[(ch_key, box.anchor)] = box.title
+                            if LEVEL_REF_RE.search(box.title):
+                                self.emit(
+                                    "ERR",
+                                    "level-ref",
+                                    path,
+                                    line_no,
+                                    "Box title references 'Level N'; name the box it points to instead",
+                                    box.ignored_rules,
+                                )
                             allowed = SCHEMES[self.cfg.scheme][box.level]
                             if box.label not in allowed:
                                 self.emit(
@@ -807,14 +952,31 @@ class Linter:
                 in_l2 = (not cur_box.is_aux) and (cur_box.level == 2)
 
             # Per-line inline checks
-            self.check_line_inline(
+            odd_bold = self.check_line_inline(
                 path,
                 line_no,
                 clean_line,
                 active_ignore,
                 in_l2=in_l2,
                 in_callout=in_callout,
+                defer_bold=True,
+                eq_context=quote_tail.get(line_no, ""),
             )
+            if odd_bold:
+                if bold_open is not None:
+                    bold_open = None  # closes the bold opened on an earlier line
+                elif kind in ("para", "quote"):
+                    bold_open = (line_no, set(active_ignore), kind)
+                else:
+                    self.emit(
+                        "ERR",
+                        "bold-balance",
+                        path,
+                        line_no,
+                        "Unbalanced ** bold markers on line (bold cannot continue past a list item, heading or table row)",
+                        active_ignore,
+                    )
+        _flush_bold()
 
         # Unclosed HTML comment at EOF
         if in_html_comment:
@@ -885,7 +1047,7 @@ class Linter:
             elif b.level == 2 and (zp is None or zp.level != 1):
                 parent_desc = f"Level {zp.level}" if zp is not None else "top level"
                 self.emit(
-                    "WARN",
+                    "ERR",
                     "nest-parent",
                     b.path,
                     b.summary_line or b.start_line,
@@ -972,6 +1134,15 @@ class Linter:
 
     def _check_l2(self, b: Box) -> None:
         eqs = b.eqs()
+        if self.cfg.min_l2_eq and len(eqs) < self.cfg.min_l2_eq:
+            self.emit(
+                "WARN",
+                "l2-size",
+                b.path,
+                b.summary_line or b.start_line,
+                f"Level 2 box has {len(eqs)} display equations (min {self.cfg.min_l2_eq})",
+                b.ignored_rules,
+            )
         if len(eqs) > self.cfg.max_l2_eq:
             self.emit(
                 "WARN",
@@ -1013,7 +1184,27 @@ class Linter:
                     if anc in child_anchors and (cur_ch is None or target_ch == cur_ch):
                         has_child_link = True
                         break
-            if not (has_phrase or has_child_link):
+            if self.cfg.scheme == "new":
+                # New scheme: "Full algebra: [Title](tut:NN#child-anchor)" is required.
+                has_pointer = False
+                for pm in FULL_ALGEBRA_LINK_RE.finditer(own_nocode):
+                    if pm.group(2) in child_anchors and (cur_ch is None or pm.group(1) == cur_ch):
+                        has_pointer = True
+                        break
+                if not child_anchors:
+                    msg = "Level 2 box's child Level 3 box has no {#anchor}, so it cannot be linked; add one and end the Level 2 with 'Full algebra: [Title](tut:NN#anchor)'"
+                else:
+                    msg = "Level 2 box with a child Level 3 must point to it with 'Full algebra: [Level 3 title](tut:NN#anchor)'"
+                if not has_pointer:
+                    self.emit(
+                        "WARN",
+                        "l2-pointer",
+                        b.path,
+                        b.summary_line or b.start_line,
+                        msg,
+                        b.ignored_rules,
+                    )
+            elif not (has_phrase or has_child_link):
                 self.emit(
                     "WARN",
                     "l2-pointer",
@@ -1050,14 +1241,15 @@ class Linter:
 
         own_text = "\n".join(text for _, text, _, _ in b.own_lines)
 
-        # 2. l3-check: sanity check / verification
-        if not CHECK_RE.search(own_text):
+        # 2. l3-check: sanity check / verification (new scheme only; legacy
+        #    Toolkit/Advanced boxes were never meant to end in a check)
+        if self.cfg.scheme == "new" and not CHECK_RE.search(own_text):
             self.emit(
                 "WARN",
                 "l3-check",
                 b.path,
                 b.summary_line or b.start_line,
-                "Level 3 box has no verification/sanity check (e.g. '✓' or 'Check')",
+                "Level 3 box has no verification: add a '**Check:** ... ✓' paragraph",
                 b.ignored_rules,
             )
 
@@ -1074,6 +1266,37 @@ class Linter:
                     b.path,
                     ln,
                     f"Level 3 derivation defers proof forward ({m_def.group(0)!r})",
+                    eff_ign,
+                ):
+                    break
+                continue
+            m_below = FWD_BELOW_RE.search(nocode)
+            if m_below:
+                if self.emit(
+                    "WARN",
+                    "l3-forward",
+                    b.path,
+                    ln,
+                    f"Level 3 derivation points forward to later material ({m_below.group(0)!r})",
+                    eff_ign,
+                ):
+                    break
+                continue
+            fwd_anchor: Optional[str] = None
+            for lm in TUT_LINK_RE.finditer(nocode):
+                if lm.group(2) != b.chapter_key or not lm.group(3):
+                    continue
+                loc = self.anchors_by_ch.get(b.chapter_key, {}).get(lm.group(3))
+                if loc and loc[0] == b.path and loc[1] > (b.end_line or b.start_line):
+                    fwd_anchor = lm.group(3)
+                    break
+            if fwd_anchor is not None:
+                if self.emit(
+                    "WARN",
+                    "l3-forward",
+                    b.path,
+                    ln,
+                    f"Level 3 derivation links forward to #{fwd_anchor}, defined later in this chapter",
                     eff_ign,
                 ):
                     break
@@ -1133,9 +1356,26 @@ class Linter:
                 sibling_cache[dir_path] = found
             return sibling_cache[dir_path]
 
+        def _norm_title(t: str) -> str:
+            t = re.sub(r"<[^>]+>", "", t)
+            t = re.sub(r"[*\\_^`]", "", t)
+            return re.sub(r"\s+", " ", t).strip().lower()
+
         for ref in self.links:
             if ref.target_ch in self.passed_chapters:
                 if ref.anchor:
+                    title = self.box_titles.get((ref.target_ch, ref.anchor))
+                    if title is not None:
+                        lab, tit = _norm_title(ref.label), _norm_title(title)
+                        if lab and lab != tit and lab not in tit:
+                            self.emit(
+                                "WARN",
+                                "box-link-label",
+                                ref.path,
+                                ref.line,
+                                f"Link label {ref.label!r} does not match the target box title {title!r}",
+                                ref.ignored,
+                            )
                     ch_anchors = self.anchors_by_ch.get(ref.target_ch, {})
                     if ref.anchor not in ch_anchors:
                         self.emit(
@@ -1227,6 +1467,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Max display equations in a Level 2 box (default: 5)",
     )
     ap.add_argument(
+        "--min-l2-eq",
+        type=int,
+        default=0,
+        help="Min display equations in a Level 2 box (default: 0 = off; the style guide asks for 3-5)",
+    )
+    ap.add_argument(
+        "--require-units",
+        action="store_true",
+        help="Warn on every display equation without an (SI) or (a.u.) tag, not only ones with SI constants",
+    )
+    ap.add_argument(
         "--max-l1-equals",
         type=int,
         default=2,
@@ -1261,7 +1512,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         outline=args.outline,
         ignore=ignore_set,
         max_l2_eq=args.max_l2_eq,
+        min_l2_eq=args.min_l2_eq,
         max_l1_equals=args.max_l1_equals,
+        require_units=args.require_units,
         vectors=vectors_set,
     )
 
