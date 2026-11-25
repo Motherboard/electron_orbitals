@@ -251,7 +251,7 @@ Every hydrogen orbital is either **even** or **odd** when you turn space inside 
 
 In one dimension, the signed area under an odd curve over any symmetric interval around zero is always zero: the negative area on the left exactly cancels the positive area on the right. The same happens in 3D. If the integrand at −**r** is always minus its value at **r**, every little patch has a partner on the opposite side of the nucleus that cancels it completely.
 
-For 1s → 2s, both orbitals are even (spherical), so the odd position vector **r** makes the whole product odd: the electron is pushed "up" on one side and "down" on the other by the exact same amount, and nothing is left over. For 1s → 2p, the odd 2p orbital times the odd **r** gives an even product, which survives.
+For 1s → 2s, both orbitals are even (spherical), so the odd position vector **r** makes the whole product odd: the uniform field pushes the whole cloud the same way, but the energy it adds is raised on one side of the nucleus and lowered by the exact same amount on the other, so nothing is left over. For 1s → 2p, the odd 2p orbital times the odd **r** gives an even product, which survives.
 
 ```figure
 {"kind": "odd-even", "fn": "x3gauss", "caption": "For an odd function the shaded positive and negative areas are mirror images and the integral is exactly zero; switch to an even function and the areas add up instead."}
