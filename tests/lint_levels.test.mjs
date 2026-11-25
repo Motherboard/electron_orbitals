@@ -700,7 +700,40 @@ test('second-review regression checks: comment-balance, nested sup/sub, callout 
   });
 });
 
-test('real tutorial/*.md chapters work cleanly with --outline and --scheme legacy', () => {
+const MIGRATED_CHAPTERS = [
+  '01-schrodinger-superposition-and-bohmian-mechanics.md',
+  '02-magnetic-field-zeeman-and-precession.md',
+  '03-light-and-polarization.md',
+  '04-light-electron-interactions-einstein-and-angular-momentum.md',
+  '05-rabi-oscillations-detuning-and-bright-dark-states.md',
+  '06-single-photon-wavepackets-ionization-and-tdse-solver.md',
+  '07-atomic-units-canvas-guide-and-model-scope.md',
+  '08-math-toolkit.md',
+  '09-strong-magnetic-fields-and-the-diamagnetic-term.md',
+];
+
+test('all tutorial/*.md chapters pass default --scheme new --strict with 0 errors and 0 warnings', () => {
+  const allMdFiles = fs
+    .readdirSync(TUTORIAL_DIR)
+    .filter((f) => f.endsWith('.md'))
+    .sort();
+  assert.deepEqual(
+    allMdFiles,
+    [...MIGRATED_CHAPTERS].sort(),
+    'MIGRATED_CHAPTERS must stay in sync with tutorial/*.md'
+  );
+  const migratedPaths = MIGRATED_CHAPTERS.map((f) => path.join(TUTORIAL_DIR, f));
+  const res = runLinter([...migratedPaths, '--strict']);
+  assert.equal(
+    res.status,
+    0,
+    `Expected all migrated chapters to pass --scheme new --strict with exit code 0:\n${res.stdout}\n${res.stderr}`
+  );
+  const diags = parseDiagnostics(res.stdout);
+  assert.equal(diags.length, 0, `Expected 0 diagnostics on migrated chapters:\n${res.stdout}`);
+});
+
+test('real tutorial/*.md chapters work cleanly with --outline', () => {
   const mdFiles = fs
     .readdirSync(TUTORIAL_DIR)
     .filter((f) => f.endsWith('.md'))
@@ -708,36 +741,12 @@ test('real tutorial/*.md chapters work cleanly with --outline and --scheme legac
     .map((f) => path.join(TUTORIAL_DIR, f));
   assert.equal(mdFiles.length, 9, 'Expected 9 tutorial markdown files');
 
-  // 1. --outline exits 0 and lists boxes for all 9 chapters
+  // --outline exits 0 and lists boxes for all 9 chapters
   const outRes = runLinter([...mdFiles, '--outline']);
   assert.equal(outRes.status, 0, `Expected --outline exit 0:\n${outRes.stderr}`);
   assert.match(outRes.stdout, /L1\s+.*01-schrodinger-superposition-and-bohmian-mechanics\.md:\d+/);
+  assert.match(outRes.stdout, /L2\s+.*Key idea:/);
+  assert.match(outRes.stdout, /L3\s+.*Full derivation:/);
   assert.match(outRes.stdout, /AUX\s+.*Answers\s+\[eq:\d+ lines:\d+\]/);
   assert.match(outRes.stdout, /AUX\s+.*\(app details\)\s+\[eq:\d+ lines:\d+\]/);
-
-  // 2. --scheme legacy across all 9 chapters: zero summary-format, box-ref, details-*, tag/bold-balance errors
-  const legRes = runLinter([...mdFiles, '--scheme', 'legacy']);
-  const diags = parseDiagnostics(legRes.stdout);
-  for (const forbidden of [
-    'summary-format',
-    'summary-missing',
-    'details-balance',
-    'details-open',
-    'box-ref',
-    'dup-anchor',
-    'bold-balance',
-    'tag-balance',
-    'backtick-balance',
-    'label-name',
-    'dup-title',
-  ]) {
-    const hits = diags.filter((d) => d.rule === forbidden);
-    assert.equal(
-      hits.length,
-      0,
-      `Expected zero [${forbidden}] diagnostics on shipped tutorial/*.md under --scheme legacy, got:\n${hits
-        .map((h) => `${h.file}:${h.line} ${h.msg}`)
-        .join('\n')}`
-    );
-  }
 });

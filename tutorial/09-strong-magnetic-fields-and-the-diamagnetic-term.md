@@ -10,7 +10,7 @@ Chapter 2 treated a magnetic field with one term: the orbital magnet μ = −**L
 >
 > **First read:** §9.1 (where the term comes from), §9.2 (how big it is), and the demos in §9.3–9.4.
 >
-> **Notation and boxes:** *B* is short for *B*<sub>*z*</sub>, the **Field B<sub>z</sub>** slider, in atomic units (1 a.u. = 2.3505 × 10⁵ T). ρ<sub>cyl</sub> = √(*x*² + *y*²) = *r* sin θ is the distance from the *z*-axis ([T5 · Cylindrical coordinates](tut:08#T5)). As in the other chapters, a **Level 1** box gives the picture, a **Level 2** box inside it the full derivation, and a **Level 3** box the math tool, with a link to the [Math Toolkit](tut:08).
+> **Notation and boxes:** *B* is short for *B*<sub>*z*</sub>, the **Field B<sub>z</sub>** slider, in atomic units (1 a.u. = 2.3505 × 10⁵ T). ρ<sub>cyl</sub> = √(*x*² + *y*²) = *r* sin θ is the distance from the *z*-axis ([T5 · Cylindrical coordinates](tut:08#T5)). As in the other chapters, a **Level 1 · Picture** box gives the physical picture without algebra, a **Level 2 · Key idea** box inside it gives the argument in a few key equations, and a **Level 3 · Full derivation** box works through every algebraic step starting from the tools you need (linking to the [Math Toolkit](tut:08)). <!-- lint-ignore: level-ref -->
 
 ---
 
@@ -27,14 +27,23 @@ A charge in a magnetic field responds to the vector potential **A** through its 
 <details>
 <summary>Level 1 · Picture: the energy of the field's extra swirl</summary>
 
-Chapter 2 (§2.1) showed that the field adds a velocity to the electron's flow: the momentum **p** and the velocity **v** differ by **A**, and for our **A** that extra piece is a rigid swirl around the *z*-axis with speed (*B*/2)ρ<sub>cyl</sub> (it grows linearly with distance from the axis, like a turning record). Kinetic energy is ½ × speed². Squaring the sum (old motion + swirl) gives three parts: the old kinetic energy, a cross term (old motion × swirl, the linear Zeeman shift *mB*/2), and the swirl's own energy
+Chapter 2 (§2.1) showed that the field adds a rigid swirl around the *z*-axis whose speed grows linearly with distance from the axis, like points on a turning record. Squaring the total speed (old motion plus added swirl) splits kinetic energy into three parts: the old kinetic energy, a cross term (the linear Zeeman shift), and the swirl's own kinetic energy—proportional to the field squared times the squared distance from the *z*-axis.
 
-> ½ × [(*B*/2)ρ<sub>cyl</sub>]² = *B*²ρ<sub>cyl</sub>²/8.
-
-That last part is the diamagnetic term. It costs more the farther the electron sits from the axis, and it is there for **every** state, even 1s with *m* = 0, whose cross term vanishes.
+That last part is the diamagnetic term. It costs more the farther the electron sits from the axis, and it acts on **every** state, even spherical 1s (*m* = 0), whose linear cross term vanishes.
 
 <details>
-<summary>Level 2 · Full derivation: expanding (p + A)² with operators</summary>
+<summary>Level 2 · Key idea: why (p̂ + A)²/2 splits into kinetic, Zeeman, and B²ρ²/8</summary>
+
+Because the vector potential **A** = (*B*/2)(−*y*, *x*, 0) has zero divergence (∇ · **A** = 0), **p̂** · (**A**ψ) equals **A** · (**p̂**ψ), so the two cross terms merge:
+
+> (**p̂** + **A**)²/2 = *p̂*²/2 + **A** · **p̂** + *A*²/2 &nbsp;&nbsp; (a.u.)
+
+Recognizing **A** · **p̂** = (*B*/2)*L̂*<sub>*z*</sub> gives the linear Zeeman shift *mB*/2, while *A*²/2 = (*B*²/8)(*x*² + *y*²) = (*B*²/8)ρ<sub>cyl</sub>² gives the quadratic diamagnetic bowl. Full algebra: [Expanding (p + A)² with operators](tut:09#box-p-plus-a).
+
+<details>
+<summary>Level 3 · Full derivation: expanding (p + A)² with operators {#box-p-plus-a}</summary>
+
+**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule ∇·(**A**ψ) = (∇·**A**)ψ + **A**·∇ψ), [T5 · Cylindrical coordinates](tut:08#T5) (ρ<sub>cyl</sub>² = *x*² + *y*² = *r*² sin²θ, *L̂*<sub>*z*</sub> = −*i*∂/∂φ), and [T9 · Cross product & angular momentum](tut:08#T9) (*L*<sub>*z*</sub> = *xp*<sub>*y*</sub> − *yp*<sub>*x*</sub>).
 
 Write the square out carefully, remembering that **p̂** = −*i*∇ acts on everything to its right:
 
@@ -46,14 +55,7 @@ Write the square out carefully, remembering that **p̂** = −*i*∇ acts on eve
 
 **Step 2 — the linear term.** With **A** = (*B*/2)(−*y*, *x*, 0): **A**·**p̂** = (*B*/2)(*x p̂*<sub>*y*</sub> − *y p̂*<sub>*x*</sub>) = (*B*/2)*L̂*<sub>*z*</sub>. On a state with *L̂*<sub>*z*</sub> = *m* it gives *mB*/2, the Zeeman shift of Chapter 2.
 
-**Step 3 — the quadratic term.** *A*² = (*B*/2)²[(−*y*)² + *x*²] = (*B*²/4)(*x*² + *y*²), so *A*²/2 = *B*²ρ<sub>cyl</sub>²/8. In spherical coordinates *x*² + *y*² = *r*² sin²θ, so the term is (*B*²/8) *r*² sin²θ.
-
-<details>
-<summary>Level 3 · Toolkit: divergence product rule, L<sub>z</sub> and cylindrical coordinates</summary>
-
-- **Divergence of a product** ([T2](tut:08#T2)): ∇·(**A**ψ) = (∇·**A**)ψ + **A**·∇ψ, one ordinary product rule per component.
-- **Angular momentum** ([T9](tut:08#T9)): *L*<sub>*z*</sub> = *x p*<sub>*y*</sub> − *y p*<sub>*x*</sub>, the *z*-component of **r** × **p**; in quantum mechanics *L̂*<sub>*z*</sub> = −*i* ∂/∂φ with eigenvalues *m* ([T5](tut:08#T5)).
-- **Cylindrical radius** ([T5](tut:08#T5)): ρ<sub>cyl</sub> = √(*x*² + *y*²) = *r* sin θ.
+**Step 3 — the quadratic term & check.** *A*² = (*B*/2)²[(−*y*)² + *x*²] = (*B*²/4)(*x*² + *y*²), so *A*²/2 = *B*²ρ<sub>cyl</sub>²/8. In spherical coordinates *x*² + *y*² = *r*² sin²θ, so the term is (*B*²/8) *r*² sin²θ. **Check:** setting *B* = 0 gives **A** = **0** and recovers the field-free kinetic energy *p̂*²/2. ✓
 
 </details>
 
@@ -78,22 +80,28 @@ To first order the diamagnetic shift of a state is (*B*²/8)⟨ρ<sub>cyl</sub>�
 The bowl's height is (*B*²/8) × (distance from the axis)². An orbit twice as wide sits on average four times higher up the bowl. Hydrogen orbits grow as *n*² (the Bohr radius of shell *n* is about *n*² *a*₀), so their squared width grows as *n*⁴: an *n* = 7 cloud sees the bowl about 2400 times more strongly than 1s.
 
 <details>
-<summary>Level 2 · Full derivation: ⟨ρ<sub>cyl</sub>²⟩ for 1s and for any shell</summary>
+<summary>Level 2 · Key idea: ⟨ρ<sub>cyl</sub>²⟩ = 2 a₀² for 1s and n⁴ scaling across shells</summary>
 
-**Split into radial and angular parts.** ρ<sub>cyl</sub>² = *r*² sin²θ, and a hydrogen orbital is a radial function times an angular function, so ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩. (Chapter 2's §2.2 Level 2 box does this for 2p<sub>±1</sub> and 2s.)
+Because ρ<sub>cyl</sub>² = *r*² sin²θ and hydrogen orbitals factor into radial and angular parts, the average splits cleanly:
 
-**1s.** ψ = *e*<sup>−*r*</sup>/√π, so ⟨*r*²⟩ = ∫ *r*² \|ψ\|² 4π*r*² *dr* = 4∫₀<sup>∞</sup> *r*⁴ *e*<sup>−2*r*</sup> *dr* = 4 × 4!/2⁵ = 3 *a*₀² (using ∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−*ar*</sup> *dr* = *k*!/*a*<sup>*k*+1</sup>, [T6](tut:08#T6)). A spherical cloud has ⟨sin²θ⟩ = 2/3 (because ⟨*x*²⟩ = ⟨*y*²⟩ = ⟨*z*²⟩ = ⟨*r*²⟩/3 and sin²θ = (*x*² + *y*²)/*r*²). So ⟨ρ<sub>cyl</sub>²⟩ = 3 × 2/3 = 2 *a*₀², and the shift is (*B*²/8) × 2 = ***B*²/4**.
+> ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩
 
-**Any shell.** The standard result ⟨*r*²⟩ = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] is about (5/2)*n*⁴ for small *l*. The angular factor ⟨sin²θ⟩ lies between about 0.3 and 0.9 depending on *l* and *m* (largest for "doughnut" states with \|*m*\| = *l*). For *n* = 7 the largest value is 4788 *a*₀² (*l* = 2, *m* = ±2).
-
-**At 20 T.** *B* = 20/235 050 = 8.5 × 10⁻⁵ a.u., so *B*²/4 = 1.8 × 10⁻⁹ Ha = 4.9 × 10⁻⁸ eV for 1s.
+For spherical **1s**, ⟨*r*²⟩ = 3 *a*₀² and ⟨sin²θ⟩ = 2/3 give ⟨ρ<sub>cyl</sub>²⟩ = **2 *a*₀²**, hence a first-order diamagnetic shift of (*B*²/8) × 2 = *B*²/4 (just 4.9 × 10⁻⁸ eV at 20 T). Across higher shells, ⟨*r*²⟩ ≈ (5/2)*n*⁴ for low *l* drives the steep *n*⁴ growth (up to 4788 *a*₀² in *n* = 7). Full derivation: [Computing ⟨ρ_cyl²⟩ for 1s and higher shells](tut:09#box-ch9-rho2).
 
 <details>
-<summary>Level 3 · Toolkit: radial integrals and averages</summary>
+<summary>Level 3 · Full derivation: computing ⟨ρ<sub>cyl</sub>²⟩ for 1s and higher shells {#box-ch9-rho2}</summary>
 
-- **Radial integrals** ([T6](tut:08#T6)): ∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−*ar*</sup> *dr* = *k*!/*a*<sup>*k*+1</sup>.
-- **Volume element** ([T5](tut:08#T5)): a thin shell of radius *r* has volume 4π*r*² *dr*.
-- **Expectation value** ([T7](tut:08#T7)): ⟨*f*⟩ = ∫ *f* \|ψ\|² *d*³*r*, the cloud-weighted average of *f*.
+**You need:** [T5 · Spherical coordinates](tut:08#T5) (shell volume 4π*r*²*dr*), [T6 · Radial integrals](tut:08#T6) (∫₀<sup>∞</sup> *r*<sup>*k*</sup>*e*<sup>−*ar*</sup>*dr* = *k*!/*a*<sup>*k*+1</sup>), and [T7 · Expectation values](tut:08#T7) (⟨*f*⟩ = ∫ *f*\|ψ\|²*d*³*r*).
+
+**Step 1 — separate radial and angular parts.** With ρ<sub>cyl</sub>² = *r*² sin²θ, ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩ (see [Chapter 2 §2.2](tut:02#box-ch2-rho2) for 2p<sub>±1</sub> and 2s).
+
+**Step 2 — 1s ground state.** With ψ = *e*<sup>−*r*</sup>/√π:
+
+> ⟨*r*²⟩ = ∫₀<sup>∞</sup> *r*² \|ψ\|² 4π*r*² *dr* = 4 ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−2*r*</sup> *dr* = 4 × 4! / 2⁵ = 3 *a*₀²
+
+A spherical cloud has ⟨*x*²⟩ = ⟨*y*²⟩ = ⟨*z*²⟩ = ⟨*r*²⟩/3, so ⟨sin²θ⟩ = ⟨*x*² + *y*²⟩/⟨*r*²⟩ = 2/3. Multiplying gives ⟨ρ<sub>cyl</sub>²⟩ = 3 × 2/3 = 2 *a*₀², and shift (*B*²/8) × 2 = *B*²/4.
+
+**Step 3 — any shell & 20 T check.** The standard hydrogen formula ⟨*r*²⟩ = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] grows as ≈ (5/2)*n*⁴ for small *l*, while ⟨sin²θ⟩ ranges from ~0.3 to ~0.9 (largest for \|*m*\| = *l* doughnuts; for *n* = 7 the largest ⟨ρ<sub>cyl</sub>²⟩ is 4788 *a*₀² at *l* = 2, *m* = ±2). **Check:** for *n* = 1, *l* = 0 the formula gives ½(5 + 1 − 0) = 3 *a*₀² matching Step 2, and at 20 T (*B* = 20/235 050 = 8.5 × 10⁻⁵ a.u.) the 1s shift is *B*²/4 = 1.8 × 10⁻⁹ Ha = 4.9 × 10⁻⁸ eV. ✓
 
 </details>
 
@@ -121,13 +129,13 @@ The model leaves out electron spin and **fine structure**, the small spin-orbit 
 Inside one shell, the different *l* states feel the bowl differently (their ⟨ρ<sub>cyl</sub>²⟩ values differ). That difference tries to mix them. Fine structure tries to keep them apart by giving them slightly different energies. Whichever energy is larger wins: below the crossover field fine structure wins and *l* stays a good label; above it the field wins and the states mix.
 
 <details>
-<summary>Level 2 · Full derivation: the crossover fields in the table</summary>
+<summary>Level 2 · Key idea: the crossover fields in the table</summary>
 
 **Fine structure** splits a shell by about α²/(4*n*³) Ha (α ≈ 1/137.036 is the fine-structure constant). For *n* = 2: (1/137.036)²/32 = 1.66 × 10⁻⁶ Ha.
 
 **The B² term's spread** inside a shell is (*B*²/8) × (largest ⟨ρ<sub>cyl</sub>²⟩ − smallest ⟨ρ<sub>cyl</sub>²⟩). For *n* = 2 the values are 28 (2s), 24 (2p<sub>±1</sub>) and 12 *a*₀² (2p<sub>0</sub>, with ⟨*r*²⟩ = 30 and ⟨sin²θ⟩ = 2/5), so the spread is 28 − 12 = 16 *a*₀².
 
-**Set them equal:** (*B*²/8) × 16 = 1.66 × 10⁻⁶ gives *B*² = 8.3 × 10⁻⁷, *B* = 9.1 × 10⁻⁴ a.u. ≈ **214 T**. For *n* = 3 the fine structure is (2/3)³ ≈ 0.30 times smaller and the spread is 144 − 60 = 84 *a*₀², giving about 51 T. For *n* = 4, about 17 T. The app uses exactly this estimate for the warning under the slider.
+**Set them equal:** (*B*²/8) × 16 = 1.66 × 10⁻⁶ gives *B*² = 8.3 × 10⁻⁷, *B* = 9.1 × 10⁻⁴ a.u. ≈ **214 T**. For *n* = 3 the fine structure is (2/3)³ ≈ 0.30 times smaller and the spread is 144 − 60 = 84 *a*₀², giving about 51 T. For *n* = 4, about 17 T. The app uses exactly this estimate for the warning under the slider. ✓
 
 </details>
 
@@ -183,30 +191,34 @@ The bowl (*B*²/8)ρ<sub>cyl</sub>² is not spherical: ρ<sub>cyl</sub>² = *r*�
 <details>
 <summary>Level 1 · Picture: a sphere plus a d-shaped squeeze</summary>
 
-Split sin²θ into a round part and a shaped part: sin²θ = 2/3 − (2/3) *P*₂(cos θ), where *P*₂(*u*) = (3*u*² − 1)/2 is the same angular shape as a 3d<sub>0</sub> orbital. The round part (2/3)*r*² just raises every level a little. The *d*-shaped part squeezes the cloud toward the axis, and squeezing an *s* cloud this way makes it look partly like a *d* cloud. In quantum language: the squeeze **mixes** *s* with *d*. Two levels with the same energy (as 3s and 3d are in hydrogen) mix strongly even for a small squeeze, because nothing resists the mixing.
+Picture the diamagnetic bowl as a blend of two shapes: a **perfectly round** part that simply lifts every orbital uniformly, plus a **d-shaped squeeze** that pinches the cloud inward toward the *z*-axis and stretches it along the poles (the exact same angular pattern as a 3d<sub>0</sub> orbital). Squeezing a round *s* cloud this way makes it look partly like a *d* cloud—in quantum language, the squeeze **mixes** *s* with *d*. Because 3s and 3d start at the exact same energy in hydrogen, nothing resists the mixing, so even a small squeeze blends them strongly.
 
 <details>
-<summary>Level 2 · Full derivation: which pairs the term connects, and how much they mix</summary>
+<summary>Level 2 · Key idea: selection rules and s–d mixing</summary>
 
-**Which pairs.** The term couples two states \|*a*⟩ and \|*b*⟩ only if the matrix element ⟨*a*\|*r*² sin²θ\|*b*⟩ ≠ 0 ([T7](tut:08#T7)).
+Writing sin²θ = ⅔ − ⅔ *P*₂(cos θ) (where *P*₂(*u*) = (3*u*² − 1)/2 is the *l* = 2 angular shape of 3d<sub>0</sub>) splits the diamagnetic bowl into a spherical shift plus an *l* = 2 quadrupole term. Because *r*² sin²θ is independent of φ, even under **r** → −**r**, and quadratic in cos θ, ⟨*a*\|*r*² sin²θ\|*b*⟩ vanishes unless Δ*m* = 0, parity is unchanged, and Δ*l* = 0, ±2 (allowing 3s ↔ 3d₀ while forbidding 3s ↔ 3p). For the coupled 2-state pair with field-shifted diagonal energies *E*<sub>*s*</sub> = *E*₃ + Δ*E*<sub>*s*</sub> and *E*<sub>*d*</sub> = *E*₃ + Δ*E*<sub>*d*</sub> (where Δ*E*<sub>*s*</sub>, Δ*E*<sub>*d*</sub>, and off-diagonal coupling *V* are all proportional to *B*²), the mixing angle obeys:
+
+> tan 2ϑ = 2*V* / (*E*<sub>*s*</sub> − *E*<sub>*d*</sub>) = 2*V* / (Δ*E*<sub>*s*</sub> − Δ*E*<sub>*d*</sub>)
+
+Because 3s and 3d start degenerate (*E*₃ cancels out), *B*² divides out of numerator and denominator, leaving strong mixing even at small fields unless fine structure splits them (§9.2). Diagonalizing the full multi-state matrix (§9.5) gives 83% 3d + 16% 3s for dressed 3d₀ at 0.02 a.u. Full derivation: [Which pairs the B² term connects and how much they mix](tut:09#box-sd-mixing).
+
+<details>
+<summary>Level 3 · Full derivation: which pairs the B² term connects and how much they mix {#box-sd-mixing}</summary>
+
+**You need:** [T4 · 2×2 eigenvalues and eigenvectors](tut:08#T4), [T6 · Odd/even symmetry](tut:08#T6) (odd integrands vanish under **r** → −**r**), and [T7 · Operators & Dirac notation](tut:08#T7) (matrix elements ⟨*a*\|*Ô*\|*b*⟩ = ∫ *a*\* (*Ô b*) *d*³*r*).
+
+**Step 1 — which pairs couple.** The term couples two states \|*a*⟩ and \|*b*⟩ only if the matrix element ⟨*a*\|*r*² sin²θ\|*b*⟩ ≠ 0:
 - *m* must be equal: sin²θ does not depend on φ, so the φ integral of *e*<sup>−*im*<sub>*a*</sub>φ</sup> *e*<sup>*im*<sub>*b*</sub>φ</sup> is zero unless *m*<sub>*a*</sub> = *m*<sub>*b*</sub>.
-- Parity must be equal: *r*² sin²θ is unchanged by **r** → −**r** (even), so the integrand is odd, and the integral zero, whenever one state is even and the other odd ([T6](tut:08#T6)). That rules out 3s ↔ 3p.
+- Parity must be equal: *r*² sin²θ is unchanged by **r** → −**r** (even), so the integrand is odd, and the integral zero, whenever one state is even and the other odd. That rules out 3s ↔ 3p.
 - \|Δ*l*\| ≤ 2: the *d*-shaped part can change *l* by at most 2, the way multiplying by cos²θ can raise the power of cos θ by at most 2.
 
-**Example: s with d.** With *u* = cos θ, *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>2</sub><sup>0</sup> = √(5/(16π)) (3*u*² − 1):
+**Step 2 — example: *s* with *d*.** With *u* = cos θ, *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>2</sub><sup>0</sup> = √(5/(16π)) (3*u*² − 1):
 
 > ⟨*Y*<sub>0</sub><sup>0</sup>\|sin²θ\|*Y*<sub>2</sub><sup>0</sup>⟩ = 2π × (1/√(4π)) × √(5/(16π)) × ∫<sub>−1</sub><sup>1</sup> (1 − *u*²)(3*u*² − 1) *du* = (√5/4) × (−8/15) = −2√5/15 ≈ −0.30.
 
 It is not zero, so the field connects 3s and 3d<sub>0</sub>.
 
-**How much they mix.** Restricted to the two states, the Hamiltonian is a 2×2 matrix [[*E*<sub>*s*</sub>, *V*], [*V*, *E*<sub>*d*</sub>]], with the diagonal energies including each state's own bowl height and *V* the coupling. Its eigenvectors mix the two with angle ϑ given by tan 2ϑ = 2*V*/(*E*<sub>*s*</sub> − *E*<sub>*d*</sub>) ([T4](tut:08#T4)). In field-free hydrogen *E*<sub>*s*</sub> = *E*<sub>*d*</sub> inside a shell, so the mixing is set only by how differently the bowl lifts the two states compared with *V*. It does **not** shrink as *B* → 0, which is why fine structure must be included to get the weak-field limit right (§9.2). The app diagonalizes the full matrix over many states (§9.5) and finds 83% 3d + 16% 3s for the dressed 3d<sub>0</sub> at 0.02 a.u.
-
-<details>
-<summary>Level 3 · Toolkit: matrix elements, parity and 2×2 eigenvectors</summary>
-
-- **Matrix elements and Dirac notation** ([T7](tut:08#T7)): ⟨*a*\|*Ô*\|*b*⟩ = ∫ *a*\* (*Ô b*) *d*³*r*.
-- **Odd integrands vanish** ([T6](tut:08#T6)): if the integrand flips sign under **r** → −**r**, the integral over all space is zero.
-- **2×2 eigenvalues and eigenvectors** ([T4](tut:08#T4)): solve det(*M* − λ*I*) = 0, then find the direction each eigenvalue only stretches.
+**Step 3 — how much they mix & check.** Restricted to the two states, the Hamiltonian is the 2×2 matrix [[*E*<sub>*s*</sub>, *V*], [*V*, *E*<sub>*d*</sub>]], where the diagonal entries are *E*<sub>*s*</sub> = *E*₃ + Δ*E*<sub>*s*</sub> and *E*<sub>*d*</sub> = *E*₃ + Δ*E*<sub>*d*</sub> (each state's field-free energy *E*₃ plus its own diamagnetic bowl shift Δ*E* ∝ *B*²), and *V* ∝ *B*² is the coupling. Its eigenvectors mix the two with angle ϑ given by tan 2ϑ = 2*V*/(*E*<sub>*s*</sub> − *E*<sub>*d*</sub>) = 2*V*/(Δ*E*<sub>*s*</sub> − Δ*E*<sub>*d*</sub>): the common *E*₃ cancels, and *B*² cancels between numerator and denominator, so the mixing stays constant even as *B* → 0 unless fine structure breaks the degeneracy. **Check:** ∫<sub>−1</sub><sup>1</sup> (1 − *u*²)(3*u*² − 1)*du* = ∫<sub>−1</sub><sup>1</sup> (−1 + 4*u*² − 3*u*⁴)*du* = 2(−1 + 4/3 − 3/5) = −8/15. ✓
 
 </details>
 
@@ -235,7 +247,20 @@ When the bowl's energy across the orbit exceeds the Coulomb binding, the electro
 <details>
 <summary>Level 1 · Picture: where the magnetic length comes from</summary>
 
-Squeezing an electron sideways into a width ℓ costs kinetic energy of roughly 1/(2ℓ²) (the uncertainty principle: a narrow cloud needs a wide spread of momenta). Spreading it out costs bowl energy of roughly *B*²ℓ²/8. The best compromise makes the two comparable, at ℓ² ≈ 2/*B*: the electron's sideways size is about **1/√*B***, whatever the nucleus does. The field wins over the Coulomb pull when this is smaller than the orbit's own size, about *n*² *a*₀, that is when *B* ≳ 1/*n*⁴: about 0.012 a.u. for *n* = 3, 0.06 a.u. for *n* = 2, and 1 a.u. for 1s.
+Two opposing costs play tug-of-war on the electron's sideways width. Squeezing the cloud too narrow drives up its quantum kinetic energy (the uncertainty principle: a tighter box demands a wider spread of momenta). Letting it spread too wide climbs high up the magnetic bowl. The compromise width—the **magnetic length**—shrinks steadily as the field grows stronger, independent of the nucleus. Once that magnetic width shrinks below an orbital's natural radius, the field overpowers the Coulomb pull sideways and squeezes the atom into a thin cigar along the field axis.
+
+<details>
+<summary>Level 2 · Key idea: scaling of ℓ<sub>B</sub> = 1/√B and the Landau crossover B ≳ 1/n⁴</summary>
+
+Balancing sideways uncertainty kinetic energy ~ 1/(2ℓ²) against the diamagnetic bowl energy ~ *B*²ℓ²/8 sets 1/(2ℓ²) ~ *B*²ℓ²/8 ⇒ ℓ⁴ ~ 4/*B*², giving the magnetic length scale:
+
+> ℓ<sub>*B*</sub> ~ 1 / √*B* &nbsp;&nbsp; (a.u.)
+
+The field overpowers the Coulomb pull once ℓ<sub>*B*</sub> drops below shell *n*'s natural radius ~ *n*² *a*₀, i.e. 1/√*B* ≲ *n*²:
+
+> *B* ≳ 1 / *n*⁴ &nbsp;&nbsp; (≈ 0.012 a.u. for *n* = 3, 0.06 a.u. for *n* = 2, and 1 a.u. for 1s)
+
+</details>
 
 </details>
 
@@ -295,8 +320,9 @@ With **B² term** on, **Coherent EM wave** pulses are tuned and calibrated on th
 
 ## 9.5 How the App Computes Dressed States (Optional)
 
+<!-- lint-ignore: nest-parent -->
 <details>
-<summary>Level 2 · Under the hood: basis diagonalization, grid refinement and convergence flags</summary>
+<summary>Level 2 · Key idea: basis diagonalization, grid refinement and convergence flags</summary>
 
 - **Symmetry first.** The field keeps *m* and the parity (even or odd *l*) unchanged, so the Hamiltonian *H* = −1/(2*n*²) + *mB*/2 + (*B*²/8)*r*² sin²θ splits into independent blocks, one per |*m*| and parity.
 - **Basis diagonalization.** In each block the app writes *H* as a matrix over the bound hydrogen states with *n* ≤ 16 and finds its eigenvectors. The matrix elements are ⟨*n l*|*r*²|*n′ l′*⟩ (computed exactly by Gauss–Laguerre quadrature) times ⟨*l m*|sin²θ|*l′ m*⟩ (from the angular ladder of cos θ). Each eigenvector keeps the label of the field-free state it overlaps most. (Matrices, eigenvalues and eigenvectors: [T4](tut:08#T4) and [T7](tut:08#T7).)

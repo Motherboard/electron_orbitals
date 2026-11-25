@@ -6,7 +6,7 @@ Turning up the **Field B<sub>z</sub>** slider applies a uniform external magneti
 > - **Atomic units throughout:** Unless explicitly marked **(SI units)**, equations use **Hartree atomic units** (*ħ* = *m*<sub>e</sub> = *e* = 4πε₀ = 1), where energy is measured in **hartrees** (**Ha**, 1 Ha ≈ 27.2114 eV), length in Bohr radii (*a*₀ ≈ 0.5292 Å), and magnetic field in atomic units (**1 a.u. = 2.3505 × 10⁵ T**).
 > - **Spinless orbital model:** Intrinsic electron spin (*s* = ½, *g*<sub>s</sub> ≈ 2.0023) and spin–orbit coupling are omitted here, so this chapter isolates the **orbital (normal) Zeeman model** and **induced orbital diamagnetic currents**. By contrast, real **NMR** probes **nuclear spins** using radiofrequency waves, while **EPR** probes **electron spins**, typically with microwaves at ~28 GHz/T. That is twice the orbital step of ~14 GHz/T: in atomic units a spin flip costs ≈ *B*<sub>*z*</sub>, while an orbital Δ*m* = ±1 step costs *B*<sub>*z*</sub>/2. (In real hydrogen, 1s has zero *orbital* splitting, but its unpaired electron *spin* levels still shift by ≈ ±*B*<sub>*z*</sub>/2.)
 > - **Transition shorthand preview (§2.4):** **E1** means electric-dipole transitions driven by an oscillating electric field **ℰ**(*t*); **M1** means magnetic-dipole transitions driven by an oscillating magnetic field **B**₁(*t*); and **σ⁺** / **σ⁻** denote counterclockwise / clockwise circular polarization in the *xy*-plane (viewed from the +*z* side; covered fully in Chapters 3–4).
-> - **How to read the boxes:** the main text gives each result and what it means. Click a **Level 1** box for the picture, a **Level 2** box inside it for the full step-by-step derivation, and a **Level 3** box for the math tool used (with a link to the [Math Toolkit](tut:08)).
+> - **How to read the boxes:** the main text gives each result and what it means. Click a **Level 1 · Picture** box for the physical picture without algebra, a **Level 2 · Key idea** box inside it for the argument in a few key equations, and a **Level 3 · Full derivation** box for every algebraic step starting from the tools you need (with links to the [Math Toolkit](tut:08)). <!-- lint-ignore: level-ref -->
 
 > **In a Nutshell:**
 > - An electron with orbital angular momentum is a tiny **current loop**, and therefore a tiny **magnet**. Because the electron is negative, its magnet points *opposite* to **L**.
@@ -22,7 +22,7 @@ Turning up the **Field B<sub>z</sub>** slider applies a uniform external magneti
 
 - **Magnetic field and the Lorentz force:** a magnetic field **B** (unit: tesla, T) pushes on a *moving* charge *q* with force **F** = *q* **v** × **B** (a **cross product**: a vector perpendicular to both **v** and **B**, see [T9 · Cross product](tut:08#T9)). The force is perpendicular to the velocity, so it bends the path but does no work. Typical scales: Earth's field ≈ 50 μT, a fridge magnet ≈ 5 mT, an NMR magnet 1.9–23.5 T.
 - **A current loop is a magnet:** a loop carrying current *I* around area 𝒜 has **magnetic dipole moment** μ = *I*𝒜, pointing perpendicular to the loop by the right-hand rule (curl your fingers along the conventional current; your thumb gives **μ**). In a field, its energy is *U* = −**μ** · **B**: lowest when **μ** lines up with **B**, like a compass needle.
-- **An orbiting electron is a current loop:** an electron (charge −*e*) circling at speed *v* on a radius *r* makes a current of size *ev*/(2π*r*) around area 𝒜 = π*r*². So \|μ\| = *I*𝒜 = *evr*/2. Since its angular momentum is *L* = *m*<sub>e</sub>*vr*, this gives **μ = −(e/2m<sub>e</sub>) L**. The minus sign is there because the electron's charge is negative, so the magnet points *opposite* to **L**. Quantum mechanics keeps the same ratio: with *L*<sub>*z*</sub> = *mħ*, μ<sub>*z*</sub> = −*m* μ<sub>B</sub>, where the **Bohr magneton** is μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) = 5.788 × 10⁻⁵ eV/T.
+- **An orbiting electron is a current loop:** an electron (charge −*e*) circling at speed *v* on a radius *r* makes a current of size *ev*/(2π*r*) around area 𝒜 = π*r*². So \|μ\| = *I*𝒜 = *evr*/2. Since its angular momentum is *L* = *m*<sub>e</sub>*vr*, this gives **μ** = −(*e*/2*m*<sub>e</sub>) **L**. The minus sign is there because the electron's charge is negative, so the magnet points *opposite* to **L**. Quantum mechanics keeps the same ratio: with *L*<sub>*z*</sub> = *mħ*, μ<sub>*z*</sub> = −*m* μ<sub>B</sub>, where the **Bohr magneton** is μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) = 5.788 × 10⁻⁵ eV/T.
 - **Preview of the Zeeman effect:** plugging μ<sub>*z*</sub> into *U* = −μ<sub>*z*</sub>*B*<sub>*z*</sub> gives *U* = +*m* μ<sub>B</sub> *B*<sub>*z*</sub>. Orbitals with different *m* now have different energies. §2.2 derives the same result from the Schrödinger equation.
 - **Lenz's law and diamagnetism:** when a magnetic field is switched on, charges respond by circulating so that the field they create *opposes* the change. In atoms this induced circulation is **diamagnetism**; it makes nuclei "see" slightly less than the applied field, which is the origin of NMR **chemical shielding**.
 
@@ -47,20 +47,35 @@ Here ρ<sub>cyl</sub> = √(*x*² + *y*²) is the distance from the *z*-axis and
 <details>
 <summary>Level 1 · Picture: Larmor's theorem, the v × B force, and why A sits inside the momentum</summary>
 
-**Larmor's theorem (a quoted classical result).** Take an electron bound by a spherically symmetric force (like the Coulomb pull) and switch on a weak uniform **B**. Larmor's theorem says the new motion is just the old zero-field motion **plus a steady rigid rotation around B** at ω<sub>Larmor</sub> = *eB*<sub>*z*</sub>/(2*m*<sub>e</sub>) (SI), i.e. *B*<sub>*z*</sub>/2 in atomic units. *Why it works:* sit on a merry-go-round turning at angular velocity **Ω**. A moving object there feels a sideways **Coriolis force** −2*m*<sub>e</sub> **Ω** × **v**. The magnetic force *q* **v** × **B** = −*q* **B** × **v** has exactly the same "something × **v**" form. Choose 2*m*<sub>e</sub>**Ω** = −*q***B** and the two cancel. For the electron (*q* = −*e*) that is **Ω** = *e***B**/(2*m*<sub>e</sub>): rotation **counterclockwise** around **B** (seen from +*z* when *B*<sub>*z*</sub> > 0). On the merry-go-round only the central pull is left (plus a tiny centrifugal term proportional to *B*<sub>*z*</sub>², which we neglect), so the electron moves exactly as without a field; seen from the ground, that motion is carried around at **Ω**. This is also why ω<sub>Larmor</sub> is **half** the free-electron cyclotron frequency *eB*<sub>*z*</sub>/*m*<sub>e</sub>: the Coriolis force has a factor 2 in it.
+**Larmor's theorem (the merry-go-round analogy).** Take an electron bound by a spherically symmetric Coulomb pull and switch on a weak uniform magnetic field **B**. Larmor's theorem says the new motion is just the old zero-field motion **plus a steady rigid rotation around B** at the Larmor frequency. *Why it works:* imagine standing on a merry-go-round turning around the field axis. Any moving object on a turntable feels a sideways **Coriolis force** perpendicular to its velocity—the exact same geometric shape as the magnetic Lorentz force. Pick the turntable's rotation rate to match the field, and the Coriolis force cancels the magnetic force completely (leaving only a tiny outward centrifugal term proportional to the field squared). On the merry-go-round the electron moves just as if there were no magnetic field; viewed from the lab, that motion is carried around at the Larmor rate—which is **half** the free-electron cyclotron frequency because of the factor of 2 in the Coriolis force.
 
-**Which way does v × B point?** Use the right-hand rule: fingers along the first vector, curl toward the second, thumb gives the cross product. The same rule gives the direction of the angular momentum **L** = **r** × **p** of a circulating electron.
+**Which way does v × B point?** Use the right-hand rule: point your fingers along the first vector, curl them toward the second, and your thumb gives the cross product. The same rule gives the direction of orbital angular momentum **L** for a circulating electron.
 
 ```figure
 {"kind": "cross-product", "caption": "Let a be the electron velocity v and b the field B. The cross product v × B stands perpendicular to both, so the magnetic force only bends the path. Its size is largest at 90 degrees and zero when v is along B.", "angle": 90}
 ```
 
-**Why A enters the momentum ("stored momentum").** A vector potential that changes in time produces an electric field **ℰ** = −∂**A**/∂*t* (this is Faraday's law of induction written with **A**). Picture a charge *q* sitting almost still while the magnet is switched on. The induced field kicks it: *d*(*m***v**)/*dt* = *q***ℰ** = −*q* ∂**A**/∂*t*. Move both terms to one side and the quantity *m***v** + *q***A** does not change during the switch-on. A charge that started at rest ends up moving with *m***v** = −*q***A**. So *q***A** behaves like momentum **stored in the field**, and the momentum that is conserved (the **canonical momentum**) is **p** = *m***v** + *q***A**. Quantum mechanics uses the canonical momentum, **p̂** = −*iħ*∇, so the velocity is (**p̂** − *q***A**)/*m*. Replacing **p̂** → **p̂** − *q***A** in the kinetic energy *K* = **p**²/2*m* is called **minimal coupling**. We quote it as a result; it is the standard way magnetism enters the Schrödinger equation.
+**Why A enters the momentum ("stored momentum").** Switching on a magnet creates a looping induced electric field (Faraday's law). Picture a charge sitting still while the magnet ramps up: that induced electric field gives it a sideways kick proportional to the growing vector potential **A**. The combination of mechanical momentum plus field-stored momentum stays conserved during the ramp—which is why quantum mechanics couples magnetism by shifting momentum by the vector potential (**minimal coupling**).
 
-For the electron (*q* = −1 in atomic units) this says: a 1s electron at rest before the field is switched on ends with velocity **v** = **A**. That is the rigid Larmor whirl of the first demo below, and it is the diamagnetic current that Lenz's law predicts.
+For the negatively charged electron, a motionless 1s electron before the field switches on ends up drifting smoothly with the whirlpool **A**. That is the rigid Larmor whirl of the first demo below, and it is the exact diamagnetic current predicted by Lenz's law.
 
 <details>
-<summary>Level 2 · Full derivation: from minimal coupling to the Zeeman term and the Larmor flow</summary>
+<summary>Level 2 · Key idea: from minimal coupling to the Zeeman term and Larmor flow</summary>
+
+In atomic units (*q* = −1, *m*<sub>e</sub> = 1), minimal coupling replaces **p̂** by **p̂** + **A** with **A** = ½(**B** × **r**) = ½*B*<sub>*z*</sub>(−*y***x̂** + *x***ŷ**), which satisfies ∇ × **A** = **B** and ∇ · **A** = 0. Expanding ½(**p̂** + **A**)² (using ∇ · **A** = 0 so **p̂** · **A** = **A** · **p̂**) splits the Hamiltonian into the zero-field atom, the linear Zeeman term (**A** · **p̂** = ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>), and the quadratic diamagnetic term (½**A**² = ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>²):
+
+> *Ĥ* = ½ (**p̂** + **A**)² − 1/*r* = *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> + ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>² &nbsp;&nbsp; (a.u.)
+
+Repeating Chapter 1's continuity calculation with the extra −*i***A** · ∇ψ term adds \|ψ\|²**A** to the probability current (while real potential-like terms cancel):
+
+> **J** = Im(ψ\* ∇ψ) + \|ψ\|² **A**, &nbsp;&nbsp; **v** = **J**/\|ψ\|² = Im(∇ψ/ψ) + **A** &nbsp;&nbsp; (a.u.)
+
+Since **A** = ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>**φ̂**, dividing tangential speed ½*B*<sub>*z*</sub>ρ<sub>cyl</sub> by ρ<sub>cyl</sub> gives the exact same angular velocity ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 at every radius. Full algebra: [Minimal coupling, Zeeman term, and Larmor flow](tut:02#box-minimal-coupling).
+
+<details>
+<summary>Level 3 · Full derivation: minimal coupling, Zeeman term, and Larmor flow {#box-minimal-coupling}</summary>
+
+**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A**, gradient product rule ∇(ψ\*ψ) = ψ\*∇ψ + ψ∇ψ\*, and curl (∇ × **A**)<sub>*z*</sub> = ∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y*) and [T9 · Cross product & angular momentum](tut:08#T9) (**x̂** × **ŷ** = **ẑ** cyclically, and *L̂*<sub>*z*</sub> = *xp̂*<sub>*y*</sub> − *yp̂*<sub>*x*</sub>).
 
 We work in atomic units, so the electron has *q* = −1 and *m*<sub>e</sub> = 1. Minimal coupling gives the Hamiltonian
 
@@ -78,7 +93,7 @@ Now the curl. Because *A*<sub>*z*</sub> = 0 and neither *A*<sub>*x*</sub> nor *A
 
 so *Ĥ* = ½ **p̂**² + ½(**p̂** · **A** + **A** · **p̂**) + ½ **A**² − 1/*r*.
 
-**Step 3 — the middle terms are equal.** Use the divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A** (with *f* = ψ, see [T2](tut:08#T2)) and then ∇ · **A** = 0:
+**Step 3 — the middle terms are equal.** Use the divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A** (with *f* = ψ) and then ∇ · **A** = 0:
 
 > **p̂** · (**A**ψ) = −*i*∇ · (**A**ψ) = −*i*(∇ · **A**)ψ − *i***A** · (∇ψ) = −*i***A** · ∇ψ = **A** · (**p̂**ψ)
 
@@ -88,7 +103,7 @@ Thus **p̂** · **A** + **A** · **p̂** = 2 **A** · **p̂**.
 
 > **A** · **p̂** = ½ *B*<sub>*z*</sub>(−*y p̂*<sub>*x*</sub> + *x p̂*<sub>*y*</sub>) = ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub>
 
-because the *z*-component of **L̂** = **r** × **p̂** is *L̂*<sub>*z*</sub> = *x p̂*<sub>*y*</sub> − *y p̂*<sub>*x*</sub> ([T9](tut:08#T9)).
+because the *z*-component of **L̂** = **r** × **p̂** is *L̂*<sub>*z*</sub> = *x p̂*<sub>*y*</sub> − *y p̂*<sub>*x*</sub>.
 
 **Step 5 — the A² term.** **A**² = ¼ *B*<sub>*z*</sub>² (*y*² + *x*²) = ¼ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>², so ½ **A**² = ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>². Collecting Steps 2–5:
 
@@ -120,7 +135,7 @@ which is the continuity equation ∂\|ψ\|²/∂*t* + ∇ · **J** = 0 with
 
 > **J** = Im(ψ\* ∇ψ) + \|ψ\|² **A** &nbsp;&nbsp; (atomic units)
 
-Cross-check: the velocity operator is **v**<sub>op</sub> = **p̂**<sub>kin</sub>/*m*<sub>e</sub> = (−*iħ*∇ + *e* **A**)/*m*<sub>e</sub> in SI units, i.e. −*i*∇ + **A** in atomic units, and Re[ψ\*(−*i*∇ + **A**)ψ] gives the same **J**, because Re(−*iz*) = Im(*z*).
+Cross-check: the velocity operator is **v**<sub>op</sub> = **p̂**<sub>kin</sub>/*m*<sub>e</sub> = (−*iħ*∇ + *e* **A**)/*m*<sub>e</sub> in SI units, i.e. −*i*∇ + **A** in atomic units, and Re[ψ\*(−*i*∇ + **A**)ψ] gives the same **J**, because Re(−*iz*) = Im(*z*). ✓
 
 **Step 7 — the flow velocity.** Divide by \|ψ\|² = ψ\*ψ. Since ψ\*∇ψ/(ψ\*ψ) = ∇ψ/ψ:
 
@@ -128,15 +143,7 @@ Cross-check: the velocity operator is **v**<sub>op</sub> = **p̂**<sub>kin</sub>
 
 In cylindrical form **A** = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂** (because (−*y*, *x*)/ρ<sub>cyl</sub> is the unit vector **φ̂**). A tangential speed ½*B*<sub>*z*</sub>ρ<sub>cyl</sub> at radius ρ<sub>cyl</sub> is an angular speed (speed ÷ radius) of *B*<sub>*z*</sub>/2 at **every** radius: a rigid rotation at ω<sub>Larmor</sub>.
 
-We call **v**(**r**, *t*) the **probability-current flow** rather than picturing tiny classical electrons on fixed tracks. **J** is a genuine observable of standard quantum mechanics (**J**<sub>elec</sub> = −*e***J** is the physical electric current density). The Bohmian dots simply trace its streamlines: each dot position **X**(*t*) obeys *d***X**/*dt* = **v**(**X**, *t*).
-
-<details>
-<summary>Level 3 · Toolkit: divergence product rule, curl, and cross products</summary>
-
-- **Product rule for divergence** ([T2 · Partial derivatives and ∇](tut:08#T2)): ∇ · (*f***A**) = ∂(*fA*<sub>*x*</sub>)/∂*x* + ∂(*fA*<sub>*y*</sub>)/∂*y* + ∂(*fA*<sub>*z*</sub>)/∂*z*. Each piece is an ordinary product rule, e.g. ∂(*fA*<sub>*x*</sub>)/∂*x* = (∂*f*/∂*x*)*A*<sub>*x*</sub> + *f* ∂*A*<sub>*x*</sub>/∂*x*. Adding the three gives ∇*f* · **A** + *f* ∇ · **A**.
-- **Gradient of a product:** ∇(ψ\*ψ) = ψ\*∇ψ + ψ∇ψ\*, again one ordinary product rule per component.
-- **Curl, z-component:** (∇ × **A**)<sub>*z*</sub> = ∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y*. It measures how much **A** circulates around a tiny loop in the *xy*-plane ([T2](tut:08#T2)).
-- **Cross products** ([T9 · Cross product & angular momentum](tut:08#T9)): **x̂** × **ŷ** = **ẑ**, **ŷ** × **ẑ** = **x̂**, **ẑ** × **x̂** = **ŷ**; swapping the order flips the sign; any vector crossed with itself is zero. The *z*-component of **r** × **p** is *xp*<sub>*y*</sub> − *yp*<sub>*x*</sub>.
+We call **v**(**r**, *t*) the **probability-current flow** rather than picturing tiny classical electrons on fixed tracks. **J** is a genuine observable of standard quantum mechanics (**J**<sub>elec</sub> = −*e***J** is the physical electric current density). The Bohmian dots simply trace its streamlines: each dot position **X**(*t*) obeys *d***X**/*dt* = **v**(**X**, *t*). **Check:** setting *B*<sub>*z*</sub> = 0 sets **A** = **0** and recovers Chapter 1's *Ĥ*₀ and **v** = Im(∇ψ/ψ) identically. ✓
 
 </details>
 
@@ -155,13 +162,13 @@ In cylindrical coordinates (ρ<sub>cyl</sub>, φ, *z*), **A** = ½ *B*<sub>*z*</
 The first term is Chapter 1's quantum vortex: fast near the *z*-axis, slow far away, turning in the sense of *m*. The second term is the Larmor whirl: the same angular speed everywhere. The dots feel their sum.
 
 <details>
-<summary>Level 2 · Full derivation: the angular speed of a single eigenstate</summary>
+<summary>Level 2 · Key idea: the angular speed of a single eigenstate</summary>
 
 1. The around-the-axis part of the gradient is (1/ρ<sub>cyl</sub>) ∂/∂φ (a step *d*φ moves you a distance ρ<sub>cyl</sub> *d*φ; see [T5](tut:08#T5)).
 2. For ψ ∝ *e*<sup>*im*φ</sup>: (1/ρ<sub>cyl</sub>)(∂ψ/∂φ)/ψ = *im*/ρ<sub>cyl</sub>, whose imaginary part is *m*/ρ<sub>cyl</sub>. That is the φ-component of Im(∇ψ/ψ).
 3. Add the φ-component of **A**, ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>: *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> + ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>.
 4. Angular speed = tangential speed ÷ radius: *d*φ/*dt* = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² + *B*<sub>*z*</sub>/2.
-5. For *m* = −1 the two terms cancel where 1/ρ<sub>cyl</sub>² = *B*<sub>*z*</sub>/2, i.e. ρ<sub>cyl</sub> = √(2/*B*<sub>*z*</sub>). For *B*<sub>*z*</sub> = 0.25: √(2/0.25) = √8 ≈ 2.83 *a*₀.
+5. For *m* = −1 the two terms cancel where 1/ρ<sub>cyl</sub>² = *B*<sub>*z*</sub>/2, i.e. ρ<sub>cyl</sub> = √(2/*B*<sub>*z*</sub>). For *B*<sub>*z*</sub> = 0.25: √(2/0.25) = √8 ≈ 2.83 *a*₀. ✓
 
 </details>
 
@@ -220,16 +227,31 @@ This also resolves the quantization-axis choice from [§1.2 · Choosing a quanti
 <details>
 <summary>Level 1 · Picture: a compass needle that points the wrong way</summary>
 
-**Why does *m* > 0 go *up* in energy when *B*<sub>*z*</sub> > 0?** Because the electron has **negative** charge (*q* = −*e* < 0), its orbital magnetic dipole moment **μ**<sub>L</sub> = −(*e*/2*m*<sub>e</sub>)**L** = −μ<sub>B</sub> **L**/*ħ* **(SI units)** points **opposite** to **L**! So when *m* > 0 (*L*<sub>*z*</sub> > 0 points along +**B**), **μ**<sub>L</sub> points *antiparallel* to **B**, like a compass needle held backwards. That raises the magnetic potential energy −**μ**<sub>L</sub> · **B** = +*m* μ<sub>B</sub> *B*<sub>*z*</sub> > 0. Here the Bohr magneton μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) = 5.788 × 10⁻⁵ eV/T equals ½ in atomic units.
+**Why does *m* > 0 go *up* in energy when the magnetic field points along +*z*?** Because the electron carries **negative** charge, its orbital magnetic dipole moment **μ**<sub>L</sub> points **opposite** to its orbital angular momentum **L**. When *m* > 0, **L** points along +**B**, so the electron's tiny magnet points *antiparallel* to **B**—like a compass needle forced to point backwards. Holding a magnet backwards raises its magnetic potential energy, pushing *m* > 0 levels up and *m* < 0 levels down.
 
-The quantum calculation below gives exactly the same answer, because the term ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub> in the Hamiltonian *is* this magnet energy written as an operator.
+The quantum calculation inside gives the exact same sign and spacing, because the Zeeman term in the Hamiltonian *is* this magnet energy written as an operator.
 
 <details>
-<summary>Level 2 · Full derivation: L̂z = −i ∂/∂φ and the energy shift</summary>
+<summary>Level 2 · Key idea: why L̂z = −i ∂/∂φ shifts each orbital by m B_z / 2</summary>
 
-**Step 1 — rewrite *L̂*<sub>*z*</sub> as a derivative in φ.** Around the *z*-axis, *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. Changing φ (with ρ<sub>cyl</sub> and *z* held fixed) moves both *x* and *y*, so the multivariable chain rule ([T2](tut:08#T2), [T5](tut:08#T5)) gives:
+Using the chain rule in cylindrical coordinates turns the *z*-component of angular momentum *L̂*<sub>*z*</sub> = *x p̂*<sub>*y*</sub> − *y p̂*<sub>*x*</sub> into a single azimuthal derivative:
 
-> ∂/∂φ = (∂*x*/∂φ) ∂/∂*x* + (∂*y*/∂φ) ∂/∂*y* = (−ρ<sub>cyl</sub> sin φ) ∂/∂*x* + (ρ<sub>cyl</sub> cos φ) ∂/∂*y* = −*y* ∂/∂*x* + *x* ∂/∂*y*
+> *L̂*<sub>*z*</sub> = −*i* ∂/∂φ &nbsp;&nbsp; (a.u.)
+
+Every hydrogen orbital depends on φ only through *e*<sup>*im*φ</sup>, so differentiating pulls down *im* and −*i*(*im*) = *m*:
+
+> (*Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub>) ψ<sub>*nlm*</sub> = (*E*<sub>*n*</sub> + *m* *B*<sub>*z*</sub> / 2) ψ<sub>*nlm*</sub> &nbsp;&nbsp; (a.u.)
+
+The orbital shape stays untouched; only its energy shifts linearly in *m*. Full algebra: [L̂_z = −i ∂/∂φ and the energy shift](tut:02#box-lz-zeeman).
+
+<details>
+<summary>Level 3 · Full derivation: L̂z = −i ∂/∂φ and the energy shift {#box-lz-zeeman}</summary>
+
+**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (multivariable chain rule *df*/*d*φ = (∂*f*/∂*x*)(*dx*/*d*φ) + (∂*f*/∂*y*)(*dy*/*d*φ)) and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = ρ<sub>cyl</sub> cos φ, *y* = ρ<sub>cyl</sub> sin φ).
+
+**Step 1 — rewrite *L̂*<sub>*z*</sub> as a derivative in φ.** Around the *z*-axis, *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. Changing φ (with ρ<sub>cyl</sub> and *z* held fixed) moves both *x* and *y*, with *dx*/*d*φ = −ρ<sub>cyl</sub> sin φ = −*y* and *dy*/*d*φ = ρ<sub>cyl</sub> cos φ = *x*. The multivariable chain rule gives:
+
+> ∂/∂φ = (∂*x*/∂φ) ∂/∂*x* + (∂*y*/∂φ) ∂/∂*y* = −*y* ∂/∂*x* + *x* ∂/∂*y*
 
 **Step 2 — compare with *L̂*<sub>*z*</sub>.** In atomic units (*ħ* = 1), *p̂*<sub>*x*</sub> = −*i* ∂/∂*x* and *p̂*<sub>*y*</sub> = −*i* ∂/∂*y*, so
 
@@ -243,10 +265,7 @@ The quantum calculation below gives exactly the same answer, because the term ½
 
 **Step 4 — the energy.** *Ĥ*₀ψ<sub>*nlm*</sub> = *E*<sub>*n*</sub>ψ<sub>*nlm*</sub> (Chapter 1) and ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>ψ<sub>*nlm*</sub> = ½*B*<sub>*z*</sub>*m*ψ<sub>*nlm*</sub>. Adding: (*Ĥ*₀ + ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>)ψ<sub>*nlm*</sub> = (*E*<sub>*n*</sub> + *mB*<sub>*z*</sub>/2)ψ<sub>*nlm*</sub>. The orbital is unchanged; only its energy moves.
 
-<details>
-<summary>Level 3 · Toolkit: the multivariable chain rule</summary>
-
-If a function *f*(*x*, *y*) is evaluated along a path where *x* and *y* both depend on a parameter φ, then *df*/*d*φ = (∂*f*/∂*x*)(*dx*/*d*φ) + (∂*f*/∂*y*)(*dy*/*d*φ): add the change caused through *x* to the change caused through *y*. Here *dx*/*d*φ = −ρ<sub>cyl</sub> sin φ = −*y* and *dy*/*d*φ = ρ<sub>cyl</sub> cos φ = *x*. See [T2 · Partial derivatives](tut:08#T2) and [T5 · Spherical and cylindrical coordinates](tut:08#T5).
+**Check:** For *m* = 0, ψ does not depend on φ so *L̂*<sub>*z*</sub>ψ = 0 and the energy shift vanishes; in SI units μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) reproduces Δ*E* = *m* μ<sub>B</sub> *B*<sub>*z*</sub>. ✓
 
 </details>
 
@@ -269,25 +288,33 @@ If a function *f*(*x*, *y*) is evaluated along a path where *x* and *y* both dep
 The term ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² is an energy cost for being far from the field axis. Its average therefore depends on how widely the electron cloud spreads sideways, measured by ⟨ρ<sub>cyl</sub>²⟩. The \|2p, ±1⟩ cloud is a doughnut around the *z*-axis, which keeps more of it away from the axis than a sphere would. But the spherical 2s cloud is larger overall, and size wins: ⟨ρ<sub>cyl</sub>²⟩ = 28 *a*₀² for 2s against 24 *a*₀² for 2p, ±1, so 2s is pushed up a little more.
 
 <details>
-<summary>Level 2 · Full derivation: where ⟨ρ<sub>cyl</sub>²⟩ = 24 a₀² (2p, ±1) and 28 a₀² (2s) come from</summary>
+<summary>Level 2 · Key idea: factoring ⟨ρ<sub>cyl</sub>²⟩ into radial and angular averages</summary>
 
-The squared distance from the *z*-axis is ρ<sub>cyl</sub>² = *x*² + *y*² = *r*² sin²θ. In a hydrogen orbital the radial and angular parts are independent, so the average splits into two factors:
+Because ρ<sub>cyl</sub>² = *r*² sin²θ and hydrogen orbitals separate into radial and angular parts, the average factors cleanly:
 
 > ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩
 
-**Radial factor.** The standard formula ⟨*r*²⟩<sub>*nl*</sub> = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] gives
-- 2p (*n* = 2, *l* = 1): (4/2)(20 + 1 − 6) = 2 × 15 = **30** *a*₀²
-- 2s (*n* = 2, *l* = 0): (4/2)(20 + 1 − 0) = 2 × 21 = **42** *a*₀²
+- \|2p, ±1⟩: ⟨*r*²⟩ = 30 *a*₀² and ⟨sin²θ⟩ = 4/5 give ⟨ρ<sub>cyl</sub>²⟩ = **24** *a*₀² (diamagnetic shift 3*B*<sub>*z*</sub>²).
+- \|2s, 0⟩: ⟨*r*²⟩ = 42 *a*₀² and ⟨sin²θ⟩ = 2/3 give ⟨ρ<sub>cyl</sub>²⟩ = **28** *a*₀² (diamagnetic shift 3.5*B*<sub>*z*</sub>², pushing 2s up by 0.5*B*<sub>*z*</sub>² more than 2p, ±1).
 
-You can check both directly with ∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−*r*</sup> *dr* = *k*! ([T6](tut:08#T6)) and ⟨*r*²⟩ = ∫₀<sup>∞</sup> *r*² · *R*² · *r*² *dr*:
-- 2p: *R*<sub>21</sub>² = *r*²*e*<sup>−*r*</sup>/24, so ⟨*r*²⟩ = (1/24)∫*r*⁶*e*<sup>−*r*</sup>*dr* = 720/24 = 30.
-- 2s: *R*<sub>20</sub>² = ½(1 − *r*/2)²*e*<sup>−*r*</sup> = ½(1 − *r* + *r*²/4)*e*<sup>−*r*</sup>, so ⟨*r*²⟩ = ½(4! − 5! + 6!/4) = ½(24 − 120 + 180) = 42.
+Full derivation: [Evaluating ⟨ρ_cyl²⟩ for 2p, ±1 and 2s](tut:02#box-ch2-rho2).
 
-**Angular factor.** Write *u* = cos θ, so sin²θ = 1 − *u*² and the angular weight sin θ *d*θ becomes *du* from −1 to 1.
-- *m* = ±1 (\|*Y*\|² ∝ sin²θ): ⟨sin²θ⟩ = ∫(1 − *u*²)² *du* / ∫(1 − *u*²) *du* = (16/15)/(4/3) = **4/5**.
-- *l* = 0 (spherical, \|*Y*\|² constant): ⟨sin²θ⟩ = ∫(1 − *u*²) *du* / ∫ *du* = (4/3)/2 = **2/3**.
+<details>
+<summary>Level 3 · Full derivation: evaluating ⟨ρ<sub>cyl</sub>²⟩ for 2p, ±1 and 2s {#box-ch2-rho2}</summary>
 
-**Products.** \|2p, ±1⟩: 30 × 4/5 = **24** *a*₀², so ⅛*B*<sub>*z*</sub>² × 24 = 3*B*<sub>*z*</sub>². \|2s, 0⟩: 42 × 2/3 = **28** *a*₀², so ⅛*B*<sub>*z*</sub>² × 28 = 3.5*B*<sub>*z*</sub>². The 2s level is pushed up by 0.5*B*<sub>*z*</sub>² more than 2p, ±1.
+**You need:** [T5 · Spherical coordinates](tut:08#T5) (ρ<sub>cyl</sub>² = *r*² sin²θ) and [T6 · Radial integrals](tut:08#T6) (∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−*r*</sup> *dr* = *k*!).
+
+**Step 1 — radial factor ⟨*r*²⟩.** Using ⟨*r*²⟩ = ∫₀<sup>∞</sup> *r*² · *R*² · *r*² *dr* (matching the standard formula ⟨*r*²⟩<sub>*nl*</sub> = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)]):
+- **2p** (*n* = 2, *l* = 1): *R*<sub>21</sub>² = *r*²*e*<sup>−*r*</sup>/24, so ⟨*r*²⟩ = (1/24)∫₀<sup>∞</sup> *r*⁶*e*<sup>−*r*</sup>*dr* = 6!/24 = 720/24 = **30** *a*₀².
+- **2s** (*n* = 2, *l* = 0): *R*<sub>20</sub>² = ½(1 − *r*/2)²*e*<sup>−*r*</sup> = ½(1 − *r* + *r*²/4)*e*<sup>−*r*</sup>, so ⟨*r*²⟩ = ½(4! − 5! + 6!/4) = ½(24 − 120 + 180) = **42** *a*₀².
+
+**Step 2 — angular factor ⟨sin²θ⟩.** Set *u* = cos θ, so sin²θ = 1 − *u*² and sin θ *d*θ becomes *du* over [−1, 1]:
+- For *m* = ±1 (\|*Y*\|² ∝ sin²θ): ⟨sin²θ⟩ = ∫<sub>−1</sub><sup>1</sup> (1 − *u*²)² *du* / ∫<sub>−1</sub><sup>1</sup> (1 − *u*²) *du* = (16/15)/(4/3) = **4/5**.
+- For *l* = 0 (spherical, \|*Y*\|² constant): ⟨sin²θ⟩ = ∫<sub>−1</sub><sup>1</sup> (1 − *u*²) *du* / ∫<sub>−1</sub><sup>1</sup> *du* = (4/3)/2 = **2/3**.
+
+**Step 3 — products & check.** \|2p, ±1⟩: 30 × 4/5 = **24** *a*₀² ⇒ ⅛*B*<sub>*z*</sub>² × 24 = 3*B*<sub>*z*</sub>². \|2s, 0⟩: 42 × 2/3 = **28** *a*₀² ⇒ ⅛*B*<sub>*z*</sub>² × 28 = 3.5*B*<sub>*z*</sub>². **Check:** both radial integrals match the closed-form formula (*n*²/2)[5*n*² + 1 − 3*l*(*l*+1)] = 30 (2p) and 42 (2s), and for spherical 2s, ⟨sin²θ⟩ = 2/3 matches ⟨*x*² + *y*²⟩/⟨*r*²⟩ = 2/3. ✓
+
+</details>
 
 </details>
 
@@ -310,18 +337,33 @@ so φ has been replaced by φ − ω<sub>Larmor</sub>*t*: the dumbbell **rotates
 <details>
 <summary>Level 1 · Picture: two phase clocks turning in opposite directions</summary>
 
-The *m* = +1 part carries a phase clock that runs a bit fast (energy *E*₂ + ω<sub>Larmor</sub>), the *m* = −1 part one that runs a bit slow (*E*₂ − ω<sub>Larmor</sub>). Their difference grows steadily, and a changing relative phase between *e*<sup>+*i*φ</sup> and *e*<sup>−*i*φ</sup> is the same thing as turning the pattern in φ.
+The *m* = +1 part carries a phase clock that runs slightly faster than the base *n* = 2 clock, while the *m* = −1 part carries one that runs slightly slower. As their relative phase grows steadily, the standing interference pattern of the two counter-rotating waves turns smoothly around the *z*-axis.
 
 ```figure
 {"kind": "phase-beats", "caption": "The two clocks stand for m = +1 and m = -1, whose energies differ by B_z. Their interference term repeats at the beat rate, which equals B_z, twice the Larmor frequency.", "dE": 0.12, "c2": 0.5}
 ```
 
-- **Orbital pattern rotation vs. true gyroscopic precession:** Because 2p<sub>*x*</sub> is an equal mix of *m* = +1 and *m* = −1, its average angular momentum vanishes (⟨**L**⟩ = **0**)—so there is no nonzero angular-momentum vector precessing like a spinning gyroscope! Instead, it is the **orbital density pattern** \|Ψ\|² ∝ cos²(φ − ω<sub>Larmor</sub>*t*) that rotates continuously around the *z*-axis at angular velocity ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2. *(True gyroscopic precession of a tilted ⟨**L**⟩ vector requires mixing neighboring m values (Δm = 1), such as \|2p, 0⟩ + \|2p, +1⟩.)*
-- **Why ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 when the energy gap is Δ*E* = *B*<sub>*z*</sub>:** In Chapter 1 (§1.3), two states separated by Δ*E* = *E*₊₁ − *E*₋₁ = *B*<sub>*z*</sub> beat at angular frequency Δ*E* = *B*<sub>*z*</sub>. Why does the 2p<sub>*x*</sub> dumbbell rotate at half that rate (ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2)? Because rotating a symmetric two-lobed dumbbell by 180° swaps the two lobes and brings \|Ψ\|² ∝ cos²(φ − ω<sub>Larmor</sub>*t*) = ½[1 + cos(2φ − *B*<sub>*z*</sub>*t*)] right back onto itself—so \|Ψ\|² repeats **twice** per full revolution (2ω<sub>Larmor</sub> = *B*<sub>*z*</sub> = Δ*E*)!
-- **Why the electron dots ride cleanly inside the rotating lobes:** At every instant *t*, Ψ is a purely real function of position times the overall phase factor *e*<sup>−*iE*₂*t*</sup>, which is the same everywhere, so Im(∇Ψ/Ψ) = 0 everywhere! Thus the probability-current velocity is purely **v** = **A** = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂**, sweeping every dot rigidly at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 in step with the rotating lobes.
+- **Orbital pattern rotation vs. true gyroscopic precession:** Because 2p<sub>*x*</sub> is an equal mix of *m* = +1 and *m* = −1, its average angular momentum vanishes—so there is no nonzero angular-momentum arrow precessing like a spinning gyroscope! Instead, it is the **orbital density pattern** itself that rotates continuously around the *z*-axis at the Larmor frequency. *(True gyroscopic precession of a tilted angular-momentum vector requires mixing neighboring m values, such as \|2p, 0⟩ + \|2p, +1⟩.)*
+- **Why the dumbbell rotates at half the beat frequency:** Two states separated by the Zeeman gap between *m* = +1 and *m* = −1 beat at that full gap frequency. Why does the 2p<sub>*x*</sub> dumbbell turn at half that rate? Because turning a symmetric two-lobed dumbbell by 180° swaps the two lobes and brings the exact same probability density back onto itself—so the density pattern repeats **twice** per full revolution!
+- **Why the electron dots ride cleanly inside the rotating lobes:** At every instant, the rotating 2p<sub>*x*</sub> wave stays purely real up to one uniform global time phase. With zero internal phase twist, the probability-current velocity comes purely from the rigid Larmor whirl, sweeping every dot in lockstep with the turning lobes.
 
 <details>
-<summary>Level 2 · Full derivation: building 2px and letting each part evolve</summary>
+<summary>Level 2 · Key idea: why Zeeman phases rotate 2p<sub>*x*</sub> at ω<sub>Larmor</sub></summary>
+
+Under the Condon–Shortley sign convention, subtracting the *m* = ±1 states builds the real 2p<sub>*x*</sub> dumbbell:
+
+> ψ(0) = (ψ<sub>2,1,+1</sub> − ψ<sub>2,1,−1</sub>)/√2 = −√2 *C* *R*<sub>21</sub>(*r*) sin θ cos φ
+
+In a field *B*<sub>*z*</sub>, *m* = ±1 evolve at energies *E*₂ ± ω<sub>Larmor</sub> (with ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2). Factoring out *e*<sup>−*iE*₂*t*</sup> combines the opposite Zeeman phases *e*<sup>∓*i*ω<sub>Larmor</sub>*t*</sup> directly with *e*<sup>±*i*φ</sup> into *e*<sup>±*i*(φ − ω<sub>Larmor</sub>*t*)</sup>:
+
+> Ψ(*r*, θ, φ, *t*) = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*)
+
+Squaring gives \|Ψ\|² ∝ cos²(φ − ω<sub>Larmor</sub>*t*) = ½[1 + cos(2φ − *B*<sub>*z*</sub>*t*)], so the dumbbell rotates at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 while its density repeats at Δ*E* = *B*<sub>*z*</sub> = 2ω<sub>Larmor</sub>. Full algebra: [Building 2p_x and letting each part evolve](tut:02#box-2px-larmor).
+
+<details>
+<summary>Level 3 · Full derivation: building 2p<sub>*x*</sub> and letting each part evolve {#box-2px-larmor}</summary>
+
+**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (*e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a* and *e*<sup>*ia*</sup>*e*<sup>*ib*</sup> = *e*<sup>*i*(*a*+*b*)</sup>).
 
 **Step 1 — the two ingredients.** Recall from Chapter 1 how the real **2p<sub>*x*</sub>** orbital is built from *m* = ±1 eigenstates. Under the standard **Condon–Shortley phase convention** used in quantum chemistry and inside `electron_orbitals.html`, the two *m* = ±1 wavefunctions carry opposite signs:
 
@@ -343,10 +385,7 @@ again using *e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a*. Notice that 
 
 **Step 5 — the density.** \|Ψ\|² = 2*C*²*R*<sub>21</sub>² sin²θ cos²(φ − ω<sub>Larmor</sub>*t*), since \|*e*<sup>−*iE*₂*t*</sup>\| = 1. Using cos²*a* = ½(1 + cos 2*a*), the time-dependent part is cos(2φ − *B*<sub>*z*</sub>*t*).
 
-<details>
-<summary>Level 3 · Toolkit: Euler's formula</summary>
-
-*e*<sup>*ia*</sup> = cos *a* + *i* sin *a* and *e*<sup>−*ia*</sup> = cos *a* − *i* sin *a*. Adding them cancels the sines: *e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a*. Also *e*<sup>*ia*</sup>*e*<sup>*ib*</sup> = *e*<sup>*i*(*a*+*b*)</sup>. See [T1 · Complex numbers & Euler](tut:08#T1).
+**Check:** At *t* = 0 this reduces to the static 2p<sub>*x*</sub> state ∝ cos φ, and at *B*<sub>*z*</sub> = 0 we have ω<sub>Larmor</sub> = 0 so the lobes stand still. ✓
 
 </details>
 
@@ -416,7 +455,7 @@ An oscillating electric field **ℰ**(*t*) drives **E1 (electric-dipole)** trans
 
 In our simplified linear-Zeeman model (dropping ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>², which would shift the spacing by ~10% at *B*<sub>*z*</sub> = 0.1 a.u.), \|2s, 0⟩ lies **exactly halfway** between \|2p, +1⟩ and \|2p, −1⟩ with equal circular dipole strength **3.00 a.u.** (\|⟨2s, 0\| **r** · **ε**<sub>+</sub><sup>∗</sup> \|2p, +1⟩\| = 3.00 *a*₀, whereas \|⟨2s, 0\|*x*\|2p, +1⟩\| = 3/√2 ≈ 2.12 *a*₀). Therefore, **σ⁺** circularly polarized light in **Coherent EM wave** mode, tuned to the resonance frequency ω₀ = ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 couples an **equidistant 3-level ladder** (`|2p,+1⟩ ↔ |2s,0⟩ ↔ |2p,-1⟩`)!
 
-To understand the `Power` slider and pulse-area readout **Θ** previewed here (and derived fully in Chapter 5): in **Coherent EM wave** mode at this line's reference duration (`13 cyc`, its shortest ionization-safe π-pulse), `Power = 1` is calibrated to a **π-pulse** (Θ = π, 100% inversion for an isolated **2-level** pair), and since field amplitude scales as √Power, Θ = π√Power at `13 cyc`. When a classical coherent wave drives both steps of the three-level ladder equally, the effective ladder rotation angle is **β = Θ / √2** (so full transfer across all three levels requires √2 more amplitude, i.e., `Power = 2`). For this equal-step ladder, the populations after the pulse are (quoted here, derived as a spin-1 rotation in Chapter 5, §5.4):
+To understand the `Power` slider and pulse-area readout *Θ* previewed here (and derived fully in Chapter 5): in **Coherent EM wave** mode at this line's reference duration (`13 cyc`, its shortest ionization-safe π-pulse), `Power = 1` is calibrated to a **π-pulse** (Θ = π, 100% inversion for an isolated **2-level** pair), and since field amplitude scales as √Power, Θ = π√Power at `13 cyc`. When a classical coherent wave drives both steps of the three-level ladder equally, the effective ladder rotation angle is β = Θ / √2 (so full transfer across all three levels requires √2 more amplitude, i.e., `Power = 2`). For this equal-step ladder, the populations after the pulse are (quoted here, derived as a spin-1 rotation in Chapter 5, §5.4):
 
 > *P*<sub>+1</sub> = cos⁴(β/2), &nbsp;&nbsp; *P*<sub>0</sub> = ½ sin²β, &nbsp;&nbsp; *P*<sub>−1</sub> = sin⁴(β/2), &nbsp;&nbsp; β = Θ/√2
 
@@ -428,7 +467,7 @@ where *P*<sub>+1</sub>, *P*<sub>0</sub>, *P*<sub>−1</sub> are the populations 
 <details>
 <summary>Level 1 · Picture: the ladder as an arrow being tipped over</summary>
 
-Think of the three levels as three positions of an arrow: pointing up (*m* = +1), sideways (*m* = 0), and down (*m* = −1). The σ⁺ pulse tips the arrow by the angle β. Tipping by 90° (β = π/2) leaves it sideways, which is a mixture: half in the middle level and a quarter at each end. Tipping by 180° (β = π) turns it fully upside down: everything in *m* = −1. The angle is Θ/√2 rather than Θ: when the same coupling acts on both steps of a three-level ladder, the arrow turns √2 times more slowly than an isolated two-level pair would flip. That factor is quoted here; Chapter 5 (§5.4) solves the ladder exactly. The formulas reduce to familiar cases at the ends: at β = 0 nothing has moved (*P*<sub>+1</sub> = 1), and at β = π the arrow is reversed (*P*<sub>−1</sub> = 1).
+Think of the three levels as three orientations of an arrow: pointing up (*m* = +1), sideways (*m* = 0), and down (*m* = −1). The σ⁺ pulse tips the arrow smoothly through the rotation angle β. Tipping by 90° leaves it sideways—half in the middle level and a quarter at each end. Tipping by 180° turns it completely upside down, putting 100% into *m* = −1. Because the same coupling drives both steps of a three-level ladder, the arrow turns √2 times more slowly than an isolated two-level pair would flip (quoted here; Chapter 5, §5.4 solves the ladder exactly). At zero tip nothing has moved; at a full 180° tip the arrow is completely reversed.
 
 </details>
 

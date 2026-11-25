@@ -6,7 +6,7 @@ This reference chapter explains how `electron_orbitals.html` converts between mi
 
 ## 7.1 Why Chemists Use Hartree Atomic Units
 
-In SI units, Schrödinger's equation for hydrogen carries four tiny fundamental constants: *ħ* = 1.0546 × 10⁻³⁴ J·s (the reduced Planck constant), *m*<sub>e</sub> = 9.1094 × 10⁻³¹ kg (the electron mass), *e* = 1.6022 × 10⁻¹⁹ C (the elementary charge), and ε₀ = 8.8542 × 10⁻¹² F/m (the vacuum permittivity). Together they set the natural length, energy and time scales of the atom. If we choose our units so that **ħ = m<sub>e</sub> = e = 4πε₀ = 1**, all four constants drop out of the equations, and the Bohr radius *a*₀ = 4πε₀*ħ*²/(*m*<sub>e</sub>*e*²) becomes exactly 1.
+In SI units, Schrödinger's equation for hydrogen carries four tiny fundamental constants: *ħ* = 1.0546 × 10⁻³⁴ J·s (the reduced Planck constant), *m*<sub>e</sub> = 9.1094 × 10⁻³¹ kg (the electron mass), *e* = 1.6022 × 10⁻¹⁹ C (the elementary charge), and ε₀ = 8.8542 × 10⁻¹² F/m (the vacuum permittivity). Together they set the natural length, energy and time scales of the atom. If we choose our units so that *ħ* = *m*<sub>e</sub> = *e* = 4πε₀ = 1, all four constants drop out of the equations, and the Bohr radius *a*₀ = 4πε₀*ħ*²/(*m*<sub>e</sub>*e*²) becomes exactly 1.
 
 Whenever the UI shows energies, durations, magnetic fields, or intensities, it multiplies the internal atomic-unit numbers by these CODATA conversion factors (rounded here):
 
@@ -128,7 +128,7 @@ Like any good scientific model, `electron_orbitals.html` balances mathematical e
 
 ## 7.4 Chapter Roadmap & Study Index
 
-Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 to strong magnetic fields; [Chapter 8](tut:08), the **Math Toolkit**, is an appendix that the "Level 3 · Toolkit" boxes link into whenever an equation needs a piece of math (complex numbers, ∇, differential equations, Fourier transforms, …).
+Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 to strong magnetic fields. Throughout the tutorial, collapsible zoom boxes follow three consistent tiers—**Level 1 · Picture** (algebra-free intuition), **Level 2 · Key idea** (the physical argument in a few key equations), and **Level 3 · Full derivation** (step-by-step algebra). [Chapter 8](tut:08), the **Math Toolkit**, is the companion appendix that the **You need:** headers of **Level 3 · Full derivation** (and standalone **Level 2 · Key idea**) boxes link into whenever a proof uses a piece of math (complex numbers, ∇, differential equations, Fourier transforms, …). <!-- lint-ignore: level-ref -->
 
 | Chapter | Core Chemistry & Quantum Concepts | Key Demos to Revisit |
 | :--- | :--- | :--- |
@@ -204,7 +204,7 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | :--- | :--- | :--- |
 | *a*₀ | Bohr radius, 0.5292 Å = 1 a.u. of length. | Ch 1–4, 6–8 |
 | **A** | Vector potential (a helper field with **B** = ∇ × **A**). Always bold (in Ch 8's product rules, **A** is any vector field). | Ch 1, 2, 6, 8 |
-| *A*<sub>21</sub> | Einstein coefficient for spontaneous emission from level 2 to level 1 (a rate; equals Γ when 2 has only one decay channel). Always subscripted. | Ch 4, 5, 8 |
+| *A*<sub>21</sub> | Einstein coefficient for spontaneous emission from level 2 to level 1 (a rate; equals Γ when 2 has only one decay channel). Always subscripted. | Ch 4, 5, 8 | <!-- lint-ignore: level-ref -->
 | Abs | Absorbance in the Beer–Lambert law, Abs = ε *c* ℓ. | Ch 4 |
 | 𝒜 | Area (of a current loop or a surface). | Ch 2, 8 |
 | *a*<sub>glow</sub> | Opacity of the density-overlay glow (0 = transparent, 1 = solid); usually just written "opacity". | Ch 7 |
@@ -236,7 +236,7 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | *l*, *m* | Orbital and magnetic quantum numbers. Not to be confused with masses *m*<sub>e</sub>, *m*<sub>p</sub> or the spin projection *m*<sub>*s*</sub>. | all |
 | *N* | Number of optical cycles in a photon (*N*<sub>sim</sub> = 24 shown on screen). In Ch 4, *N*₁, *N*₂ are level populations; in the bucket picture (Ch 6, 8), the water level or population; in Ch 1, a normalization constant. | Ch 1, 3, 4, 6, 8 |
 | *n* | Principal quantum number (shell). | all |
-| *P* | *P*(*r*) radial distribution *r*²*R*²; *P*₂ population of level 2; *P*<sub>abs</sub> absorption probability; *P*<sub>*l*</sub> Legendre polynomial. | Ch 1, 5, 6, 8 |
+| *P* | *P*(*r*) radial distribution *r*²*R*²; *P*₂ population of level 2; *P*<sub>abs</sub> absorption probability; *P*<sub>*l*</sub> Legendre polynomial. | Ch 1, 5, 6, 8 | <!-- lint-ignore: level-ref -->
 | **p**, *p* | **p** is momentum. In Ch 7, *p* is the `Tilt` angle (and *p*<sub>2D</sub>, *p*<sub>ref</sub> are overlay densities). | Ch 1, 2, 4, 7, 8 |
 | *Q*<sub>quant</sub> | Bohm's quantum potential. | Ch 1 |
 | *q* | Electric charge (*q* = −*e* for the electron). For light, the polarization component that changes *m* by Δ*m* = *q* = 0, ±1. In Ch 8 (T3), *q*(*t*) is also a generic source term. | Ch 2–4, 6, 8 |
@@ -279,6 +279,6 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | χ<sub>*k*</sub>, χ<sub>*j*</sub> | Phase of superposition component *k* (the Phase slider); in Ch 3, χ<sub>*j*</sub> is the phase of polarization component *j* = *x*, *y*, *z*. | Ch 1, 3, 8 |
 | ψ, Ψ | ψ(**r**) is a spatial wavefunction, Ψ(**r**, *t*) the full time-dependent one; Ψ<sub>total</sub> is a joint atom + photon state. | all |
 | ω, ω₀, ω<sub>L</sub>, ω<sub>Larmor</sub> | Angular frequency; atomic transition frequency; light (laser) frequency; Larmor precession frequency. | Ch 1–6, 8 |
-| Ω, Ω<sub>R</sub> | Rabi frequency (rate of the population flop). In Ch 2's merry-go-round analogy, bold **Ω** is an angular velocity. | Ch 2, 3, 5, 8 |
+| Ω, Ω<sub>R</sub> | Rabi frequency (rate of the population flop). | Ch 3, 5, 8 |
 | ∇, ∇·, ∇², ∇× | Gradient, divergence, Laplacian, curl ([T2](tut:08#T2)). | Ch 1, 2, 6, 8 |
 | \|ψ⟩, ⟨ψ\| | Dirac ket and bra; ⟨φ\|ψ⟩ is an overlap ([T7](tut:08#T7)). | Ch 1–6, 8 |

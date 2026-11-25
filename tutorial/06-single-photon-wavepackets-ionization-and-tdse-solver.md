@@ -27,26 +27,41 @@ A single photon carries exactly one quantum, so there is no pulse area to tune. 
 
 Here *c*<sub>*e*</sub>(*t*) is the complex amplitude of the upper (excited) level, so \|*c*<sub>*e*</sub>\|² is the probability that the atom is excited; ξ(*t*) is the normalized photon envelope (∫\|ξ\|² *dt* = 1: exactly one photon in total); *T* is the photon's duration; Γ<sub>*b*</sub> is the decay rate of the upper level back into exactly the photon's channel, and Γ<sub>tot</sub> is the upper level's **total** decay rate (it leaks out through every channel while it fills). The ideal photon is the time-reversal of the upper level's emission, so its envelope rises as *e*<sup>+Γ<sub>tot</sub>*t*/2</sup>. Then:
 - For a **two-level atom** (Γ<sub>*b*</sub> = Γ<sub>tot</sub> = Γ, e.g. `1s → 2p`), absorption reaches 1 − *e*<sup>−Γ*T*</sup> (99.3% for the simulated Γ*T* = 5).
-- For any other photon shape, or when the upper level has several decay channels, absorption is lower. It can never exceed the **branching ratio** Γ<sub>*b*</sub>/Γ<sub>tot</sub> (values in §6.3; proof in the Level-2 box below). The proof uses the **Cauchy–Schwarz inequality** \|∫*f*<sup>∗</sup>*g* *dt*\|² ≤ ∫\|*f*\|² *dt* · ∫\|*g*\|² *dt* (for any two functions *f* and *g*), the function version of "a dot product is at most the product of the two lengths" (because cos θ ≤ 1).
+- For any other photon shape, or when the upper level has several decay channels, absorption is lower. It can never exceed the **branching ratio** Γ<sub>*b*</sub>/Γ<sub>tot</sub> (values in §6.3; proof in [From the leaky bucket to the photon](tut:06#box-cascade-photon)). The proof uses the **Cauchy–Schwarz inequality** \|∫*f*<sup>∗</sup>*g* *dt*\|² ≤ ∫\|*f*\|² *dt* · ∫\|*g*\|² *dt* (for any two functions *f* and *g*), the function version of "a dot product is at most the product of the two lengths" (because cos θ ≤ 1).
 
 <details>
 <summary>Level 1 · Picture: a leaky bucket filled by a hose</summary>
 
 Think of the upper level as a **bucket with a hole in the bottom**:
-- The **hose** is the incoming photon. It pours in at a rate set by the photon's envelope ξ(*t*) and by how strongly the photon's channel couples to the atom (the factor √Γ<sub>*b*</sub>).
-- The **hole** is spontaneous emission. The fuller the bucket, the faster it leaks: the term −(Γ<sub>tot</sub>/2)*c*<sub>*e*</sub> is "leak rate × current level".
-- With a **steady** hose the level rises and then flattens at "fill rate ÷ leak rate", when the outflow balances the inflow (figure below).
+- The **hose** is the incoming photon. It pours in at a rate set by the photon's shape and by how strongly the photon's channel couples to the atom.
+- The **hole** is spontaneous emission. The fuller the bucket, the faster it leaks out.
+- With a **steady** hose the level rises and then flattens where outflow balances inflow (figure below).
 
-The time-reversed photon is a clever hose schedule. It opens gently and then ever faster (*e*<sup>+Γ*t*/2</sup>), so most of the water arrives near the end, when there is no time left for it to leak out, and then it shuts off at the moment the bucket is fullest. Any other schedule wastes some water through the hole.
+The time-reversed photon is a clever hose schedule: it starts as a gentle trickle and ramps up faster and faster toward the end so most of the water arrives when there is almost no time left to leak out, then shuts off at the exact moment the bucket is fullest. Any other schedule wastes some water through the hole.
 
-*(The picture is only an analogy: in the quantum equation the "water level" is the amplitude *c*<sub>*e*</sub>, which leaks at Γ/2; its square, the probability \|*c*<sub>*e*</sub>\|², leaks at Γ.)*
+*(This picture is an analogy: in the quantum equation the "water level" is the excited-state amplitude, whose squared size gives the excited-state probability.)*
 
 ```figure
 {"kind": "leaky-bucket", "mode": "fill", "caption": "A steady hose fills a leaky bucket: the level climbs quickly at first, then levels off at fill rate divided by leak rate, reaching 99.33% of that after a time 5/Γ."}
 ```
 
 <details>
-<summary>Level 2 · Full derivation: the integrating factor, from the bucket to the photon</summary>
+<summary>Level 2 · Key idea: integrating factor and the branching-ratio bound</summary>
+
+Multiplying the cascade equation *dc*<sub>*e*</sub>/*dt* + (Γ<sub>tot</sub>/2)*c*<sub>*e*</sub> = −√Γ<sub>*b*</sub> ξ(*t*) by the integrating factor *e*<sup>Γ<sub>tot</sub>*t*/2</sup> collapses the left side into one derivative and yields the excited amplitude at the end of the pulse:
+
+> *c*<sub>*e*</sub>(*T*) = −√Γ<sub>*b*</sub> ∫₀<sup>*T*</sup> *e*<sup>−Γ<sub>tot</sub>(*T*−*t*)/2</sup> ξ(*t*) *dt* &nbsp;&nbsp; (★)
+
+Applying the Cauchy–Schwarz inequality with ∫\|ξ\|²*dt* = 1 bounds the absorption probability for **any** normalized photon shape:
+
+> *P*<sub>abs</sub> = \|*c*<sub>*e*</sub>(*T*)\|² ≤ (Γ<sub>*b*</sub>/Γ<sub>tot</sub>)(1 − *e*<sup>−Γ<sub>tot</sub>*T*</sup>) < Γ<sub>*b*</sub>/Γ<sub>tot</sub>
+
+Equality holds uniquely when ξ(*t*) matches the atom's listening weight *e*<sup>−Γ<sub>tot</sub>(*T*−*t*)/2</sup>—the time-reversed exponential photon—reaching 1 − *e*<sup>−5</sup> = **99.33%** for a two-level atom at Γ*T* = 5. Full algebra: [From the leaky bucket to the photon](tut:06#box-cascade-photon).
+
+<details>
+<summary>Level 3 · Full derivation: from the leaky bucket to the photon {#box-cascade-photon}</summary>
+
+**You need:** [T3 · First-order linear ODEs](tut:08#T3) (integrating factor *e*<sup>*kt*</sup> turns *dy*/*dt* + *ky* = *g*(*t*) into *d*(*ye*<sup>*kt*</sup>)/*dt* = *g*(*t*)*e*<sup>*kt*</sup>, including complex *k*) and [T7 · Operators & Dirac notation](tut:08#T7) (Cauchy–Schwarz inequality: for real functions *f*, *g*, the non-negative quadratic ∫(*f* − λ*g*)²*dt* ≥ 0 has discriminant ≤ 0, giving (∫*fg* *dt*)² ≤ ∫*f*²*dt* · ∫*g*²*dt* with equality only when *f* ∝ *g*).
 
 **Warm-up: the bucket.** Let *N*(*t*) be the water level, *R* the constant fill rate and Γ the leak rate, with an empty bucket at the start, *N*(0) = 0:
 
@@ -96,14 +111,7 @@ Read (★) as: photon arriving at time *t* counts with the weight *e*<sup>−Γ(
 
 > *P*<sub>abs</sub> ≤ Γ<sub>*b*</sub> · (1 − *e*<sup>−Γ<sub>tot</sub>*T*</sup>)/Γ<sub>tot</sub> · 1 = (Γ<sub>*b*</sub>/Γ<sub>tot</sub>)(1 − *e*<sup>−Γ<sub>tot</sub>*T*</sup>) < Γ<sub>*b*</sub>/Γ<sub>tot</sub>
 
-Equality holds only when ξ has the same shape as *f*, i.e. for the time-reversed photon. Check against the table in §6.3: 88.2% × 0.9933 ≈ 87.6% for `1s → 3p`, and 11.83% × 0.9933 ≈ 11.75% (shown as 11.8%) for `2s → 3p`.
-
-<details>
-<summary>Level 3 · Toolkit: integrating factors and the Cauchy–Schwarz inequality</summary>
-
-- **Integrating factor** ([T3 · First-order linear ODEs](tut:08#T3)): any equation *dy*/*dt* + *k y* = *g*(*t*) becomes *d*(*y e*<sup>*kt*</sup>)/*dt* = *g*(*t*) *e*<sup>*kt*</sup> after multiplying by *e*<sup>*kt*</sup>, so *y*(*t*) = *e*<sup>−*kt*</sup> [ *y*(0) + ∫₀<sup>*t*</sup> *e*<sup>*kt*′</sup> *g*(*t*′) *dt*′ ]. It works for complex *k* too, which is how detuning enters (*k* = Γ/2 + *i*Δω, §6.2).
-- **Cauchy–Schwarz, intuition:** for ordinary vectors, **a**·**b** = \|**a**\|\|**b**\| cos θ ≤ \|**a**\|\|**b**\|, with equality only when the vectors are parallel. A function is a vector with one component for every instant *t*, and ∫*f*<sup>∗</sup>*g* *dt* is its dot product (the inner product ⟨*f*\|*g*⟩ of [T7 · Dirac notation](tut:08#T7)).
-- **Cauchy–Schwarz, proof for real functions:** for every number λ, 0 ≤ ∫(*f* − λ*g*)² *dt* = ∫*f*² *dt* − 2λ∫*fg* *dt* + λ²∫*g*² *dt*. A quadratic in λ that is never negative cannot have two different real roots, so its discriminant is ≤ 0: (2∫*fg* *dt*)² − 4 ∫*f*² *dt* ∫*g*² *dt* ≤ 0, i.e. (∫*fg* *dt*)² ≤ ∫*f*² *dt* · ∫*g*² *dt*.
+Equality holds only when ξ has the same shape as *f*, i.e. for the time-reversed photon. **Check:** at Γ<sub>tot</sub>*T* = 5 this gives 99.33% for a two-level line, 88.2% × 0.9933 ≈ 87.6% for `1s → 3p`, and 11.83% × 0.9933 ≈ 11.75% (shown as 11.8%) for `2s → 3p`. ✓
 
 </details>
 
@@ -117,7 +125,7 @@ Equality holds only when ξ has the same shape as *f*, i.e. for the time-reverse
 
 ## 6.2 Time Compression (10⁶–10⁸ Cycles vs. 24 Simulated Cycles) & Lorentzian Lineshape
 
-Because electromagnetic coupling is weak (α ≈ 1/137), real atomic photons last millions of optical cycles. For **Lyman-α (1s → 2p)**, τ = 1.595 ns spans **N ≈ 3.94 × 10⁶ cycles**. At the same H<sub>α</sub> energy, a photon driving **2p → 3s** lasts τ(3s) = 158.3 ns (**~7.23 × 10⁷ cycles**), while one driving **2s → 3p** lasts only τ(3p) = 5.27 ns (**~2.41 × 10⁶ cycles**), because 3p empties mostly into 1s.
+Because electromagnetic coupling is weak (α ≈ 1/137), real atomic photons last millions of optical cycles. For **Lyman-α (1s → 2p)**, τ = 1.595 ns spans *N* ≈ **3.94 × 10⁶ cycles**. At the same H<sub>α</sub> energy, a photon driving **2p → 3s** lasts τ(3s) = 158.3 ns (**~7.23 × 10⁷ cycles**), while one driving **2s → 3p** lasts only τ(3p) = 5.27 ns (**~2.41 × 10⁶ cycles**), because 3p empties mostly into 1s.
 
 Simulating millions of cycles cycle-by-cycle in real time would take hours. To keep individual light oscillations and Bohmian trajectories clearly visible, `electron_orbitals.html`:
 1. Computes and reports the **exact physical Weisskopf–Wigner quantities** of the upper level: total rate Γ<sub>tot</sub>, linewidth Γ<sub>tot</sub>/2π, lifetime τ = 1/Γ<sub>tot</sub> (which sets the photon's real duration), and natural cycles *N*, plus the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub>.
@@ -142,9 +150,9 @@ Absorbing the photon needs two things to line up: the photon's own blend of freq
 ```
 
 <details>
-<summary>Level 2 · Result with intuition: the Γ²/(Γ² + Δω²) line for a long photon</summary>
+<summary>Level 2 · Key idea: the Γ²/(Γ² + Δω²) line for a long photon</summary>
 
-This result is **quoted**, not derived step by step here (the Level-3 box sketches where it comes from). For a two-level atom and a time-reversed photon long enough that its truncation does not matter (*T* → ∞):
+For a two-level atom and a time-reversed photon long enough that its truncation does not matter (*T* → ∞):
 
 > *P*<sub>abs</sub>(Δω) = Γ² / (Γ² + Δω²) = 1 / [ 1 + (Δω/Γ)² ]
 
@@ -153,14 +161,18 @@ This result is **quoted**, not derived step by step here (the Level-3 box sketch
 - **Why the app shows 65.1%, not 64%:** the app's photon lasts only Γ*T* = 5, and the finite *T* slightly changes the number.
 - **Several decay channels:** multiply by the branching ratio Γ<sub>*b*</sub>/Γ<sub>tot</sub> (and use Γ = Γ<sub>tot</sub>), as in the main formula above.
 
-<details>
-<summary>Level 3 · Advanced: where the Lorentzian comes from</summary>
+Full derivation: [Where the Lorentzian comes from](tut:06#box-cascade-lorentzian).
 
-With detuning, the amplitude also turns at the rate Δω, so the leak coefficient in the cascade equation becomes complex, Γ/2 + *i*Δω (the sign of the *i*Δω term depends on convention and does not change \|*c*<sub>*e*</sub>\|²). The integrating factor works unchanged ([T3](tut:08#T3)), and in (★) the weight becomes *e*<sup>−(Γ/2 + *i*Δω)*u*</sup>. Times the photon's *C e*<sup>−Γ*u*/2</sup>:
+<details>
+<summary>Level 3 · Full derivation: where the Lorentzian comes from {#box-cascade-lorentzian}</summary>
+
+**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (\|Γ + *i*Δω\|² = Γ² + Δω²), [T3 · First-order ODEs](tut:08#T3) (integrating factor with complex rate Γ/2 + *i*Δω), and [T8 · Fourier & Lorentzian](tut:08#T8).
+
+With detuning, the amplitude also turns at the rate Δω, so the leak coefficient in the cascade equation becomes complex, Γ/2 + *i*Δω (the sign of the *i*Δω term depends on convention and does not change \|*c*<sub>*e*</sub>\|²). The integrating factor works unchanged, and in (★) of §6.1 the weight becomes *e*<sup>−(Γ/2 + *i*Δω)*u*</sup>. Multiplying by the photon's *C e*<sup>−Γ*u*/2</sup>:
 
 > *c*<sub>*e*</sub>(*T*) = −√Γ *C* ∫₀<sup>*T*</sup> *e*<sup>−(Γ + *i*Δω)*u*</sup> *du* = −√Γ *C* [1 − *e*<sup>−(Γ + *i*Δω)*T*</sup>] / (Γ + *i*Δω)
 
-For *T* → ∞, the bracket → 1 and *C*² → Γ. Using \|Γ + *i*Δω\|² = Γ² + Δω² ([T1 · complex numbers](tut:08#T1)): \|*c*<sub>*e*</sub>\|² = Γ · Γ / (Γ² + Δω²) = Γ²/(Γ² + Δω²). The same function 1/(Γ + *i*Δω) is the Fourier transform of the one-sided fade *e*<sup>−Γ*u*</sup>, which is why exponential decay and Lorentzian lines always come together ([T8 · Fourier & Lorentzian](tut:08#T8)). Keeping *T* = 5/Γ instead of ∞ and evaluating the bracket and *C*² exactly gives the 65.1% at `det = −1.5`.
+For *T* → ∞, the bracket → 1 and *C*² → Γ. Using \|Γ + *i*Δω\|² = Γ² + Δω² gives \|*c*<sub>*e*</sub>\|² = Γ · Γ / (Γ² + Δω²) = Γ²/(Γ² + Δω²). The same function 1/(Γ + *i*Δω) is the Fourier transform of the one-sided fade *e*<sup>−Γ*u*</sup>, which is why exponential decay and Lorentzian lines always come together. **Check:** at resonance Δω = 0 this gives *P*<sub>abs</sub> = 1; at Δω = ±Γ it falls to ½ (confirming half-width Γ); keeping *T* = 5/Γ and evaluating the bracket and *C*² exactly gives 65.1% at `det = −1.5`. ✓
 
 </details>
 
@@ -217,8 +229,8 @@ In **Single photon** mode, only **one** photon quantum is exchanged with the ato
 ### How the Simulator Projects the Interacting Branch (Bandwidth-Aware Branching)
 Around the chosen transition energy ω₀, the simulated wavepacket has spectral half-width `bw` = Γ<sub>sim</sub>/2. The simulator computes two independent overlaps inside `bw`:
 - **Active electron overlap (`elecMatch`):** Any initial orbital component whose energy falls outside `bw` of the chosen channel (for example, `0.20 |2p⟩` in `0.98 |1s⟩ + 0.20 |2p⟩` during `1s → 3p`, or an off-resonance Zeeman sublevel at large *B*<sub>*z*</sub>) does not interact and passes alongside an unabsorbed photon in `|1⟩_field`. Conditioned on the transition occurring (`0.98² ≈ 96%`), **Single photon** collapses onto the active initial orbital (`|1s⟩ → |3p⟩`), whereas a macroscopic laser coherent state (`Coherent EM wave`) does *not* entangle photon number and preserves the coherent `0.20 |2p⟩` spectator.
-- **Unresolved polarization (e.g., *B*<sub>*z*</sub> = 0, or weak fields where Zeeman splitting ≪ `bw`):** All magnetic sublevels (*m* = −1, 0, +1) overlap in energy within the photon spectrum. Linear **x̂** = (**σ**⁺ + **σ**⁻)/√2 matches **100%** and excites a genuine coherent `2p_x` (Larmor-precessing) superposition without over-rotating.
-- **Resolved Zeeman sublevels or chiral stimulated emission (e.g., `1s → 2p, Δm = −1` at *B*<sub>*z*</sub> = 0.05 a.u. with `pol = x`, or `2p,+1 → 1s · stim. emit` with `pol = x`):** Because the **σ**⁺ line lies well outside `bw` (or is dipole-blocked—wrong spin `σ⁻` on `2p,+1 → 1s` cannot stimulate emission!), the interacting dipole operator couples *only* **σ**⁻ (or **σ**⁺ downward). Orthogonal **ε** shows **0% match (blocked)**; linear **x̂** gives **Branch match = 50%** (if part of the electron state is also a non-interacting spectator, the total is `elecMatch × polMatch`).
+- **Unresolved polarization (e.g., *B*<sub>*z*</sub> = 0, or weak fields where Zeeman splitting ≪ `bw`):** All magnetic sublevels (*m* = −1, 0, +1) overlap in energy within the photon spectrum. Linear **x̂** = (σ⁺ + σ⁻)/√2 matches **100%** and excites a genuine coherent `2p_x` (Larmor-precessing) superposition without over-rotating.
+- **Resolved Zeeman sublevels or chiral stimulated emission (e.g., `1s → 2p, Δm = −1` at *B*<sub>*z*</sub> = 0.05 a.u. with `pol = x`, or `2p,+1 → 1s · stim. emit` with `pol = x`):** Because the σ⁺ line lies well outside `bw` (or is dipole-blocked—wrong spin `σ⁻` on `2p,+1 → 1s` cannot stimulate emission!), the interacting dipole operator couples *only* σ⁻ (or σ⁺ downward). Orthogonal **ε** shows **0% match (blocked)**; linear **x̂** gives **Branch match = 50%** (if part of the electron state is also a non-interacting spectator, the total is `elecMatch × polMatch`).
 - Rather than secretly multiplying pulse energy or leaving unentangled coherence after photon tracing, `electron_orbitals.html` **collapses onto the active electron subspace and ε<sub>int</sub>** (the part of **ε** that couples) and simulates strictly the **post-selected transition arm**.
 
 ```demo
@@ -282,13 +294,13 @@ The displayed branch is drawn as a **coherent** superposition (with dipole beats
 ### Why We Display Just One Branch: Atom–Photon Entanglement vs. Mixed States
 Why doesn't sending one **x̂**-polarized photon onto a Zeeman-resolved atom put the **atom alone** into a coherent superposition `a|2p, −1⟩ + b|1s, 0⟩`? Because in quantum electrodynamics the photon itself is a quantum object!
 
-Start with a 1-photon Fock state polarized along **x̂**: \|1<sub>*x*</sub>⟩ = (1/√2)(\|1<sub>σ⁻</sub>⟩ + \|1<sub>σ⁺</sub>⟩) hitting \|1s, 0⟩. The **σ**⁻ piece is absorbed (\|1<sub>σ⁻</sub>⟩\|1s⟩ → \|0⟩\|2p, −1⟩), while the **σ**⁺ piece passes unabsorbed (\|1<sub>σ⁺</sub>⟩\|1s⟩ → \|1<sub>σ⁺</sub>⟩\|1s⟩), leaving the **joint atom + photon state**:
+Start with a 1-photon Fock state polarized along **x̂**: \|1<sub>*x*</sub>⟩ = (1/√2)(\|1<sub>σ⁻</sub>⟩ + \|1<sub>σ⁺</sub>⟩) hitting \|1s, 0⟩. The σ⁻ piece is absorbed (\|1<sub>σ⁻</sub>⟩\|1s⟩ → \|0⟩\|2p, −1⟩), while the σ⁺ piece passes unabsorbed (\|1<sub>σ⁺</sub>⟩\|1s⟩ → \|1<sub>σ⁺</sub>⟩\|1s⟩), leaving the **joint atom + photon state**:
 
 > \|Ψ<sub>total</sub>⟩ = (1/√2) ( \|0⟩<sub>field</sub> \|2p, −1⟩<sub>atom</sub> + \|1<sub>σ⁺</sub>⟩<sub>field</sub> \|1s, 0⟩<sub>atom</sub> )
 
 Notice the crucial distinction: **only the combined atom + photon system is in a coherent superposition**—the atom by itself is *entangled* with orthogonal photon states (\|0⟩ vs. \|1<sub>σ⁺</sub>⟩). (Even with a 100% matching polarization, the same happens part-way through the pulse or with partial detuning such as §6.2's `det = −1.5`: quantized single-photon evolution produces *a* \|0⟩\|*e*⟩ + *b* \|1⟩\|*g*⟩, where \|*e*⟩ is the excited (target) state and \|*g*⟩ the initial state, so the atom's state is tied to the photon number, \|0⟩ or \|1⟩.)
 
-How does a **mixture of states** differ from a **coherent superposition**? *(For a geometric preview of this same contrast, see [§1.2](tut:01#axis-eigenstates) and its Level 2–3 boxes, where a coherent sum of 2p<sub>*x*</sub>, 2p<sub>*y*</sub>, 2p<sub>*z*</sub> is a tilted dumbbell while an incoherent mixture is spherical.)*
+How does a **mixture of states** differ from a **coherent superposition**? *(For a geometric preview of this same contrast, see [§1.2](tut:01#axis-eigenstates) and [Rotating 2p states onto the x and y axes](tut:01#box-xy-key), where a coherent sum of 2p<sub>*x*</sub>, 2p<sub>*y*</sub>, 2p<sub>*z*</sub> is a tilted dumbbell while an incoherent mixture is spherical.)*
 1. **Pure coherent superposition** \|ψ⟩ = *a* \|*e*⟩ + *b* \|*g*⟩: Has a definite relative phase between \|*e*⟩ and \|*g*⟩. Its spatial probability density \|ψ(**r**, *t*)\|² = \|*a*\|²\|ψ<sub>*e*</sub>\|² + \|*b*\|²\|ψ<sub>*g*</sub>\|² + 2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>) includes the oscillating **interference cross-term**, with Δ*E* = *E*<sub>*e*</sub> − *E*<sub>*g*</sub> > 0 (Bohr quantum beats and time-varying Bohmian trajectories). In density-operator language, ρ̂<sub>coh</sub> = \|ψ⟩⟨ψ\| has non-zero off-diagonal **coherences** *ab*<sup>∗</sup> \|*e*⟩⟨*g*\| + *a*<sup>∗</sup>*b* \|*g*⟩⟨*e*\|.
 2. **Statistical mixture of states** ρ̂<sub>mix</sub> = \|*a*\|² \|*e*⟩⟨*e*\| + \|*b*\|² \|*g*⟩⟨*g*\|: Describes classical uncertainty ("excited state *e* with probability \|*a*\|², **or** ground state *g* with probability \|*b*\|²"). All off-diagonal coherences are **zero**, so spatial density is simply ρ<sub>prob</sub>(**r**, *t*) = \|*a*\|²\|ψ<sub>*e*</sub>\|² + \|*b*\|²\|ψ<sub>*g*</sub>\|²—**no interference, no dipole beats**. A single electron wavefunction ψ(**r**, *t*) cannot represent a mixed state!
 3. **Why ignoring the photon yields a mixture:** If we look only at the atom and discard/ignore the photon (mathematically taking the **partial trace** ρ̂<sub>atom</sub> = Tr<sub>field</sub>(\|Ψ<sub>total</sub>⟩⟨Ψ<sub>total</sub>\|)), every cross-term between \|*e*⟩ and \|*g*⟩ is multiplied by the inner product ⟨0\|1<sub>σ⁺</sub>⟩ = 0 (or ⟨0\|1⟩ = 0). Because the photon states are **orthogonal** ("which-way" information: *zero* escaping photons tells you the atom absorbed and sits in \|*e*⟩; *one* escaping photon tells you it stayed in \|*g*⟩), all coherences vanish and the atom reduces to the **mixed state** ρ̂<sub>atom</sub> = \|*a*\|² \|*e*⟩⟨*e*\| + \|*b*\|² \|*g*⟩⟨*g*\|!
@@ -299,8 +311,8 @@ Even though \|Ψ<sub>total</sub>⟩ is a genuine quantum superposition of the co
 > \|Ψ<sub>total</sub>⟩ = (1/√2) \|+⟩ (*a* \|*e*⟩ + *b* \|*g*⟩) + (1/√2) \|−⟩ (*a* \|*e*⟩ − *b* \|*g*⟩)
 
 Look closely at those two terms: the joint superposition contains **two complementary atomic superpositions**—*a*\|*e*⟩ + *b*\|*g*⟩ paired with \|+⟩, and its opposite-phase twin *a*\|*e*⟩ − *b*\|*g*⟩ paired with \|−⟩!
-- The \|+⟩ branch carries positive interference **+2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>)**.
-- The \|−⟩ branch carries the opposite-sign interference term **−2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>)**.
+- The \|+⟩ branch carries positive interference +2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>).
+- The \|−⟩ branch carries the opposite-sign interference term −2 Re(*a*<sup>∗</sup> *b* *e*<sup>+*i*Δ*E t*</sup> ψ<sub>*e*</sub><sup>∗</sup> ψ<sub>*g*</sub>).
 - Whenever you trace over (ignore) the photon, you sum both complementary branches equally—and their opposite-sign interference terms **cancel each other out**, destroying all atomic interference!
 
 **Restoring interference:** Only if we **project the outgoing photon onto the {\|+⟩ = (\|0⟩ + \|1⟩)/√2, \|−⟩ = (\|0⟩ − \|1⟩)/√2} basis** and sort atomic measurements using **coincidence counters**—keeping only runs where the photon clicks in \|+⟩ (or only \|−⟩)—do we erase the which-way record and recover full interference fringes! (In the laboratory, projecting two orthogonal 1-photon polarization/path states onto (\|1<sub>*A*</sub>⟩ ± \|1<sub>*B*</sub>⟩)/√2 uses a polarizer or 50/50 beam splitter, whereas projecting photon-number states \|0⟩ ± \|1⟩ requires homodyne interference with a phase-locked local oscillator.)
@@ -313,9 +325,9 @@ Look closely at those two terms: the joint superposition contains **two compleme
 
 In **Coherent EM wave** mode, why does cranking **Power** up—or squeezing a pulse into too few optical cycles—literally tear the electron out of the atom? Because squeezing a π-pulse into a short time *T* demands a strong peak field ℰ₀, and above a sharp threshold the field pulls the top of the Coulomb barrier down below the orbital's energy, so the electron can simply roll out!
 
-*Notation:* ℰ₀ is the peak electric-field amplitude of the pulse (printed as E₀ in the app's readouts and in a few places below), and *E*<sub>*n*</sub> = −1/(2*n*²) is always the **energy** of shell *n* (atomic units, clamped nucleus). The result of the derivation in the boxes below is the **over-the-barrier ionization (OBI)** threshold field:
+*Notation:* ℰ₀ is the peak electric-field amplitude of the pulse (printed as E₀ in the app's readouts and in a few places below), and *E*<sub>*n*</sub> = −1/(2*n*²) is always the **energy** of shell *n* (atomic units, clamped nucleus). The result (see [Finding the barrier top](tut:06#box-obi-derivation)) is the **over-the-barrier ionization (OBI)** threshold field:
 
-> **ℰ<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴)** &nbsp;&nbsp; (atomic units of field; 1 a.u. = 5.142 × 10¹¹ V/m)
+> ℰ<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴) &nbsp;&nbsp; (atomic units of field; 1 a.u. = 5.142 × 10¹¹ V/m)
 
 Above this field an electron in shell *n* no longer has to tunnel out: it can spill straight over the lowered barrier.
 
@@ -332,9 +344,24 @@ Above this field an electron in shell *n* no longer has to tunnel out: it can sp
 ```
 
 <details>
-<summary>Level 2 · Full derivation: finding the barrier top and setting it equal to the level energy</summary>
+<summary>Level 2 · Key idea: barrier top U<sub>max</sub> = −2√ℰ₀ and ℰ<sub>OBI</sub> = 1/(16n⁴)</summary>
 
-We can derive this threshold with **first-year calculus**. Let the field point along **−*z***. The electron's charge is negative, so the force on it points along **+*z***, and its potential energy in the field is *U*<sub>field</sub> = −ℰ₀*z* (Chapter 3 writes *U* = +*e*ℰ*z* for a field along +*z*; flipping the field flips the sign). Along the +*z* axis (*z* > 0, atomic units), the total potential energy is Coulomb attraction plus this downhill ramp:
+Along the downhill +*z* axis (*z* > 0, atomic units), the tilted potential *U*(*z*) = −1/*z* − ℰ₀*z* peaks where *dU*/*dz* = 1/*z*² − ℰ₀ = 0, at *z*<sub>top</sub> = 1/√ℰ₀, giving barrier height:
+
+> *U*<sub>max</sub> = −2 √ℰ₀ &nbsp;&nbsp; (a.u.)
+
+Setting *U*<sub>max</sub> equal to shell *n*'s energy *E*<sub>*n*</sub> = −1/(2*n*²) gives the classical threshold:
+
+> ℰ<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴) &nbsp;&nbsp; (a.u.)
+
+This classical 1D estimate omits Stark shifts, quantum tunnelling, and field oscillations—all included automatically by the full **Coherent EM wave** TDSE solver (§6.5). Full derivation: [Finding the barrier top and classical caveats](tut:06#box-obi-derivation).
+
+<details>
+<summary>Level 3 · Full derivation: finding the barrier top and classical caveats {#box-obi-derivation}</summary>
+
+**You need:** ordinary derivatives (*d*(*z*<sup>−1</sup>)/*dz* = −*z*<sup>−2</sup>) and [T2 · Partial derivatives & ∇](tut:08#T2) (3D saddle point where ∇*U* = **0**).
+
+We derive this threshold with **first-year calculus**. Let the field point along **−*z***. The electron's charge is negative, so the force on it points along **+*z***, and its potential energy in the field is *U*<sub>field</sub> = −ℰ₀*z* (Chapter 3 writes *U* = +*e*ℰ*z* for a field along +*z*; flipping the field flips the sign). Along the +*z* axis (*z* > 0, atomic units), the total potential energy is Coulomb attraction plus this downhill ramp:
 
 > *U*(*z*) = −1/*z* − ℰ₀ *z* &nbsp;&nbsp; (*z* > 0)
 
@@ -350,18 +377,15 @@ We can derive this threshold with **first-year calculus**. Let the field point a
 
 *Step 3 · When does the hilltop reach the waterline?* OBI starts as soon as the barrier top drops down to the bound orbital's energy *E*<sub>*n*</sub> = −1/(2*n*²). Set them equal, divide both sides by −2, then square both sides:
 
-> −2 √ℰ₀ = −1 / (2*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; √ℰ₀ = 1 / (4*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; **ℰ<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴)**
+> −2 √ℰ₀ = −1 / (2*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; √ℰ₀ = 1 / (4*n*²) &nbsp;&nbsp; ⇒ &nbsp;&nbsp; ℰ<sub>OBI</sub>(*n*) = 1 / (16 *n*⁴)
 
-*Check with n = 2:* ℰ<sub>OBI</sub> = 1/256, so *z*<sub>top</sub> = √256 = 16 *a*₀ and *U*<sub>max</sub> = −2/16 = −1/8 Ha, which is exactly *E*₂ = −1/(2 · 4) = −1/8 Ha.
+*Check with n = 2:* ℰ<sub>OBI</sub> = 1/256, so *z*<sub>top</sub> = √256 = 16 *a*₀ and *U*<sub>max</sub> = −2/16 = −1/8 Ha, which is exactly *E*₂ = −1/(2 · 4) = −1/8 Ha. ✓
 
-<details>
-<summary>Level 3 · Advanced: what this classical estimate leaves out</summary>
-
-- **Why the 1D axis is enough:** off the axis, at the same *z*, the distance *r* from the nucleus is larger, so the Coulomb term −1/*r* is higher. The lowest pass out of the well is therefore on the axis. In 3D the barrier top is a **saddle point** of *U*(**r**): a maximum along *z* but a minimum sideways, where the gradient ∇*U* is zero ([T2 · partial derivatives and ∇](tut:08#T2)).
-- **Stark shift:** the field also moves the level itself. The 1s level is pushed slightly down, so it needs a somewhat stronger field; in *n* ≥ 2 some states move up and some down. The real threshold is therefore shifted a little from 1/(16*n*⁴), in either direction.
-- **Tunnelling:** a quantum electron can leak *through* the barrier before the hilltop reaches the waterline, so real ionization starts somewhat earlier (at lower fields) than the classical threshold.
-- **Oscillating field:** a laser field reverses direction twice per optical cycle, so the barrier appears alternately on the +*z* and −*z* sides. The static picture holds only while the field changes slowly compared with the electron's own motion.
-- **Bottom line:** ℰ<sub>OBI</sub> = 1/(16*n*⁴) is a classical **estimate** of where ionization becomes easy, not a sharp law. The **Coherent EM wave** TDSE solver (§6.5) does not use this formula: it computes the electron's actual response, so Stark shifts, tunnelling and multiphoton ionization are all included automatically.
+**What this classical estimate leaves out:**
+- **Why the 1D axis is enough:** off the axis, at the same *z*, the distance *r* from the nucleus is larger, so −1/*r* is higher. The lowest pass out of the well is on the axis—a 3D **saddle point** of *U*(**r**) where ∇*U* = **0** (maximum along *z*, minimum sideways).
+- **Stark shift:** the field also shifts the bound level itself, slightly moving the true threshold.
+- **Tunnelling:** a quantum electron can leak *through* the barrier before the hilltop reaches the waterline, so real ionization begins at somewhat lower fields.
+- **Oscillating field:** a laser field reverses twice per cycle; the static picture holds only when the field changes slowly compared with the electron's orbital motion.
 
 </details>
 
