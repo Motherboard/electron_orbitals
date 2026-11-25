@@ -1,23 +1,24 @@
 # 3. Light, Polarization & Time-Dependent Fields
 
-To understand how laser pulses and single photons drive chemical spectroscopy and electronic transitions, we first need a clear mathematical picture of the light wave itself—especially how **complex polarization vectors** encode linear, circular, and elliptical motion of the electric field **ℰ**(*t*).
+To understand how laser pulses and single photons drive chemical spectroscopy and electronic transitions, we first need a clear picture of the light wave itself: why an atom feels it as a uniform field that oscillates in time, and how three complex numbers (the **polarization vector**) say whether the electric field **ℰ**(*t*) swings along a line, turns in a circle, or traces an ellipse.
 
 *(Notation: in this chapter the script letter **ℰ** always means an **electric field** and *E* always means an **energy**, such as a photon energy *E* = *hν* or a level *E*<sub>*n*</sub>. The app's readouts print the peak field ℰ₀ as "E0". Every box marked **Level 1 · Picture** gives the physical picture without algebra, a **Level 2 · Key idea** box inside it gives the argument in a few key equations, and a **Level 3 · Full derivation** box works through every algebraic step starting from the tools you need, linking to the [Math Toolkit](tut:08).)* <!-- lint-ignore: level-ref -->
 
 > **In a Nutshell:**
-> - Light is an oscillating **electric field** (plus a weaker companion magnetic field) traveling at *c*. Its photon energy is *E* = *hν* = *hc*/λ.
-> - An atom is about a thousand times smaller than a UV or visible wavelength, so across the atom the light's field is just a **uniform field that oscillates in time**. This is the **electric dipole approximation**.
+> - Light is an oscillating **electric field** (plus a companion magnetic field whose push on the electron is about 137 times weaker) traveling at *c*. Its photon energy is *E* = *hν* = *hc*/λ.
+> - An atom is thousands of times smaller than a UV or visible wavelength, so across the atom the light's field is just a **uniform field that oscillates in time**. This is the **electric dipole approximation**.
 > - **Polarization** is the direction in which the field oscillates: along a line (linear), or rotating in a circle (circular σ⁺/σ⁻). Circular light carries angular momentum and picks out which *m* the atom ends up in (Chapter 4).
-> - Brighter light means a larger field. Population moves at a rate set by the field **amplitude**, which grows only as the **square root** of intensity.
+> - Brighter light means a larger field. The **population** of the target orbital (the probability of finding the electron there) moves at a rate set by the field **amplitude**, which grows only as the **square root** of intensity.
 
 ---
 
 ## 3.0 Electricity & Light Primer (What You Need from Physics)
 
-- **Coulomb's law and the electric field:** two charges *q*₁, *q*₂ a distance *r* apart have potential energy *U* = *q*₁*q*₂/(4πε₀*r*). For the electron and proton (*q* = −*e* and +*e*), *U* = −*e*²/(4πε₀*r*): this is hydrogen's potential from Chapter 1. An **electric field ℰ** (units V/m) is the force per unit charge, so a charge *q* feels **F** = *q***ℰ**.
-- **Uniform field = tilted potential:** in a uniform field ℰ along *z*, a charge *q* gains potential energy *U* = −*q*ℰ*z*. For the electron (*q* = −*e*) that is *U* = +*e*ℰ*z*: the field tilts the energy landscape and pulls the cloud one way.
-- **Electric dipole moment:** a charge distribution with separated + and − charge has dipole moment **d** = Σ *q*<sub>*i*</sub>**r**<sub>*i*</sub> (units C·m, or debye: 1 D = 3.336 × 10⁻³⁰ C·m). In a field its energy is *U* = −**d** · **ℰ**. The electron at position **r** relative to the proton has **d** = −*e***r**.
-- **Light is a traveling electromagnetic wave:** oscillating electric (**ℰ**) and magnetic (**B**) fields, perpendicular to each other and to the direction of travel, moving at *c* = 2.998 × 10⁸ m/s. Each photon carries energy *E* = *hν* = *hc*/λ.
+- **Coulomb's law and the electric field:** two charges *q*₁, *q*₂ a distance *r* apart push or pull on each other with a force of size \|*q*₁*q*₂\|/(4πε₀*r*²) and have potential energy *U* = *q*₁*q*₂/(4πε₀*r*), where ε₀ = 8.854 × 10⁻¹² F/m is the vacuum permittivity. For the electron and proton (*q* = −*e* and +*e*), *U* = −*e*²/(4πε₀*r*): this is hydrogen's potential from Chapter 1. Every charge surrounds itself with an **electric field ℰ**: an arrow at each point giving the force per unit charge that another charge placed there would feel, so a charge *q* feels **F** = *q***ℰ** (units of ℰ: V/m). For scale, the proton's field one Bohr radius away is 5.14 × 10¹¹ V/m.
+- **Uniform field = tilted potential:** in a uniform field ℰ along *z* the voltage (electric potential) falls steadily, *V* = −ℰ*z*, so a charge *q* has potential energy *U* = *qV* = −*q*ℰ*z*. For the electron (*q* = −*e*) that is *U* = +*e*ℰ*z*: the field tilts the energy landscape uphill toward +*z* and pulls the electron cloud toward −*z*.
+- **Electric dipole moment:** a charge distribution with separated + and − charge has dipole moment **d** = Σ *q*<sub>*i*</sub>**r**<sub>*i*</sub> (units C·m, or debye: 1 D = 3.336 × 10⁻³⁰ C·m). Physicists' **d** points from the negative toward the positive charge, opposite to the crossed arrow many general-chemistry books draw. In a field its energy is *U* = −**d** · **ℰ**, lowest when the dipole lines up with the field (as polar molecules do). The electron at position **r** relative to the proton has **d** = −*e***r**.
+- **Light is a traveling electromagnetic wave:** oscillating electric (**ℰ**) and magnetic (**B**) fields, perpendicular to each other and to the direction of travel, moving at *c* = 2.998 × 10⁸ m/s. At a fixed point the field swings back and forth ν times per second (the **frequency**, in Hz); at a fixed instant neighboring crests are a **wavelength** λ apart. The wave moves one wavelength per cycle, so *c* = λν. Each photon carries energy *E* = *hν* = *hc*/λ (Planck's constant *h* = 6.626 × 10⁻³⁴ J·s); a handy form is *E* in eV ≈ 1239.84 / (λ in nm).
+- **Brightness is intensity:** the **intensity** *I* of light is the energy it delivers per second per unit area (W/cm²). It grows as the **square** of the field's peak value ℰ₀, the wave's **amplitude** (§3.4).
 - **The spectrum and the chemistry it probes:**
 
 | Region | Wavelength | Photon energy | What it does to molecules |
@@ -53,7 +54,7 @@ Three rules from classical electrodynamics govern how light acts on an atom:
 
 > **ℰ**(**r**, *t*) = ℰ(*t*) Re[ **ε** *e*<sup>*i*(**k**·**r** − ω<sub>L</sub>*t*)</sup> ]
 
-For a wave travelling along *x* (so **k** · **r** = *kx*), each field component is a cosine of (*kx* − ω<sub>L</sub>*t*), shifted by a fixed phase, and such a wave moves at speed ω<sub>L</sub>/*k* = λν = *c*.
+For a wave travelling along *x* (so **k** · **r** = *kx*), each field component is a cosine of (*kx* − ω<sub>L</sub>*t*), shifted by a fixed phase, and such a wave moves at speed ω<sub>L</sub>/*k* = λν = *c*. (Strictly, the envelope travels with the wave and depends on *t* − **k̂** · **r**/*c*; light crosses an atom in about a thousandth of an optical cycle, so at the atom we simply write ℰ(*t*).)
 
 <details>
 <summary>Level 1 · Picture: why cos(kx − ωt) is a wave moving at speed ω/k</summary>
@@ -98,7 +99,7 @@ A plus sign, cos(*kx* + ω<sub>L</sub>*t*), gives a wave moving toward −*x* in
 
 </details>
 
-**3. Companion magnetic field** (**B**₁ = (**k̂** × **ℰ**) / *c*): In vacuum, *B*₁ = ℰ/*c*. On a bound electron of charge −*e* moving at speed *v*, the magnetic Lorentz force has magnitude *evB*₁ = (*v*/*c*)(*e*ℰ), so the magnetic-to-electric force ratio is *vB*₁/ℰ = *v*/*c*. For hydrogen's electron, *v*/*c* ≈ α ≈ 1/137 (where α = *e*²/(4πε₀*ħc*) ≈ 1/137.036 is the dimensionless **fine-structure constant**): the Bohr-model speed is *v*₁ = α*c*, about 0.7% of light speed, and the 1s root-mean-square speed has the same value. Because *v*/*c* ≪ 1 at all frequencies, **electric-dipole (E1)** interactions dominate by orders of magnitude over **magnetic-dipole (M1)** interactions whenever E1 is allowed—including low-frequency Zeeman E1 transitions such as 2p ↔ 2s in Chapter 2. Magnetic-dipole interactions take over for **intra-orbital Zeeman transitions** (Δ*n* = 0, Δ*l* = 0, e.g., 2p,+1 ↔ 2p,0 when *B*<sub>*z*</sub> ≠ 0) only because **E1 needs Δ*l* = ±1 (a parity change), which is impossible inside one (*n*, *l*) subshell** (Chapter 4). In NMR/EPR spectrometers, an RF coil or microwave cavity applies such an oscillating **B**₁(*t*) directly.
+**3. Companion magnetic field** (**B**₁ = (**k̂** × **ℰ**) / *c*): In vacuum, *B*₁ = ℰ/*c*. On a bound electron of charge −*e* moving at speed *v*, the magnetic Lorentz force (Chapter 2) has magnitude at most *evB*₁ = (*v*/*c*)(*e*ℰ), so the magnetic-to-electric force ratio is at most *vB*₁/ℰ = *v*/*c*. For hydrogen's electron, *v*/*c* ≈ α ≈ 1/137 (where α = *e*²/(4πε₀*ħc*) ≈ 1/137.036 is the dimensionless **fine-structure constant**): the Bohr-model speed is *v*₁ = α*c*, about 0.7% of light speed, and the 1s root-mean-square speed has the same value. Because this ratio does not depend on the light's frequency, **electric-dipole (E1)** transitions (driven by **ℰ**) beat **magnetic-dipole (M1)** transitions (driven by **B**₁) by orders of magnitude whenever E1 is allowed—including low-frequency Zeeman E1 transitions such as 2p ↔ 2s in Chapter 2. M1 takes over only for **intra-orbital Zeeman transitions** inside one (*n*, *l*) subshell (Δ*n* = 0, Δ*l* = 0, e.g., 2p,+1 ↔ 2p,0 when *B*<sub>*z*</sub> ≠ 0), because **E1 needs Δ*l* = ±1, a change of parity, which is impossible inside one subshell** (Chapter 4). An orbital's **parity** says whether it keeps its sign (*s*, *d*: even) or flips it (*p*, *f*: odd) when every point is reflected through the nucleus to the opposite side. In NMR/EPR spectrometers, an RF coil or microwave cavity applies such an oscillating **B**₁(*t*) directly.
 
 <details>
 <summary>Level 1 · Picture: how fast does the electron move?</summary>
@@ -121,7 +122,7 @@ In atomic units *v*₁ = 1 and *c* = 1/α ≈ 137, and the quantum 1s state has 
 <details>
 <summary>Level 3 · Full derivation: the Bohr speed step by step {#box-bohr-speed}</summary>
 
-**You need:** Newton's second law for circular motion (centripetal force *m*<sub>e</sub>*v*²/*r*), Coulomb's law from §3.0, and angular momentum *L* = *m*<sub>e</sub>*vr* for a circular orbit ([T9 · Cross product & angular momentum](tut:08#T9)).
+**You need:** Newton's second law for circular motion (centripetal force *m*<sub>e</sub>*v*²/*r*), Coulomb's law from §3.0, angular momentum *L* = *m*<sub>e</sub>*vr* for a circular orbit ([T9 · Cross product & angular momentum](tut:08#T9)), and, for the quantum check in Step 5, the 1s energy *E*₁ = −½ Ha with the **virial theorem** for a Coulomb potential, ⟨*K*⟩ = −*E* (quoted, not derived here).
 
 Use the Bohr model for the lowest orbit (radius *r*, speed *v*), SI units.
 
@@ -133,7 +134,7 @@ Use the Bohr model for the lowest orbit (radius *r*, speed *v*), SI units.
 
 **Step 4 — compare with α.** Since α = *e*²/(4πε₀*ħc*), *v*₁ = α*c* ≈ *c*/137 ≈ 2.19 × 10⁶ m/s.
 
-**Step 5 — atomic units and the quantum 1s state.** In atomic units *v*₁ = 1 and *c* = 1/α ≈ 137. The quantum 1s state agrees: its mean kinetic energy is ⟨*K*⟩ = ½ Ha, so ½⟨*v*²⟩ = ½ and the root-mean-square speed is 1 a.u. = α*c*.
+**Step 5 — atomic units and the quantum 1s state.** In atomic units *v*₁ = 1 and *c* = 1/α ≈ 137. The quantum 1s state agrees: by the virial theorem its mean kinetic energy is ⟨*K*⟩ = −*E*₁ = ½ Ha, so ½⟨*v*²⟩ = ½ (with *m*<sub>e</sub> = 1) and the root-mean-square speed is 1 a.u. = α*c*.
 
 **Check:** with *e* = 1.602 × 10⁻¹⁹ C, ε₀ = 8.854 × 10⁻¹² F/m and *ħ* = 1.0546 × 10⁻³⁴ J·s, *e*²/(4πε₀*ħ*) = 2.188 × 10⁶ m/s, and α*c* = (2.998 × 10⁸ m/s)/137.036 = 2.188 × 10⁶ m/s: the two agree. ✓
 
@@ -144,16 +145,16 @@ Use the Bohr model for the lowest orbit (radius *r*, speed *v*), SI units.
 </details>
 
 ### Why the Electric Dipole Approximation Holds
-**The result.** Across an atom the factor *e*<sup>*i* **k**·**r**</sup> changes by less than 1%, so we set it to 1. The light then acts as a **uniform** field that only oscillates in time,
+**The result.** Hydrogen's ultraviolet and visible lines have wavelengths thousands of times the Bohr radius *a*₀ = 0.0529 nm: about 2,300 *a*₀ for Lyman-α (1s → 2p, 121.6 nm) and 12,400 *a*₀ for the red Balmer-α line (*n* = 2 → 3, 656.3 nm). So across the atom the position factor *e*<sup>*i* **k**·**r**</sup> changes by less than 1% over the 1s cloud and by a few percent at most over an excited orbital, and we set it to 1. The light then acts as a **uniform** field that only oscillates in time,
 
 > **ℰ**(*t*) = ℰ(*t*) Re( **ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> )
 
-and an electron of charge −*e* at displacement **r** from the nucleus has **electric dipole moment** **d** = −*e***r** and potential energy *U* = −**d** · **ℰ**(*t*) = +*e* **r** · **ℰ**(*t*)—which is why this long-wavelength limit is called the **electric dipole approximation**.
+and an electron of charge −*e* at displacement **r** from the nucleus has **electric dipole moment** **d** = −*e***r** and potential energy *U* = −**d** · **ℰ**(*t*) = +*e* **r** · **ℰ**(*t*)—which is why this long-wavelength limit is called the **electric dipole approximation**. For a field along *z* this is just §3.0's tilted potential +*e*ℰ*z*, now rocking back and forth at the light's frequency.
 
 <details>
 <summary>Level 1 · Picture: a cork on a long ocean swell</summary>
 
-A cork floating on a swell hundreds of metres long does not feel the shape of the wave; it just rises and falls as a whole. The atom is the cork: a Lyman-α wavelength (121.5 nm) is about 2300 times the Bohr radius (0.0529 nm), so every part of the electron cloud feels the same field at the same moment.
+A cork floating on a swell hundreds of metres long does not feel the shape of the wave; it just rises and falls as a whole. The atom is the cork: a Lyman-α wavelength (121.5 nm) is about 2300 times the Bohr radius (0.0529 nm), and the red Balmer-α wavelength (656 nm) about 12,400 times, so every part of the electron cloud feels the same field at the same moment.
 
 <details>
 <summary>Level 2 · Key idea: putting in the numbers for Lyman-α</summary>
@@ -162,9 +163,11 @@ For hydrogen's **1s → 2p** Lyman-α ultraviolet transition (clamped-nucleus Δ
 
 > *ka*₀ = 2π *a*₀ / λ ≈ 2π × 0.0529 / 121.5 ≈ 0.0027 ≪ 1
 
-For such a small angle θ (in radians) the position-dependent factor is 1 plus a tiny correction, *e*<sup>*i*θ</sup> ≈ 1 + *i*θ, so *e*<sup>*i* **k**·**r**</sup> varies by less than **0.3%** over one Bohr radius and under ~1% across the 1s diameter 2*a*₀. Setting it to 1 leaves a field that is the same everywhere in the atom, and the dipole energy then follows from **d** = −*e***r**:
+For such a small angle θ (in radians) the position-dependent factor is 1 plus a tiny correction, *e*<sup>*i*θ</sup> ≈ 1 + *i*θ, so *e*<sup>*i* **k**·**r**</sup> varies by less than **0.3%** over one Bohr radius and under ~1% across the 1s diameter 2*a*₀ (about 2.7% across the larger 2p cloud, roughly 10 *a*₀ wide). For the visible Balmer-α line (λ = 656.3 nm), *ka*₀ ≈ 0.0005, so even across the *n* = 3 cloud (about 25 *a*₀ wide) the change is only ~1.3%. Setting the factor to 1 leaves a field that is the same everywhere in the atom, and the dipole energy then follows from **d** = −*e***r**:
 
 > *U* = −**d** · **ℰ**(*t*) = +*e* **r** · **ℰ**(*t*)
+
+The real error is smaller still. The first correction multiplies the dipole coupling, which flips sign under reflection through the nucleus, by *i* **k**·**r**, which also flips sign, so the product is even (parity-keeping). It therefore adds nothing to an allowed, parity-changing line such as 1s → 2p; it only drives very weak "forbidden" lines such as 1s → 3d, of order (*ka*₀)² ~ 10⁻⁵ times weaker. This **r** · **ℰ** way of writing the interaction is called the **length form**; an equivalent **velocity form** built from Chapter 2's vector potential **A** gives the same transition rates. The app uses the length form.
 
 Full algebra: [The dipole approximation in numbers](tut:03#box-dipole-numbers).
 
@@ -258,6 +261,12 @@ Full algebra: [Taking the real part step by step](tut:03#box-real-part).
 
 </details>
 
+**Convention: the factor ½.** Because the real part of a complex number is half of it plus its conjugate, Re *z* = (*z* + *z*\*)/2, the same real field can be written as two counter-rotating halves:
+
+> **ℰ**(*t*) = ½ ℰ(*t*) [ **ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> + **ε**\* *e*<sup>+*i*ω<sub>L</sub>*t*</sup> ]
+
+often abbreviated "+ c.c." (complex conjugate). Chapter 5 uses exactly this split: near resonance only the **ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> half drives absorption. In this tutorial ℰ₀ is the peak of the envelope, which is the **peak** field of linearly polarized light (circular light with the same ℰ₀ and the same intensity turns at constant length ℰ₀/√2, §3.3). Some textbooks write the field as ℰ₀(**ε** *e*<sup>−*i*ω<sub>L</sub>*t*</sup> + c.c.) without the ½, so their ℰ₀ is half of ours; check which is meant before comparing field strengths, intensities, or Rabi frequencies between sources.
+
 ### Linear Polarization (*x*, *y*, *z*)
 Suppose all active components have phase 0°, or a mix of 0° and 180°. A 180° phase simply flips the sign of that axis, because cos(ω<sub>L</sub>*t* − 180°) = −cos(ω<sub>L</sub>*t*); this allows tilted mixtures like (−**x̂** + **ẑ**)/√2. Then every axis oscillates in lockstep: **ℰ**(*t*) = ℰ(*t*) cos(ω<sub>L</sub>*t*) **n̂**. The field vector simply oscillates back and forth along the straight unit vector **n̂** (**linear polarization**):
 - **z (π-polarization):** **ℰ**(*t*) points along the quantization axis **ẑ** (requiring **k** · **ẑ** = 0, so the wave travels in the *xy*-plane, perpendicular to *z*; in spectroscopy π stands for *parallel* to the *z* quantization axis, unrelated to π molecular orbitals).
@@ -320,19 +329,21 @@ Since cos(ω<sub>L</sub>*t* − 90°) = +sin(ω<sub>L</sub>*t*), the real electr
 
 > **ℰ**(*t*) = (ℰ(*t*)/√2) [ cos(ω<sub>L</sub>*t*) **x̂** + sin(ω<sub>L</sub>*t*) **ŷ** ]
 
-At ω<sub>L</sub>*t* = 0 it points along +**x̂**; a quarter-cycle later at ω<sub>L</sub>*t* = 90° it points along +**ŷ**—tracing a circle **counterclockwise** when looking down from +*z* onto the *xy*-plane (`Tilt = 90°`)!
+At ω<sub>L</sub>*t* = 0 it points along +**x̂**; a quarter-cycle later at ω<sub>L</sub>*t* = 90° it points along +**ŷ**—tracing a circle **counterclockwise** when looking down from +*z* onto the *xy*-plane (`Tilt = 90°`)! The arrow never shrinks while it turns: its length stays ℰ(*t*)/√2, because the two components share the envelope (\|**ε**\|² = ½ + ½ = 1). That sharing is why a circular and a linear pulse with the same envelope carry the same intensity (§3.4).
 
 #### 2. σ⁻ Preset (`x = 1 at 0°`, `y = 1 at 270°`)
 > **ε**<sub>−</sub> = (**x̂** + *e*<sup>*i*3π/2</sup> **ŷ**)/√2 = (**x̂** − *i* **ŷ**) / √2
 
 Since cos(ω<sub>L</sub>*t* − 270°) = −sin(ω<sub>L</sub>*t*), **ℰ**(*t*) sweeps from +**x̂** toward −**ŷ**—**clockwise** as viewed from +*z* (`Tilt = 90°`)!
 
+**Convention: σ⁺/σ⁻ versus "left" and "right".** Here **σ⁺** and **σ⁻** are defined by the atom's fixed +*z* quantization axis (counterclockwise vs. clockwise as seen from +*z*), whichever way the beam travels; this is the label that decides whether *m* goes up or down on absorption (Chapter 4). Optics and circular-dichroism texts instead name the handedness relative to the beam's direction of travel **k̂**, and two opposite conventions are in use. Take a beam travelling along +*z*, so that looking down from +*z* means facing the oncoming light. Its σ⁺ light has **positive helicity**: the field turns counterclockwise to the receiver, and its angular momentum (+*ħ* per photon) points along the beam. The traditional optics convention (handedness judged by a receiver facing the source, with clockwise called "right") calls this light **left-circularly polarized**; the engineering (IEEE) and particle-physics convention (right-hand thumb along the beam) calls it **right-handed**. For a beam travelling along −*z*, the same σ⁺ rotation has negative helicity and both labels swap. Always check which convention a source uses. (Many quantum textbooks also write the σ⁺ unit vector as −(**x̂** + *i***ŷ**)/√2. The extra minus sign is an overall phase that changes no rotation sense and no probability.)
+
 ### Linear Light Is a Superposition of Opposite Circular Polarizations
 **The result.** Adding and subtracting **ε**<sub>+</sub> and **ε**<sub>−</sub> gives an exact algebraic identity:
 
 > **x̂** = (1/√2)(**ε**<sub>+</sub> + **ε**<sub>−</sub>), &nbsp;&nbsp; **ŷ** = (1/*i*√2)(**ε**<sub>+</sub> − **ε**<sub>−</sub>)
 
-In spectroscopy—such as **circular dichroism (CD)**, where chiral molecules or oriented states absorb left- and right-circularly polarized light differently—linearly polarized light literally behaves as a 50/50 coherent superposition of opposite circular **helicities** (circular handednesses)! Adjusting amplitudes or phases away from 1:1 and ±90° creates **elliptical polarization**, weighting **ε**<sub>+</sub> and **ε**<sub>−</sub> unequally, while adding `z amp` tilts the oscillation line (for linear light) or polarization ellipse into 3D space. For example, setting `x = 1 at 0°` and `y = 0.4 at 90°` gives
+So for a beam travelling along *z*, linearly polarized light literally behaves as a 50/50 coherent superposition of opposite circular **helicities** (senses of rotation about the direction of travel). This is the starting point of **circular dichroism (CD)** spectroscopy, where chiral molecules absorb the left- and right-circular halves of the light differently. Unequal amplitudes with a ±90° delay, or any delay other than 0°, ±90°, or 180°, give **elliptical polarization**: the field's tip traces an ellipse, and **ε**<sub>+</sub> and **ε**<sub>−</sub> get unequal weights. Adding `z amp` tilts the oscillation line (for linear light) or the polarization ellipse into 3D space. For example, setting `x = 1 at 0°` and `y = 0.4 at 90°` gives
 
 > **x̂** + 0.4*i* **ŷ** = (1.4 **ε**<sub>+</sub> + 0.6 **ε**<sub>−</sub>)/√2 &nbsp; ⇒ &nbsp; σ⁺ : σ⁻ = 0.98 : 0.18 ≈ **84.5% : 15.5%**
 
@@ -386,8 +397,6 @@ so the light is about **84% σ⁺ and 16% σ⁻**. Because σ⁺ drives 1s → \
 </details>
 
 </details>
-
-*(Convention note: here **σ⁺** and **σ⁻** are defined relative to the atom's fixed **+z** quantization axis—counterclockwise vs. clockwise viewed from +z—whereas optics and CD textbooks define "left-circular (LCP)" and "right-circular (RCP)" relative to the wave's propagation direction **k**, so reversing **k** from +z to −z swaps which optics label matches σ⁺ vs. σ⁻.)*
 
 ```demo
 {
@@ -481,11 +490,11 @@ Whereas the first five demos run in **Coherent EM wave** mode, the final demo be
 
 ## 3.4 Envelopes, Spectral Bandwidth & Intensity
 
-**The result (time–bandwidth rule, quoted).** A finite pulse of duration *T* cannot be purely monochromatic: the shorter the pulse, the wider its spread of frequencies. Roughly,
+**The result (time–bandwidth rule, quoted).** A finite pulse of duration *T* cannot be purely monochromatic (single-frequency): the shorter the pulse, the wider its spread of frequencies, its **bandwidth** Δω. Roughly,
 
 > Δω · *T* ~ 2π &nbsp;&nbsp; (equivalently Δν · *T* ~ 1), &nbsp;&nbsp; so a pulse of *N* optical cycles has Δω/ω<sub>L</sub> ~ 1/*N*
 
-A 10-cycle pulse has a spectral width of about 10% of its center frequency. Multiplying by *ħ* (Δ*E* = *ħ*Δω) gives Δ*E* · *T* ~ 2π*ħ* = *h*, the energy–time relation, often quoted as Δ*E* · Δ*t* ≳ *ħ*. *(The exact constant—1, ½, 2π—depends on how "width" is defined, e.g. full width vs. standard deviation; Heisenberg's ħ/2 uses standard deviations. Read all of these as order-of-magnitude rules.)* A second quoted result: a wave whose amplitude **decays exponentially**, *e*<sup>−Γ*t*/2</sup>, has a **Lorentzian** spectrum ∝ 1/[(ω − ω₀)² + (Γ/2)²], with full width Γ at half maximum. Both come from Fourier analysis ([T8 · Fourier, time–bandwidth & Lorentzian](tut:08#T8)).
+A 10-cycle pulse has a spectral width of about 10% of its center frequency. Multiplying by *ħ* (Δ*E* = *ħ*Δω) gives Δ*E* · *T* ~ 2π*ħ* = *h*, the energy–time relation, often quoted as Δ*E* · Δ*t* ≳ *ħ*. *(The exact constant—1, ½, 2π—depends on how "width" is defined, e.g. full width vs. standard deviation; Heisenberg's ħ/2 uses standard deviations. Read all of these as order-of-magnitude rules.)* Laser data sheets use a precise version: with both widths measured as the **full width at half maximum (FWHM)** of the intensity, a smooth Gaussian pulse has Δν · Δ*t* = 2 ln 2/π ≈ 0.441, and the app's sin² pulse of total length *T* has a spectral FWHM of about 1.44/*T* (so a 10-cycle sin² pulse is about 14% wide). A second quoted result: a wave whose amplitude **decays exponentially**, *e*<sup>−Γ*t*/2</sup> (so its intensity decays at the rate Γ), has a **Lorentzian** spectrum ∝ 1/[(ω − ω₀)² + (Γ/2)²], with full width Γ at half maximum. Both come from Fourier analysis ([T8 · Fourier, time–bandwidth & Lorentzian](tut:08#T8)).
 
 <details>
 <summary>Level 1 · Picture: short pulses need many frequencies</summary>
@@ -509,7 +518,7 @@ The simplest "pulse" is two equal waves with angular frequencies ω₁ and ω₂
 
 > cos(ω₁*t*) + cos(ω₂*t*) = 2 cos(Δω *t*/2) cos(ω̄ *t*)
 
-The envelope's central bump runs between its first zeros at *t* = ±π/Δω, so it lasts *T* ≈ 2π/Δω. Filling the band Δω with many frequencies removes the repeated beats and leaves a single pulse with the same width–duration product; an *N*-cycle pulse lasts *T* = 2π*N*/ω<sub>L</sub>, which gives
+The envelope's central bump runs between its first zeros at *t* = ±π/Δω, so it lasts *T* ≈ 2π/Δω. Filling the band Δω with many frequencies removes the repeated beats and leaves a single pulse with roughly the same width–duration product; an *N*-cycle pulse lasts *T* = 2π*N*/ω<sub>L</sub>, which gives
 
 > Δω · *T* ≈ 2π, &nbsp;&nbsp; Δω/ω<sub>L</sub> ≈ 1/*N*
 
@@ -522,7 +531,7 @@ Full algebra: [The two-frequency estimate of Δω · T ~ 2π](tut:03#box-two-fre
 <details>
 <summary>Level 3 · Full derivation: the two-frequency estimate of Δω · T ~ 2π {#box-two-frequency}</summary>
 
-**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (cos *x* = Re *e*<sup>*ix*</sup>, *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>, and cos *x* = (*e*<sup>*ix*</sup> + *e*<sup>−*ix*</sup>)/2) and the time–bandwidth rule of [T8 · Fourier, time–bandwidth & Lorentzian](tut:08#T8).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (cos *x* = Re *e*<sup>*ix*</sup>, *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>, and cos *x* = (*e*<sup>*ix*</sup> + *e*<sup>−*ix*</sup>)/2), and, for Step 4 only, the statement of [T8 · Fourier, time–bandwidth & Lorentzian](tut:08#T8) that a continuous band of frequencies of width Δω builds a single pulse of duration of order 2π/Δω (quoted, not derived here).
 
 **Step 1 — the sum-to-product identity.** Write ω̄ = (ω₁ + ω₂)/2 and Δω = ω₁ − ω₂, so ω₁ = ω̄ + Δω/2 and ω₂ = ω̄ − Δω/2. Then
 
@@ -576,15 +585,19 @@ In both modes below, ℰ₀ denotes the **peak electric-field amplitude** (reach
 | **Single photon** | ℰ₀ *e*<sup>+Γ<sub>sim</sub>(*t*−*T*)/2</sup> (cuts off abruptly at *t* = *T*) | Γ<sub>sim</sub>/2 (simulated Lorentzian half-width) |
 | **Coherent EM wave** | ℰ₀ sin²(π*t*/*T*) (smooth turn-on and turn-off) | 2π/*T* |
 
-- **Why the Single photon envelope rises exponentially and why Γ<sub>sim</sub> ≠ physical Γ:** When an atom emits spontaneously, the field amplitude of the emitted light decays exponentially as *e*<sup>−Γ*t*/2</sup>. Reversing that decay in time gives the rising *e*<sup>+Γ(*t*−*T*)/2</sup> shape with an abrupt cutoff at *t* = *T*, which is the ideal pulse shape for absorption in free space (100% for a two-level line like Lyman-α; capped by the branching ratio when the upper level has several decay channels, Chapter 6). Because real atomic lifetimes span millions of optical cycles (e.g., for Lyman-α the UI **Wavepacket** row prints the physical Weisskopf–Wigner rate Γ<sub>tot</sub> = 6.27 × 10⁸ s⁻¹, linewidth 99.8 MHz, τ = 1/Γ = 1.60 ns, *N* ≈ 3.94 × 10⁶ cycles), animating every real cycle would take hours. Instead, the simulator computes and prints the exact physical Γ, τ, and *N*, while rendering the wavepacket **time-compressed** with Γ<sub>sim</sub> = 5/*T* over a wavepacket of *T* = 24 cycles (~8.2 × 10⁵× broader than physical Γ for Lyman-α, and up to ~10⁸× across higher-shell transitions). Both the plotted envelope and the detuning scale `bw` = Γ<sub>sim</sub>/2 use **Γ<sub>sim</sub>**, *not* the physical Γ displayed in **Wavepacket**.
-- **Detuning & mode controls:** The dimensionless **Detuning** slider multiplier `det` (from `−2.5` to `+2.5`) shifts the carrier frequency ω<sub>L</sub> = ω₀ + (`det`) · `bw` in multiples of `bw` around the Bohr resonance ω₀ = \|*E*₂ − *E*₁\|/*ħ* **(SI units)**—or \|*E*₂ − *E*₁\| in **Hartree atomic units** (*ħ* = 1, Chapter 7)—while the UI readout beside the slider shows the resulting energy shift *ħ*(ω<sub>L</sub> − ω₀) in eV or meV. Notice that the **Duration** and **Power** (`0.01–16`, with a **`1π`** shortcut that sets `Power` for Θ = π at the chosen Duration) sliders appear only when **Coherent EM wave** is selected; in **Single photon** mode, one photon carries exactly one quantum, so there is nothing to set: the animation shows the branch where the photon is absorbed, the note reports the real odds, and the two sliders are replaced by **Wavepacket** and **Branch match** (and you can click **Match** beside the polarization chips to auto-set the polarization matching the selected transition).
+- **Why the Single photon envelope rises exponentially and why Γ<sub>sim</sub> ≠ physical Γ:** When an atom emits spontaneously, the field amplitude of the emitted light decays exponentially as *e*<sup>−Γ*t*/2</sup>. Reversing that decay in time gives the rising *e*<sup>+Γ(*t*−*T*)/2</sup> shape with an abrupt cutoff at *t* = *T*, which is the ideal pulse shape for absorption in free space, provided the photon also converges on the atom from all directions like a time-reversed emitted wave (100% for a two-level line like Lyman-α; capped by the **branching ratio**, the fraction of the upper level's decays that return to the starting level, when it has several decay channels; Chapter 6). Because real atomic lifetimes span millions of optical cycles (e.g., for Lyman-α the UI **Wavepacket** row prints the physical spontaneous-emission rate from Weisskopf–Wigner theory, Γ<sub>tot</sub> = 6.27 × 10⁸ s⁻¹, linewidth 99.8 MHz, τ = 1/Γ = 1.60 ns, *N* ≈ 3.94 × 10⁶ cycles), animating every real cycle would take hours. Instead, the simulator computes and prints the exact physical Γ, τ, and *N*, while rendering the wavepacket **time-compressed** with Γ<sub>sim</sub> = 5/*T* over a wavepacket of *T* = 24 cycles (~8.2 × 10⁵× broader than physical Γ for Lyman-α, and up to ~10⁸× across higher-shell transitions). Both the plotted envelope and the detuning scale `bw` = Γ<sub>sim</sub>/2 use **Γ<sub>sim</sub>**, *not* the physical Γ displayed in **Wavepacket**.
+- **Detuning & mode controls:** The **detuning** is how far the light's **carrier frequency** ω<sub>L</sub> (the fast oscillation inside the envelope) sits from the atom's resonance. The dimensionless **Detuning** slider multiplier `det` (from `−2.5` to `+2.5`) shifts the carrier frequency ω<sub>L</sub> = ω₀ + (`det`) · `bw` in multiples of `bw` around the Bohr resonance ω₀ = \|*E*₂ − *E*₁\|/*ħ* **(SI units)**—or \|*E*₂ − *E*₁\| in **Hartree atomic units** (*ħ* = 1, Chapter 7)—while the UI readout beside the slider shows the resulting energy shift *ħ*(ω<sub>L</sub> − ω₀) in eV or meV. Notice that the **Duration** and **Power** (`0.01–16`, with a **`1π`** shortcut that sets `Power` for Θ = π at the chosen Duration) sliders appear only when **Coherent EM wave** is selected; in **Single photon** mode, one photon carries exactly one quantum, so there is nothing to set: the animation shows the branch where the photon is absorbed, the note reports the real odds, and the two sliders are replaced by **Wavepacket** and **Branch match** (and you can click **Match** beside the polarization chips to auto-set the polarization matching the selected transition).
 
 ### Pulse Area, Intensity & the Power Slider
 **The result.** In Chapter 5 we derive the **Rabi flip angle (pulse area)** Θ, which measures how far a coherent pulse rotates the electron between initial and target orbitals (Θ = π transfers 100% population in an ideal two-level atom; Θ = 2π drives a full round-trip back to the initial state with a −1 phase flip). For a sin²(π*t*/*T*) pulse,
 
 > Θ = ½ Ω<sub>R</sub> *T* ∝ ℰ₀ *T*, &nbsp;&nbsp; *I* = ½ *c* ε₀ ℰ<sub>0,SI</sub>² = ℰ<sub>0,a.u.</sub>² × 3.50945 × 10¹⁶ W/cm²
 
-where Ω<sub>R</sub> ∝ ℰ₀ is the peak **Rabi frequency** (the coherent oscillation rate) and *I* is the cycle-averaged irradiance (intensity). The intensity is displayed next to the **Power** slider (`Power` scales *I* linearly). The field in atomic units is ℰ<sub>0,a.u.</sub> = ℰ<sub>0,SI</sub> / (5.14221 × 10¹¹ V/m), since 1 a.u. of field = *E*<sub>h</sub>/(*ea*₀) ≈ 5.14221 × 10¹¹ V/m (Chapter 7). Because the Schrödinger dipole interaction +*e* **r** · **ℰ**(*t*) couples directly to electric-field **amplitude** ℰ₀ ∝ √*I* ∝ √`Power` rather than intensity *I*:
+where Ω<sub>R</sub> ∝ ℰ₀ is the peak **Rabi frequency** (the rate, in radians per unit time, at which resonant light at the pulse's peak swings the electron between the two orbitals) and *I* is the cycle-averaged irradiance (intensity). The same formula holds for linear, circular, and elliptical light, because \|**ε**\|² = 1 shares the envelope among the components. The intensity is displayed next to the **Power** slider (`Power` scales *I* linearly). The field in atomic units is ℰ<sub>0,a.u.</sub> = ℰ<sub>0,SI</sub> / (5.14221 × 10¹¹ V/m), since 1 a.u. of field = *E*<sub>h</sub>/(*ea*₀) ≈ 5.14221 × 10¹¹ V/m (Chapter 7), the proton's own field at one Bohr radius. For scale, noon sunlight (about 0.1 W/cm²) corresponds to a field of roughly 1 kV/m, about 5 × 10⁸ times weaker: ordinary light only gently rocks an atom, and fields near 1 a.u. need intense laser pulses near 10¹⁶ W/cm².
+
+A field is **ionization-safe** if it keeps the estimated loss of the electron to the continuum (ionization) below about 1%. A shorter π-pulse (Θ = π) needs a stronger field, so each line has a **reference Duration** *T*<sub>ref</sub>: the shortest π-pulse whose peak field is still ionization-safe (54 cycles for `1s → 2p`).
+
+Because the Schrödinger dipole interaction +*e* **r** · **ℰ**(*t*) couples directly to electric-field **amplitude** ℰ₀ ∝ √*I* ∝ √`Power` rather than intensity *I*:
 - Doubling the **coherent oscillation rate** (Rabi frequency Ω<sub>R</sub> ∝ ℰ₀) takes **4× the Power**. Changing **Duration** *T* leaves ℰ₀ and Ω<sub>R</sub> unchanged only up to *T*<sub>ref</sub>; beyond *T*<sub>ref</sub> the app clamps ℰ₀ to the ionization-safe field, which falls as the pulse gets longer (Chapter 5).
 - Doubling the **flip angle / pulse area** (Θ ∝ ℰ₀ *T*) takes either **4× the Power** at fixed Duration *or*, at fixed Power, **2× the Duration** for pulses up to *T*<sub>ref</sub> but about **4× the Duration** beyond *T*<sub>ref</sub> (there Θ grows only about as √Duration, Chapter 5).
 
@@ -602,7 +615,7 @@ Because sin²(π*t*/*T*) = ½[1 − cos(2π*t*/*T*)] runs through one full cosin
 
 > Θ = ∫₀<sup>*T*</sup> Ω<sub>R</sub> sin²(π*t*/*T*) *dt* = ½ Ω<sub>R</sub> *T*
 
-In a vacuum EM wave (*B* = ℰ/*c*), magnetic and electric field energies are equal (*u* = ε₀ℰ²), cycle-averaging cos² gives ⟨*u*⟩ = ½ε₀ℰ₀², and multiplying by light speed *c* gives irradiance:
+The energy stored per unit volume in an electric field ℰ is ½ε₀ℰ². In a vacuum EM wave (*B* = ℰ/*c*) the magnetic field stores an equal amount, so *u* = ε₀ℰ² in total. Cycle-averaging cos² gives ⟨*u*⟩ = ½ε₀ℰ₀² (for any polarization, since \|**ε**\|² = 1), and multiplying by light speed *c* gives the energy crossing unit area per second, the irradiance:
 
 > *I* = *c* ⟨*u*⟩ = ½ *c* ε₀ ℰ₀² &nbsp;&nbsp; (SI)
 
@@ -611,7 +624,7 @@ Full algebra: [Evaluating ∫ sin² = T/2 and I = ½cε₀ℰ₀²](tut:03#box-a
 <details>
 <summary>Level 3 · Full derivation: evaluating ∫ sin² = T/2 and I = ½cε₀ℰ₀² {#box-area-intensity}</summary>
 
-**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*θ</sup> = cos θ + *i* sin θ and *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>), sin²*x* + cos²*x* = 1, and two facts from electromagnetism: the field energy per unit volume *u* = ½ε₀ℰ² + *B*²/(2μ₀) and *c*² = 1/(ε₀μ₀), with μ₀ the magnetic constant.
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*θ</sup> = cos θ + *i* sin θ and *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>), sin²*x* + cos²*x* = 1, the integral ∫ cos(*at*) *dt* = sin(*at*)/*a*, the real field components ℰ<sub>*j*</sub> = ℰ₀ \|ε<sub>*j*</sub>\| cos(ω<sub>L</sub>*t* − χ<sub>*j*</sub>) with \|ε<sub>*x*</sub>\|² + \|ε<sub>*y*</sub>\|² + \|ε<sub>*z*</sub>\|² = 1 from §3.2, and two facts from electromagnetism: the field energy per unit volume *u* = ½ε₀ℰ² + *B*²/(2μ₀) and *c*² = 1/(ε₀μ₀), with μ₀ the magnetic constant.
 
 **Step 1 — the double-angle identities.** Square Euler's formula: *e*<sup>*i*2*x*</sup> = (cos *x* + *i* sin *x*)² = cos²*x* − sin²*x* + 2*i* sin *x* cos *x*. The real part gives cos 2*x* = cos²*x* − sin²*x* = (1 − sin²*x*) − sin²*x* = 1 − 2 sin²*x*, so sin²*x* = (1 − cos 2*x*)/2 and likewise cos²*x* = (1 + cos 2*x*)/2. Averaged over a full period cos 2*x* gives zero, so both sin² and cos² average to ½.
 
@@ -624,7 +637,7 @@ because sin 2π = sin 0 = 0 (the cosine runs through one full period, so its pos
 **Step 3 — the intensity (SI units).**
 1. The energy stored per unit volume in the fields is *u* = ½ε₀ℰ² + *B*²/(2μ₀).
 2. In a light wave *B* = ℰ/*c*, and *c*² = 1/(ε₀μ₀), so *B*²/(2μ₀) = ℰ²/(2μ₀*c*²) = ½ε₀ℰ². The magnetic half equals the electric half: *u* = ε₀ℰ².
-3. Over one cycle, cos² averages to ½ (Step 1), so the cycle-averaged energy density is ⟨*u*⟩ = ½ε₀ℰ₀².
+3. The squared field is ℰ² = ℰ<sub>*x*</sub>² + ℰ<sub>*y*</sub>² + ℰ<sub>*z*</sub>² = ℰ₀² Σ<sub>*j*</sub> \|ε<sub>*j*</sub>\|² cos²(ω<sub>L</sub>*t* − χ<sub>*j*</sub>). Over one cycle each cos² averages to ½ (Step 1), whatever its phase χ<sub>*j*</sub>, and the weights \|ε<sub>*j*</sub>\|² add to 1, so for any polarization the cycle-averaged energy density is ⟨*u*⟩ = ½ε₀ℰ₀².
 4. This energy moves at speed *c*, so the power crossing a unit area each second is *I* = *c*⟨*u*⟩ = ½*c*ε₀ℰ₀².
 
 **Step 4 — the numerical factor.** For ℰ₀ = 1 a.u. = 5.14221 × 10¹¹ V/m: *I* = ½ × (2.998 × 10⁸ m/s) × (8.854 × 10⁻¹² F/m) × (5.14221 × 10¹¹ V/m)² ≈ 3.509 × 10²⁰ W/m² = 3.509 × 10¹⁶ W/cm² (1 m² = 10⁴ cm²).
@@ -655,6 +668,6 @@ because sin 2π = sin 0 = 0 (the cosine runs through one full period, so its pos
 - **2.** At ω<sub>L</sub>*t* = 90°: ℰ<sub>*x*</sub> ∝ cos 90° = 0 and ℰ<sub>*y*</sub> ∝ cos(90° − 270°) = cos(−180°) = −1, so **ℰ** points along **−y**. At 180°: ℰ<sub>*x*</sub> ∝ −1 and ℰ<sub>*y*</sub> ∝ cos(−90°) = 0, so **ℰ** points along **−x**. Going +*x* → −*y* → −*x* is **clockwise** viewed from +*z*: σ⁻.
 - **3.** **Power = 4.** Θ ∝ ℰ₀ *T* and ℰ₀ ∝ √Power, so doubling Θ at fixed duration needs twice the field, i.e. four times the power. Power above 1 exceeds the ionization-safe field, so the readout warns about continuum loss; alternatively keep Power = 1 and stretch the Duration (to about 4 × 54 ≈ 216 cycles, because beyond *T*<sub>ref</sub> Θ grows only as √Duration; Chapter 5).
 - **P1.** *E* = 1239.84/254 ≈ **4.88 eV**; ν̃ = 10⁷/254 ≈ **39,400 cm⁻¹**.
-- **P2.** One cycle at 800 nm lasts λ/*c* = 800 × 10⁻⁹ / 2.998 × 10⁸ ≈ 2.67 fs, so 10 fs is about **3.7 cycles**. Using Δν · *T* ~ 1 (a pulse of *N* cycles has relative width ~1/*N*), the spectral width is about 1/3.7 ≈ **25–30%** of the center frequency: a very broadband pulse.
+- **P2.** One cycle at 800 nm lasts λ/*c* = 800 × 10⁻⁹ / 2.998 × 10⁸ ≈ 2.67 fs, so 10 fs is about **3.7 cycles**. Using Δν · *T* ~ 1 (a pulse of *N* cycles has relative width ~1/*N*), the spectral width is about 1/3.7 ≈ **25–30%** of the center frequency: a very broadband pulse. (Laser makers quote 10 fs as an intensity FWHM; for a Gaussian pulse the precise rule Δν · Δ*t* ≈ 0.441 gives Δν ≈ 44 THz, about 12% of the 375 THz carrier, or roughly 94 nm. Same order of magnitude, as promised; the rough rule overestimates because the FWHM is shorter than the pulse's full length.)
 
 </details>
