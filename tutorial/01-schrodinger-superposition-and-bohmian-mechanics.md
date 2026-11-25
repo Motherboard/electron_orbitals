@@ -115,17 +115,17 @@ We work in atomic units (*ħ* = 1), where the TDSE is *i* ∂Ψ/∂*t* = *Ĥ*₀
 
 **Step 1 — substitute Ψ = ψ(r) f(t).** The time derivative acts only on *f*; *Ĥ*₀ (space derivatives and *V*(*r*)) acts only on ψ:
 
-> *i* ψ(**r**) *df*/*dt* = *f*(*t*) (*Ĥ*₀ ψ(**r**))
+> *i* ψ(**r**) *df*/*dt* = *f*(*t*) (*Ĥ*₀ ψ(**r**)) &nbsp;&nbsp; (a.u.)
 
 **Step 2 — divide** both sides by ψ(**r**) *f*(*t*), which separates time (left) from space (right):
 
-> (*i* / *f*(*t*)) *df*/*dt* = (*Ĥ*₀ ψ(**r**)) / ψ(**r**)
+> (*i* / *f*(*t*)) *df*/*dt* = (*Ĥ*₀ ψ(**r**)) / ψ(**r**) &nbsp;&nbsp; (a.u.)
 
 **Step 3 — both sides equal one constant.** Call the left side *g*(*t*) and the right side *h*(**r**). Pick any one point **r**₀: then *g*(*t*) = *h*(**r**₀) for every time *t*, so *g* never changes—it is a constant. The same constant equals *h*(**r**) at every **r**. Call it *E*. The right side then reads *Ĥ*₀ ψ = *E* ψ: the energy operator just multiplies ψ by the number *E*, so *E* is the **energy** of the state (this is the TISE).
 
 **Step 4 — the time equation.** The left side says (*i*/*f*) *df*/*dt* = *E*. Multiply by *f* and divide by *i*, using 1/*i* = −*i*:
 
-> *df*/*dt* = *E f* / *i* = −*iE f*
+> *df*/*dt* = *E f* / *i* = −*iE f* &nbsp;&nbsp; (a.u.)
 
 **Step 5 — solve it by guessing an exponential.** Try *f*(*t*) = *e*<sup>*st*</sup> with some constant *s*. Then *df*/*dt* = *s e*<sup>*st*</sup>, and the equation becomes *s e*<sup>*st*</sup> = −*iE e*<sup>*st*</sup>. Divide by *e*<sup>*st*</sup> (never zero): *s* = −*iE*. So
 
@@ -157,20 +157,49 @@ Writing the radial part as *u*(*r*) = *r R*<sub>*nl*</sub>(*r*) turns the radial
 
 The repulsive **centrifugal barrier** *l*(*l*+1)/(2*r*²) pushes *p*, *d*, and *f* electrons away from the nucleus: near *r* → 0, *R*<sub>*nl*</sub>(*r*) ∝ *r*<sup>*l*</sup> (forcing *R*<sub>*nl*</sub>(0) = 0 and \|ψ\|² ∝ *r*<sup>2*l*</sup> for *l* ≥ 1, e.g. \|ψ\|² ∝ *r*² for 2p), whereas *s* electrons (*l* = 0) have zero centrifugal barrier.
 
-<!-- lint-ignore: nest-parent -->
 <details>
-<summary>Level 2 · Key idea: why m is an integer and why 1s solves the radial equation {#box-short-proofs}</summary>
+<summary>Level 1 · Picture: going once around the axis, and testing 1s</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) and [T5 · Spherical coordinates](tut:08#T5).
+Walk once around the *z*-axis and you arrive back at exactly the same point in space, so the wave must arrive back at exactly the same value. The azimuthal phase wave therefore has to complete a whole number of full turns on the trip around—half a turn or a quarter turn would leave the wave disagreeing with itself at the starting point. That whole number of turns is the quantum number *m*.
 
-**1. Azimuthal quantization (*m* must be an integer).** Separating the φ angle from the TISE gives the simple harmonic equation Φ″(φ) = −*m*² Φ(φ), with solutions Φ(φ) = *e*<sup>*im*φ</sup>. A full 2π turn around the *z*-axis returns to the exact same physical point in space, so the wavefunction must be single-valued: *e*<sup>*im*(φ+2π)</sup> = *e*<sup>*im*φ</sup>. Dividing by *e*<sup>*im*φ</sup> leaves *e*<sup>*i*2π*m*</sup> = cos(2π*m*) + *i* sin(2π*m*) = 1, which holds if and only if *m* is an integer (`0, ±1, ±2, …`). ✓
+The 1s orbital can be tested directly: put its simple exponential shape into the radial wave equation and check that the curvature (kinetic) term and the Coulomb term combine into one fixed number times the original wave. They do, and that number is the 1s energy, −13.61 eV.
 
-**2. Verifying 1s (*n* = 1, *l* = 0) in the radial equation.** Set *u*(*r*) = *r R*<sub>10</sub>(*r*) = *r e*<sup>−*r*</sup> in the *l* = 0 radial equation above, −½*u*″ − *u*/*r* = *E u* (a.u.):
+<details>
+<summary>Level 2 · Key idea: single-valuedness quantizes m, and 1s solves the radial equation</summary>
+
+Separating the φ angle from the TISE gives (quoted) a simple harmonic equation whose solutions are the azimuthal phase waves:
+
+> Φ″(φ) = −*m*² Φ(φ), &nbsp;&nbsp; Φ(φ) = *e*<sup>*im*φ</sup>
+
+A full turn returns to the same point, so Φ must be single-valued, which forces *m* to be an integer:
+
+> *e*<sup>*im*(φ+2π)</sup> = *e*<sup>*im*φ</sup> &nbsp;⇒&nbsp; *e*<sup>*i*2π*m*</sup> = 1 &nbsp;⇒&nbsp; *m* = 0, ±1, ±2, …
+
+For 1s, the reduced radial wave *u*(*r*) = *r R*<sub>10</sub>(*r*) = *r e*<sup>−*r*</sup> satisfies the *l* = 0 radial equation with a single constant on the right, the ground-state energy:
+
+> −½ *u*″ − *u*/*r* = −½ *u* &nbsp;⇒&nbsp; *E*₁ = −½ Ha ≈ −13.61 eV &nbsp;&nbsp; (a.u.)
+
+The same derivative of *r e*<sup>−*r*</sup> reappears when checking the 1s quantum potential in §1.5. Full algebra: [Azimuthal quantization and the 1s radial check](tut:01#box-short-proofs).
+
+<details>
+<summary>Level 3 · Full derivation: azimuthal quantization and the 1s radial check {#box-short-proofs}</summary>
+
+**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (*e*<sup>*i*θ</sup> = cos θ + *i* sin θ) and [T5 · Spherical coordinates](tut:08#T5) (φ is the angle around the *z*-axis, so φ and φ + 2π label the same point).
+
+**Step 1 — azimuthal quantization (*m* must be an integer).** Separating the φ angle from the TISE gives the simple harmonic equation Φ″(φ) = −*m*² Φ(φ), with solutions Φ(φ) = *e*<sup>*im*φ</sup>. A full 2π turn around the *z*-axis returns to the exact same physical point in space, so the wavefunction must be single-valued: *e*<sup>*im*(φ+2π)</sup> = *e*<sup>*im*φ</sup>. Dividing by *e*<sup>*im*φ</sup> leaves *e*<sup>*i*2π*m*</sup> = cos(2π*m*) + *i* sin(2π*m*) = 1, which holds if and only if *m* is an integer (`0, ±1, ±2, …`).
+
+**Step 2 — verifying 1s (*n* = 1, *l* = 0) in the radial equation.** Set *u*(*r*) = *r R*<sub>10</sub>(*r*) = *r e*<sup>−*r*</sup> in the *l* = 0 radial equation above, −½*u*″ − *u*/*r* = *E u* (a.u.):
 - First derivative (product rule): *u*′ = (1 − *r*) *e*<sup>−*r*</sup>
 - Second derivative: *u*″ = −*e*<sup>−*r*</sup> − (1 − *r*) *e*<sup>−*r*</sup> = (*r* − 2) *e*<sup>−*r*</sup>
 - Substitute into the left-hand side: −½(*r* − 2)*e*<sup>−*r*</sup> − *e*<sup>−*r*</sup> = (−½*r* + 1 − 1)*e*<sup>−*r*</sup> = (−½) *r e*<sup>−*r*</sup> = (−½) *u*(*r*)
 
-So 1s is an exact eigenstate with energy *E*₁ = −½ Ha ≈ −13.61 eV. ✓ *(Notice that we reuse this same derivative of r e<sup>−r</sup> when checking the 1s quantum potential in §1.5.)*
+So 1s is an exact eigenstate with energy *E*₁ = −½ Ha ≈ −13.61 eV.
+
+**Check:** a half-integer such as *m* = ½ would give *e*<sup>*i*π</sup> = −1 ≠ 1, so it fails single-valuedness; and *E*₁ = −½ Ha matches *E*<sub>*n*</sub> = −1/(2*n*²) at *n* = 1, i.e. −½ × 27.211 eV = −13.61 eV. ✓
+
+</details>
+
+</details>
 
 </details>
 
@@ -211,7 +240,7 @@ Full algebra: [The radial equation and why R ∝ r^l near the nucleus](tut:01#bo
 
 since (*rf*)′ = *f* + *rf*′ and (*rf*)″ = 2*f*′ + *rf*″. Combining this with the angular Laplacian eigenvalue −*l*(*l*+1)/*r*² of *Y*<sub>*l*</sub><sup>*m*</sup> (quoted from [T5](tut:08#T5) and [T7](tut:08#T7)) gives, for ψ = *R*(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ):
 
-> ∇²ψ = [ (1/*r*) *d*²(*rR*)/*dr*² − *l*(*l*+1) *R* / *r*² ] *Y*<sub>*l*</sub><sup>*m*</sup> &nbsp;&nbsp; (identity)
+> ∇²ψ = [ (1/*r*) *d*²(*rR*)/*dr*² − *l*(*l*+1) *R* / *r*² ] *Y*<sub>*l*</sub><sup>*m*</sup>
 
 **Step 2 — from the TISE to the 1D radial equation.** Substitute *R* = *u*/*r*, so *rR* = *u* and (1/*r*) *d*²(*rR*)/*dr*² = *u*″/*r*. The TISE −½∇²ψ − ψ/*r* = *E*ψ (a.u.) becomes
 
@@ -456,7 +485,11 @@ using cos(2φ) = cos²φ − sin²φ and sin(2φ) = 2 sin φ cos φ.
   - **Subtracting** (\|2s, 0⟩ − \|2p, 0⟩)/√2 (`180°` on `2p,0`): the big `87.5%` lobe points along +*z* (⟨*z*⟩ = +3 *a*₀) instead.
   - **Caveats:** Which way the big lobe points depends on the sign convention chosen for 2s and 2p₀—only their relative sign matters, and textbooks differ. The minor lobe never vanishes; the hybrid is simply strongly lopsided. And sp hybrids are stationary here only because 2s and 2p share the same energy in hydrogen; in many-electron atoms they do not, so hybrids are a bonding-model construct rather than isolated-atom eigenstates.
 
-<!-- lint-ignore: nest-parent -->
+<details>
+<summary>Level 1 · Picture: why the hybrid's cloud slides down the axis</summary>
+
+Most of the 2s cloud lives in its big outer shell, where the 2s wave is negative. The 2p₀ wave is positive above the *xy*-plane and negative below it. Add the two: below the plane both are negative there, so they reinforce into a big lobe; above the plane they have opposite signs, so they partly cancel and leave only a small lobe. The cloud's balance point therefore slides down the *z*-axis—by about three Bohr radii—even though each ingredient on its own is perfectly centred on the nucleus.
+
 <details>
 <summary>Level 2 · Key idea: why the sp hybrid shifts to ⟨z⟩ = −3 a₀ {#box-hybrid-z-key}</summary>
 
@@ -489,6 +522,8 @@ Full derivation: [Computing the hybrid's average position ⟨z⟩ = −3 a₀](t
 > ⟨*z*⟩ = (1/(32π)) × (−72) × (2/3) × 2π = −(72 × 4π)/(3 × 32π) = −288/96 = −3 *a*₀ &nbsp;&nbsp; (a.u.)
 
 **Check:** Flipping the sign of ψ<sub>2p₀</sub> (the `180°` demo below) flips the cross-term and gives ⟨*z*⟩ = +3 *a*₀, and \|⟨*z*⟩\| = 3 *a*₀ sits comfortably inside the *n* = 2 cloud's mean radius ⟨*r*⟩ = 5–6 *a*₀. ✓
+
+</details>
 
 </details>
 
@@ -623,7 +658,7 @@ Full derivation: [Proof of Unsöld's theorem and operator structure](tut:01#box-
 <details>
 <summary>Level 3 · Full derivation: proof of Unsöld's theorem and operator structure {#box-unsold-proof}</summary>
 
-**You need:** [T7 · Operators & eigenvalues](tut:08#T7) (commutators and unitary basis changes).
+**You need:** [T7 · Operators & eigenvalues](tut:08#T7) (operators, eigenstates and orthonormal bases), plus two terms defined here: the **commutator** [*A*, *B*] ≡ *AB* − *BA* of two operators, and a **unitary** matrix, one that turns an orthonormal basis into another orthonormal basis (it preserves lengths and overlaps).
 
 **Step 1 — non-commuting angular-momentum operators.** In operator language, hydrogen's zero-field Hamiltonian *Ĥ*₀ commutes with *L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>, and *L̂*<sub>*z*</sub> individually (*Ĥ*₀*L̂*<sub>*x*</sub> = *L̂*<sub>*x*</sub>*Ĥ*₀), so any axis yields valid energy eigenstates. Because the commutator [*A*, *B*] = *AB* − *BA* between distinct components is nonzero ([*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *iħ* *L̂*<sub>*z*</sub> and cyclic permutations), no state with *l* ≥ 1 can be a simultaneous eigenstate of two different axes. Picking one axis defines an orthonormal basis of 2*l* + 1 states that spans the entire (2*l* + 1)-dimensional subshell subspace.
 
@@ -673,8 +708,6 @@ When the hands line up, the two orbital waves add where they have the same sign 
 <details>
 <summary>Level 2 · Key idea: expanding the square of a sum {#box-expand-square}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) — specifically (*z w*)\* = *z*\* *w*\*, (*e*<sup>*i*θ</sup>)\* = *e*<sup>−*i*θ</sup>, *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>, and *z* + *z*\* = 2 Re *z*.
-
 Name the two terms *a* = *c*₁ψ₁*e*<sup>−*iE*₁*t*/*ħ*</sup> and *b* = *c*₂ψ₂*e*<sup>−*iE*₂*t*/*ħ*</sup>, so Ψ = *a* + *b*. Multiplying out \|*a* + *b*\|² = (*a*\* + *b*\*)(*a* + *b*) and noticing that *b*\* *a* = (*a*\* *b*)\* collapses the two cross terms into 2 Re(*a*\* *b*):
 
 > \|*a* + *b*\|² = \|*a*\|² + \|*b*\|² + 2 Re(*a*\* *b*)
@@ -683,7 +716,32 @@ Because each clock has length 1 (\|*e*<sup>−*iE*<sub>*k*</sub>*t*/*ħ*</sup>\|
 
 > *a*\* *b* = *c*₁\* *c*₂ ψ₁\* ψ₂ *e*<sup>−*i*(*E*₂ − *E*₁)*t*/*ħ*</sup> &nbsp;&nbsp; (SI)
 
-which gives the boxed formula above. For real orbitals and real coefficients (such as 1s + 2p,0), Re[*e*<sup>−*i*ω₂₁*t*</sup>] = cos(ω₂₁*t*), so the cross-term is simply 2 *c*₁ *c*₂ ψ₁ ψ₂ cos(ω₂₁*t*): a fixed pattern ψ₁ψ₂ whose sign flips back and forth at the Bohr frequency. ✓
+which gives the boxed formula above. For real orbitals and real coefficients (such as 1s + 2p,0), Re[*e*<sup>−*i*ω₂₁*t*</sup>] = cos(ω₂₁*t*), so the cross-term is simply 2 *c*₁ *c*₂ ψ₁ ψ₂ cos(ω₂₁*t*): a fixed pattern ψ₁ψ₂ whose sign flips back and forth at the Bohr frequency.
+
+Full algebra: [Expanding \|a + b\|² term by term](tut:01#box-expand-square-full).
+
+<details>
+<summary>Level 3 · Full derivation: expanding \|a + b\|² term by term {#box-expand-square-full}</summary>
+
+**You need:** [T1 · Complex numbers & Euler](tut:08#T1) — specifically (*z w*)\* = *z*\* *w*\* and (*z* + *w*)\* = *z*\* + *w*\*; (*e*<sup>*i*θ</sup>)\* = *e*<sup>−*i*θ</sup> for real θ; *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>; and *z* + *z*\* = 2 Re *z*, \|*z*\|² = *z*\* *z*.
+
+Name the two terms *a* = *c*₁ψ₁*e*<sup>−*iE*₁*t*/*ħ*</sup> and *b* = *c*₂ψ₂*e*<sup>−*iE*₂*t*/*ħ*</sup>, so Ψ = *a* + *b*.
+
+**Step 1 — multiply out.** \|*a* + *b*\|² = (*a* + *b*)\*(*a* + *b*) = (*a*\* + *b*\*)(*a* + *b*) = *a*\* *a* + *b*\* *b* + *a*\* *b* + *b*\* *a*.
+
+**Step 2 — the separate clouds.** *a*\* *a* = \|*a*\|² = \|*c*₁\|² \|ψ₁\|² \|*e*<sup>−*iE*₁*t*/*ħ*</sup>\|² = \|*c*₁\|² \|ψ₁\|², because the clock has length 1. Likewise *b*\* *b* = \|*c*₂\|² \|ψ₂\|².
+
+**Step 3 — the two leftover terms are conjugates of each other.** (*a*\* *b*)\* = *a b*\* = *b*\* *a*. For any complex *z* = *x* + *iy*, *z* + *z*\* = (*x* + *iy*) + (*x* − *iy*) = 2*x* = 2 Re *z*. So *a*\* *b* + *b*\* *a* = 2 Re(*a*\* *b*).
+
+**Step 4 — combine the clocks.** Conjugating flips the sign of *i* in an exponent, and exponents add when you multiply:
+
+> *a*\* *b* = *c*₁\* ψ₁\* *e*<sup>+*iE*₁*t*/*ħ*</sup> · *c*₂ ψ₂ *e*<sup>−*iE*₂*t*/*ħ*</sup> = *c*₁\* *c*₂ ψ₁\* ψ₂ *e*<sup>−*i*(*E*₂ − *E*₁)*t*/*ħ*</sup> &nbsp;&nbsp; (SI)
+
+**Step 5 — the real case.** For real orbitals and real coefficients (as in the 1s + 2p,0 demo), Re[*e*<sup>−*i*ω₂₁*t*</sup>] = cos(ω₂₁*t*) with ω₂₁ = (*E*₂ − *E*₁)/*ħ*, so the cross-term is 2 *c*₁ *c*₂ ψ₁ ψ₂ cos(ω₂₁*t*).
+
+**Check:** with *b* = *a* the formula gives \|2*a*\|² = \|*a*\|² + \|*a*\|² + 2\|*a*\|² = 4\|*a*\|², as it must; and at *E*₁ = *E*₂ the cross-term stops oscillating (cos 0 = 1), recovering a stationary degenerate superposition. ✓
+
+</details>
 
 </details>
 
@@ -692,7 +750,7 @@ which gives the boxed formula above. For real orbitals and real coefficients (su
 ### Reading the Canvas Visualization
 - **Continuous glow vs. textbook 90% boundary surfaces:** General chemistry textbooks usually draw orbitals as solid shells—**90% boundary surfaces** enclosing 90% of the electron probability—because soft clouds are hard to print on paper. Here, the indigo **Density overlay** shows the continuous probability cloud directly (transparent at nodes and vacuum, brightest inside dense lobes). Because brightness is compressed so diffuse outer shells stay visible alongside dense cores, the glow is a *visual aid for shapes and nodes, not proportional to \|Ψ\|²* (see [Chapter 7 §7.2](tut:07) for the exact opacity curve, `Tilt`/`Rotate` projection formulas, and dot color scale).
 - **Two overlay modes:**
-  - **`Column projection ∫|ψ|² dz_cam` (default):** Integrates the instantaneous \|Ψ(**r**, *t*)\|² along your camera's line of sight so the shaded cloud matches the 2D density of the 3D electron dots. Because it sums through curved 3D shells, it partly fills in spherical and conical nodes.
+  - **`Column projection ∫|ψ|² dz_cam` (default):** Integrates the instantaneous \|Ψ(**r**, *t*)\|² along your camera's line of sight so the shaded cloud matches the 2D density of the 3D electron dots. Because it sums through curved 3D shells, it fills in spherical and conical nodes—almost completely for the 2s node, where the column density is still about 80% of the outer ring's peak.
   - **`2D slice |ψ|²`:** Evaluates \|Ψ\|² on the mid-plane through the nucleus perpendicular to your viewing angle (**Tilt = 0°, Rotate = 0°** slices *xz*; **Tilt = 90°** slices *xy*), exposing internal radial and angular nodes as crisp dark cuts.
 
 ```demo
@@ -823,17 +881,38 @@ The first term is real, so taking the imaginary part removes it, leaving **J** =
 
 > **J** = \|Ψ\|² (*mħ* / (*m*<sub>e</sub> ρ<sub>cyl</sub>)) **φ̂** &nbsp;&nbsp; (SI)
 
-<!-- lint-ignore: nest-parent -->
 <details>
-<summary>Level 2 · Key idea: ∇φ = φ̂/ρ<sub>cyl</sub> with Cartesian derivatives {#box-grad-phi}</summary>
+<summary>Level 1 · Picture: why the vortex spins fastest near the axis</summary>
 
-**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5).
+Picture the angle φ as the reading on a compass dial centred on the *z*-axis. Close to the axis, a single small step sideways swings the reading through a large angle; far from the axis, the same step barely moves it. A phase that grows steadily with that angle therefore changes most steeply near the axis, and the probability current, which follows the steepness of the phase, races around tight inner circles and drifts slowly around wide outer ones.
+
+<details>
+<summary>Level 2 · Key idea: the gradient of the azimuthal angle</summary>
+
+Differentiating tan φ = *y*/*x* at fixed *y* (and then at fixed *x*) gives the two in-plane slopes of φ, while φ does not depend on *z*:
+
+> ∂φ/∂*x* = −*y*/ρ<sub>cyl</sub>², &nbsp;&nbsp; ∂φ/∂*y* = *x*/ρ<sub>cyl</sub>²
+
+Collecting them into a vector with *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ gives the unit tangent **φ̂** = (−sin φ, cos φ, 0) shrunk by the distance from the axis:
+
+> ∇φ = **φ̂**/ρ<sub>cyl</sub>
+
+Full algebra: [∇φ = φ̂/ρ_cyl with Cartesian derivatives](tut:01#box-grad-phi).
+
+<details>
+<summary>Level 3 · Full derivation: ∇φ = φ̂/ρ<sub>cyl</sub> with Cartesian derivatives {#box-grad-phi}</summary>
+
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = ρ<sub>cyl</sub> cos φ, *y* = ρ<sub>cyl</sub> sin φ) and [T2 · Partial derivatives & ∇](tut:08#T2) (partial derivatives at fixed other coordinates; ∇ = (∂/∂*x*, ∂/∂*y*, ∂/∂*z*)).
 
 The azimuthal angle satisfies tan φ = *y*/*x*, with ρ<sub>cyl</sub>² = *x*² + *y*². Differentiating tan φ = *y*/*x* with respect to *x* (holding *y* fixed) gives (1/cos²φ) ∂φ/∂*x* = −*y*/*x*², so ∂φ/∂*x* = −*y* cos²φ/*x*² = −*y*/ρ<sub>cyl</sub>² (using cos φ = *x*/ρ<sub>cyl</sub>). The same steps for *y* give ∂φ/∂*y* = *x*/ρ<sub>cyl</sub>², and φ does not depend on *z*. Therefore
 
 > ∇φ = (−*y*, *x*, 0)/ρ<sub>cyl</sub>² = (1/ρ<sub>cyl</sub>)(−sin φ, cos φ, 0) = **φ̂**/ρ<sub>cyl</sub>
 
 using *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. With *S* = *mħ*φ, ∇*S* = *mħ* **φ̂**/ρ<sub>cyl</sub>, and **J** = \|Ψ\|² ∇*S*/*m*<sub>e</sub> gives the vortex formula above. Check that **φ̂** is a unit vector: sin²φ + cos²φ = 1 ✓; and that it is perpendicular to the radial direction (cos φ, sin φ, 0): −sin φ cos φ + cos φ sin φ = 0 ✓.
+
+</details>
+
+</details>
 
 </details>
 
@@ -1040,10 +1119,14 @@ This simulator models **one electron with no spin**. That is enough for orbital 
   - Because separate electrons in orthogonal orbitals add their probability densities \|ψ\|² **without** single-electron wave interference, every half-filled or filled subshell (*p*³, *p*⁶, *d*⁵, *d*¹⁰, *f*⁷, *f*¹⁴, …) sums to a **perfectly spherical** total electron cloud (**Unsöld's theorem**, [§1.2](tut:01#axis-eigenstates))—giving the exact same spherical density whether you draw the real orbitals (*p*<sub>*x*</sub>, *p*<sub>*y*</sub>, *p*<sub>*z*</sub>) or the complex *m*<sub>*l*</sub> orbitals.
 - **Many-electron atoms, shielding, and penetration:** Once an atom has more than one electron, electrons repel each other and the true wavefunction depends on all electron positions together—so assigning each electron its own single-electron "orbital" is an **approximation** (though a remarkably accurate one for chemistry). Inner electrons **shield** outer ones, so an outer electron feels an effective nuclear charge *Z*<sub>eff</sub> < *Z*, and energy now depends on *l* as well as *n*. Orbitals that penetrate closer to the nucleus (*s* more than *p*, *p* more than *d*) experience less shielding and drop lower in energy:
   - **Why *E*<sub>2s</sub> < *E*<sub>2p</sub>:** Look at the bright inner 2s lobe inside *r* < 2 *a*₀ (§1.1): 2s penetrates right to the nucleus, whereas 2p's centrifugal barrier suppresses it near *r* = 0 (\|ψ\|² ∝ *r*²). That extra core penetration drops 2s below 2p in Li, C, and all heavier atoms.
-  - **4s vs. 3d in transition metals:** In K and Ca the penetrating 4s orbital lies below 3d, so 4s fills first. From Sc onward the compact 3d orbitals are actually the lower ones, yet the lowest-energy *atom* is usually 4s²3d<sup>*n*</sup> rather than 3d<sup>*n*+2</sup>, because 3d electrons sit close together and repel each other strongly, while 4s electrons are far out and repel little. (Cr and Cu shift one 4s electron into 3d because 4s and 3d are close in energy and a half-filled or filled 3d shell is especially favorable.) When the metal ionizes, there are fewer electrons and the 3d–3d repulsion eases, so 3d configurations win: Fe²⁺ is [Ar]3d⁶, and the 4s electrons leave first. There is no contradiction: "fills first" compares the total energies of whole neutral-atom configurations, while "leaves first" asks which configuration of the *ion* is lowest, and the Madelung filling order is a rule of thumb rather than a fixed ranking of orbital energies.
+  - **4s vs. 3d in transition metals:** In K and Ca the penetrating 4s orbital lies below 3d, so 4s fills first. From Sc onward the compact 3d orbitals are actually the lower ones, yet the lowest-energy *atom* is usually 4s²3d<sup>*n*</sup> rather than 3d<sup>*n*+2</sup>, because 3d electrons sit close together and repel each other strongly, while 4s electrons are far out and repel little. (Cr and Cu instead take 4s¹3d<sup>*n*+1</sup>: the two subshells are so close in energy that the extra exchange stabilization of a half-filled or filled 3d set outweighs the cost of moving one electron out of 4s.) When the metal ionizes, there are fewer electrons and the 3d–3d repulsion eases, so 3d configurations win: Fe²⁺ is [Ar]3d⁶, and the 4s electrons leave first. There is no contradiction: "fills first" compares the total energies of whole neutral-atom configurations, while "leaves first" asks which configuration of the *ion* is lowest, and the Madelung filling order is a rule of thumb rather than a fixed ranking of orbital energies.
 - **Hydrogen-like ions (one electron, nuclear charge *Z*):** He⁺, Li²⁺, … are solved exactly like hydrogen with −1/*r* replaced by −*Z*/*r*. Energies scale as *E*<sub>*n*</sub> = −13.6 eV × *Z*²/*n*² and sizes shrink as 1/*Z* (⟨*r*⟩ → ⟨*r*⟩/*Z*). For example, He⁺ has ground-state energy −54.4 eV, four times deeper than H.
 
-<!-- lint-ignore: nest-parent -->
+<details>
+<summary>Level 1 · Picture: separate electrons are like independent dice</summary>
+
+Interference needs a single wave split between two options, like one electron in a superposition of 2p<sub>*x*</sub> and 2p<sub>*y*</sub>. Two *different* electrons sitting in two perpendicular orbitals are more like two independent dice: knowing where one landed tells you nothing that cancels or reinforces the other. Their clouds simply stack on top of each other, and when every orbital of a subshell is evenly occupied, the stacked lobes fill in all directions equally and the total cloud is a perfect sphere.
+
 <details>
 <summary>Level 2 · Key idea: why separate electrons add densities without interfering {#box-slater-key}</summary>
 
@@ -1051,7 +1134,7 @@ Two identical electrons in orthonormal spin-orbitals χ₁, χ₂ (⟨χ₁\|χ�
 
 > ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|φ<sub>*k*</sub>(**r**)\|²
 
-Combined with Unsöld's theorem ([§1.2](tut:01#box-unsold-proof)), every half-filled or filled subshell sums to a perfect sphere. Full derivation: [Two-electron Slater determinant & Unsöld's theorem](tut:01#box-slater-det).
+Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof)), every half-filled or filled subshell sums to a perfect sphere. Full derivation: [Two-electron Slater determinant & Unsöld's theorem](tut:01#box-slater-det).
 
 <details>
 <summary>Level 3 · Full derivation: two-electron Slater determinant & Unsöld's theorem {#box-slater-det}</summary>
@@ -1070,7 +1153,11 @@ Combined with Unsöld's theorem ([§1.2](tut:01#box-unsold-proof)), every half-f
 
 **Step 3 — cross terms vanish by orthogonality.** Each normalized orbital integrates to 1, while the overlap integrals ∫χ₂\*(2)χ₁(2) *d*(2) = ⟨χ₂\|χ₁⟩ = 0 vanish identically. Summing over spin 1 (∑<sub>*s*₁</sub> \|σ<sub>*k*</sub>(*s*₁)\|² = 1) leaves ρ₁(**r**) = ½(\|φ₁(**r**)\|² + \|φ₂(**r**)\|²) for electron 1 (and the same for electron 2), so the **total** two-electron density is the plain sum ρ(**r**) = ρ₁(**r**) + ρ₂(**r**) = \|φ₁(**r**)\|² + \|φ₂(**r**)\|²—with zero interference!
 
-**Step 4 — generalize to *N* electrons and link to Unsöld's theorem.** An *N*-electron Slater determinant cancels every cross term by the exact same orthogonality, giving ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|φ<sub>*k*</sub>(**r**)\|². Combining this with the proof of **Unsöld's theorem** in [Proof of Unsöld's theorem](tut:01#box-unsold-proof) (∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = (2*l* + 1)/(4π)) proves that every half-filled or filled subshell (*p*³, *p*⁶, *d*⁵, *d*¹⁰, *f*⁷, *f*¹⁴, …) has an exactly spherical total electron cloud—independent of whether you use the real Cartesian or complex *m*<sub>*l*</sub> basis. **Check:** integrating ρ(**r**) over all space gives ∑<sub>*k*=1</sub><sup>*N*</sup> 1 = *N* electrons, matching total electron count. ✓
+**Step 4 — generalize to *N* electrons and link to Unsöld's theorem.** An *N*-electron Slater determinant cancels every cross term by the exact same orthogonality, giving ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|φ<sub>*k*</sub>(**r**)\|². Combining this with the proof of **Unsöld's theorem** in [Proof of Unsöld's theorem](tut:01#box-unsold-proof) (∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = (2*l* + 1)/(4π)) proves that every half-filled or filled subshell (*p*³, *p*⁶, *d*⁵, *d*¹⁰, *f*⁷, *f*¹⁴, …) has an exactly spherical total electron cloud—independent of whether you use the real Cartesian or complex *m*<sub>*l*</sub> basis.
+
+**Check:** integrating ρ(**r**) over all space gives ∑<sub>*k*=1</sub><sup>*N*</sup> 1 = *N* electrons, matching the total electron count. ✓
+
+</details>
 
 </details>
 
@@ -1100,7 +1187,7 @@ Combined with Unsöld's theorem ([§1.2](tut:01#box-unsold-proof)), every half-f
 <details>
 <summary>Answers</summary>
 
-- **1.** The slice shows \|ψ\|², which is largest at the nucleus. But the inner region is tiny in volume: only ≈ 5.3% of the probability lies inside *r* = 2 *a*₀, so most dots land in the outer shell (the *P*(*r*) picture). In column projection, each screen pixel adds up \|ψ\|² along a whole line of sight, and lines that pass through the node also pass through the bright regions in front of and behind it, so the node is partly filled in.
+- **1.** The slice shows \|ψ\|², which is largest at the nucleus. But the inner region is tiny in volume: only ≈ 5.3% of the probability lies inside *r* = 2 *a*₀, so most dots land in the outer shell (the *P*(*r*) picture). In column projection, each screen pixel adds up \|ψ\|² along a whole line of sight, and lines that pass through the node also pass through the bright regions in front of and behind it, so the node is almost completely filled in (the column density there is about 80% of the outer ring's peak and about 16% of the bright centre).
 - **2.** In 2p<sub>*x*</sub> the two opposite circulations (*m* = +1 and *m* = −1) are combined with equal weight. The result is a real wavefunction (up to a global phase), so the phase gradient ∇*S* is zero and the probability current **J** vanishes everywhere. Changing the phase to `0°` rotates the dumbbell to lie along *y*; it is still real, so the dots still stand still.
 - **3.** It points along −*z*. With both phases at `0°`, ψ ∝ (2 − *r* + *z*). Outside the node, 2 − *r* is negative, so adding *z* reinforces it where *z* is also negative.
 - **4.** Factoring out the global phase *e*<sup>*i*δ/2</sup> (which does not affect \|ψ\|²) leaves *e*<sup>2*i*φ</sup> + *e*<sup>*i*δ</sup>*e*<sup>−2*i*φ</sup> = *e*<sup>*i*δ/2</sup>(*e*<sup>*i*(2φ−δ/2)</sup> + *e*<sup>−*i*(2φ−δ/2)</sup>) = 2*e*<sup>*i*δ/2</sup> cos(2φ − δ/2) = 2*e*<sup>*i*δ/2</sup> cos[2(φ − δ/4)]. Replacing φ by φ − δ/4 rotates the entire orbital pattern around the *z*-axis by δ/4. Setting δ/4 = 45° gives δ = **180°**: setting `m_l = −2` to `180°` turns cos(2φ) into cos(2φ − 90°) = sin(2φ) ∝ 2*xy*, rotating **3d<sub>*x*²−*y*²</sub>** by 45° onto **3d<sub>*xy*</sub>**!
