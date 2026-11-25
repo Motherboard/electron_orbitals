@@ -525,7 +525,7 @@ Under *z* → −*z*, both ψ<sub>2s</sub>² and ψ<sub>2p₀</sub>² are even w
 
 > ⟨*z*⟩ = ∫ *z* ψ<sub>2s</sub> ψ<sub>2p₀</sub> *d*³*r* = −3 *a*₀ &nbsp;&nbsp; (a.u.)
 
-Full derivation: [Computing the hybrid's average position ⟨z⟩ = −3 a₀](tut:01#box-hybrid-z).
+Full algebra: [Computing the hybrid's average position ⟨z⟩ = −3 a₀](tut:01#box-hybrid-z).
 
 <details>
 <summary>Level 3 · Full derivation: computing the hybrid's average position ⟨z⟩ = −3 a₀ {#box-hybrid-z}</summary>
@@ -545,7 +545,7 @@ Full derivation: [Computing the hybrid's average position ⟨z⟩ = −3 a₀](t
 
 > ⟨*z*⟩ = (1/(32π)) × (−72) × (2/3) × 2π = −(72 × 4π)/(3 × 32π) = −288/96 = −3 *a*₀ &nbsp;&nbsp; (a.u.)
 
-**Check:** Flipping the sign of ψ<sub>2p₀</sub> (the `180°` demo below) flips the cross-term and gives ⟨*z*⟩ = +3 *a*₀, and \|⟨*z*⟩\| = 3 *a*₀ sits comfortably inside the *n* = 2 cloud's mean radius ⟨*r*⟩ = 5–6 *a*₀. ✓
+**Check:** Flipping the sign of ψ<sub>2p₀</sub> (as with the `180°` phase on `2p,0`) flips the cross-term and gives ⟨*z*⟩ = +3 *a*₀, and \|⟨*z*⟩\| = 3 *a*₀ sits comfortably inside the *n* = 2 cloud's mean radius ⟨*r*⟩ = 5–6 *a*₀. ✓
 
 </details>
 
@@ -677,7 +677,7 @@ Three structural facts tie the 3×3 grid together:
 
 > ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ)\|² = (2*l* + 1) / (4π)
 
-Full derivation: [Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof).
+Full algebra: [Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof).
 
 <details>
 <summary>Level 3 · Full derivation: proof of Unsöld's theorem and operator structure {#box-unsold-proof}</summary>
@@ -1123,7 +1123,7 @@ In a swirling *m* ≠ 0 eigenstate (*S* = *m*φ − *E*<sub>*n*</sub>*t*), the a
 
 > *V* + *Q*<sub>quant</sub> + *m*² / (2ρ<sub>cyl</sub>²) = *E*<sub>*n*</sub> &nbsp;&nbsp; (a.u.)
 
-Full derivation: [Hamilton–Jacobi equation and Q_quant for 1s and m ≠ 0](tut:01#box-q-quant).
+Full algebra: [Hamilton–Jacobi equation and Q_quant for 1s and m ≠ 0](tut:01#box-q-quant).
 
 <details>
 <summary>Level 3 · Full derivation: Hamilton–Jacobi equation and Q<sub>quant</sub> for 1s and m ≠ 0 {#box-q-quant}</summary>
@@ -1232,7 +1232,7 @@ which vanishes identically if χ₁ = χ₂: the Pauli exclusion principle. Squa
 
 > ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|ψ<sub>*k*</sub>(**r**)\|²
 
-Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof)), every half-filled or filled subshell sums to a perfect sphere. Full derivation: [Two-electron Slater determinant & Unsöld's theorem](tut:01#box-slater-det).
+Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof)), every half-filled or filled subshell sums to a perfect sphere. Full algebra: [Two-electron Slater determinant & Unsöld's theorem](tut:01#box-slater-det).
 
 <details>
 <summary>Level 3 · Full derivation: two-electron Slater determinant & Unsöld's theorem {#box-slater-det}</summary>
