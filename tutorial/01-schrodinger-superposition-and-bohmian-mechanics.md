@@ -20,12 +20,12 @@ The key steps—separation of variables, superposition interference, the continu
 
 This chapter leans on a few tools from calculus and general chemistry. Here is a one-line reminder of each; the appendix [Chapter 8 · Math Toolkit](tut:08) explains them properly.
 
-- **Complex numbers:** *i* = √(−1), so *i*² = −1 and 1/*i* = −*i* (because *i* · (−*i*) = −*i*² = 1). A complex number *z* = *a* + *ib* (*a*, *b* real) has **complex conjugate** *z*\* = *a* − *ib* and squared size \|*z*\|² = *z*\* *z* = *a*² + *b*². → [T1 · Complex numbers & Euler](tut:08#T1)
+- **Complex numbers:** *i* = √(−1), so *i*² = −1 and 1/*i* = −*i* (because *i* · (−*i*) = −*i*² = 1). A complex number *z* = *a* + *ib* (*a*, *b* real) has **complex conjugate** *z*\* = *a* − *ib* and squared size \|*z*\|² = *z*\* *z* = *a*² + *b*². → [T1 · Complex numbers & Euler's formula](tut:08#T1)
 - **Euler's formula:** *e*<sup>*i*θ</sup> = cos θ + *i* sin θ (and *e*<sup>−*i*θ</sup> = cos θ − *i* sin θ). Since \|*e*<sup>*i*θ</sup>\| = 1, multiplying a wave by *e*<sup>*i*θ</sup> turns its **phase** by θ without changing its size: *e*<sup>0</sup> = 1, *e*<sup>*i*π/2</sup> = *i*, *e*<sup>*i*π</sup> = −1, *e*<sup>*i*3π/2</sup> = −*i*. Adding and subtracting the two versions gives *e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup> = 2 cos φ and *e*<sup>*i*φ</sup> − *e*<sup>−*i*φ</sup> = 2*i* sin φ (used in §1.2).
 - **Slider phases:** each component in the control panel has a complex weight *c*<sub>*k*</sub> = \|*c*<sub>*k*</sub>\| *e*<sup>*i*χ<sub>*k*</sub></sup>. The Phase slider sets χ<sub>*k*</sub> = (Phase°) × π/180, because formulas use radians (180° = π): `0°` → `+1`, `90°` → `+i`, `180°` → `−1`, `270°` → `−i`.
 - **Probability density:** \|ψ(**r**)\|² is the probability **per unit volume** of finding the electron at **r**; the probability inside a tiny volume *dV* is \|ψ\|² *dV*, and the total over all space is 1.
 
-**Spherical coordinates (*r*, θ, φ).** The proton pulls equally in all directions, so we use the distance *r* = √(*x*² + *y*² + *z*²) from the nucleus, the **polar angle** θ (0 to π, measured down from the +*z* axis; θ = 90° is the equatorial *xy*-plane) and the **azimuthal angle** φ (0 to 2π, around the *z*-axis). → [T5 · Spherical coordinates](tut:08#T5)
+**Spherical coordinates (*r*, θ, φ).** The proton pulls equally in all directions, so we use the distance *r* = √(*x*² + *y*² + *z*²) from the nucleus, the **polar angle** θ (0 to π, measured down from the +*z* axis; θ = 90° is the equatorial *xy*-plane) and the **azimuthal angle** φ (0 to 2π, around the *z*-axis). → [T5 · Spherical & cylindrical coordinates](tut:08#T5)
 
 > *x* = *r* sin θ cos φ, &nbsp;&nbsp; *y* = *r* sin θ sin φ, &nbsp;&nbsp; *z* = *r* cos θ, &nbsp;&nbsp; *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ
 
@@ -40,7 +40,7 @@ This chapter leans on a few tools from calculus and general chemistry. Here is a
 
 </details>
 
-**Quantum vocabulary.** → [T7 · Operators & eigenvalues](tut:08#T7)
+**Quantum vocabulary.** → [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7)
 - **Operator:** a rule that turns one function into another (for example "differentiate with respect to *x*").
 - **Hamiltonian *Ĥ*:** the total-energy operator. *Ĥ*₀ is the isolated hydrogen atom (subscript `0`: no external fields; fields appear in later chapters).
 - **Eigenstate:** a wavefunction with *Ĥ*ψ = *E*ψ—the operator only scales ψ by a number *E*, its energy. **Degenerate** eigenstates share the same *E*.
@@ -109,7 +109,7 @@ Full algebra: [Separating variables and solving df/dt = −iEf](tut:01#box-sep-v
 <details>
 <summary>Level 3 · Full derivation: separating variables and solving df/dt = −iEf {#box-sep-vars}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (for 1/*i* = −*i* and *e*<sup>−*i*ω*t*</sup> = cos ω*t* − *i* sin ω*t*, which rotates at constant length 1) and [T3 · First-order ODEs](tut:08#T3) (the equation *df*/*dt* = *k f* has solution *f*(*t*) = *f*(0)*e*<sup>*kt*</sup> for any constant *k*: real *k* grows or decays, while purely imaginary *k* = −*i*ω rotates without changing size).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (for 1/*i* = −*i* and *e*<sup>−*i*ω*t*</sup> = cos ω*t* − *i* sin ω*t*, which rotates at constant length 1) and [T3 · First-order linear ODEs](tut:08#T3) (the equation *df*/*dt* = *k f* has solution *f*(*t*) = *f*(0)*e*<sup>*kt*</sup> for any constant *k*: real *k* grows or decays, while purely imaginary *k* = −*i*ω rotates without changing size).
 
 We work in atomic units (*ħ* = 1), where the TDSE is *i* ∂Ψ/∂*t* = *Ĥ*₀ Ψ.
 
@@ -184,7 +184,7 @@ The same derivative of *r e*<sup>−*r*</sup> reappears when checking the 1s qua
 <details>
 <summary>Level 3 · Full derivation: azimuthal quantization and the 1s radial check {#box-short-proofs}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (*e*<sup>*i*θ</sup> = cos θ + *i* sin θ) and [T5 · Spherical coordinates](tut:08#T5) (φ is the angle around the *z*-axis, so φ and φ + 2π label the same point).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*θ</sup> = cos θ + *i* sin θ) and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (φ is the angle around the *z*-axis, so φ and φ + 2π label the same point).
 
 **Step 1 — azimuthal quantization (*m* must be an integer).** Separating the φ angle from the TISE gives the simple harmonic equation Φ″(φ) = −*m*² Φ(φ), with solutions Φ(φ) = *e*<sup>*im*φ</sup>. A full 2π turn around the *z*-axis returns to the exact same physical point in space, so the wavefunction must be single-valued: *e*<sup>*im*(φ+2π)</sup> = *e*<sup>*im*φ</sup>. Dividing by *e*<sup>*im*φ</sup> leaves *e*<sup>*i*2π*m*</sup> = cos(2π*m*) + *i* sin(2π*m*) = 1, which holds if and only if *m* is an integer (`0, ±1, ±2, …`).
 
@@ -232,7 +232,7 @@ Full algebra: [The radial equation and why R ∝ r^l near the nucleus](tut:01#bo
 <details>
 <summary>Level 3 · Full derivation: the radial equation and why R ∝ r<sup>l</sup> near the nucleus {#box-radial-eq}</summary>
 
-**You need:** [T5 · Spherical coordinates](tut:08#T5) (chain rule for *r* = √(*x*² + *y*² + *z*²)) and [T7 · Operators & eigenvalues](tut:08#T7) (spherical harmonics *Y*<sub>*l*</sub><sup>*m*</sup> are eigenfunctions of the angular Laplacian with eigenvalue −*l*(*l*+1)).
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (chain rule for *r* = √(*x*² + *y*² + *z*²)) and [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (spherical harmonics *Y*<sub>*l*</sub><sup>*m*</sup> are eigenfunctions of the angular Laplacian with eigenvalue −*l*(*l*+1)).
 
 **Step 1 — the radial Laplacian identity.** For a function *f*(*r*) depending only on *r* = √(*x*² + *y*² + *z*²), the chain rule gives ∂*r*/∂*x* = *x*/*r*, so ∂*f*/∂*x* = *f*′(*r*) · *x*/*r*. Differentiating a second time with the product and quotient rules yields ∂²*f*/∂*x*² = *f*″(*x*/*r*)² + *f*′(1/*r* − *x*²/*r*³). Adding the matching *y* and *z* pieces and using *x*² + *y*² + *z*² = *r*² gives
 
@@ -392,9 +392,7 @@ Think of a superposition's total probability as a single pie equal to 100%, divi
 <details>
 <summary>Level 2 · Key idea: why the weights add up to 1</summary>
 
-**You need:** orthonormality of eigenstates and [T7 · Operators & eigenvalues](tut:08#T7).
-
-Put each time factor into its coefficient, *a*<sub>*k*</sub>(*t*) = *c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>, so Ψ = ∑<sub>*k*</sub> *a*<sub>*k*</sub> ψ<sub>*k*</sub>. For two states, multiplying out \|Ψ\|² = Ψ\* Ψ gives:
+The argument uses only the orthonormality of eigenstates ([T7 · Operators, eigenvalues & Dirac notation](tut:08#T7)). Put each time factor into its coefficient, *a*<sub>*k*</sub>(*t*) = *c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>, so Ψ = ∑<sub>*k*</sub> *a*<sub>*k*</sub> ψ<sub>*k*</sub>. For two states, multiplying out \|Ψ\|² = Ψ\* Ψ gives:
 
 > \|Ψ\|² = (*a*₁\* ψ₁\* + *a*₂\* ψ₂\*)(*a*₁ ψ₁ + *a*₂ ψ₂) = \|*a*₁\|² \|ψ₁\|² + \|*a*₂\|² \|ψ₂\|² + *a*₁\* *a*₂ ψ₁\* ψ₂ + *a*₂\* *a*₁ ψ₂\* ψ₁
 
@@ -448,7 +446,7 @@ For *m* = ±2, both states carry sign `+1`, so adding them gives *r*² sin²θ c
 <details>
 <summary>Level 3 · Full derivation: building real 2p and 3d orbitals with Euler's formula {#box-real-orbitals}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (*e*<sup>±*i*α</sup> = cos α ± *i* sin α) and [T5 · Spherical coordinates](tut:08#T5) (*x* = *r* sin θ cos φ, *y* = *r* sin θ sin φ).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>±*i*α</sup> = cos α ± *i* sin α) and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = *r* sin θ cos φ, *y* = *r* sin θ sin φ).
 
 **Step 1 — Condon–Shortley signs for 2p (*l* = 1, *m* = ±1).** With *P*<sub>1</sub><sup>1</sup>(cos θ) = sin θ and the Condon–Shortley phase (−1)<sup>*m*</sup> for *m* > 0, the angular factors are *Y*<sub>1</sub><sup>+1</sup> ∝ −sin θ *e*<sup>+*i*φ</sup> and *Y*<sub>1</sub><sup>−1</sup> ∝ +sin θ *e*<sup>−*i*φ</sup>, sharing the radial wave *R*<sub>21</sub>(*r*) ∝ *r e*<sup>−*r*/2</sup>.
 
@@ -497,7 +495,7 @@ Squaring the real hybrid Ψ = (ψ<sub>2s</sub> + ψ<sub>2p₀</sub>)/√2 produc
 
 > \|Ψ\|² = ½ ψ<sub>2s</sub>² + ½ ψ<sub>2p₀</sub>² + ψ<sub>2s</sub> ψ<sub>2p₀</sub>
 
-Under *z* → −*z*, both ψ<sub>2s</sub>² and ψ<sub>2p₀</sub>² are even while *z* is odd, so they contribute zero to the average position ⟨*z*⟩ = ∫ *z* \|Ψ\|² *d*³*r* ([T6 · Integrals & symmetry](tut:08#T6)). Only the cross-term survives—and because ψ<sub>2s</sub> is negative in the dominant outer shell (*r* > 2 *a*₀) while ψ<sub>2p₀</sub> ∝ *z*, the product *z* ψ<sub>2s</sub> ψ<sub>2p₀</sub> is negative there, pulling the mean position to:
+Under *z* → −*z*, both ψ<sub>2s</sub>² and ψ<sub>2p₀</sub>² are even while *z* is odd, so they contribute zero to the average position ⟨*z*⟩ = ∫ *z* \|Ψ\|² *d*³*r* ([T6 · Radial integrals & odd/even symmetry](tut:08#T6)). Only the cross-term survives—and because ψ<sub>2s</sub> is negative in the dominant outer shell (*r* > 2 *a*₀) while ψ<sub>2p₀</sub> ∝ *z*, the product *z* ψ<sub>2s</sub> ψ<sub>2p₀</sub> is negative there, pulling the mean position to:
 
 > ⟨*z*⟩ = ∫ *z* ψ<sub>2s</sub> ψ<sub>2p₀</sub> *d*³*r* = −3 *a*₀ &nbsp;&nbsp; (a.u.)
 
@@ -506,7 +504,7 @@ Full derivation: [Computing the hybrid's average position ⟨z⟩ = −3 a₀](t
 <details>
 <summary>Level 3 · Full derivation: computing the hybrid's average position ⟨z⟩ = −3 a₀ {#box-hybrid-z}</summary>
 
-**You need:** [T5 · Spherical coordinates](tut:08#T5) (volume element *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ) and [T6 · Integrals & symmetry](tut:08#T6) (odd/even symmetry and ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*r*</sup> *dr* = *n*!).
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (volume element *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ) and [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (odd/even symmetry and ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*r*</sup> *dr* = *n*!).
 
 **Step 1 — keep only the cross-term.** The average of *z* is ⟨*z*⟩ = ∫ *z* \|Ψ\|² *d*³*r*. For Ψ = (ψ<sub>2s</sub> + ψ<sub>2p₀</sub>)/√2 (both real), expanding the square gives \|Ψ\|² = ½ ψ<sub>2s</sub>² + ½ ψ<sub>2p₀</sub>² + ψ<sub>2s</sub> ψ<sub>2p₀</sub>. Since ψ<sub>2s</sub>² and ψ<sub>2p₀</sub>² are unchanged by *z* → −*z* while *z* flips sign, their integrals cancel identically, leaving ⟨*z*⟩ = ∫ ψ<sub>2s</sub> ψ<sub>2p₀</sub> *z* *d*³*r*:
 
@@ -615,7 +613,7 @@ Full algebra: [Building the x and y eigenstates from m_l = −1, 0, +1](tut:01#b
 <details>
 <summary>Level 3 · Full derivation: building the x and y eigenstates from m_l = −1, 0, +1 {#box-xy-eigenstates}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) and [T5 · Spherical coordinates](tut:08#T5).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) and [T5 · Spherical & cylindrical coordinates](tut:08#T5).
 
 Under the Condon–Shortley convention, dropping the shared factor *R*<sub>21</sub>(*r*)/*r* (∝ *e*<sup>−*r*/2</sup>) and normalization √(3/4π), the three menu states are proportional to:
 
@@ -658,7 +656,7 @@ Full derivation: [Proof of Unsöld's theorem and operator structure](tut:01#box-
 <details>
 <summary>Level 3 · Full derivation: proof of Unsöld's theorem and operator structure {#box-unsold-proof}</summary>
 
-**You need:** [T7 · Operators & eigenvalues](tut:08#T7) (operators, eigenstates and orthonormal bases), plus two terms defined here: the **commutator** [*A*, *B*] ≡ *AB* − *BA* of two operators, and a **unitary** matrix, one that turns an orthonormal basis into another orthonormal basis (it preserves lengths and overlaps).
+**You need:** [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (operators, eigenstates and orthonormal bases), plus two terms defined here: the **commutator** [*A*, *B*] ≡ *AB* − *BA* of two operators, and a **unitary** matrix, one that turns an orthonormal basis into another orthonormal basis (it preserves lengths and overlaps).
 
 **Step 1 — non-commuting angular-momentum operators.** In operator language, hydrogen's zero-field Hamiltonian *Ĥ*₀ commutes with *L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>, and *L̂*<sub>*z*</sub> individually (*Ĥ*₀*L̂*<sub>*x*</sub> = *L̂*<sub>*x*</sub>*Ĥ*₀), so any axis yields valid energy eigenstates. Because the commutator [*A*, *B*] = *AB* − *BA* between distinct components is nonzero ([*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *iħ* *L̂*<sub>*z*</sub> and cyclic permutations), no state with *l* ≥ 1 can be a simultaneous eigenstate of two different axes. Picking one axis defines an orthonormal basis of 2*l* + 1 states that spans the entire (2*l* + 1)-dimensional subshell subspace.
 
@@ -723,7 +721,7 @@ Full algebra: [Expanding \|a + b\|² term by term](tut:01#box-expand-square-full
 <details>
 <summary>Level 3 · Full derivation: expanding \|a + b\|² term by term {#box-expand-square-full}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) — specifically (*z w*)\* = *z*\* *w*\* and (*z* + *w*)\* = *z*\* + *w*\*; (*e*<sup>*i*θ</sup>)\* = *e*<sup>−*i*θ</sup> for real θ; *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>; and *z* + *z*\* = 2 Re *z*, \|*z*\|² = *z*\* *z*.
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) — specifically (*z w*)\* = *z*\* *w*\* and (*z* + *w*)\* = *z*\* + *w*\*; (*e*<sup>*i*θ</sup>)\* = *e*<sup>−*i*θ</sup> for real θ; *e*<sup>*iA*</sup>*e*<sup>*iB*</sup> = *e*<sup>*i*(*A*+*B*)</sup>; and *z* + *z*\* = 2 Re *z*, \|*z*\|² = *z*\* *z*.
 
 Name the two terms *a* = *c*₁ψ₁*e*<sup>−*iE*₁*t*/*ħ*</sup> and *b* = *c*₂ψ₂*e*<sup>−*iE*₂*t*/*ħ*</sup>, so Ψ = *a* + *b*.
 
@@ -833,7 +831,7 @@ Full algebra: [J and the flow velocity ∇S/m_e from the TDSE](tut:01#box-j-from
 <details>
 <summary>Level 3 · Full derivation: J and the flow velocity ∇S/m<sub>e</sub> from the TDSE {#box-j-from-tdse}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (*z* − *z*\* = 2*i* Im *z*) and [T2 · Partial derivatives & ∇](tut:08#T2) — specifically the divergence product rule ∇ · (*f* **A**) = ∇*f* · **A** + *f* ∇ · **A** (apply the ordinary product rule to each component and sum *x*, *y*, *z*), ∇ · (∇*f*) = ∇²*f*, and the chain rule ∇*e*<sup>*iS*/*ħ*</sup> = (*i*/*ħ*) *e*<sup>*iS*/*ħ*</sup> ∇*S*.
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*z* − *z*\* = 2*i* Im *z*) and [T2 · Partial derivatives & ∇](tut:08#T2) — specifically the divergence product rule ∇ · (*f* **A**) = ∇*f* · **A** + *f* ∇ · **A** (apply the ordinary product rule to each component and sum *x*, *y*, *z*), ∇ · (∇*f*) = ∇²*f*, and the chain rule ∇*e*<sup>*iS*/*ħ*</sup> = (*i*/*ħ*) *e*<sup>*iS*/*ħ*</sup> ∇*S*.
 
 **Step 1 — product rule in time.** Differentiate ρ<sub>prob</sub> = Ψ\* Ψ:
 
@@ -1037,7 +1035,7 @@ Full derivation: [Hamilton–Jacobi equation and Q_quant for 1s and m ≠ 0](tut
 <details>
 <summary>Level 3 · Full derivation: Hamilton–Jacobi equation and Q<sub>quant</sub> for 1s and m ≠ 0 {#box-q-quant}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1), [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule and chain rule), and [T5 · Spherical coordinates](tut:08#T5) (radial Laplacian ∇²*f* = (1/*r*)*d*²(*rf*)/*dr*², derived in [The radial equation](tut:01#box-radial-eq)).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1), [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule and chain rule), and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (radial Laplacian ∇²*f* = (1/*r*)*d*²(*rf*)/*dr*², derived in [The radial equation](tut:01#box-radial-eq)).
 
 **Step 1 — Hamilton–Jacobi equation from the TDSE.** Substitute Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup> directly into *iħ* ∂Ψ/∂*t* = [−(*ħ*²/2*m*<sub>e</sub>)∇² + *V*]Ψ. Using the product rule, the chain rule ∇*e*<sup>*iS*/*ħ*</sup> = (*i*/*ħ*) *e*<sup>*iS*/*ħ*</sup> ∇*S*, and the divergence product rule of §1.4 twice:
 - *iħ* ∂Ψ/∂*t* = (*iħ* ∂\|Ψ\|/∂*t* − \|Ψ\| ∂*S*/∂*t*) *e*<sup>*iS*/*ħ*</sup>
@@ -1139,7 +1137,7 @@ Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator struct
 <details>
 <summary>Level 3 · Full derivation: two-electron Slater determinant & Unsöld's theorem {#box-slater-det}</summary>
 
-**You need:** orthogonality of eigenstates (§1.2) and [T7 · Operators & eigenvalues](tut:08#T7).
+**You need:** orthogonality of eigenstates (§1.2) and [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7).
 
 **Step 1 — a two-electron antisymmetrized state.** Suppose two electrons occupy two orthonormal spin-orbitals χ₁ = φ₁(**r**) σ₁ and χ₂ = φ₂(**r**) σ₂ (spatial orbital φ times spin state σ, with ⟨χ₁\|χ₂⟩ = 0). Because electrons are identical fermions, swapping their labels `1 ↔ 2` must flip the sign of the wavefunction—giving the simplest **Slater determinant**:
 

@@ -20,7 +20,7 @@ Turning up the **Field B<sub>z</sub>** slider applies a uniform external magneti
 
 ## 2.0 Magnetism Primer (What You Need from Physics)
 
-- **Magnetic field and the Lorentz force:** a magnetic field **B** (unit: tesla, T) pushes on a *moving* charge *q* with force **F** = *q* **v** × **B** (a **cross product**: a vector perpendicular to both **v** and **B**, see [T9 · Cross product](tut:08#T9)). The force is perpendicular to the velocity, so it bends the path but does no work. Typical scales: Earth's field ≈ 50 μT, a fridge magnet ≈ 5 mT, an NMR magnet 1.9–23.5 T.
+- **Magnetic field and the Lorentz force:** a magnetic field **B** (unit: tesla, T) pushes on a *moving* charge *q* with force **F** = *q* **v** × **B** (a **cross product**: a vector perpendicular to both **v** and **B**, see [T9 · Cross product & angular momentum](tut:08#T9)). The force is perpendicular to the velocity, so it bends the path but does no work. Typical scales: Earth's field ≈ 50 μT, a fridge magnet ≈ 5 mT, an NMR magnet 1.9–23.5 T.
 - **A current loop is a magnet:** a loop carrying current *I* around area 𝒜 has **magnetic dipole moment** μ = *I*𝒜, pointing perpendicular to the loop by the right-hand rule (curl your fingers along the conventional current; your thumb gives **μ**). In a field, its energy is *U* = −**μ** · **B**: lowest when **μ** lines up with **B**, like a compass needle.
 - **An orbiting electron is a current loop:** an electron (charge −*e*) circling at speed *v* on a radius *r* makes a current of size *ev*/(2π*r*) around area 𝒜 = π*r*². So \|μ\| = *I*𝒜 = *evr*/2. Since its angular momentum is *L* = *m*<sub>e</sub>*vr*, this gives **μ** = −(*e*/2*m*<sub>e</sub>) **L**. The minus sign is there because the electron's charge is negative, so the magnet points *opposite* to **L**. Quantum mechanics keeps the same ratio: with *L*<sub>*z*</sub> = *mħ*, μ<sub>*z*</sub> = −*m* μ<sub>B</sub>, where the **Bohr magneton** is μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) = 5.788 × 10⁻⁵ eV/T.
 - **Preview of the Zeeman effect:** plugging μ<sub>*z*</sub> into *U* = −μ<sub>*z*</sub>*B*<sub>*z*</sub> gives *U* = +*m* μ<sub>B</sub> *B*<sub>*z*</sub>. Orbitals with different *m* now have different energies. §2.2 derives the same result from the Schrödinger equation.
@@ -32,22 +32,22 @@ Turning up the **Field B<sub>z</sub>** slider applies a uniform external magneti
 
 **The result.** In quantum mechanics a magnetic field enters through the **vector potential A**, a vector field whose swirl (curl) is **B**. For our uniform field we use
 
-> **A**(**r**) = ½ (**B** × **r**) = ½ *B*<sub>*z*</sub>(−*y* **x̂** + *x* **ŷ**) = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂**
+> **A**(**r**) = ½ (**B** × **r**) = ½ *B*<sub>*z*</sub>(−*y* **x̂** + *x* **ŷ**) = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂** &nbsp;&nbsp; (a.u.)
 
 Here ρ<sub>cyl</sub> = √(*x*² + *y*²) is the distance from the *z*-axis and **φ̂** is the unit vector pointing *around* the *z*-axis (counterclockwise seen from +*z*). So **A** is a gentle whirlpool around the field axis that grows linearly with distance. With it, two things change (atomic units):
 
-> *Ĥ* = *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> + ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>² &nbsp;&nbsp; (the app keeps the first two terms)
+> *Ĥ* = *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> + ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>² &nbsp;&nbsp; (a.u.)
 >
-> **v**(**r**, *t*) = **J**/\|ψ\|² = Im(∇ψ/ψ) + **A**(**r**) &nbsp;&nbsp; (probability-current flow)
+> **v**(**r**, *t*) = **J**/\|ψ\|² = Im(∇ψ/ψ) + **A**(**r**) &nbsp;&nbsp; (a.u.)
 
-*Ĥ*₀ = ½**p̂**² − 1/*r* is the zero-field hydrogen Hamiltonian, *L̂*<sub>*z*</sub> is the *z*-component of orbital angular momentum, **J** is the probability current of Chapter 1, and Im(∇ψ/ψ) is Chapter 1's flow velocity. In words:
+*Ĥ*₀ = ½**p̂**² − 1/*r* is the zero-field hydrogen Hamiltonian, *L̂*<sub>*z*</sub> is the *z*-component of orbital angular momentum, **J** is the probability current of Chapter 1, and Im(∇ψ/ψ) is Chapter 1's flow velocity, so **v** is the **probability-current flow** that carries the dots. The app keeps the first two terms of *Ĥ*. In words:
 1. **Zeeman energy shift:** the ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub> term shifts each sublevel: *E*<sub>*nlm*</sub> = *E*<sub>*n*</sub> + *m* (*B*<sub>*z*</sub> / 2) = *E*<sub>*n*</sub> + *m* ω<sub>Larmor</sub> (§2.2). The quadratic term ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² is dropped by choice (sized in §2.2).
 2. **Added Larmor flow:** the extra **A** in the flow velocity turns everything around the *z*-axis at the **Larmor angular frequency ω<sub>Larmor</sub> = *B*<sub>*z*</sub> / 2 (atomic units)**, or ω<sub>Larmor</sub> = *eB*<sub>*z*</sub> / (2*m*<sub>e</sub>) **(SI units)**.
 
 <details>
 <summary>Level 1 · Picture: Larmor's theorem, the v × B force, and why A sits inside the momentum</summary>
 
-**Larmor's theorem (the merry-go-round analogy).** Take an electron bound by a spherically symmetric Coulomb pull and switch on a weak uniform magnetic field **B**. Larmor's theorem says the new motion is just the old zero-field motion **plus a steady rigid rotation around B** at the Larmor frequency. *Why it works:* imagine standing on a merry-go-round turning around the field axis. Any moving object on a turntable feels a sideways **Coriolis force** perpendicular to its velocity—the exact same geometric shape as the magnetic Lorentz force. Pick the turntable's rotation rate to match the field, and the Coriolis force cancels the magnetic force completely (leaving only a tiny outward centrifugal term proportional to the field squared). On the merry-go-round the electron moves just as if there were no magnetic field; viewed from the lab, that motion is carried around at the Larmor rate—which is **half** the free-electron cyclotron frequency because of the factor of 2 in the Coriolis force.
+**Larmor's theorem (the merry-go-round analogy).** Take an electron bound by a spherically symmetric Coulomb pull and switch on a weak uniform magnetic field **B**. Larmor's theorem says the new motion is just the old zero-field motion **plus a steady rigid rotation around B** at the Larmor frequency. *Why it works:* imagine standing on a merry-go-round turning around the field axis. Any moving object on a turntable feels a sideways **Coriolis force** perpendicular to its velocity—the exact same geometric shape as the magnetic Lorentz force. Pick the turntable's rotation rate to match the field, and the Coriolis force cancels the magnetic force completely (leaving only a tiny leftover pull toward the field axis, proportional to the field squared). On the merry-go-round the electron moves just as if there were no magnetic field; viewed from the lab, that motion is carried around at the Larmor rate—which is **half** the free-electron cyclotron frequency because of the factor of 2 in the Coriolis force.
 
 **Which way does v × B point?** Use the right-hand rule: point your fingers along the first vector, curl them toward the second, and your thumb gives the cross product. The same rule gives the direction of orbital angular momentum **L** for a circulating electron.
 
@@ -62,64 +62,78 @@ For the negatively charged electron, a motionless 1s electron before the field s
 <details>
 <summary>Level 2 · Key idea: from minimal coupling to the Zeeman term and Larmor flow</summary>
 
-In atomic units (*q* = −1, *m*<sub>e</sub> = 1), minimal coupling replaces **p̂** by **p̂** + **A** with **A** = ½(**B** × **r**) = ½*B*<sub>*z*</sub>(−*y***x̂** + *x***ŷ**), which satisfies ∇ × **A** = **B** and ∇ · **A** = 0. Expanding ½(**p̂** + **A**)² (using ∇ · **A** = 0 so **p̂** · **A** = **A** · **p̂**) splits the Hamiltonian into the zero-field atom, the linear Zeeman term (**A** · **p̂** = ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>), and the quadratic diamagnetic term (½**A**² = ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>²):
+**Stored momentum.** While the magnet ramps up, the changing vector potential induces an electric field **ℰ** = −∂**A**/∂*t* (Faraday's law written with **A**). Its kick changes the mechanical momentum *m*<sub>e</sub>**v** of a charge *q* by exactly −*q* times the change in **A**, so the sum below never changes. This conserved sum is the **canonical momentum**, and it is the momentum that quantum mechanics writes as **p̂** = −*iħ*∇:
+
+> **p** = *m*<sub>e</sub>**v** + *q***A**, &nbsp; so &nbsp; **v** = (**p̂** − *q***A**)/*m*<sub>e</sub> &nbsp;&nbsp; (SI)
+
+**Minimal coupling.** For the electron in atomic units (*q* = −1, *m*<sub>e</sub> = 1) the kinetic energy ½**v**² becomes ½(**p̂** + **A**)². With **A** = ½(**B** × **r**), which satisfies ∇ × **A** = **B** and ∇ · **A** = 0, expanding the square splits the Hamiltonian into the zero-field atom *Ĥ*₀, the linear Zeeman term (**A** · **p̂** = ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>, where *L̂*<sub>*z*</sub> is the *z*-component of angular momentum), and the quadratic diamagnetic term (½**A**² = ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>²):
 
 > *Ĥ* = ½ (**p̂** + **A**)² − 1/*r* = *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> + ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>² &nbsp;&nbsp; (a.u.)
 
-Repeating Chapter 1's continuity calculation with the extra −*i***A** · ∇ψ term adds \|ψ\|²**A** to the probability current (while real potential-like terms cancel):
+**Current and flow.** Repeating Chapter 1's continuity calculation with the extra −*i***A** · ∇ψ term adds \|ψ\|²**A** to the probability current **J** (the real, potential-like ½**A**² term cancels, just as the Coulomb term does):
 
 > **J** = Im(ψ\* ∇ψ) + \|ψ\|² **A**, &nbsp;&nbsp; **v** = **J**/\|ψ\|² = Im(∇ψ/ψ) + **A** &nbsp;&nbsp; (a.u.)
 
-Since **A** = ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>**φ̂**, dividing tangential speed ½*B*<sub>*z*</sub>ρ<sub>cyl</sub> by ρ<sub>cyl</sub> gives the exact same angular velocity ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 at every radius. Full algebra: [Minimal coupling, Zeeman term, and Larmor flow](tut:02#box-minimal-coupling).
+Since **A** = ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>**φ̂**, dividing the tangential speed ½*B*<sub>*z*</sub>ρ<sub>cyl</sub> by the radius ρ<sub>cyl</sub> gives the same angular velocity ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 at every radius.
+
+**Larmor's theorem.** Classically the same rate appears on the merry-go-round: a frame turning at angular velocity **Ω** adds a Coriolis force −2*m*<sub>e</sub>**Ω** × **v**, and the magnetic force *q***v** × **B** = −*q***B** × **v** has the same shape. They cancel when
+
+> 2*m*<sub>e</sub>**Ω** = −*q***B**, &nbsp; i.e. &nbsp; Ω = *eB*<sub>*z*</sub>/(2*m*<sub>e</sub>) for the electron (*q* = −*e*) &nbsp;&nbsp; (SI)
+
+which is *B*<sub>*z*</sub>/2 in atomic units and half the free-electron cyclotron frequency *eB*<sub>*z*</sub>/*m*<sub>e</sub>. Full algebra: [Stored momentum, minimal coupling, Zeeman term, and Larmor flow](tut:02#box-minimal-coupling).
 
 <details>
-<summary>Level 3 · Full derivation: minimal coupling, Zeeman term, and Larmor flow {#box-minimal-coupling}</summary>
+<summary>Level 3 · Full derivation: stored momentum, minimal coupling, Zeeman term, and Larmor flow {#box-minimal-coupling}</summary>
 
-**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A**, gradient product rule ∇(ψ\*ψ) = ψ\*∇ψ + ψ∇ψ\*, and curl (∇ × **A**)<sub>*z*</sub> = ∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y*) and [T9 · Cross product & angular momentum](tut:08#T9) (**x̂** × **ŷ** = **ẑ** cyclically, and *L̂*<sub>*z*</sub> = *xp̂*<sub>*y*</sub> − *yp̂*<sub>*x*</sub>).
+**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A**, gradient product rule ∇(ψ\*ψ) = ψ\*∇ψ + ψ∇ψ\*, and curl (∇ × **A**)<sub>*z*</sub> = ∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y*), [T9 · Cross product & angular momentum](tut:08#T9) (**x̂** × **ŷ** = **ẑ** cyclically, **b** × **a** = −**a** × **b**, and *L̂*<sub>*z*</sub> = *xp̂*<sub>*y*</sub> − *yp̂*<sub>*x*</sub>), Chapter 1's continuity equation ∂\|ψ\|²/∂*t* + ∇ · **J** = 0 with **J** = Im(ψ\*∇ψ) at zero field, and two quoted classical results: Faraday's law written with the vector potential, **ℰ** = −∂**A**/∂*t* (for a field with no electrostatic part), and the **Coriolis force** −2*m* **Ω** × **v** felt by a mass *m* moving at velocity **v** in a frame that turns at angular velocity **Ω**.
 
-We work in atomic units, so the electron has *q* = −1 and *m*<sub>e</sub> = 1. Minimal coupling gives the Hamiltonian
+**Step 1 — why A sits inside the momentum (SI).** Let a charge *q* sit almost still at a fixed point while the magnet is switched on. Newton's law with the induced field gives *d*(*m*<sub>e</sub>**v**)/*dt* = *q***ℰ** = −*q* ∂**A**/∂*t*. Because the charge barely moves, ∂**A**/∂*t* at its position is the full rate of change of **A** there, so
 
-> *Ĥ* = ½ (**p̂** + **A**)² − 1/*r*, &nbsp;&nbsp; **p̂** = −*i*∇
+> *d*(*m*<sub>e</sub>**v** + *q***A**)/*dt* = 0 &nbsp;&nbsp; (SI)
 
-**Step 1 — check that A gives the right B.** First the cross product, using **ẑ** × **x̂** = **ŷ**, **ẑ** × **ŷ** = −**x̂**, **ẑ** × **ẑ** = 0:
+The **canonical momentum** **p** = *m*<sub>e</sub>**v** + *q***A** is conserved during the switch-on; a charge that started at rest with **A** = **0** ends with *m*<sub>e</sub>**v** = −*q***A**. Quantum mechanics represents the canonical momentum by **p̂** = −*iħ*∇, so the velocity is (**p̂** − *q***A**)/*m*<sub>e</sub> and the kinetic energy ½*m*<sub>e</sub>**v**² becomes (**p̂** − *q***A**)²/(2*m*<sub>e</sub>): this replacement is **minimal coupling**. In atomic units the electron has *q* = −1 and *m*<sub>e</sub> = 1, so the Hamiltonian is
 
-> **B** × **r** = *B*<sub>*z*</sub> **ẑ** × (*x* **x̂** + *y* **ŷ** + *z* **ẑ**) = *B*<sub>*z*</sub>(*x* **ŷ** − *y* **x̂**), &nbsp; so &nbsp; **A** = ½ *B*<sub>*z*</sub> (−*y* **x̂** + *x* **ŷ**)
+> *Ĥ* = ½ (**p̂** + **A**)² − 1/*r*, &nbsp;&nbsp; **p̂** = −*i*∇ &nbsp;&nbsp; (a.u.)
 
-Now the curl. Because *A*<sub>*z*</sub> = 0 and neither *A*<sub>*x*</sub> nor *A*<sub>*y*</sub> depends on *z*, the *x*- and *y*-components of ∇ × **A** vanish. The *z*-component is (∇ × **A**)<sub>*z*</sub> = ∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y* = ½ *B*<sub>*z*</sub> − (−½ *B*<sub>*z*</sub>) = *B*<sub>*z*</sub>. ✓ The divergence (net outflow) is zero: ∇ · **A** = ∂*A*<sub>*x*</sub>/∂*x* + ∂*A*<sub>*y*</sub>/∂*y* = ½ *B*<sub>*z*</sub>(−∂*y*/∂*x* + ∂*x*/∂*y*) = 0. We will use ∇ · **A** = 0 twice below.
+**Step 2 — check that A gives the right B.** First the cross product, using **ẑ** × **x̂** = **ŷ**, **ẑ** × **ŷ** = −**x̂**, **ẑ** × **ẑ** = 0:
 
-**Step 2 — expand the square, keeping the order.** **p̂** is a derivative, so it acts on everything to its right. Acting on a wavefunction ψ:
+> **B** × **r** = *B*<sub>*z*</sub> **ẑ** × (*x* **x̂** + *y* **ŷ** + *z* **ẑ**) = *B*<sub>*z*</sub>(*x* **ŷ** − *y* **x̂**), &nbsp; so &nbsp; **A** = ½ *B*<sub>*z*</sub> (−*y* **x̂** + *x* **ŷ**) &nbsp;&nbsp; (a.u.)
 
-> (**p̂** + **A**)·(**p̂** + **A**)ψ = **p̂**·(**p̂**ψ) + **p̂**·(**A**ψ) + **A**·(**p̂**ψ) + **A**·**A**ψ
+Now the curl. Because *A*<sub>*z*</sub> = 0 and neither *A*<sub>*x*</sub> nor *A*<sub>*y*</sub> depends on *z*, the *x*- and *y*-components of ∇ × **A** vanish. The *z*-component is (∇ × **A**)<sub>*z*</sub> = ∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y* = ½ *B*<sub>*z*</sub> − (−½ *B*<sub>*z*</sub>) = *B*<sub>*z*</sub>. ✓ The divergence (net outflow) is zero: ∇ · **A** = ∂*A*<sub>*x*</sub>/∂*x* + ∂*A*<sub>*y*</sub>/∂*y* = ½ *B*<sub>*z*</sub>(−∂*y*/∂*x* + ∂*x*/∂*y*) = 0. We will use ∇ · **A** = 0 in Steps 4 and 7.
+
+**Step 3 — expand the square, keeping the order.** **p̂** is a derivative, so it acts on everything to its right. Acting on a wavefunction ψ:
+
+> (**p̂** + **A**)·(**p̂** + **A**)ψ = **p̂**·(**p̂**ψ) + **p̂**·(**A**ψ) + **A**·(**p̂**ψ) + **A**·**A**ψ &nbsp;&nbsp; (a.u.)
 
 so *Ĥ* = ½ **p̂**² + ½(**p̂** · **A** + **A** · **p̂**) + ½ **A**² − 1/*r*.
 
-**Step 3 — the middle terms are equal.** Use the divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A** (with *f* = ψ) and then ∇ · **A** = 0:
+**Step 4 — the middle terms are equal.** Use the divergence product rule ∇ · (*f***A**) = ∇*f* · **A** + *f* ∇ · **A** (with *f* = ψ) and then ∇ · **A** = 0:
 
-> **p̂** · (**A**ψ) = −*i*∇ · (**A**ψ) = −*i*(∇ · **A**)ψ − *i***A** · (∇ψ) = −*i***A** · ∇ψ = **A** · (**p̂**ψ)
+> **p̂** · (**A**ψ) = −*i*∇ · (**A**ψ) = −*i*(∇ · **A**)ψ − *i***A** · (∇ψ) = −*i***A** · ∇ψ = **A** · (**p̂**ψ) &nbsp;&nbsp; (a.u.)
 
 Thus **p̂** · **A** + **A** · **p̂** = 2 **A** · **p̂**.
 
-**Step 4 — A · p̂ is the angular momentum.** Insert the components of **A**:
+**Step 5 — A · p̂ is the angular momentum.** Insert the components of **A**:
 
-> **A** · **p̂** = ½ *B*<sub>*z*</sub>(−*y p̂*<sub>*x*</sub> + *x p̂*<sub>*y*</sub>) = ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub>
+> **A** · **p̂** = ½ *B*<sub>*z*</sub>(−*y p̂*<sub>*x*</sub> + *x p̂*<sub>*y*</sub>) = ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> &nbsp;&nbsp; (a.u.)
 
 because the *z*-component of **L̂** = **r** × **p̂** is *L̂*<sub>*z*</sub> = *x p̂*<sub>*y*</sub> − *y p̂*<sub>*x*</sub>.
 
-**Step 5 — the A² term.** **A**² = ¼ *B*<sub>*z*</sub>² (*y*² + *x*²) = ¼ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>², so ½ **A**² = ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>². Collecting Steps 2–5:
+**Step 6 — the A² term.** **A**² = ¼ *B*<sub>*z*</sub>² (*y*² + *x*²) = ¼ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>², so ½ **A**² = ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>². Collecting Steps 3–6:
 
-> *Ĥ* = *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> + ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>² &nbsp;&nbsp; (atomic units)
+> *Ĥ* = *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub> + ⅛ *B*<sub>*z*</sub>² ρ<sub>cyl</sub>² &nbsp;&nbsp; (a.u.)
 
-**Step 6 — the probability current with A.** We redo Chapter 1's continuity derivation, now with the two new **A**-terms. From Steps 3–5, *Ĥ* acting on ψ is
+**Step 7 — the probability current with A.** We redo Chapter 1's continuity derivation, now with the two new **A**-terms. From Steps 4–6, *Ĥ* acting on ψ is
 
-> *Ĥ*ψ = −½ ∇²ψ − *i* **A** · ∇ψ + ½ **A**²ψ − ψ/*r*
+> *Ĥ*ψ = −½ ∇²ψ − *i* **A** · ∇ψ + ½ **A**²ψ − ψ/*r* &nbsp;&nbsp; (a.u.)
 
 The two middle terms, −*i* **A** · ∇ψ and ½ **A**²ψ, are new; the other two are exactly Chapter 1's. Multiply the Schrödinger equation *i* ∂ψ/∂*t* = *Ĥ*ψ by −*i* (since 1/*i* = −*i*):
 
-> ∂ψ/∂*t* = (*i*/2) ∇²ψ − **A** · ∇ψ − (*i*/2) **A**²ψ + *i*ψ/*r*
+> ∂ψ/∂*t* = (*i*/2) ∇²ψ − **A** · ∇ψ − (*i*/2) **A**²ψ + *i*ψ/*r* &nbsp;&nbsp; (a.u.)
 
 Take the complex conjugate (**A**, **A**² and 1/*r* are real, so only *i* → −*i* changes):
 
-> ∂ψ\*/∂*t* = −(*i*/2) ∇²ψ\* − **A** · ∇ψ\* + (*i*/2) **A**²ψ\* − *i*ψ\*/*r*
+> ∂ψ\*/∂*t* = −(*i*/2) ∇²ψ\* − **A** · ∇ψ\* + (*i*/2) **A**²ψ\* − *i*ψ\*/*r* &nbsp;&nbsp; (a.u.)
 
 The product rule gives ∂\|ψ\|²/∂*t* = ∂(ψ\*ψ)/∂*t* = ψ\* ∂ψ/∂*t* + ψ ∂ψ\*/∂*t*. Collect the terms in four groups:
 - **∇² terms:** (*i*/2)(ψ\*∇²ψ − ψ∇²ψ\*). This is exactly Chapter 1's term, which equals −∇ · Im(ψ\*∇ψ).
@@ -127,23 +141,31 @@ The product rule gives ∂\|ψ\|²/∂*t* = ∂(ψ\*ψ)/∂*t* = ψ\* ∂ψ/∂*
 - **New term 1, A²:** −(*i*/2)**A**²\|ψ\|² + (*i*/2)**A**²\|ψ\|² = 0. It is real and potential-like, so it cancels too.
 - **New term 2, A · ∇:** −ψ\* **A** · ∇ψ − ψ **A** · ∇ψ\* = −**A** · (ψ\*∇ψ + ψ∇ψ\*) = −**A** · ∇\|ψ\|² (the ordinary product rule ∇(ψ\*ψ) = ψ\*∇ψ + ψ∇ψ\*, read backwards).
 
-The last term is not yet a divergence. Use the product rule of Step 3 again with *f* = \|ψ\|²: ∇ · (\|ψ\|²**A**) = ∇\|ψ\|² · **A** + \|ψ\|² ∇ · **A** = **A** · ∇\|ψ\|², since ∇ · **A** = 0. So new term 2 is −∇ · (\|ψ\|²**A**). Altogether
+The last term is not yet a divergence. Use the product rule of Step 4 again with *f* = \|ψ\|²: ∇ · (\|ψ\|²**A**) = ∇\|ψ\|² · **A** + \|ψ\|² ∇ · **A** = **A** · ∇\|ψ\|², since ∇ · **A** = 0. So new term 2 is −∇ · (\|ψ\|²**A**). Altogether
 
-> ∂\|ψ\|²/∂*t* = −∇ · [ Im(ψ\*∇ψ) + \|ψ\|² **A** ]
+> ∂\|ψ\|²/∂*t* = −∇ · [ Im(ψ\*∇ψ) + \|ψ\|² **A** ] &nbsp;&nbsp; (a.u.)
 
 which is the continuity equation ∂\|ψ\|²/∂*t* + ∇ · **J** = 0 with
 
-> **J** = Im(ψ\* ∇ψ) + \|ψ\|² **A** &nbsp;&nbsp; (atomic units)
+> **J** = Im(ψ\* ∇ψ) + \|ψ\|² **A** &nbsp;&nbsp; (a.u.)
 
-Cross-check: the velocity operator is **v**<sub>op</sub> = **p̂**<sub>kin</sub>/*m*<sub>e</sub> = (−*iħ*∇ + *e* **A**)/*m*<sub>e</sub> in SI units, i.e. −*i*∇ + **A** in atomic units, and Re[ψ\*(−*i*∇ + **A**)ψ] gives the same **J**, because Re(−*iz*) = Im(*z*). ✓
+Cross-check: the velocity operator is **v**<sub>op</sub> = **p̂**<sub>kin</sub>/*m*<sub>e</sub> = (−*iħ*∇ + *e* **A**)/*m*<sub>e</sub> in SI units, i.e. −*i*∇ + **A** in atomic units, and Re[ψ\*(−*i*∇ + **A**)ψ] gives the same **J**, because Re(−*iz*) = Im(*z*).
 
-**Step 7 — the flow velocity.** Divide by \|ψ\|² = ψ\*ψ. Since ψ\*∇ψ/(ψ\*ψ) = ∇ψ/ψ:
+**Step 8 — the flow velocity.** Divide by \|ψ\|² = ψ\*ψ. Since ψ\*∇ψ/(ψ\*ψ) = ∇ψ/ψ:
 
-> **v**(**r**, *t*) = **J** / \|ψ\|² = Im(∇ψ / ψ) + **A**(**r**)
+> **v**(**r**, *t*) = **J** / \|ψ\|² = Im(∇ψ / ψ) + **A**(**r**) &nbsp;&nbsp; (a.u.)
 
 In cylindrical form **A** = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂** (because (−*y*, *x*)/ρ<sub>cyl</sub> is the unit vector **φ̂**). A tangential speed ½*B*<sub>*z*</sub>ρ<sub>cyl</sub> at radius ρ<sub>cyl</sub> is an angular speed (speed ÷ radius) of *B*<sub>*z*</sub>/2 at **every** radius: a rigid rotation at ω<sub>Larmor</sub>.
 
-We call **v**(**r**, *t*) the **probability-current flow** rather than picturing tiny classical electrons on fixed tracks. **J** is a genuine observable of standard quantum mechanics (**J**<sub>elec</sub> = −*e***J** is the physical electric current density). The Bohmian dots simply trace its streamlines: each dot position **X**(*t*) obeys *d***X**/*dt* = **v**(**X**, *t*). **Check:** setting *B*<sub>*z*</sub> = 0 sets **A** = **0** and recovers Chapter 1's *Ĥ*₀ and **v** = Im(∇ψ/ψ) identically. ✓
+We call **v**(**r**, *t*) the **probability-current flow** rather than picturing tiny classical electrons on fixed tracks. **J** is a genuine observable of standard quantum mechanics (**J**<sub>elec</sub> = −*e***J** is the physical electric current density). The Bohmian dots simply trace its streamlines: each dot position **X**(*t*) obeys *d***X**/*dt* = **v**(**X**, *t*).
+
+**Step 9 — the classical cross-check: Larmor's theorem (SI).** In a frame turning at angular velocity **Ω**, a moving electron feels the Coriolis force −2*m*<sub>e</sub>**Ω** × **v** on top of the real forces. Reverse the order of the magnetic force with **b** × **a** = −**a** × **b**: *q***v** × **B** = −*q***B** × **v**. The two velocity-dependent forces add to
+
+> −2*m*<sub>e</sub>**Ω** × **v** − *q***B** × **v** = −(2*m*<sub>e</sub>**Ω** + *q***B**) × **v** &nbsp;&nbsp; (SI)
+
+which vanishes for every velocity when **Ω** = −*q***B**/(2*m*<sub>e</sub>). For the electron (*q* = −*e*) this is **Ω** = *e***B**/(2*m*<sub>e</sub>): parallel to **B**, so counterclockwise seen from +*z* when *B*<sub>*z*</sub> > 0, with Ω = *eB*<sub>*z*</sub>/(2*m*<sub>e</sub>), half the free-electron cyclotron frequency *eB*<sub>*z*</sub>/*m*<sub>e</sub>. Two forces remain in the turning frame, both proportional to *B*<sub>*z*</sub>²: the outward centrifugal force *m*<sub>e</sub>Ω²ρ<sub>cyl</sub>, and the magnetic force on the frame's own velocity **Ω** × **r**, which with *q***B** = −2*m*<sub>e</sub>**Ω** is 2*m*<sub>e</sub>Ω²ρ<sub>cyl</sub> pointing inward. Their sum is an inward pull *m*<sub>e</sub>Ω²ρ<sub>cyl</sub>, the force of the potential ½*m*<sub>e</sub>Ω²ρ<sub>cyl</sub>² = *e*²*B*<sub>*z*</sub>²ρ<sub>cyl</sub>²/(8*m*<sub>e</sub>), which is ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² in atomic units: the classical partner of the diamagnetic term of Step 6. Up to that, the electron moves in the turning frame exactly as with no field. In atomic units (*e* = *m*<sub>e</sub> = 1), Ω = *B*<sub>*z*</sub>/2, the same rigid rotation as the **A** part of the flow in Step 8.
+
+**Check:** setting *B*<sub>*z*</sub> = 0 sets **A** = **0** and recovers Chapter 1's *Ĥ*₀ and **v** = Im(∇ψ/ψ) identically. The two routes to the Larmor rate also agree numerically: for the 1s demo's *B*<sub>*z*</sub> = 0.6 a.u. = 1.410 × 10⁵ T, *eB*<sub>*z*</sub>/(2*m*<sub>e</sub>) = 1.240 × 10¹⁶ rad/s, and *B*<sub>*z*</sub>/2 = 0.3 a.u. divided by the atomic unit of time (2.419 × 10⁻¹⁷ s) is also 1.240 × 10¹⁶ rad/s. ✓
 
 </details>
 
@@ -154,7 +176,7 @@ We call **v**(**r**, *t*) the **probability-current flow** rather than picturing
 ### Two Striking Flow Effects
 In cylindrical coordinates (ρ<sub>cyl</sub>, φ, *z*), **A** = ½ *B*<sub>*z*</sub> ρ<sub>cyl</sub> **φ̂** adds a **rigid-body angular velocity** ω<sub>Larmor</sub> = *B*<sub>*z*</sub> / 2 to every point. **For a single eigenstate** ψ<sub>*nlm*</sub> ∝ *e*<sup>*im*φ</sup> (not for superpositions like 2p<sub>*x*</sub>), the total angular speed around the *z*-axis is:
 
-> *d*φ/*dt* = *m* / ρ<sub>cyl</sub>² + *B*<sub>*z*</sub> / 2 &nbsp;&nbsp; (single eigenstate ψ<sub>*nlm*</sub>, atomic units)
+> *d*φ/*dt* = *m* / ρ<sub>cyl</sub>² + *B*<sub>*z*</sub> / 2 &nbsp;&nbsp; (a.u.)
 
 <details>
 <summary>Level 1 · Picture: two whirlpools on top of each other</summary>
@@ -164,11 +186,50 @@ The first term is Chapter 1's quantum vortex: fast near the *z*-axis, slow far a
 <details>
 <summary>Level 2 · Key idea: the angular speed of a single eigenstate</summary>
 
-1. The around-the-axis part of the gradient is (1/ρ<sub>cyl</sub>) ∂/∂φ (a step *d*φ moves you a distance ρ<sub>cyl</sub> *d*φ; see [T5](tut:08#T5)).
-2. For ψ ∝ *e*<sup>*im*φ</sup>: (1/ρ<sub>cyl</sub>)(∂ψ/∂φ)/ψ = *im*/ρ<sub>cyl</sub>, whose imaginary part is *m*/ρ<sub>cyl</sub>. That is the φ-component of Im(∇ψ/ψ).
-3. Add the φ-component of **A**, ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>: *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> + ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>.
-4. Angular speed = tangential speed ÷ radius: *d*φ/*dt* = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² + *B*<sub>*z*</sub>/2.
-5. For *m* = −1 the two terms cancel where 1/ρ<sub>cyl</sub>² = *B*<sub>*z*</sub>/2, i.e. ρ<sub>cyl</sub> = √(2/*B*<sub>*z*</sub>). For *B*<sub>*z*</sub> = 0.25: √(2/0.25) = √8 ≈ 2.83 *a*₀. ✓
+A hydrogen eigenstate depends on the angle φ only through its phase *e*<sup>*im*φ</sup>; everything else about it is real. The phase climbs by *m* per radian, and one radian around the axis is a distance ρ<sub>cyl</sub>, so the phase gradient points along **φ̂** (the around-the-axis unit vector) with size *m*/ρ<sub>cyl</sub>. That is Chapter 1's vortex part of the flow:
+
+> Im(∇ψ/ψ) = (*m*/ρ<sub>cyl</sub>) **φ̂** &nbsp;&nbsp; (a.u.)
+
+Adding the φ-component of **A** = ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>**φ̂** gives the tangential speed *v*<sub>φ</sub> of the flow:
+
+> *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> + ½*B*<sub>*z*</sub>ρ<sub>cyl</sub> &nbsp;&nbsp; (a.u.)
+
+Angular speed is tangential speed divided by the radius:
+
+> *d*φ/*dt* = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² + *B*<sub>*z*</sub>/2 &nbsp;&nbsp; (a.u.)
+
+For *m* = −1 the two terms cancel on a cylinder around the *z*-axis, which for Demo 2's *B*<sub>*z*</sub> = 0.25 a.u. has radius √8 ≈ 2.83 *a*₀:
+
+> ρ<sub>cyl</sub> = √(2/*B*<sub>*z*</sub>) &nbsp;&nbsp; (a.u.)
+
+Full algebra: [Angular speed of a single eigenstate in B_z](tut:02#box-eigenstate-angular-speed).
+
+<details>
+<summary>Level 3 · Full derivation: angular speed of a single eigenstate in B<sub>*z*</sub> {#box-eigenstate-angular-speed}</summary>
+
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (ρ<sub>cyl</sub> = √(*x*² + *y*²), the around-the-axis unit vector **φ̂** = (−sin φ, cos φ, 0)), [T2 · Partial derivatives & ∇](tut:08#T2) (gradient product rule ∇(*fg*) = *f*∇*g* + *g*∇*f* and the chain rule), the gradient of the azimuthal angle ∇φ = **φ̂**/ρ<sub>cyl</sub> from [∇φ = φ̂/ρ_cyl with Cartesian derivatives](tut:01#box-grad-phi), and the flow velocity **v** = Im(∇ψ/ψ) + **A** with **A** = ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>**φ̂** from [Stored momentum, minimal coupling, Zeeman term, and Larmor flow](tut:02#box-minimal-coupling).
+
+**Step 1 — split off the phase.** Every hydrogen eigenstate has the form ψ<sub>*nlm*</sub> = *F*(*r*, θ) *e*<sup>*im*φ</sup>, where *F* is the radial function times the θ-part of the spherical harmonic. In the Condon–Shortley convention *F* is real (for example *F* = −*C R*<sub>21</sub>(*r*) sin θ for \|2p, +1⟩).
+
+**Step 2 — the gradient.** The product rule, then the chain rule on *e*<sup>*im*φ</sup> (its derivative with respect to φ is *im e*<sup>*im*φ</sup>):
+
+> ∇ψ = *e*<sup>*im*φ</sup> ∇*F* + *F* · *im e*<sup>*im*φ</sup> ∇φ = *e*<sup>*im*φ</sup> [ ∇*F* + *im F* **φ̂**/ρ<sub>cyl</sub> ] &nbsp;&nbsp; (a.u.)
+
+**Step 3 — divide by ψ.** Wherever *F* ≠ 0, dividing by ψ = *F e*<sup>*im*φ</sup> leaves
+
+> ∇ψ/ψ = ∇*F*/*F* + *i* (*m*/ρ<sub>cyl</sub>) **φ̂** &nbsp;&nbsp; (a.u.)
+
+The first term is real because *F* is real, so Im(∇ψ/ψ) = (*m*/ρ<sub>cyl</sub>) **φ̂**: a flow purely around the *z*-axis.
+
+**Step 4 — add A.** **v** = (*m*/ρ<sub>cyl</sub> + ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>) **φ̂**, so the tangential speed is *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> + ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>, with no radial or vertical part.
+
+**Step 5 — angular speed.** A point at distance ρ<sub>cyl</sub> from the axis moving at tangential speed *v*<sub>φ</sub> turns at *d*φ/*dt* = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² + *B*<sub>*z*</sub>/2.
+
+**Step 6 — the stationary cylinder for *m* = −1.** Setting −1/ρ<sub>cyl</sub>² + *B*<sub>*z*</sub>/2 = 0 gives ρ<sub>cyl</sub>² = 2/*B*<sub>*z*</sub>, so ρ<sub>cyl</sub> = √(2/*B*<sub>*z*</sub>). Inside it the vortex term wins (clockwise for *B*<sub>*z*</sub> > 0); outside it the Larmor term wins (counterclockwise).
+
+**Check:** for *B*<sub>*z*</sub> = 0.25, √(2/0.25) = √8 ≈ 2.83 *a*₀. At ρ<sub>cyl</sub> = 1 *a*₀, *d*φ/*dt* = −1 + 0.125 = −0.875 (clockwise); at ρ<sub>cyl</sub> = 5 *a*₀, −0.04 + 0.125 = +0.085 (counterclockwise), on opposite sides of 2.83 *a*₀ as expected. At *B*<sub>*z*</sub> = 0 the result reduces to Chapter 1's vortex *m*/ρ<sub>cyl</sub>². ✓
+
+</details>
 
 </details>
 
@@ -215,9 +276,9 @@ Two counterintuitive physical effects appear immediately:
 
 **The result.** Every hydrogen orbital ψ<sub>*nlm*</sub> stays an exact eigenstate of the orbital Zeeman Hamiltonian *Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub>, with its energy shifted linearly by *m*:
 
-> *E*<sub>*nlm*</sub> = −1/(2*n*²) + *m* (*B*<sub>*z*</sub> / 2) = *E*<sub>*n*</sub> + *m* μ<sub>B</sub> *B*<sub>*z*</sub> &nbsp;&nbsp; (atomic units, where μ<sub>B</sub> = ½)
+> *E*<sub>*nlm*</sub> = −1/(2*n*²) + *m* (*B*<sub>*z*</sub> / 2) = *E*<sub>*n*</sub> + *m* μ<sub>B</sub> *B*<sub>*z*</sub> &nbsp;&nbsp; (a.u.)
 
-Every (*n*, *l*) subshell splits into **2*l* + 1** equally spaced **Zeeman sublevels** (for *B*<sub>*z*</sub> > 0):
+In atomic units the Bohr magneton is μ<sub>B</sub> = ½. Every (*n*, *l*) subshell splits into **2*l* + 1** equally spaced **Zeeman sublevels** (for *B*<sub>*z*</sub> > 0):
 - *m* > 0 shifts **up** in energy (+*mB*<sub>*z*</sub>/2)
 - *m* = 0 is **unchanged**
 - *m* < 0 shifts **down** in energy (−\|*m*\|*B*<sub>*z*</sub>/2)
@@ -242,7 +303,11 @@ Every hydrogen orbital depends on φ only through *e*<sup>*im*φ</sup>, so diffe
 
 > (*Ĥ*₀ + ½ *B*<sub>*z*</sub> *L̂*<sub>*z*</sub>) ψ<sub>*nlm*</sub> = (*E*<sub>*n*</sub> + *m* *B*<sub>*z*</sub> / 2) ψ<sub>*nlm*</sub> &nbsp;&nbsp; (a.u.)
 
-The orbital shape stays untouched; only its energy shifts linearly in *m*. Full algebra: [L̂_z = −i ∂/∂φ and the energy shift](tut:02#box-lz-zeeman).
+The orbital shape stays untouched; only its energy shifts linearly in *m*. In SI units the same shift is the compass-needle energy of the orbital magnet, with the **Bohr magneton** μ<sub>B</sub> (which is ½ in atomic units):
+
+> Δ*E* = *m* μ<sub>B</sub> *B*<sub>*z*</sub>, &nbsp;&nbsp; μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) = 5.788 × 10⁻⁵ eV/T &nbsp;&nbsp; (SI)
+
+Full algebra: [L̂_z = −i ∂/∂φ and the energy shift](tut:02#box-lz-zeeman).
 
 <details>
 <summary>Level 3 · Full derivation: L̂z = −i ∂/∂φ and the energy shift {#box-lz-zeeman}</summary>
@@ -251,21 +316,25 @@ The orbital shape stays untouched; only its energy shifts linearly in *m*. Full 
 
 **Step 1 — rewrite *L̂*<sub>*z*</sub> as a derivative in φ.** Around the *z*-axis, *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. Changing φ (with ρ<sub>cyl</sub> and *z* held fixed) moves both *x* and *y*, with *dx*/*d*φ = −ρ<sub>cyl</sub> sin φ = −*y* and *dy*/*d*φ = ρ<sub>cyl</sub> cos φ = *x*. The multivariable chain rule gives:
 
-> ∂/∂φ = (∂*x*/∂φ) ∂/∂*x* + (∂*y*/∂φ) ∂/∂*y* = −*y* ∂/∂*x* + *x* ∂/∂*y*
+> ∂/∂φ = (∂*x*/∂φ) ∂/∂*x* + (∂*y*/∂φ) ∂/∂*y* = (−ρ<sub>cyl</sub> sin φ) ∂/∂*x* + (ρ<sub>cyl</sub> cos φ) ∂/∂*y* = −*y* ∂/∂*x* + *x* ∂/∂*y*
 
 **Step 2 — compare with *L̂*<sub>*z*</sub>.** In atomic units (*ħ* = 1), *p̂*<sub>*x*</sub> = −*i* ∂/∂*x* and *p̂*<sub>*y*</sub> = −*i* ∂/∂*y*, so
 
-> *L̂*<sub>*z*</sub> = *xp̂*<sub>*y*</sub> − *yp̂*<sub>*x*</sub> = −*i*(*x* ∂/∂*y* − *y* ∂/∂*x*) = −*i* ∂/∂φ
+> *L̂*<sub>*z*</sub> = *xp̂*<sub>*y*</sub> − *yp̂*<sub>*x*</sub> = −*i*(*x* ∂/∂*y* − *y* ∂/∂*x*) = −*i* ∂/∂φ &nbsp;&nbsp; (a.u.)
 
 (in **SI units**, *L̂*<sub>*z*</sub> = −*iħ* ∂/∂φ).
 
 **Step 3 — act on an orbital.** Every hydrogen eigenstate has the form ψ<sub>*nlm*</sub> ∝ *e*<sup>*im*φ</sup> times a function of *r* and θ only. The derivative of *e*<sup>*im*φ</sup> is *im e*<sup>*im*φ</sup>, so:
 
-> *L̂*<sub>*z*</sub> ψ<sub>*nlm*</sub> = −*i* (*im*) ψ<sub>*nlm*</sub> = *m* ψ<sub>*nlm*</sub> &nbsp;&nbsp; (eigenvalue *mħ* in SI units), using −*i* · *i* = 1
+> *L̂*<sub>*z*</sub> ψ<sub>*nlm*</sub> = −*i* (*im*) ψ<sub>*nlm*</sub> = *m* ψ<sub>*nlm*</sub> &nbsp;&nbsp; (a.u.)
+
+using −*i* · *i* = 1. In SI units the eigenvalue is *mħ*.
 
 **Step 4 — the energy.** *Ĥ*₀ψ<sub>*nlm*</sub> = *E*<sub>*n*</sub>ψ<sub>*nlm*</sub> (Chapter 1) and ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>ψ<sub>*nlm*</sub> = ½*B*<sub>*z*</sub>*m*ψ<sub>*nlm*</sub>. Adding: (*Ĥ*₀ + ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>)ψ<sub>*nlm*</sub> = (*E*<sub>*n*</sub> + *mB*<sub>*z*</sub>/2)ψ<sub>*nlm*</sub>. The orbital is unchanged; only its energy moves.
 
-**Check:** For *m* = 0, ψ does not depend on φ so *L̂*<sub>*z*</sub>ψ = 0 and the energy shift vanishes; in SI units μ<sub>B</sub> = *eħ*/(2*m*<sub>e</sub>) reproduces Δ*E* = *m* μ<sub>B</sub> *B*<sub>*z*</sub>. ✓
+**Step 5 — back to SI units.** Restoring constants, ½*B*<sub>*z*</sub>*L̂*<sub>*z*</sub> becomes (*e*/2*m*<sub>e</sub>)*B*<sub>*z*</sub>*L̂*<sub>*z*</sub>, and *L̂*<sub>*z*</sub> → *mħ* gives Δ*E* = *m* (*eħ*/2*m*<sub>e</sub>) *B*<sub>*z*</sub> = *m* μ<sub>B</sub> *B*<sub>*z*</sub>.
+
+**Check:** For *m* = 0, ψ does not depend on φ so *L̂*<sub>*z*</sub>ψ = 0 and the energy shift vanishes. For *m* = +1 at *B*<sub>*z*</sub> = 0.1 a.u., the shift is +0.05 Ha = 0.05 × 27.211 eV = 1.36 eV; and at 1 T, μ<sub>B</sub> × 1 T = 5.788 × 10⁻⁵ eV, i.e. 14.0 GHz after dividing by Planck's constant. ✓
 
 </details>
 
@@ -290,29 +359,43 @@ The term ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>² is an energy cost for being fa
 <details>
 <summary>Level 2 · Key idea: factoring ⟨ρ<sub>cyl</sub>²⟩ into radial and angular averages</summary>
 
-Because ρ<sub>cyl</sub>² = *r*² sin²θ and hydrogen orbitals separate into radial and angular parts, the average factors cleanly:
+The squared distance from the *z*-axis is ρ<sub>cyl</sub>² = *x*² + *y*² = *r*² sin²θ. Hydrogen orbitals separate into a radial part and an angular part, each normalized on its own, so the average factors into a radial average ⟨*r*²⟩ and an angular average ⟨sin²θ⟩:
 
-> ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩
+> ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩ &nbsp;&nbsp; (a.u.)
+
+The radial factor follows from the standard closed form for hydrogen (checked against direct integrals in the full derivation):
+
+> ⟨*r*²⟩<sub>*nl*</sub> = (*n*²/2) [5*n*² + 1 − 3*l*(*l* + 1)] &nbsp;&nbsp; (a.u.)
+
+The angular factor is 4/5 for *m* = ±1 (a doughnut around the axis) and 2/3 for a sphere. The energy cost is the average of the dropped term:
+
+> Δ*E*<sub>dia</sub> = ⅛ *B*<sub>*z*</sub>² ⟨ρ<sub>cyl</sub>²⟩ &nbsp;&nbsp; (a.u.)
 
 - \|2p, ±1⟩: ⟨*r*²⟩ = 30 *a*₀² and ⟨sin²θ⟩ = 4/5 give ⟨ρ<sub>cyl</sub>²⟩ = **24** *a*₀² (diamagnetic shift 3*B*<sub>*z*</sub>²).
 - \|2s, 0⟩: ⟨*r*²⟩ = 42 *a*₀² and ⟨sin²θ⟩ = 2/3 give ⟨ρ<sub>cyl</sub>²⟩ = **28** *a*₀² (diamagnetic shift 3.5*B*<sub>*z*</sub>², pushing 2s up by 0.5*B*<sub>*z*</sub>² more than 2p, ±1).
 
-Full derivation: [Evaluating ⟨ρ_cyl²⟩ for 2p, ±1 and 2s](tut:02#box-ch2-rho2).
+Full algebra: [Evaluating ⟨ρ_cyl²⟩ for 2p, ±1 and 2s](tut:02#box-ch2-rho2).
 
 <details>
 <summary>Level 3 · Full derivation: evaluating ⟨ρ<sub>cyl</sub>²⟩ for 2p, ±1 and 2s {#box-ch2-rho2}</summary>
 
-**You need:** [T5 · Spherical coordinates](tut:08#T5) (ρ<sub>cyl</sub>² = *r*² sin²θ) and [T6 · Radial integrals](tut:08#T6) (∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−*r*</sup> *dr* = *k*!).
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (ρ<sub>cyl</sub> = *r* sin θ, and the volume element *d*³*r* = *r*² sin θ *dr d*θ *d*φ) and [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−*r*</sup> *dr* = *k*!), plus Chapter 1's factorization ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) with each factor normalized on its own: ∫₀<sup>∞</sup> *R*² *r*² *dr* = 1 and ∫ \|*Y*\|² sin θ *d*θ *d*φ = 1.
 
-**Step 1 — radial factor ⟨*r*²⟩.** Using ⟨*r*²⟩ = ∫₀<sup>∞</sup> *r*² · *R*² · *r*² *dr* (matching the standard formula ⟨*r*²⟩<sub>*nl*</sub> = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)]):
+**Step 1 — separate radial and angular parts.** With ρ<sub>cyl</sub>² = *r*² sin²θ and \|ψ\|² *d*³*r* = [*R*² *r*² *dr*] × [\|*Y*\|² sin θ *d*θ *d*φ], the average splits into two independent integrals:
+
+> ⟨ρ<sub>cyl</sub>²⟩ = ∫₀<sup>∞</sup> *r*² · *R*² *r*² *dr* × ∫ sin²θ \|*Y*\|² sin θ *d*θ *d*φ = ⟨*r*²⟩ × ⟨sin²θ⟩ &nbsp;&nbsp; (a.u.)
+
+**Step 2 — radial factor ⟨*r*²⟩.** Using ⟨*r*²⟩ = ∫₀<sup>∞</sup> *r*² · *R*² · *r*² *dr*:
 - **2p** (*n* = 2, *l* = 1): *R*<sub>21</sub>² = *r*²*e*<sup>−*r*</sup>/24, so ⟨*r*²⟩ = (1/24)∫₀<sup>∞</sup> *r*⁶*e*<sup>−*r*</sup>*dr* = 6!/24 = 720/24 = **30** *a*₀².
 - **2s** (*n* = 2, *l* = 0): *R*<sub>20</sub>² = ½(1 − *r*/2)²*e*<sup>−*r*</sup> = ½(1 − *r* + *r*²/4)*e*<sup>−*r*</sup>, so ⟨*r*²⟩ = ½(4! − 5! + 6!/4) = ½(24 − 120 + 180) = **42** *a*₀².
 
-**Step 2 — angular factor ⟨sin²θ⟩.** Set *u* = cos θ, so sin²θ = 1 − *u*² and sin θ *d*θ becomes *du* over [−1, 1]:
+**Step 3 — angular factor ⟨sin²θ⟩.** For *m* = ±1 and *l* = 0, \|*Y*\|² does not depend on φ, so the φ integral gives the same 2π in the numerator and in the normalization and cancels. Set *u* = cos θ, so sin²θ = 1 − *u*² and sin θ *d*θ becomes *du* over [−1, 1]:
 - For *m* = ±1 (\|*Y*\|² ∝ sin²θ): ⟨sin²θ⟩ = ∫<sub>−1</sub><sup>1</sup> (1 − *u*²)² *du* / ∫<sub>−1</sub><sup>1</sup> (1 − *u*²) *du* = (16/15)/(4/3) = **4/5**.
 - For *l* = 0 (spherical, \|*Y*\|² constant): ⟨sin²θ⟩ = ∫<sub>−1</sub><sup>1</sup> (1 − *u*²) *du* / ∫<sub>−1</sub><sup>1</sup> *du* = (4/3)/2 = **2/3**.
 
-**Step 3 — products & check.** \|2p, ±1⟩: 30 × 4/5 = **24** *a*₀² ⇒ ⅛*B*<sub>*z*</sub>² × 24 = 3*B*<sub>*z*</sub>². \|2s, 0⟩: 42 × 2/3 = **28** *a*₀² ⇒ ⅛*B*<sub>*z*</sub>² × 28 = 3.5*B*<sub>*z*</sub>². **Check:** both radial integrals match the closed-form formula (*n*²/2)[5*n*² + 1 − 3*l*(*l*+1)] = 30 (2p) and 42 (2s), and for spherical 2s, ⟨sin²θ⟩ = 2/3 matches ⟨*x*² + *y*²⟩/⟨*r*²⟩ = 2/3. ✓
+**Step 4 — products.** \|2p, ±1⟩: 30 × 4/5 = **24** *a*₀² ⇒ ⅛*B*<sub>*z*</sub>² × 24 = 3*B*<sub>*z*</sub>². \|2s, 0⟩: 42 × 2/3 = **28** *a*₀² ⇒ ⅛*B*<sub>*z*</sub>² × 28 = 3.5*B*<sub>*z*</sub>². The 2s level is pushed up by 0.5*B*<sub>*z*</sub>² more than 2p, ±1.
+
+**Check:** the closed form ⟨*r*²⟩<sub>*nl*</sub> = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] gives (4/2)(20 + 1 − 6) = 2 × 15 = 30 for 2p and (4/2)(20 + 1 − 0) = 2 × 21 = 42 for 2s, matching both integrals; for spherical 2s, ⟨sin²θ⟩ = 2/3 matches ⟨*x*² + *y*²⟩/⟨*r*²⟩ = 2/3 (each of *x*², *y*², *z*² carries a third of *r*²); and at *B*<sub>*z*</sub> = 0.1 a.u. the extra 2s shift 0.5 × 0.1² = 0.005 Ha is 10% of the 0.05 Ha Zeeman spacing. ✓
 
 </details>
 
@@ -328,7 +411,7 @@ Now watch how Zeeman energy splitting connects quantum phase evolution directly 
 
 **The result.** Start in the real **2p<sub>*x*</sub>** orbital, an equal mix of *m* = +1 and *m* = −1 (with `0°` on `+1` and `180°` on `−1`, giving −2p<sub>*x*</sub>, which differs from +2p<sub>*x*</sub> only by an unobservable global minus sign). In a field *B*<sub>*z*</sub> the state becomes
 
-> Ψ(*r*, θ, φ, *t*) = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*), &nbsp;&nbsp; ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2
+> Ψ(*r*, θ, φ, *t*) = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*), &nbsp;&nbsp; ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 &nbsp;&nbsp; (a.u.)
 
 so φ has been replaced by φ − ω<sub>Larmor</sub>*t*: the dumbbell **rotates** around the *z*-axis at ω<sub>Larmor</sub>, with its shape unchanged. (*C* = √(3/8π) and *R*<sub>21</sub> is the 2p radial function.)
 - For *B*<sub>*z*</sub> > 0, the pattern rotates **counterclockwise** (viewed from the +*z* side at `Tilt = 90°`).
@@ -350,42 +433,48 @@ The *m* = +1 part carries a phase clock that runs slightly faster than the base 
 <details>
 <summary>Level 2 · Key idea: why Zeeman phases rotate 2p<sub>*x*</sub> at ω<sub>Larmor</sub></summary>
 
-Under the Condon–Shortley sign convention, subtracting the *m* = ±1 states builds the real 2p<sub>*x*</sub> dumbbell:
+Under the Condon–Shortley sign convention the *m* = ±1 states carry opposite signs, so subtracting them builds the real 2p<sub>*x*</sub> dumbbell up to an overall sign: the result is −2p<sub>*x*</sub> in Chapter 1's convention, which has the same density. Here *C* = √(3/8π) is the angular normalization and *R*<sub>21</sub>(*r*) the 2p radial function:
 
-> ψ(0) = (ψ<sub>2,1,+1</sub> − ψ<sub>2,1,−1</sub>)/√2 = −√2 *C* *R*<sub>21</sub>(*r*) sin θ cos φ
+> ψ(0) = (ψ<sub>2,1,+1</sub> − ψ<sub>2,1,−1</sub>)/√2 = −√2 *C* *R*<sub>21</sub>(*r*) sin θ cos φ &nbsp;&nbsp; (a.u.)
 
 In a field *B*<sub>*z*</sub>, *m* = ±1 evolve at energies *E*₂ ± ω<sub>Larmor</sub> (with ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2). Factoring out *e*<sup>−*iE*₂*t*</sup> combines the opposite Zeeman phases *e*<sup>∓*i*ω<sub>Larmor</sub>*t*</sup> directly with *e*<sup>±*i*φ</sup> into *e*<sup>±*i*(φ − ω<sub>Larmor</sub>*t*)</sup>:
 
-> Ψ(*r*, θ, φ, *t*) = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*)
+> Ψ(*r*, θ, φ, *t*) = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*) &nbsp;&nbsp; (a.u.)
 
-Squaring gives \|Ψ\|² ∝ cos²(φ − ω<sub>Larmor</sub>*t*) = ½[1 + cos(2φ − *B*<sub>*z*</sub>*t*)], so the dumbbell rotates at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 while its density repeats at Δ*E* = *B*<sub>*z*</sub> = 2ω<sub>Larmor</sub>. Full algebra: [Building 2p_x and letting each part evolve](tut:02#box-2px-larmor).
+Squaring removes the overall phase:
+
+> \|Ψ\|² ∝ cos²(φ − ω<sub>Larmor</sub>*t*) = ½[1 + cos(2φ − *B*<sub>*z*</sub>*t*)] &nbsp;&nbsp; (a.u.)
+
+so the dumbbell rotates at ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2 while its density repeats at the beat rate Δ*E* = *B*<sub>*z*</sub> = 2ω<sub>Larmor</sub>. Because Ψ is a real function times one overall phase, Im(∇Ψ/Ψ) = 0 and the flow is just the Larmor whirl **v** = **A**, which carries the dots along with the lobes. Full algebra: [Building 2p_x and letting each part evolve](tut:02#box-2px-larmor).
 
 <details>
 <summary>Level 3 · Full derivation: building 2p<sub>*x*</sub> and letting each part evolve {#box-2px-larmor}</summary>
 
-**You need:** [T1 · Complex numbers & Euler](tut:08#T1) (*e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a* and *e*<sup>*ia*</sup>*e*<sup>*ib*</sup> = *e*<sup>*i*(*a*+*b*)</sup>).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>±*ia*</sup> = cos *a* ± *i* sin *a*, so adding them cancels the sines and *e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a*; *e*<sup>*ia*</sup>*e*<sup>*ib*</sup> = *e*<sup>*i*(*a*+*b*)</sup>; \|*e*<sup>*ia*</sup>\| = 1 for real *a*), Chapter 1's rule that a superposition of energy eigenstates evolves as Ψ(*t*) = ∑ *c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> ψ<sub>*k*</sub>, the half-angle identity cos²*a* = ½(1 + cos 2*a*), and the flow velocity **v** = Im(∇Ψ/Ψ) + **A** from [Stored momentum, minimal coupling, Zeeman term, and Larmor flow](tut:02#box-minimal-coupling).
 
-**Step 1 — the two ingredients.** Recall from Chapter 1 how the real **2p<sub>*x*</sub>** orbital is built from *m* = ±1 eigenstates. Under the standard **Condon–Shortley phase convention** used in quantum chemistry and inside `electron_orbitals.html`, the two *m* = ±1 wavefunctions carry opposite signs:
+**Step 1 — the two ingredients.** Recall from Chapter 1 how the real **2p<sub>*x*</sub>** orbital is built from *m* = ±1 eigenstates. Under the standard **Condon–Shortley phase convention** used in quantum chemistry and inside `electron_orbitals.html`, the two *m* = ±1 wavefunctions carry opposite signs (with *C* = √(3/8π) and *R*<sub>21</sub> the 2p radial function):
 
-> ψ<sub>2,1,+1</sub>(*r*, θ, φ) = −*C* *R*<sub>21</sub>(*r*) sin θ *e*<sup>+*i*φ</sup>, &nbsp;&nbsp; ψ<sub>2,1,−1</sub>(*r*, θ, φ) = +*C* *R*<sub>21</sub>(*r*) sin θ *e*<sup>−*i*φ</sup> &nbsp;&nbsp; (*C* = √(3/8π))
+> ψ<sub>2,1,+1</sub>(*r*, θ, φ) = −*C* *R*<sub>21</sub>(*r*) sin θ *e*<sup>+*i*φ</sup>, &nbsp;&nbsp; ψ<sub>2,1,−1</sub>(*r*, θ, φ) = +*C* *R*<sub>21</sub>(*r*) sin θ *e*<sup>−*i*φ</sup> &nbsp;&nbsp; (a.u.)
 
-**Step 2 — the starting state.** Because of those opposite ∓ Condon–Shortley signs, subtracting them forms the real **2p<sub>*x*</sub>** orbital along ±*x*: ψ(0) = (1/√2)(ψ<sub>2,1,+1</sub> − ψ<sub>2,1,−1</sub>) = −(*C*/√2) *R*<sub>21</sub> sin θ (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>) = −√2 *C* *R*<sub>21</sub>(*r*) sin θ cos φ ∝ −*x e*<sup>−*r*/2</sup>, using *e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup> = 2 cos φ. *(Without that Condon–Shortley sign convention, subtracting e<sup>+iφ</sup> − e<sup>−iφ</sup> would give sin φ, i.e., 2p<sub>y</sub>, so always keep track of the ∓ sign! The overall minus sign makes this state −2p<sub>x</sub>, a harmless global 180° phase that leaves \|ψ\|² unchanged.)*
+**Step 2 — the starting state.** Because of those opposite ∓ Condon–Shortley signs, subtracting them forms the real 2p<sub>*x*</sub> dumbbell along the *x*-axis, up to an overall sign: ψ(0) = (1/√2)(ψ<sub>2,1,+1</sub> − ψ<sub>2,1,−1</sub>) = −(*C*/√2) *R*<sub>21</sub> sin θ (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>) = −√2 *C* *R*<sub>21</sub>(*r*) sin θ cos φ ∝ −*x e*<sup>−*r*/2</sup>, using *e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup> = 2 cos φ. *(Without that Condon–Shortley sign convention, subtracting e<sup>+iφ</sup> − e<sup>−iφ</sup> would give sin φ, i.e., 2p<sub>y</sub>, so always keep track of the ∓ sign! The overall minus sign makes this state −2p<sub>x</sub> in Chapter 1's convention, where 2p<sub>x</sub> = (−\|2p, +1⟩ + \|2p, −1⟩)/√2 ∝ +x; it is a harmless global 180° phase that leaves \|ψ\|² unchanged.)*
 
 **Step 3 — let each part evolve.** When *B*<sub>*z*</sub> ≠ 0, the *m* = +1 state has energy *E*₂ + ω<sub>Larmor</sub> while *m* = −1 has energy *E*₂ − ω<sub>Larmor</sub> (where ω<sub>Larmor</sub> = *B*<sub>*z*</sub>/2). Each eigenstate just picks up its own phase factor *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> (Chapter 1: Ψ(*t*) = ∑ *c*<sub>*k*</sub> *e*<sup>−*iE*<sub>*k*</sub>*t*</sup> ψ<sub>*k*</sub>). Pull the common factor *e*<sup>−*iE*₂*t*</sup> out front:
 
-> Ψ(*t*) = −(*C*/√2) *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub> sin θ [ *e*<sup>−*i*ω<sub>Larmor</sub>*t*</sup> *e*<sup>*i*φ</sup> + *e*<sup>+*i*ω<sub>Larmor</sub>*t*</sup> *e*<sup>−*i*φ</sup> ]
+> Ψ(*t*) = −(*C*/√2) *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub> sin θ [ *e*<sup>−*i*ω<sub>Larmor</sub>*t*</sup> *e*<sup>*i*φ</sup> + *e*<sup>+*i*ω<sub>Larmor</sub>*t*</sup> *e*<sup>−*i*φ</sup> ] &nbsp;&nbsp; (a.u.)
 
 **Step 4 — combine exponents.** *e*<sup>−*i*ω<sub>Larmor</sub>*t*</sup> *e*<sup>*i*φ</sup> = *e*<sup>*i*(φ − ω<sub>Larmor</sub>*t*)</sup>, and the second term is its complex conjugate:
 
-> Ψ(*r*, θ, φ, *t*) = −(*C*/√2) *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ [ *e*<sup>*i*(φ − ω<sub>Larmor</sub>*t*)</sup> + *e*<sup>−*i*(φ − ω<sub>Larmor</sub>*t*)</sup> ]
+> Ψ(*r*, θ, φ, *t*) = −(*C*/√2) *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ [ *e*<sup>*i*(φ − ω<sub>Larmor</sub>*t*)</sup> + *e*<sup>−*i*(φ − ω<sub>Larmor</sub>*t*)</sup> ] &nbsp;&nbsp; (a.u.)
 >
-> = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*)
+> = −√2 *C* *e*<sup>−*iE*₂*t*</sup> *R*<sub>21</sub>(*r*) sin θ cos(φ − ω<sub>Larmor</sub>*t*) &nbsp;&nbsp; (a.u.)
 
 again using *e*<sup>*ia*</sup> + *e*<sup>−*ia*</sup> = 2 cos *a*. Notice that φ has shifted to φ − ω<sub>Larmor</sub>*t*!
 
-**Step 5 — the density.** \|Ψ\|² = 2*C*²*R*<sub>21</sub>² sin²θ cos²(φ − ω<sub>Larmor</sub>*t*), since \|*e*<sup>−*iE*₂*t*</sup>\| = 1. Using cos²*a* = ½(1 + cos 2*a*), the time-dependent part is cos(2φ − *B*<sub>*z*</sub>*t*).
+**Step 5 — the density.** \|Ψ\|² = 2*C*²*R*<sub>21</sub>² sin²θ cos²(φ − ω<sub>Larmor</sub>*t*), since \|*e*<sup>−*iE*₂*t*</sup>\| = 1. Using cos²*a* = ½(1 + cos 2*a*), the time-dependent part is cos(2φ − *B*<sub>*z*</sub>*t*). The lobes turn at ω<sub>Larmor</sub>, but the density returns to itself after a half-turn, at the beat rate *B*<sub>*z*</sub> = 2ω<sub>Larmor</sub>.
 
-**Check:** At *t* = 0 this reduces to the static 2p<sub>*x*</sub> state ∝ cos φ, and at *B*<sub>*z*</sub> = 0 we have ω<sub>Larmor</sub> = 0 so the lobes stand still. ✓
+**Step 6 — the flow.** At every instant Ψ is the real function −√2 *C R*<sub>21</sub> sin θ cos(φ − ω<sub>Larmor</sub>*t*) times the phase *e*<sup>−*iE*₂*t*</sup>, which is the same everywhere. The phase cancels in ∇Ψ/Ψ, leaving the gradient of a real function divided by itself, which is real. So Im(∇Ψ/Ψ) = 0 wherever Ψ ≠ 0, and the flow is **v** = **A** = ½*B*<sub>*z*</sub>ρ<sub>cyl</sub>**φ̂**: a rigid rotation at ω<sub>Larmor</sub> that carries every dot in step with the turning lobes.
+
+**Check:** At *t* = 0 this reduces to the static dumbbell ∝ cos φ, and at *B*<sub>*z*</sub> = 0 we have ω<sub>Larmor</sub> = 0 so the lobes stand still. For the demo's *B*<sub>*z*</sub> = 0.12 a.u., ω<sub>Larmor</sub> = 0.06 a.u., so one full turn takes 2π/0.06 ≈ 104.7 a.u. of time ≈ 2.53 fs, and the density repeats every half-turn, ≈ 52.4 a.u. ✓
 
 </details>
 

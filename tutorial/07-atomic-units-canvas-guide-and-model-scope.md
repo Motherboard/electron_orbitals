@@ -32,24 +32,24 @@ The `Rotate` slider turns the atom around the *z*-axis by an azimuth angle (`−
 - **Depth away from the camera** = *y* cos *p* − *z* sin *p* (larger values are farther away and are drawn smaller and dimmer; at Tilt = 90° the camera sits on the +*z* side, so points at −*z* are farthest)
 
 Thus (at `Rotate = 0°`):
-- **Tilt = 0°** (cos *p* = 1, sin *p* = 0): displays the ***xz*-plane** with the *z*-axis vertical—best for radial nodes, polar nodal cones, and *z*-oscillating dipoles.
-- **Tilt = 90°** (cos *p* = 0, sin *p* = 1): looks straight down from +*z* onto the ***xy*-plane**—best for circular *m* ≠ 0 currents, Larmor rotation, 2p<sub>*x*</sub> rotation, and circular σ⁺/σ⁻ polarization.
+- **Tilt = 0°** (cos *p* = 1, sin *p* = 0): displays the *xz*-plane with the *z*-axis vertical—best for radial nodes, polar nodal cones, and *z*-oscillating dipoles.
+- **Tilt = 90°** (cos *p* = 0, sin *p* = 1): looks straight down from +*z* onto the *xy*-plane—best for circular *m* ≠ 0 currents, Larmor rotation, 2p<sub>*x*</sub> rotation, and circular σ⁺/σ⁻ polarization.
 - Changing `Rotate` swings the camera horizontally around the *z*-axis (for example, `Rotate = −75°` views nearly down +*x* onto the *yz*-plane, and `Rotate = 165°` views nearly down +*y* onto the *xz*-plane).
 
 ### How the Density Overlay Works: Column Projection vs. 2D Slice
-When **Density overlay** is checked, the canvas shades probability density with an **indigo glow** whose **opacity** is **0** at nodes and empty vacuum and rises monotonically to **0.54** at peak density, so bright orbital lobes stand out cleanly without hiding the colored Bohmian electron dots inside. (Opacity runs from 0 = fully transparent to 1 = fully solid.) The mode selector beside **Density overlay** offers two complementary views:
+When **Density overlay** is checked, the canvas shades probability density with an **indigo glow** whose **opacity** is 0 at nodes and empty vacuum and rises monotonically to 0.54 at peak density, so bright orbital lobes stand out cleanly without hiding the colored Bohmian electron dots inside. (Opacity runs from 0 = fully transparent to 1 = fully solid.) The mode selector beside **Density overlay** offers two complementary views:
 
 - **Column projection ∫\|ψ\|² *dz*<sub>cam</sub> (default):** Integrates \|ψ\|² along your viewing depth axis (depth = *y* cos *p* − *z* sin *p*). It then divides the projected density *p*<sub>2D</sub> by a reference value *p*<sub>ref</sub> (both are densities, not the tilt angle *p*) to get the relative density *w* = *p*<sub>2D</sub> / *p*<sub>ref</sub>, and applies square-root compression:
 
 > opacity = min(0.54, 0.54 √*w*)
 
-Because the simulated electron dots are sampled in 3D from \|ψ(*x*, *y*, *z*)\|² and orthogonally projected onto the screen, their 2D spatial density matches ∫\|ψ\|² *dz*<sub>cam</sub> directly. For free (unpulsed) superpositions, *p*<sub>ref</sub> is an upper bound that does not depend on the phases: the largest value of (Σ<sub>*k*</sub> \|*c*<sub>*k*</sub>\| √*p*<sub>*k*</sub>)² on the screen, where *p*<sub>*k*</sub> is the projected density of component *k* alone (the Minkowski, or triangle, inequality guarantees the real projected density never exceeds it). Because this reference stays fixed, interference beats do not make the overall brightness flicker. During EM pulses, *p*<sub>ref</sub> tracks the live maximum, scaled by the probability that is still bound.
+Because the simulated electron dots are sampled in 3D from \|ψ(*x*, *y*, *z*)\|² and orthogonally projected onto the screen, their 2D spatial density matches ∫\|ψ\|² *dz*<sub>cam</sub> directly. The price is that a node is filled in by the bright regions in front of and behind it: for 2s, the column density at the radial node is about 16% of the bright centre but about 80% of the outer ring's peak (opacity ≈ 0.21 vs. ≈ 0.24), so the 2s node almost disappears in Column projection, and you need 2D slice to see it. For free (unpulsed) superpositions, *p*<sub>ref</sub> is an upper bound that does not depend on the phases: the largest value of (Σ<sub>*k*</sub> \|*c*<sub>*k*</sub>\| √*p*<sub>*k*</sub>)² on the screen, where *p*<sub>*k*</sub> is the projected density of component *k* alone (the Minkowski, or triangle, inequality guarantees the real projected density never exceeds it). Because this reference stays fixed, interference beats do not make the overall brightness flicker. During EM pulses (in both overlay modes), the reference instead follows the live on-screen maximum; in **Coherent EM wave** mode that maximum is divided by the probability still on the simulation grid, so the glow fades as the electron ionizes.
 
 - **2D slice \|ψ\|²:** Evaluates \|ψ\|² on the plane through the nucleus perpendicular to your line of sight (*y* cos *p* − *z* sin *p* = 0). Here *w* is the slice density divided by a reference density (for a superposition, the probability-weighted harmonic mean of the components' peak densities), with stronger root compression so diffuse outer shells (2s, 3s, 3p) stay visible alongside dense cores:
 
 > opacity = min(0.54, 0.54 [min(1, *w*)]<sup>0.30</sup>)
 
-Where a radial nodal sphere, a nodal cone, or a nodal plane cuts the depth = 0 slice, **the opacity drops straight to 0**, leaving dark, transparent cuts right through the glowing orbital lobes.
+Where a radial nodal sphere, a nodal cone, or a nodal plane cuts the depth = 0 slice, the opacity drops straight to 0, leaving dark, transparent cuts right through the glowing orbital lobes.
 
 ```demo
 {
@@ -83,7 +83,7 @@ Where a radial nodal sphere, a nodal cone, or a nodal plane cuts the depth = 0 s
 ```
 
 ### Particle Colors, Depth, Time Scaling & UI Ranges
-- **Color by cylindrical radius ρ<sub>cyl</sub> = √(*x*² + *y*²) (distance from the *z*-axis):** Dots grade from orange-red near the *z*-axis through green/cyan to blue-violet near the outer boundary. *(The status bar abbreviates ρ<sub>cyl</sub> as `ρ`.)*
+- **Color by cylindrical radius ρ<sub>cyl</sub> = √(*x*² + *y*²) (distance from the *z*-axis):** Dots grade from orange-red near the *z*-axis through green/cyan to blue-violet, reached at 80% of the view-box radius *R*<sub>box</sub> (dots farther out stay blue-violet). *(The status bar abbreviates ρ<sub>cyl</sub> as `ρ`.)*
 - **Depth cueing:** Dots closer to the viewer appear slightly larger and brighter.
 - **Adaptive `Speed`:** Larger shells (*n* = 5–7) evolve much more slowly than *n* = 1–2, while superpositions beat at the angular frequency Δ*E*/*ħ* (just Δ*E* in atomic units). The simulator scales atomic time per frame using box size *R*<sub>box</sub> and the fastest active frequency so motion always stays readable.
 - **Superposition & ensemble controls:** The orbital selectors span *n* = 1–7, and the `Electrons` slider sets the sampled ensemble size (`50–600`, default `220`). Each component row displays weights normalized from your raw slider values, while internally the simulator interferes any duplicate (*n*, *l*, *m*) rows together first and renormalizes the distinct effective states (adding two equal-amplitude copies of the same state at `0°` and `180°` cancels everywhere and displays `ψ = 0`).
@@ -112,23 +112,23 @@ Like any good scientific model, `electron_orbitals.html` balances mathematical e
 
 - **Exact within the model:**
   - Non-relativistic Schrödinger hydrogen eigenstates ψ<sub>*nlm*</sub> (*n* = 1..7) and exact E1/M1 dipole matrix elements.
-  - **Coherent EM wave:** Full continuous radial-grid TDSE (*L*<sub>max</sub> ≤ 7) during pulses, capturing multi-shell coupling, AC Stark shifts, and continuum ionization; `Power ≤ 1` and `1π` stay within the ionization-safe field (~0.6% estimated loss, including Zeeman-shifted photon energies at *B*<sub>*z*</sub> ≠ 0). **Single photon:** Single-excitation RWA manifold + shell-local multipole continuity flow (∇·δ**J** = −σ) over *n* = 1..7 without compression ionization or 2-photon cascades.
+  - **Coherent EM wave:** Full continuous radial-grid TDSE (*L*<sub>max</sub> ≤ 7, or ≤ 11 with the **B² term**) during pulses, capturing multi-shell coupling, AC Stark shifts, and continuum ionization; `Power ≤ 1` and `1π` stay within the ionization-safe field (~0.6% estimated loss, including Zeeman-shifted photon energies at *B*<sub>*z*</sub> ≠ 0). **Single photon:** Single-excitation RWA manifold + shell-local multipole continuity flow (∇·δ**J** = −*s*) over *n* = 1..7 without compression ionization or 2-photon cascades.
   - Exact 3D Bohmian velocities **v** = Im(∇ψ/ψ) + **A** integrated with adaptive RK4.
   - Exact Weisskopf–Wigner spontaneous rates Γ = *A*<sub>21</sub> and natural lifetimes τ.
 
 - **Intentional physical simplifications:**
   1. **Spinless orbital hydrogen:** Electron spin (*s* = ½, *g*<sub>s</sub> ≈ 2.0023), spin–orbit fine structure (which splits 2p into 2p<sub>3/2</sub> and 2p<sub>1/2</sub>), the Lamb shift, and hyperfine structure are omitted.
-  2. **Linear (orbital) Zeeman model:** Keeps the linear Zeeman splitting +*mB*<sub>*z*</sub>/2 and the Larmor vector potential **A**, but omits the quadratic diamagnetic term ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>². At the visual-scale fields used here (0.1–0.25 a.u., i.e. 23.5–58.8 kT), that omitted term is **not** small for *n* ≥ 2: for 2p, ±1 at 0.1 a.u. it is already ~60% of the linear shift (§2.2). Treat those magnetic demos as qualitative. By default the **Field B<sub>z</sub>** slider covers only the laboratory range `±20 T`, where the omitted term shifts every shell *n* ≤ 7 by less than half the bandwidth of a 400-cycle pulse. **Toy range** (switched on automatically by demos above 20 T) unlocks `±0.10 a.u.` (`±23.5 kT`) and beyond, with a note under the slider naming the shells the missing term would disturb. The **B² term** checkbox adds the diamagnetic term back as field-dressed states (Coherent EM wave only; see Chapter 9).
+  2. **Linear (orbital) Zeeman model:** Keeps the linear Zeeman splitting +*mB*<sub>*z*</sub>/2 and the Larmor vector potential **A**, but omits the quadratic diamagnetic term ⅛*B*<sub>*z*</sub>²ρ<sub>cyl</sub>². At the visual-scale fields used here (0.1–0.25 a.u., i.e. 23.5–58.8 kT), that omitted term is *not* small for *n* ≥ 2: for 2p, ±1 at 0.1 a.u. it is already ~60% of the linear shift (§2.2). Treat those magnetic demos as qualitative. By default the **Field B<sub>z</sub>** slider covers only the laboratory range `±20 T`, where the omitted term shifts every shell *n* ≤ 7 by less than half the bandwidth of a 400-cycle pulse. **Toy range** (switched on automatically by demos above 20 T) unlocks `±0.10 a.u.` (`±23.5 kT`) and beyond, with a note under the slider naming the shells the missing term would disturb. The **B² term** checkbox adds the diamagnetic term back as field-dressed states (Coherent EM wave only; see Chapter 9).
   3. **Dipole approximation:** Keeps E1 (**r**·**ℰ**, with **ℰ** the light's electric field) and Zeeman M1 (**B**₁·**L**/2), dropping the electric-quadrupole (E2) and higher terms that come from the light wave's finite wavelength (retardation).
   4. **Time-compressed single-photon absorption/stimulation:** Real excited-state lifetimes last 10⁶–10⁸ optical cycles. Single-photon mode displays the exact physical Γ<sub>tot</sub>, τ, *N* (the photon's length in optical cycles), and branching ratio, while compressing the *e*<sup>+Γ<sub>sim</sub>*t*/2</sup> pulse to 24 cycles so each optical cycle stays visible.
   5. **Semiclassical radiation, single-photon branch projection & post-pulse projection:** During a pulse, the atom never emits spontaneously into the vacuum (the downward `stim. emit` options model emission stimulated by incoming light instead). In **Single photon** mode, when only part of the initial electron superposition or of the polarization **ε** couples within the photon linewidth, the simulator reports **Branch match**, projects onto the active electron subspace and onto **ε**<sub>int</sub> (the part of the polarization that can interact), and visualizes the post-selected transition branch, conditioned on absorption and timed by the single-photon cascade model (rather than a photon-traced mixed state or full quantized atom–photon entanglement; see §6.3). The real absorption odds, including Raman scattering (the atom ending in a different lower level), are reported in the note. When a pulse finishes, the bound components with amplitude \|*c*\| > 0.14 form the new superposition, and electron dots that escaped beyond 1.25 *R*<sub>box</sub> (ionized outliers) are resampled back into the bound state.
-  6. **Infinite nuclear mass (clamped nucleus, *m*<sub>p</sub> → ∞):** Uses bare electron mass *m*<sub>e</sub> rather than hydrogen's reduced mass μ = *m*<sub>e</sub>*m*<sub>p</sub>/(*m*<sub>e</sub> + *m*<sub>p</sub>), omitting the tiny **−0.054%** energy correction (this reduced-mass effect, slightly different for each isotope, is also what separates hydrogen and deuterium lines). **Every energy in this tutorial uses this clamped-nucleus convention:** *E*<sub>*n*</sub> = −1/(2*n*²) Ha = −13.6057/*n*² eV. Where a real-atom value is quoted, it is labelled as such: for example Lyman-α is 10.204 eV ↔ 121.50 nm in the clamped model but 121.57 nm for the real atom (vacuum), and H<sub>α</sub> is 656.11 nm clamped vs. 656.47 nm real (vacuum) or 656.28 nm real (in air). The real atom's ionization energy is 13.598 eV rather than 13.6057 eV.
+  6. **Infinite nuclear mass (clamped nucleus, *m*<sub>p</sub> → ∞):** Uses bare electron mass *m*<sub>e</sub> rather than hydrogen's reduced mass μ = *m*<sub>e</sub>*m*<sub>p</sub>/(*m*<sub>e</sub> + *m*<sub>p</sub>), omitting the tiny −0.054% energy correction (this reduced-mass effect, slightly different for each isotope, is also what separates hydrogen and deuterium lines). **Every energy in this tutorial uses this clamped-nucleus convention:** *E*<sub>*n*</sub> = −1/(2*n*²) Ha = −13.6057/*n*² eV. Where a real-atom value is quoted, it is labelled as such: for example Lyman-α is 10.204 eV ↔ 121.50 nm in the clamped model but 121.57 nm for the real atom (vacuum), and H<sub>α</sub> is 656.11 nm clamped vs. 656.47 nm real (vacuum) or 656.28 nm real (in air). The real atom's ionization energy is 13.598 eV rather than 13.6057 eV.
 
 ---
 
 ## 7.4 Chapter Roadmap & Study Index
 
-Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 to strong magnetic fields. Throughout the tutorial, collapsible zoom boxes follow three consistent tiers—**Level 1 · Picture** (algebra-free intuition), **Level 2 · Key idea** (the physical argument in a few key equations), and **Level 3 · Full derivation** (step-by-step algebra). [Chapter 8](tut:08), the **Math Toolkit**, is the companion appendix that the **You need:** headers of **Level 3 · Full derivation** (and standalone **Level 2 · Key idea**) boxes link into whenever a proof uses a piece of math (complex numbers, ∇, differential equations, Fourier transforms, …). <!-- lint-ignore: level-ref -->
+Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 to strong magnetic fields. Throughout the tutorial, derivations sit in collapsible zoom boxes nested three deep, so you can stop at whatever depth suits you: **Level 1 · Picture** (words only, no equations) opens into **Level 2 · Key idea** (the physical argument in 3–5 key equations), which opens into **Level 3 · Full derivation** (every step, starting with a **You need:** line and ending with a ✓ check). A short result may stop at a **Level 2 · Key idea** box with no Level 3 below it. [Chapter 8](tut:08), the **Math Toolkit**, is the companion appendix: each **You need:** line links to the toolkit section (complex numbers, ∇, differential equations, Fourier transforms, …) that the proof relies on. <!-- lint-ignore: level-ref -->
 
 | Chapter | Core Chemistry & Quantum Concepts | Key Demos to Revisit |
 | :--- | :--- | :--- |
@@ -166,7 +166,6 @@ Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 
 | **Einstein *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub> coefficients** | Rates of spontaneous emission (*A*<sub>21</sub>) and of absorption / stimulated emission (*B*<sub>12</sub> / *B*<sub>21</sub>). | Ch 4 |
 | **Entanglement** | A joint state of two systems (here atom + photon) that cannot be written as "atom state × photon state". | Ch 6 |
 | **Fock state** | A light state with an exact number of photons (\|0⟩, \|1⟩, …). | Ch 6 |
-| **Gauge / vector potential A** | **A** is a helper field with **B** = ∇ × **A**; "gauge" refers to the freedom to choose **A** without changing **B**. | Ch 2 |
 | **Hamiltonian *Ĥ*** | The total-energy operator. | Ch 1 |
 | **Hamilton–Jacobi equation** | The classical-mechanics equation for the "action" *S*; quantum mechanics adds the quantum potential to it. | Ch 1 |
 | **Homodyne detection** | Measuring a light field by interfering it with a reference laser. | Ch 6 |
@@ -191,6 +190,7 @@ Chapters 1–7 tell the physics story and [Chapter 9](tut:09) extends Chapter 2 
 | **SU(2)** | The mathematical group of quantum rotations; "spin-1 SU(2)" = three levels that rotate like *l* = 1. | Ch 5 |
 | **TDSE / TISE** | Time-dependent / time-independent Schrödinger equation. | Ch 1 |
 | **Unsöld's theorem** | Summing \|ψ\|² over all 2*l* + 1 orthogonal orbitals of any subshell (*p*, *d*, *f*, …) cancels all angles and yields a spherical cloud. | Ch 1 |
+| **Vector potential A** | A helper field with **B** = ∇ × **A**; the app uses **A** = ½ **B** × **r**, which adds the Larmor swirl to the Bohmian velocity. | Ch 2, 6, 9 |
 | **Weisskopf–Wigner theory** | The QED calculation of the spontaneous emission rate Γ = *A*<sub>21</sub>. | Ch 4, 6 |
 | **Zeeman effect** | Splitting of energy levels by a magnetic field, by *m* μ<sub>B</sub> *B*. | Ch 2 |
 
@@ -203,7 +203,7 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | Symbol | Meaning(s) | Where |
 | :--- | :--- | :--- |
 | *a*₀ | Bohr radius, 0.5292 Å = 1 a.u. of length. | Ch 1–4, 6–8 |
-| **A** | Vector potential (a helper field with **B** = ∇ × **A**). Always bold (in Ch 8's product rules, **A** is any vector field). | Ch 1, 2, 6, 8 |
+| **A** | Vector potential (a helper field with **B** = ∇ × **A**). Always bold (in the product rules of Ch 1 and Ch 8, **A** is any vector field). | Ch 1, 2, 6, 8, 9 |
 | *A*<sub>21</sub> | Einstein coefficient for spontaneous emission from level 2 to level 1 (a rate; equals Γ when 2 has only one decay channel). Always subscripted. | Ch 4, 5, 8 | <!-- lint-ignore: level-ref -->
 | Abs | Absorbance in the Beer–Lambert law, Abs = ε *c* ℓ. | Ch 4 |
 | 𝒜 | Area (of a current loop or a surface). | Ch 2, 8 |
@@ -229,8 +229,8 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | *Ĥ*, *Ĥ*₀ | Hamiltonian (total-energy operator); *Ĥ*₀ is the atom without light (or without the magnetic field, Ch 2). | Ch 1, 2, 4–6, 8 |
 | *I* | Light intensity (W/cm²). In the current-loop picture of Ch 2, the electric current. *I*<sub>*n*</sub> is a radial integral in Ch 4; in det(*M* − λ*I*) (Ch 5, 8) *I* is the identity matrix. | Ch 2–5, 8 |
 | **J**, δ**J** | Probability current density (where probability flows); δ**J** is the single-photon solver's correction current. | Ch 1, 2, 6, 8 |
-| *K*, ⟨*K*⟩ | Kinetic energy and its average. (Not *T*.) | Ch 1–3 |
-| *k*, **k** | Wavenumber 2π/λ and wavevector of light; *k*<sub>B</sub> is Boltzmann's constant; *k* is also a counting index (*c*<sub>*k*</sub>). | Ch 3, 4 |
+| *K*, ⟨*K*⟩ | Kinetic energy and its average. (Not *T*.) | Ch 1, 3 |
+| *k*, **k** | Wavenumber 2π/λ and wavevector of light (in Ch 1, of a matter plane wave); *k*<sub>B</sub> is Boltzmann's constant; *k* is also a counting index (*c*<sub>*k*</sub>). | Ch 1, 3, 4 |
 | **L**, *L*<sub>*z*</sub> | Orbital angular momentum vector and its *z* component. | Ch 1–6, 8 |
 | *L*, *L*<sub>max</sub> | Multipole order in the solver; largest *l* kept on the TDSE grid. | Ch 6 |
 | *l*, *m* | Orbital and magnetic quantum numbers. Not to be confused with masses *m*<sub>e</sub>, *m*<sub>p</sub> or the spin projection *m*<sub>*s*</sub>. | all |
@@ -244,12 +244,12 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | **r**, *r* | Position vector of the electron and its distance from the nucleus. | all |
 | *S* | Phase (action) of the wavefunction, Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup>. Δ*S* = 0 in Ch 4 is the total-spin selection rule for molecules. | Ch 1, 4 |
 | *s*, *m*<sub>*s*</sub>, **s** | Electron spin ½, its projection, and the spin vector (all left out of the model). | Ch 1, 2, 7 |
-| *s*(**r**, *t*) | Source term in the single-photon solver's continuity equation (the one-line summary in §7.3 writes it as σ). | Ch 6, 7 |
+| *s*(**r**, *t*) | Source term in the single-photon solver's continuity equation, ∇·δ**J** = −*s*. | Ch 6, 7 |
 | *T*, *T*<sub>ref</sub> | Pulse or photon duration; *T*<sub>ref</sub> is the duration of the shortest ionization-safe π-pulse (54 cycles for `1s → 2p`). | Ch 3, 5, 6, 8 |
 | *T*<sub>th</sub> | Temperature (Planck's law, thermal equilibrium). | Ch 4 |
 | *U* | Potential energy (of a charge or dipole in a field). | Ch 2–4, 6, 8 |
 | *V*, *V*<sub>eff</sub> | Coulomb potential energy −1/*r* and the effective radial potential. | Ch 1, 8 |
-| **v** | Bohmian velocity Im(∇ψ/ψ) + **A**. | Ch 1, 2, 6 |
+| **v** | Bohmian velocity Im(∇ψ/ψ) + **A**. In Ch 8 (Lorentz force), the velocity of a moving charge; in Ch 5, **v**<sub>±</sub>, **v**<sub>0</sub> are eigenvectors of the spin-1 ladder. | Ch 1, 2, 5, 6, 8 |
 | **X**(*t*) | Position of a Bohmian electron dot. | Ch 1, 2, 6 |
 | *Y*<sub>*l*</sub><sup>*m*</sup> | Spherical harmonic (angular part of an orbital). | Ch 1, 4, 6, 8 |
 | *Z*, *Z*<sub>eff</sub> | Nuclear charge and effective nuclear charge. | Ch 1 |
@@ -259,7 +259,7 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | Symbol | Meaning(s) | Where |
 | :--- | :--- | :--- |
 | ℓ, ℓ<sub>*B*</sub> | Beer–Lambert path length (Ch 4); the electron's sideways width in a strong field, and the magnetic length ℓ<sub>*B*</sub> = 1/√*B* a.u. (Ch 9). | Ch 4, 9 |
-| α | Fine-structure constant ≈ 1/137. Apart from the angle-addition formulas in Ch 8 (T1), where α and β are just two angles, it is the only α used as a symbol. In line names (Lyman-α, H<sub>α</sub>, H<sub>β</sub>) Greek letters are just labels. | Ch 3, 4, 6, 7 |
+| α | Fine-structure constant ≈ 1/137. Apart from the angle-addition formulas in Ch 8 (T1), where α and β are just two angles, it is the only α used as a symbol. In line names (Lyman-α, H<sub>α</sub>, H<sub>β</sub>) Greek letters are just labels. | Ch 3, 4, 6, 7, 9 |
 | β | Rotation angle of the spin-1 ladder for Zeeman M1 flips (β = Θ/√2). | Ch 2, 5 |
 | γ<sub>p</sub> | Proton gyromagnetic ratio (NMR). | Ch 2 |
 | Γ, Γ<sub>tot</sub>, Γ<sub>*b*</sub>, Γ<sub>sim</sub> | Decay rate (an excited population falls as *e*<sup>−Γ*t*</sup>); total rate through all channels; rate back into the photon's channel; time-compressed rate 5/*T* used on screen. | Ch 3–6, 8 |
@@ -267,10 +267,10 @@ Physics has more quantities than alphabets have letters, so some letters do doub
 | ε, **ε**, ε₀ | **ε** is the light's polarization vector (**ε**<sub>±</sub>, **ε**<sub>int</sub>); ε₀ the vacuum permittivity; plain ε in Beer–Lambert the molar absorptivity. | Ch 1–6 |
 | θ, φ, **φ̂** | Polar and azimuthal angles; **φ̂** is the unit vector circling the *z*-axis. | Ch 1–6, 8, 9 |
 | ϑ | Mixing angle of two coupled states (tan 2ϑ = 2*V*/Δ*E*). | Ch 9 |
-| Θ | Pulse area (Θ = π inverts a two-level atom). | Ch 2, 3, 5, 6, 8 |
+| Θ | Pulse area (Θ = π inverts a two-level atom). | Ch 2, 3, 5, 6, 8, 9 |
 | λ | Wavelength; in Ch 5 and Ch 8 (T4), also an eigenvalue. | Ch 1, 3–5, 8 |
 | μ<sub>B</sub>, **μ**, μ | Bohr magneton; magnetic moment; reduced mass (§7.3). | Ch 2, 4, 7, 8 |
-| ν, ν̃ | Frequency in Hz; wavenumber in cm⁻¹. | Ch 1, 3, 4 |
+| ν, ν̃ | Frequency in Hz; wavenumber in cm⁻¹. | Ch 1–4, 8 |
 | ξ(*t*) | Envelope of a single photon (∫\|ξ\|² *dt* = 1). | Ch 6, 8 |
 | ρ<sub>prob</sub>, ρ<sub>cyl</sub>, ρ(ω), ρ̂ | Probability density \|ψ\|²; cylindrical radius √(*x*² + *y*²); spectral energy density of light (Einstein); density matrix. | Ch 1, 2, 4, 6, 8, 9 |
 | σ⁺, σ⁻, π | Circular (counterclockwise / clockwise about +*z*) and linear-along-*z* light. | Ch 2–6 |
