@@ -4,7 +4,7 @@ This appendix collects every piece of mathematics the other chapters use but a f
 
 You do **not** need to read this chapter from start to finish. The other chapters link straight to the section you need (for example [T3 · First-order linear ODEs](tut:08#T3)). Jump in, read what you need, and jump back.
 
-**What you should already know:** single-variable calculus (derivatives, integrals, the product and chain rules, integration by parts), vectors in 3D (components, dot product), and complex numbers as taught in school. Everything else is built up below.
+**What you should already know:** algebra, trigonometry (sin, cos, angles in radians), derivatives and integrals of one variable (including the product and chain rules), and vectors in 3D (components and the dot product). Integration by parts is recalled where it is used. Complex numbers, matrices, and everything else are built up from scratch below.
 
 **Units:** like the rest of the tutorial, formulas here use **Hartree atomic units** (*ħ* = *m*<sub>e</sub> = *e* = 4πε₀ = 1) unless they say otherwise. Lengths are then measured in Bohr radii *a*₀ and energies in Hartree (1 Ha ≈ 27.211 eV). The full symbol table is in [Chapter 7 §7.5](tut:07#symbols).
 
@@ -17,24 +17,24 @@ You do **not** need to read this chapter from start to finish. The other chapter
 
 | Section | Tool | Where the tutorial uses it |
 | :--- | :--- | :--- |
-| T1 | Complex numbers, Euler's formula | Ch1 (phase factors, real orbitals, beats), Ch3 (polarization), Ch4 (selection rules), Ch5 (Rabi amplitudes) |
-| T2 | Partial derivatives, ∇, ∇·, ∇×, ∇², product rules | Ch1 §1.1 (kinetic energy), §1.4 (probability current), §1.5 (quantum potential), Ch2 §2.1 (vector potential), §2.2 (∂/∂φ) |
-| T3 | First-order linear ODEs, integrating factor | Ch1 §1.1 (stationary states), Ch4 §4.2 (decay), Ch6 §6.1 (photon absorption) |
+| T1 | Complex numbers, Euler's formula | Ch1 (phase factors, real orbitals, beats), Ch2 §2.3 (Larmor rotation), Ch3 (polarization), Ch4 (selection rules), Ch5 (Rabi amplitudes) |
+| T2 | Partial derivatives, ∇, ∇·, ∇×, ∇², product rules | Ch1 §1.1 (kinetic energy), §1.4 (probability current), §1.5 (quantum potential, rate of change along a path), Ch2 §2.1 (vector potential), §2.2 (∂/∂φ), Ch6 §6.4 (saddle point), Ch9 §9.1 |
+| T3 | First-order linear ODEs, integrating factor, uniqueness of paths | Ch1 §1.1 (stationary states), §1.5 (non-crossing paths), Ch4 §4.2 (decay), Ch5 §5.1 (phase clocks), Ch6 §6.1–6.2 (photon absorption, linewidth) |
 | T4 | Coupled 2×2 equations, eigenvalues | Ch5 §5.1 (Rabi oscillations), §5.3 (detuning), §5.4 (three-level ladder), Ch2 §2.4 |
-| T5 | Spherical and cylindrical coordinates, radial Laplacian | Ch1 §1.1, §1.4, §1.5, Ch2 §2.2, Ch4 §4.1 |
-| T6 | Radial integrals, odd and even functions | Ch1 §1.1 (normalization, ⟨*r*⟩), §1.2 (sp hybrid), Ch4 §4.1 (radial integrals), §4.3 (parity rule), Ch5 §5.1 |
+| T5 | Spherical and cylindrical coordinates, radial Laplacian, the angular eigenvalue | Ch1 §1.1 (centrifugal barrier), §1.4, §1.5, Ch2 §2.2, Ch4 §4.1, Ch9 (angle form of *Y*<sub>*l*</sub><sup>*m*</sup>) |
+| T6 | Radial integrals, odd and even functions, the virial theorem | Ch1 §1.1 (normalization, ⟨*r*⟩), §1.2 (sp hybrid), Ch3 §3.1 (virial theorem), Ch4 §4.1 (radial integrals), §4.3 (parity rule), Ch5 §5.1 |
 | T7 | Operators, eigenvalues, Dirac notation | Every chapter |
-| T8 | Fourier ideas, time–bandwidth, Lorentzian | Ch3 §3.4 (bandwidth), Ch5 §5.3 (detuning), Ch6 §6.2 (linewidth) |
-| T9 | Cross product, angular momentum | Ch1 §1.1, Ch2 §2.0–2.3 (Lorentz force, magnetic moment, Zeeman effect, Larmor precession), Ch4 §4.3–4.4 |
+| T8 | Fourier ideas, time–bandwidth, Lorentzian | Ch3 §3.4 (bandwidth), Ch4 §4.2 (sinc² window), Ch5 §5.3 (detuning), Ch6 §6.2 (linewidth) |
+| T9 | Cross product, angular momentum | Ch1 §1.1, Ch2 §2.0–2.3 (Lorentz force, magnetic moment, Zeeman effect, Larmor precession), Ch3 §3.1 (Bohr orbit), Ch4 §4.3–4.4, Ch9 §9.1 |
 | T10 | Field-tilted potentials (bonus) | Ch6 §6.4 (over-the-barrier ionization) |
 
 ---
 
 ## T1. Complex numbers & Euler's formula {#T1}
 
-*Used in:* [Chapter 1](tut:01) (the phase factor *e*<sup>−*iEt*</sup>, real orbitals such as 2p<sub>*x*</sub>, quantum beats), [Chapter 3](tut:03) (complex polarization vectors), [Chapter 4](tut:04) §4.3 (*x* ± *iy* = *r* sin θ *e*<sup>±*i*φ</sup>), [Chapter 5](tut:05) §5.1 (*c*₂ = −*i* sin(Θ/2)).
+*Used in:* [Chapter 1](tut:01) (the phase factor *e*<sup>−*iEt*</sup>, real orbitals such as 2p<sub>*x*</sub>, quantum beats), [Chapter 2](tut:02) §2.3 (Larmor rotation of a superposition), [Chapter 3](tut:03) (complex polarization vectors), [Chapter 4](tut:04) §4.3 (*x* ± *iy* = *r* sin θ *e*<sup>±*i*φ</sup>), [Chapter 5](tut:05) §5.1 (*c*₂ = −*i* sin(Θ/2)).
 
-**The idea.** A complex number is a point in a flat plane, or equivalently an arrow from the origin to that point. Its horizontal position is the **real part** and its vertical position is the **imaginary part**. Every quantum amplitude is such an arrow. Its **length** says "how much" and its **angle** (the **phase**) says "where in its cycle". Probabilities only care about the length; interference cares about the angles.
+**The idea.** A complex number is a point in a flat plane, or equivalently an arrow from the origin to that point. Its horizontal position is the **real part** and its vertical position is the **imaginary part**. Every quantum **amplitude** (a number whose squared length is a probability, such as an orbital's coefficient in a superposition) is such an arrow. Its **length** says "how much" and its **angle** (the **phase**) says "where in its cycle". Probabilities only care about the length; interference cares about the angles.
 
 Write *i* for the number with *i*² = −1. A complex number is *z* = *a* + *ib* with real *a* and *b*:
 
@@ -42,11 +42,19 @@ Write *i* for the number with *i*² = −1. A complex number is *z* = *a* + *ib*
 >
 > \|*z*\|² = *z*\* *z* = *a*² + *b*², &nbsp;&nbsp; \|*z*\| = √(*a*² + *b*²) &nbsp;(squared length, always real and ≥ 0)
 
-**Polar form.** If the arrow has length \|*z*\| and makes angle θ with the positive real axis, then *a* = \|*z*\| cos θ and *b* = \|*z*\| sin θ. **Euler's formula** packs cosine and sine into one exponential:
+The length \|*z*\| is also called the **modulus** (or absolute value) of *z*; by Pythagoras it is the distance from the origin to the point (*a*, *b*).
+
+**Polar form.** If the arrow has length \|*z*\| and makes angle θ with the positive real axis, then *a* = \|*z*\| cos θ and *b* = \|*z*\| sin θ. **Euler's formula** packs cosine and sine into one exponential. Why an exponential? The combination cos θ + *i* sin θ behaves exactly like *e*<sup>*k*θ</sup> with *k* = *i*: its derivative is *i* times itself, and multiplying two of them adds their angles, just as *e*<sup>*a*</sup>*e*<sup>*b*</sup> = *e*<sup>*a*+*b*</sup> (both proofs are in [Euler's formula two ways, complex identities, and the beat formula](tut:08#box-t1-euler)):
 
 > *e*<sup>*i*θ</sup> = cos θ + *i* sin θ &nbsp;&nbsp; ⇒ &nbsp;&nbsp; *z* = \|*z*\| *e*<sup>*i*θ</sup>
 >
 > *e*<sup>0</sup> = 1, &nbsp; *e*<sup>*i*π/2</sup> = *i*, &nbsp; *e*<sup>*i*π</sup> = −1, &nbsp; *e*<sup>*i*3π/2</sup> = −*i*, &nbsp; *e*<sup>*i*2π</sup> = 1
+
+**Conjugate rules.** Flipping the sign of every *i* can be done before or after adding or multiplying, so the conjugate of a sum or product is the sum or product of the conjugates. Applied to Euler's formula it gives (*e*<sup>*i*θ</sup>)\* = cos θ − *i* sin θ = *e*<sup>−*i*θ</sup>: conjugating turns the arrow's angle θ into −θ. Adding or subtracting a number and its conjugate isolates one part:
+
+> (*z* + *w*)\* = *z*\* + *w*\*, &nbsp;&nbsp; (*zw*)\* = *z*\* *w*\*, &nbsp;&nbsp; (*e*<sup>*i*θ</sup>)\* = *e*<sup>−*i*θ</sup>
+>
+> *z* + *z*\* = 2 Re *z*, &nbsp;&nbsp; *z* − *z*\* = 2*i* Im *z*
 
 **Multiplication = rotation.** Exponentials multiply by adding exponents, *e*<sup>*i*α</sup> *e*<sup>*i*β</sup> = *e*<sup>*i*(α+β)</sup>. So multiplying any *z* by *e*<sup>*i*α</sup> **rotates** its arrow by angle α and leaves its length alone, because \|*e*<sup>*i*α</sup>\|² = *e*<sup>−*i*α</sup> *e*<sup>*i*α</sup> = 1. In general: multiply the lengths, add the angles. Multiplying by *i* = *e*<sup>*i*π/2</sup> is a 90° turn: *i*(*a* + *ib*) = −*b* + *ia*.
 
@@ -134,11 +142,13 @@ So *e*<sup>*i*α</sup> *e*<sup>*i*β</sup> = *e*<sup>*i*(α+β)</sup>, as for re
 
 **Step 7 — reciprocals and division.** *i* × (−*i*) = −*i*² = −(−1) = 1, so −*i* is the number that multiplies *i* to give 1, i.e. 1/*i* = −*i*. (This is the step "divide both sides by *i*" that turns *i dc*/*dt* = … into *dc*/*dt* = −*i*(…) throughout the tutorial.) More generally *z*\* *z* = \|*z*\|² is real, so 1/*z* = *z*\* / (*z*\* *z*) = *z*\* / \|*z*\|². Example: 1/(3 + 4*i*) = (3 − 4*i*)/25.
 
-**Step 8 — the beat formula.** For any two complex numbers *a* and *b*, multiplying out (*a* + *b*)\*(*a* + *b*) gives
+**Step 8 — the conjugate rules.** Let *z* = *a* + *ib* and *w* = *c* + *id*. Then *zw* = (*ac* − *bd*) + *i*(*ad* + *bc*), whose conjugate is (*ac* − *bd*) − *i*(*ad* + *bc*); and *z*\**w*\* = (*a* − *ib*)(*c* − *id*) = (*ac* − *bd*) − *i*(*ad* + *bc*), the same. So (*zw*)\* = *z*\**w*\*, and (*z* + *w*)\* = *z*\* + *w*\* is immediate. Also *z* + *z*\* = 2*a* = 2 Re *z* and *z* − *z*\* = 2*ib* = 2*i* Im *z*.
+
+**Step 9 — the beat formula.** For any two complex numbers *a* and *b*, multiplying out (*a* + *b*)\*(*a* + *b*) gives
 
 > \|*a* + *b*\|² = \|*a*\|² + \|*b*\|² + *a*\* *b* + *a b*\* = \|*a*\|² + \|*b*\|² + 2 Re(*a*\* *b*)
 
-because *a b*\* is the complex conjugate of *a*\* *b*, and a number plus its conjugate is twice its real part. Put *a* = \|*c*₁\| *e*<sup>*i*(χ₁ − *E*₁*t*)</sup> and *b* = \|*c*₂\| *e*<sup>*i*(χ₂ − *E*₂*t*)</sup>. Then \|*a*\|² = \|*c*₁\|², \|*b*\|² = \|*c*₂\|², and by Step 5
+because *a b*\* is the complex conjugate of *a*\* *b* (Step 8), and a number plus its conjugate is twice its real part. Put *a* = \|*c*₁\| *e*<sup>*i*(χ₁ − *E*₁*t*)</sup> and *b* = \|*c*₂\| *e*<sup>*i*(χ₂ − *E*₂*t*)</sup>. Then \|*a*\|² = \|*c*₁\|², \|*b*\|² = \|*c*₂\|², and by Steps 5 and 8
 
 > *a*\* *b* = \|*c*₁\|\|*c*₂\| *e*<sup>−*i*[(*E*₂ − *E*₁)*t* − (χ₂ − χ₁)]</sup>, &nbsp;&nbsp; 2 Re(*a*\* *b*) = 2\|*c*₁\|\|*c*₂\| cos[(*E*₂ − *E*₁)*t* − (χ₂ − χ₁)] &nbsp;&nbsp; (a.u.)
 
@@ -169,11 +179,11 @@ which is the beat formula (Re *e*<sup>−*iu*</sup> = cos *u* by Euler).
 
 ## T2. Partial derivatives, ∇, ∇·, ∇×, ∇² and the product rules {#T2}
 
-*Used in:* [Chapter 1](tut:01) §1.1 (the kinetic-energy operator −½∇²), §1.4 (the continuity equation ∂ρ<sub>prob</sub>/∂*t* + ∇·**J** = 0 and its derivation), §1.5 (the quantum potential); [Chapter 2](tut:02) §2.1 (**B** = ∇ × **A**, minimal coupling), §2.2 (chain rule for ∂/∂φ); [Chapter 9](tut:09) §9.1 (∇·**A** = 0 when expanding (**p** + **A**)²).
+*Used in:* [Chapter 1](tut:01) §1.1 (the kinetic-energy operator −½∇²), §1.4 (the continuity equation ∂ρ<sub>prob</sub>/∂*t* + ∇·**J** = 0 and its derivation), §1.5 (the quantum potential, and the rate of change seen by a moving Bohmian dot); [Chapter 2](tut:02) §2.1 (**B** = ∇ × **A**, minimal coupling), §2.2 (chain rule for ∂/∂φ); [Chapter 6](tut:06) §6.4 (the saddle point of a field-tilted Coulomb potential); [Chapter 9](tut:09) §9.1 (∇·**A** = 0 when expanding (**p** + **A**)²).
 
-**The idea.** Quantum waves live in 3D, so they depend on *x*, *y* and *z* at once. We need derivatives that look in one direction at a time, and then a few ways to combine them.
+**The idea.** Quantum waves live in 3D, so they depend on *x*, *y* and *z* at once. We need derivatives that look in one direction at a time, and then a few ways to combine them. Two kinds of quantity appear: a **number field** (also called a scalar field) assigns one number to every point in space, like temperature in a room or the density \|ψ\|² of an orbital; a **vector field** assigns an arrow to every point, like wind velocity or the probability current **J**.
 
-**Partial derivative.** ∂*f*/∂*x* means "differentiate with respect to *x* while holding every other variable fixed". Example: for *f*(*x*, *y*) = *x*²*y*, ∂*f*/∂*x* = 2*xy* (treat *y* as a constant) and ∂*f*/∂*y* = *x*² (treat *x* as a constant).
+**Partial derivative.** ∂*f*/∂*x* means "differentiate with respect to *x* while holding every other variable fixed". Example: for *f*(*x*, *y*) = *x*²*y*, ∂*f*/∂*x* = 2*xy* (treat *y* as a constant) and ∂*f*/∂*y* = *x*² (treat *x* as a constant). **Second partial derivatives** repeat the step: ∂²*f*/∂*x*² differentiates twice in *x* (here 2*y*), and the **mixed** derivative ∂²*f*/∂*x*∂*y* differentiates once in each (here 2*x*). For any smooth function the order of a mixed derivative does not matter, ∂²*f*/∂*x*∂*y* = ∂²*f*/∂*y*∂*x*: check that ∂(2*xy*)/∂*y* and ∂(*x*²)/∂*x* both give 2*x*.
 
 **The four combinations.** The symbol ∇ ("del" or "nabla") is the list of the three partial derivatives, ∇ = (∂/∂*x*, ∂/∂*y*, ∂/∂*z*). It can act in four ways:
 
@@ -190,11 +200,23 @@ which is the beat formula (Re *e*<sup>−*iu*</sup> = cos *u* by Euler).
 >
 > ∇ · (*f* **A**) = ∇*f* · **A** + *f* ∇ · **A**, &nbsp;&nbsp; and as a special case &nbsp; ∇ · (*f* ∇*g*) = ∇*f* · ∇*g* + *f* ∇²*g*
 
+**A gradient never swirls.** For any smooth number field *f*, ∇ × (∇*f*) = 0. Each component of this curl is the difference of two mixed derivatives taken in opposite orders (for example ∂²*f*/∂*y*∂*z* − ∂²*f*/∂*z*∂*y*), and those are equal. So a flow that is the gradient of something, such as the zero-field Bohmian velocity of [Chapter 1](tut:01) §1.5 (the gradient of the wavefunction's phase), can swirl only around lines where that something is undefined. That is why its whirlpools (vortices) are threaded on nodal lines, where ψ = 0 and the phase has no value.
+
 **Multivariable chain rule.** If you move along a path **r**(*t*) = (*x*(*t*), *y*(*t*), *z*(*t*)), the value of *f* changes at the rate
 
 > *df*/*dt* = (∂*f*/∂*x*)(*dx*/*dt*) + (∂*f*/∂*y*)(*dy*/*dt*) + (∂*f*/∂*z*)(*dz*/*dt*) = ∇*f* · *d***r**/*dt*
 
+A second form: if a field depends on position only through another field *S*(**r**), say *g*(*S*), then the ordinary chain rule in each component gives ∇*g*(*S*) = *g*′(*S*) ∇*S*. Example: ∇*e*<sup>*iS*</sup> = *i e*<sup>*iS*</sup> ∇*S*, the step that turns a wavefunction's phase into a velocity in [Chapter 1](tut:01) §1.4.
+
+**Following a moving point.** If the field also changes in time, *f*(**r**, *t*), a point moving along **r**(*t*) sees two kinds of change: the field changing where the point is, and the point moving to where the field is different. The two rates add:
+
+> *df*/*dt* = ∂*f*/∂*t* + ∇*f* · *d***r**/*dt*
+
+This is the **total** (or **material**) derivative, the rate of change felt by someone riding along, such as a Bohmian dot moving through a changing electron cloud in [Chapter 1](tut:01) §1.5. Picture and proof: [Riding along with a changing field](tut:08#box-t2-ride).
+
 **Worked example 1 (gradient).** The "bowl" *f*(*x*, *y*) = *x*² + *y*² has ∇*f* = (2*x*, 2*y*). At the point (1, 2) the gradient is (2, 4): it points straight away from the bottom of the bowl (uphill) and is perpendicular to the circular contour through that point. Its length √(4 + 16) = √20 ≈ 4.47 is the slope in the steepest direction.
+
+**Flat points: minimum, maximum or saddle.** Where ∇*f* = 0 the surface is momentarily flat. The second derivatives tell what kind of flat point it is (when the mixed ones vanish there, as at every flat point in this tutorial): if ∂²*f*/∂*x*², ∂²*f*/∂*y*², … are all positive it is a minimum, all negative a maximum, and mixed signs make a **saddle**, uphill along one axis and downhill along another, like a mountain pass. The bowl above has ∇*f* = 0 at the origin with ∂²*f*/∂*x*² = ∂²*f*/∂*y*² = 2 > 0: a minimum. The surface *f* = *x*² − *y*² has ∇*f* = (2*x*, −2*y*) = 0 at the origin too, but with second derivatives +2 and −2: a saddle. [T10](tut:08#T10) finds exactly such a saddle where an electric field tips the Coulomb well.
 
 **Worked example 2 (divergence).** The 2D field **J** = (*x*, *y*) points away from the origin and gets stronger further out. Its divergence is ∂*x*/∂*x* + ∂*y*/∂*y* = 1 + 1 = **2** everywhere: every little region is a source. Check with the unit square 0 ≤ *x* ≤ 1, 0 ≤ *y* ≤ 1 by counting flow through each side (flow out = outward component × side length):
 - right side (*x* = 1): *J*<sub>*x*</sub> = 1, outward, so +1;
@@ -202,7 +224,7 @@ which is the beat formula (Re *e*<sup>−*iu*</sup> = cos *u* by Euler).
 - top side (*y* = 1): *J*<sub>*y*</sub> = 1, outward, so +1;
 - bottom side (*y* = 0): *J*<sub>*y*</sub> = 0, so 0.
 
-Net outflow = 2 = (∇ · **J**) × area = 2 × 1. ✓ By contrast the swirl **J** = (−*y*, *x*) has ∇ · **J** = 0 + 0 = 0 (whatever flows in flows out) but curl *z*-component ∂*J*<sub>*y*</sub>/∂*x* − ∂*J*<sub>*x*</sub>/∂*y* = 1 − (−1) = **2**.
+Net outflow = 2 = (∇ · **J**) × area = 2 × 1. ✓ By contrast the swirl **J** = (−*y*, *x*) has ∇ · **J** = 0 + 0 = 0 (whatever flows in flows out) but curl *z*-component ∂*J*<sub>*y*</sub>/∂*x* − ∂*J*<sub>*x*</sub>/∂*y* = 1 − (−1) = **2**. A second way to read the curl, as the push of the flow around a small loop divided by the loop's area, is in [Curl as circulation around a small loop](tut:08#box-t2-stokes).
 
 **Worked example 3 (Laplacian).** For *f* = *x*² + *y*² + *z*² = *r*², each second derivative is 2, so ∇²*f* = 6. Positive: the centre of a bowl lies below the average of its neighbours.
 
@@ -249,12 +271,12 @@ Finally, in cylindrical coordinates a point at distance ρ<sub>cyl</sub> from th
 
 > ∂/∂φ = −*y* ∂/∂*x* + *x* ∂/∂*y*
 
-Full algebra: [Tiny-box flux, product rules, Laplacian average, and Coulomb divergence](tut:08#box-t2-laplacian).
+Full algebra: [Tiny-box flux, product rules, Laplacian average, Coulomb divergence, and the curl of a gradient](tut:08#box-t2-laplacian).
 
 <details>
-<summary>Level 3 · Full derivation: tiny-box flux, product rules, Laplacian average, and Coulomb divergence {#box-t2-laplacian}</summary>
+<summary>Level 3 · Full derivation: tiny-box flux, product rules, Laplacian average, Coulomb divergence, and the curl of a gradient {#box-t2-laplacian}</summary>
 
-**You need:** single-variable product, quotient, and chain rules, plus the Taylor series *f*(*x* ± *h*) = *f*(*x*) ± *h f*′(*x*) + ½*h*²*f*″(*x*) + ….
+**You need:** single-variable product, quotient, and chain rules, the Taylor series *f*(*x* ± *h*) = *f*(*x*) ± *h f*′(*x*) + ½*h*²*f*″(*x*) + …, and the equality of mixed partial derivatives, ∂²*f*/∂*x*∂*y* = ∂²*f*/∂*y*∂*x* (main text, quoted).
 
 **Step 1 — Divergence as net flux out of a tiny box.** Take a box with one corner at (*x*, *y*, *z*) and sides *dx*, *dy*, *dz*. The left face (area *dy dz*) sits at *x*; the right face at *x* + *dx*:
 1. Flow entering through the left face per unit time: *J*<sub>*x*</sub>(*x*) *dy dz*.
@@ -287,7 +309,110 @@ So ∇²*f* is proportional to how far the neighbours' average sits above *f*. T
 
 **Step 6 — Zero divergence of the Coulomb field, and the divergence theorem.** Take **E** = **r**/*r*³ = (*x*, *y*, *z*)/*r*³ with *r* = √(*x*² + *y*² + *z*²). Differentiating *r*² = *x*² + *y*² + *z*² with respect to *x* gives 2*r* ∂*r*/∂*x* = 2*x*, so ∂*r*/∂*x* = *x*/*r*. The quotient rule then gives ∂(*x*/*r*³)/∂*x* = 1/*r*³ − 3*x*²/*r*⁵. Adding the *y* and *z* versions gives 3/*r*³ − 3(*x*² + *y*² + *z*²)/*r*⁵ = 3/*r*³ − 3/*r*³ = 0 for *r* ≠ 0: all the "source" sits at *r* = 0, where the charge is (Gauss's law). Gluing many tiny boxes together cancels every interior face in pairs, giving the **divergence theorem**: the total outflow through a closed surface equals ∫ (∇ · **J**) *dV* over the volume inside. It is the 3D version of the fundamental theorem of calculus.
 
+**Step 7 — The curl of a gradient vanishes.** Put **A** = ∇*f* into the curl formula of the main-text table. The *x*-component is ∂*A*<sub>*z*</sub>/∂*y* − ∂*A*<sub>*y*</sub>/∂*z* = ∂(∂*f*/∂*z*)/∂*y* − ∂(∂*f*/∂*y*)/∂*z* = ∂²*f*/∂*y*∂*z* − ∂²*f*/∂*z*∂*y* = 0, because mixed derivatives do not depend on their order; the *y*- and *z*-components vanish the same way. So ∇ × ∇*f* = 0 wherever *f* is smooth. Example: Chapter 1's vortex velocity for *m* = +1 (atomic units), **v** = **φ̂**/ρ<sub>cyl</sub> = (−*y*, *x*, 0)/(*x*² + *y*²), is the gradient of the angle φ. Its curl *z*-component is ∂[*x*/(*x*² + *y*²)]/∂*x* + ∂[*y*/(*x*² + *y*²)]/∂*y* = [1/ρ<sub>cyl</sub>² − 2*x*²/ρ<sub>cyl</sub>⁴] + [1/ρ<sub>cyl</sub>² − 2*y*²/ρ<sub>cyl</sub>⁴] = 2/ρ<sub>cyl</sub>² − 2/ρ<sub>cyl</sub>² = 0 everywhere off the *z* axis. The swirl lives only on the axis itself, where φ is undefined and the wavefunction has its nodal line.
+
 **Check:** Test Step 5 on *f* = *x*² + *y*² + *z*² at the origin (where *f*(0) = 0 and ∇²*f* = 6): all six neighbours at (±*h*, 0, 0), (0, ±*h*, 0), (0, 0, ±*h*) have *f* = *h*², so (average of 6 neighbours) − *f*(0) = *h*² = (*h*²/6) · 6. ✓
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: curl as circulation around a small loop {#box-t2-stokes}</summary>
+
+Walk once around a small closed loop in a flowing river, and at every step note how much the current pushes you along your path: a push in your direction of travel counts as positive, a push against you as negative. Add up these pushes, each weighted by the length of that step, over the whole loop. The total is the **circulation** of the flow around the loop. A steady, straight stream gives zero, because what it helps you on one side it costs you on the other. A whirlpool gives a large total.
+
+Now divide the circulation by the area the loop encloses and shrink the loop to a point. What is left is the curl, more precisely its component perpendicular to the loop: the paddle wheel's spin, made into a number. Turned around, a big loop adds up the swirl of everything inside it. The circulation around any loop equals the total curl passing through it, which is **Stokes' idea**. For the magnetic vector potential of [Chapter 2](tut:02) this means that the circulation of **A** around a loop equals the magnetic flux through the loop (the field strength times the area it threads). That is how a magnetic field can be stored in **A**.
+
+<details>
+<summary>Level 2 · Key idea: circulation, Stokes' theorem, and the enclosed flux {#box-t2-circulation}</summary>
+
+The circulation of a vector field **A** around a closed loop is ∮ **A** · *d***r**: chop the loop into small steps *d***r**, take the component of **A** along each step times its length, and add. Around a tiny counterclockwise rectangle with sides *dx* and *dy* in the *xy*-plane, opposite edges are walked in opposite directions, so each pair leaves only the change of **A** across the rectangle. The top and bottom edges give −(∂*A*<sub>*x*</sub>/∂*y*) *dx dy*, the right and left edges +(∂*A*<sub>*y*</sub>/∂*x*) *dx dy*. So for a tiny loop
+
+> ∮ **A** · *d***r** = (∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y*) *dx dy* = (∇ × **A**)<sub>*z*</sub> × (area of the loop)
+
+which is the *z*-component of the curl in the main-text table. Gluing many tiny loops into a big surface cancels every inside edge, because neighbouring loops walk it in opposite directions. What remains is **Stokes' theorem**: the circulation around the rim equals the sum of the curl components perpendicular to the surface, ∮ **A** · *d***r** = ∫ (∇ × **A**)<sub>⊥</sub> *dS*, with *dS* a small piece of the surface's area.
+
+**Worked example: the symmetric-gauge vector potential.** Chapter 2 describes a uniform field **B** = *B* **ẑ** (its *B*<sub>*z*</sub>) by **A** = ½ *B* ρ<sub>cyl</sub> **φ̂**, an arrow circling the *z* axis whose length ½*B*ρ<sub>cyl</sub> grows with the distance ρ<sub>cyl</sub> from the axis ([T5](tut:08#T5) defines ρ<sub>cyl</sub> and **φ̂**). Walk counterclockwise around a circle of radius ρ centred on the axis. **A** points along the path at every step and has the constant size ½*B*ρ, so
+
+> ∮ **A** · *d***r** = (½ *B* ρ) × (2πρ) = *B* · πρ² &nbsp;&nbsp; (a.u.)
+
+which is *B* times the area of the circle: the **magnetic flux** through it. Dividing by the area gives *B* for every radius. By symmetry the curl can only depend on ρ<sub>cyl</sub>, and its average over every disc is *B*, so (∇ × **A**)<sub>*z*</sub> = *B* at every point: ∇ × **A** = *B* **ẑ**, as the component calculation of Try it 2 confirms.
+
+The same bookkeeping shows why a gradient never swirls. Around a closed loop the circulation of ∇*f* adds up the small changes of *f* along the way, and coming back to the start returns *f* to its starting value, so the total is zero. Chapter 1's vortex flow **v** = **φ̂**/ρ<sub>cyl</sub> (for *m* = +1, atomic units) shows what happens at an exception. Its circulation around a circle about the axis is (1/ρ)(2πρ) = 2π for every radius, so all of its curl is packed onto the axis, the nodal line where φ, and hence the phase, has no value.
+
+Full algebra: [Circulation around a tiny rectangle, Stokes' theorem, and the symmetric gauge](tut:08#box-t2-stokes-proof).
+
+<details>
+<summary>Level 3 · Full derivation: circulation around a tiny rectangle, Stokes' theorem, and the symmetric gauge {#box-t2-stokes-proof}</summary>
+
+**You need:** the curl formula of the main-text table, the difference rule *A*(*y* + *dy*) − *A*(*y*) ≈ (∂*A*/∂*y*) *dy* (difference ≈ slope × step), and the cylindrical coordinates *x* = ρ<sub>cyl</sub> cos φ, *y* = ρ<sub>cyl</sub> sin φ with the unit vector **φ̂** = (−sin φ, cos φ, 0) pointing around the *z* axis.
+
+**Step 1 — The four edges of a tiny rectangle.** Take corners (*x*, *y*), (*x* + *dx*, *y*), (*x* + *dx*, *y* + *dy*), (*x*, *y* + *dy*) and walk them counterclockwise. Along each edge only the component of **A** along that edge counts:
+1. Bottom edge, along +*x* at height *y*: *A*<sub>*x*</sub>(*x*, *y*) *dx*.
+2. Right edge, along +*y* at *x* + *dx*: *A*<sub>*y*</sub>(*x* + *dx*, *y*) *dy*.
+3. Top edge, along −*x* at height *y* + *dy*: −*A*<sub>*x*</sub>(*x*, *y* + *dy*) *dx*.
+4. Left edge, along −*y* at *x*: −*A*<sub>*y*</sub>(*x*, *y*) *dy*.
+
+**Step 2 — Pair the edges.** Bottom plus top is −[*A*<sub>*x*</sub>(*x*, *y* + *dy*) − *A*<sub>*x*</sub>(*x*, *y*)] *dx* ≈ −(∂*A*<sub>*x*</sub>/∂*y*) *dx dy*. Right plus left is [*A*<sub>*y*</sub>(*x* + *dx*, *y*) − *A*<sub>*y*</sub>(*x*, *y*)] *dy* ≈ (∂*A*<sub>*y*</sub>/∂*x*) *dx dy*. The total is (∂*A*<sub>*y*</sub>/∂*x* − ∂*A*<sub>*x*</sub>/∂*y*) *dx dy*, which is the *z*-component of the curl times the area *dx dy*.
+
+**Step 3 — Stokes' theorem.** Tile a surface with tiny loops, all walked the same way round. An inside edge belongs to two neighbouring loops, which walk it in opposite directions, so its two contributions cancel. Only the edges on the rim are walked once. Adding Step 2 over all the tiles therefore gives the circulation around the rim on one side and the sum of (curl component perpendicular to each tile) × (tile area) on the other: ∮ **A** · *d***r** = ∫ (∇ × **A**)<sub>⊥</sub> *dS*.
+
+**Step 4 — Circulation of the symmetric gauge.** **A** = ½*B*(−*y*, *x*, 0) = ½*B*ρ<sub>cyl</sub>(−sin φ, cos φ, 0) = ½*B*ρ<sub>cyl</sub> **φ̂**. On the circle of radius ρ about the *z* axis, a step of angle *d*φ is *d***r** = ρ *d*φ **φ̂**, so **A** · *d***r** = ½*B*ρ · ρ *d*φ. Adding all the way round, ∮ **A** · *d***r** = ½*B*ρ² × 2π = *B* · πρ², the field times the disc's area.
+
+**Step 5 — From flux to curl.** By symmetry about the *z* axis, (∇ × **A**)<sub>*z*</sub> can depend only on ρ<sub>cyl</sub>; call it *c*(ρ<sub>cyl</sub>). By Step 3 the disc of radius ρ holds ∫ *c dS* = *B*πρ². Growing the radius to ρ + *d*ρ adds a ring of area 2πρ *d*ρ, which must contribute *c*(ρ) · 2πρ *d*ρ = *d*(*B*πρ²) = 2π*B*ρ *d*ρ. So *c*(ρ) = *B* at every distance from the axis.
+
+**Check:** The component formula gives the same: (∇ × **A**)<sub>*z*</sub> = ∂(½*Bx*)/∂*x* − ∂(−½*By*)/∂*y* = ½*B* + ½*B* = *B*. With numbers, *B* = 2 and ρ = 3 give a circulation of (½ · 2 · 3) × (2π · 3) = 18π, and *B* · πρ² = 2 · 9π = 18π. ✓
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: riding along with a changing field {#box-t2-ride}</summary>
+
+Read a thermometer while cycling across town on a morning that is warming up. The reading changes for two reasons. The whole town is getting warmer as time passes, and you are riding into warmer or cooler streets. The rate you see is the sum of the two: the warming rate at the spot where you are, plus how quickly the temperature changes along your route multiplied by your speed. Stand still and only the first part is left; ride through a town whose temperature never changes and only the second part is left. A Bohmian dot riding through a changing electron cloud sees the cloud's density change in exactly this two-part way.
+
+<details>
+<summary>Level 2 · Key idea: the chain rule along a moving point {#box-t2-material}</summary>
+
+Let *f*(**r**, *t*) depend on position and time, and let a point move along **r**(*t*). In a short time *dt* the value at the point changes partly because time passes at a fixed place, by (∂*f*/∂*t*) *dt*, and partly because the point moves by *d***r** at a fixed time, by ∇*f* · *d***r**. Adding the two and dividing by *dt*:
+
+> *df*/*dt* = ∂*f*/∂*t* + ∇*f* · *d***r**/*dt*
+
+The first term is what an observer standing still sees; the second is what the motion adds. For points carried by a flow of velocity **v**(**r**, *t*), put *d***r**/*dt* = **v** to get the **material derivative** ∂*f*/∂*t* + **v** · ∇*f*, the rate of change of *f* following the flow. Worked example: for *f* = *x*² + *yt* along the circle **r**(*t*) = (cos *t*, sin *t*, 0), the formula gives
+
+> *df*/*dt* = sin *t* + (2 cos *t*)(−sin *t*) + *t* cos *t* = sin *t* − 2 sin *t* cos *t* + *t* cos *t*
+
+which is what you get by differentiating *f*(*t*) = cos²*t* + *t* sin *t* directly.
+
+Full algebra: [The chain rule along a moving point, step by step](tut:08#box-t2-material-proof).
+
+<details>
+<summary>Level 3 · Full derivation: the chain rule along a moving point, step by step {#box-t2-material-proof}</summary>
+
+**You need:** the definition of the derivative, *dg*/*dt* = limit of [*g*(*t* + *h*) − *g*(*t*)]/*h* as *h* → 0, the partial derivatives of this section, and its multivariable chain rule for a field that does not change in time (*df*/*dt* = ∇*f* · *d***r**/*dt*).
+
+**Step 1 — Split the change.** In a short time *h* the point moves from **r**(*t*) to **r**(*t* + *h*). Add and subtract *f*(**r**(*t* + *h*), *t*):
+
+> *f*(**r**(*t* + *h*), *t* + *h*) − *f*(**r**(*t*), *t*) = [*f*(**r**(*t* + *h*), *t* + *h*) − *f*(**r**(*t* + *h*), *t*)] + [*f*(**r**(*t* + *h*), *t*) − *f*(**r**(*t*), *t*)]
+
+**Step 2 — The first bracket: same place, later time.** The position is held at **r**(*t* + *h*) while time advances by *h*, so the bracket is ≈ (∂*f*/∂*t*) *h*, with ∂*f*/∂*t* taken at **r**(*t* + *h*), which tends to **r**(*t*) as *h* → 0.
+
+**Step 3 — The second bracket: same time, new place.** Time is frozen at *t* while the position moves from **r**(*t*) to **r**(*t* + *h*). This is the time-independent chain rule of the main text, so the bracket is ≈ ∇*f* · (*d***r**/*dt*) *h*.
+
+**Step 4 — Divide by *h* and let *h* → 0.** The left side becomes *df*/*dt*, and the two brackets give ∂*f*/∂*t* + ∇*f* · *d***r**/*dt*.
+
+**Step 5 — The worked example in full.** For *f* = *x*² + *yt* and **r**(*t*) = (cos *t*, sin *t*, 0):
+1. Directly: *f*(*t*) = cos²*t* + *t* sin *t*, so *df*/*dt* = −2 cos *t* sin *t* + sin *t* + *t* cos *t*.
+2. By the formula: ∂*f*/∂*t* = *y* = sin *t*; ∇*f* = (2*x*, *t*, 0) = (2 cos *t*, *t*, 0); *d***r**/*dt* = (−sin *t*, cos *t*, 0); so ∇*f* · *d***r**/*dt* = −2 cos *t* sin *t* + *t* cos *t*.
+3. Adding the two parts of line 2 reproduces line 1.
+
+**Check:** At *t* = π/2 both lines give −2 · 0 · 1 + 1 + (π/2) · 0 = 1. A point standing still (*d***r**/*dt* = 0) recovers the plain ∂*f*/∂*t*, and a field that never changes (∂*f*/∂*t* = 0) recovers the main-text chain rule. ✓
 
 </details>
 
@@ -312,7 +437,7 @@ So ∇²*f* is proportional to how far the neighbours' average sits above *f*. T
 
 ## T3. First-order linear ODEs (including complex rates) and the integrating factor {#T3}
 
-*Used in:* [Chapter 1](tut:01) §1.1 (*df*/*dt* = −*iEf* gives the stationary-state phase *e*<sup>−*iEt*</sup>), [Chapter 4](tut:04) §4.2 (exponential decay of an excited state at rate Γ = *A*<sub>21</sub>), [Chapter 6](tut:06) §6.1 (the photon-absorption equation and the 99.3% at Γ*T* = 5).
+*Used in:* [Chapter 1](tut:01) §1.1 (*df*/*dt* = −*iEf* gives the stationary-state phase *e*<sup>−*iEt*</sup>) and §1.5 (why Bohmian paths never cross), [Chapter 4](tut:04) §4.2 (exponential decay of an excited state at rate Γ = *A*<sub>21</sub>), [Chapter 5](tut:05) §5.1 (each level's phase clock *e*<sup>−*iE*<sub>*k*</sub>*t*</sup>), [Chapter 6](tut:06) §6.1 (the photon-absorption equation and the 99.3% at Γ*T* = 5) and §6.2 (the detuned photon's line shape).
 
 **The idea.** An **ordinary differential equation (ODE)** links a function to its own derivative. "First-order linear" means only the first derivative appears and the unknown appears to the first power. Two shapes cover everything in this tutorial.
 
@@ -328,7 +453,7 @@ So ∇²*f* is proportional to how far the neighbours' average sits above *f*. T
 
 > *dy*/*dt* = *R* − Γ*y*, &nbsp; *y*(0) = 0 &nbsp;&nbsp; ⇒ &nbsp;&nbsp; *y*(*t*) = (*R*/Γ)(1 − *e*<sup>−Γ*t*</sup>)
 
-The level rises toward the steady value *R*/Γ (where filling and leaking balance). The method that solves it, the **integrating factor**, is shown in [The exponential solution, complex rates, and the integrating factor](tut:08#box-t3-ode).
+The level rises toward the steady value *R*/Γ (where filling and leaking balance). The method that solves it is the **integrating factor**: multiply the whole equation by a growing exponential, chosen so that the left side becomes the derivative of a single product, and then simply integrate both sides. It is worked out in [The exponential solution, complex rates, and the integrating factor](tut:08#box-t3-ode).
 
 **Worked example.** How full is the bucket after Γ*t* = 1, and after Γ*t* = 5?
 - Γ*t* = 1: 1 − *e*<sup>−1</sup> = 1 − 0.368 = 0.632, so **63.2%** of the steady level (one "time constant").
@@ -341,6 +466,8 @@ The level rises toward the steady value *R*/Γ (where filling and leaking balanc
 ```figure
 {"kind": "leaky-bucket", "caption": "Decay mode: turn the hose off and the level falls as e^(−Γt), dropping to 37% after one lifetime τ = 1/Γ. This is spontaneous emission emptying an excited state.", "mode": "decay"}
 ```
+
+**One start, one path.** Chapter 1's Bohmian dots move by the rule "the velocity at each point is given", *d***r**/*dt* = **v**(**r**, *t*): a first-order equation for the three coordinates of a dot. If the velocity field **v** is **smooth**, meaning it changes gradually from point to point and never becomes infinite, then a starting point and a starting time fix exactly one path, forwards and backwards in time. So two different paths can never be at the same point at the same moment: that shared point would be a common start, and the two paths would be one. If **v** does not change in time, paths never cross or merge at all; if it does, two paths can pass through the same point at different times. The guarantee can fail only where **v** is not smooth. For Bohmian dots that means the nodes of Ψ, where the velocity is undefined and, around a whirlpool, grows without limit. See [One start, one path](tut:08#box-t3-unique-picture).
 
 <details>
 <summary>Level 1 · Picture: buckets, interest rates and spinning clocks</summary>
@@ -419,6 +546,57 @@ The middle step combines the two exponentials, *e*<sup>Γ*t*/2</sup> *e*<sup>Γ*
 
 </details>
 
+<details>
+<summary>Level 1 · Picture: one start, one path {#box-t3-unique-picture}</summary>
+
+Drop a leaf on a smoothly flowing river. The current at each spot tells the leaf exactly where to go next, so where the leaf is now, and when, decides its whole journey downstream and, run backwards, where it came from. Two leaves that ever share a spot at the same moment get the same push from then on and had the same history before: they are really one path. A crossing would need the current to push two ways at one place and time, which a single current cannot do. Two leaves can drift ever closer, but while the current changes gradually from place to place they never actually meet. The guarantee needs a smooth current. At the centre of a whirlpool, where the speed shoots up without limit, it can break, and that is exactly where Bohmian dots need care: the whirlpools of Chapter 1 sit on the nodal lines of the wavefunction.
+
+<details>
+<summary>Level 2 · Key idea: why the paths of a smooth flow never cross {#box-t3-unique}</summary>
+
+Let dots follow *d***r**/*dt* = **v**(**r**, *t*). "Smooth" is made precise by a number *K*: at any moment, two points a distance *d* apart never have velocities that differ by more than *K d*,
+
+> \|**v**(**a**, *t*) − **v**(**b**, *t*)\| ≤ *K* \|**a** − **b**\|
+
+This holds in any region where the partial derivatives of **v** ([T2](tut:08#T2)) stay bounded. Then the distance between two dots can change at most exponentially fast. With *D*(*t*) the squared distance between them,
+
+> *D*(0) *e*<sup>−2*K*\|*t*\|</sup> ≤ *D*(*t*) ≤ *D*(0) *e*<sup>2*K*\|*t*\|</sup>
+
+If the dots are ever together, take that moment as *t* = 0: *D*(0) = 0, and the right-hand bound keeps them together at all times. If they start apart, the left-hand bound keeps them apart. So distinct paths never meet at the same instant, and for a **v** that does not change in time, they never cross at all. Without the bound, uniqueness can fail:
+
+> *dx*/*dt* = √\|*x*\| with *x*(0) = 0 is solved by both *x*(*t*) = 0 and *x*(*t*) = *t*²/4 (for *t* ≥ 0)
+
+because √\|*x*\| is infinitely steep at *x* = 0. The Bohmian velocity is smooth wherever Ψ ≠ 0, but near a nodal line it can behave like the vortex **φ̂**/ρ<sub>cyl</sub> of [T2](tut:08#T2), whose speed has no upper limit. So the argument covers any stretch of path that stays away from the nodes. That almost every dot never reaches a node (all but a set of starting points with zero total probability) is a known theorem, quoted here.
+
+Full algebra: [Uniqueness from a growth bound, and where it fails](tut:08#box-t3-unique-proof).
+
+<details>
+<summary>Level 3 · Full derivation: uniqueness from a growth bound, and where it fails {#box-t3-unique-proof}</summary>
+
+**You need:** the dot product with its bound \|**a** · **b**\| ≤ \|**a**\| \|**b**\| (from **a** · **b** = \|**a**\| \|**b**\| cos θ), the product rule, and the trick of [The exponential solution, complex rates, and the integrating factor](tut:08#box-t3-ode): multiply by an exponential and follow the product.
+
+**Step 1 — The squared distance.** Let **r**₁(*t*) and **r**₂(*t*) both obey *d***r**/*dt* = **v**(**r**, *t*), and write **s** = **r**₁ − **r**₂ for their separation and *D* = **s** · **s** = \|**s**\|². The product rule, applied to each component, gives *dD*/*dt* = 2 **s** · *d***s**/*dt* = 2 **s** · (**v**₁ − **v**₂), with **v**₁ = **v**(**r**₁, *t*) and **v**₂ = **v**(**r**₂, *t*).
+
+**Step 2 — The growth bound.** By the dot-product bound and the smoothness bound, \|**s** · (**v**₁ − **v**₂)\| ≤ \|**s**\| \|**v**₁ − **v**₂\| ≤ *K* \|**s**\|² = *KD*. Hence −2*KD* ≤ *dD*/*dt* ≤ 2*KD*.
+
+**Step 3 — Turn the bound into exponentials.** Let *g*(*t*) = *D*(*t*) *e*<sup>−2*Kt*</sup> and *h*(*t*) = *D*(*t*) *e*<sup>2*Kt*</sup>. The product rule gives *dg*/*dt* = (*dD*/*dt* − 2*KD*) *e*<sup>−2*Kt*</sup> ≤ 0 and *dh*/*dt* = (*dD*/*dt* + 2*KD*) *e*<sup>2*Kt*</sup> ≥ 0. For *t* ≥ 0, *g*(*t*) ≤ *g*(0) and *h*(*t*) ≥ *h*(0), so *D*(0) *e*<sup>−2*Kt*</sup> ≤ *D*(*t*) ≤ *D*(0) *e*<sup>2*Kt*</sup>. For *t* < 0 the same two functions give *g*(*t*) ≥ *g*(0) and *h*(*t*) ≤ *h*(0), which is the same pair of bounds with \|*t*\| in place of *t*.
+
+**Step 4 — One start, one path.** If the two paths are at one point at some moment, call it *t* = 0. Then *D*(0) = 0, the upper bound forces *D*(*t*) = 0 at all times, and the paths coincide before and after. If *D*(0) > 0, the lower bound keeps *D*(*t*) > 0 at all times: distinct paths never meet, merge or split.
+
+**Step 5 — Velocity fields that do not change in time.** Let **v** = **v**(**r**), and suppose path 1 passes the point **a** at time *t*₁ and path 2 passes it at time *t*₂. The delayed copy **r**₂(*t* + *t*₂ − *t*₁) also obeys *d***r**/*dt* = **v**(**r**), because the equation does not contain *t* itself, and it is at **a** at time *t*₁. By Step 4 it equals **r**₁(*t*) at all times: path 2 is path 1 run with a delay, and the two trace the same curve. Two different curves therefore never cross, at any times.
+
+**Step 6 — Where it fails.**
+1. For *dx*/*dt* = √\|*x*\| with *x*(0) = 0, both *x* = 0 and *x* = *t*²/4 (for *t* ≥ 0) work, since *d*(*t*²/4)/*dt* = *t*/2 = √(*t*²/4). The smoothness bound fails at *x* = 0: comparing a point *x* with 0, \|√\|*x*\| − 0\|/\|*x* − 0\| = 1/√\|*x*\|, which exceeds any fixed *K* close enough to 0.
+2. The Bohmian velocity **v** = Im(∇Ψ/Ψ) (atomic units) is smooth wherever Ψ ≠ 0. Around a nodal line with *m* = +1 it is the vortex **v** = **φ̂**/ρ<sub>cyl</sub> of [T2](tut:08#T2). Two points at distances ρ and 2ρ from the axis, on the same side of it, are ρ apart, but their speeds differ by 1/ρ − 1/(2ρ) = 1/(2ρ): the ratio 1/(2ρ²) grows without limit as ρ → 0, so no single *K* works near the node. Steps 1–5 therefore apply to any stretch of path that keeps some distance from the nodes. That almost every Bohmian path never reaches a node is a theorem quoted here (Berndl, Dürr, Goldstein, Peruzzi and Zanghì, *Commun. Math. Phys.* 173, 647 (1995)).
+
+**Check:** For *v* = *x* in one dimension (*K* = 1), the paths *x*₁ = *e*<sup>*t*</sup> and *x*₂ = 3*e*<sup>*t*</sup> have *D*(*t*) = (2*e*<sup>*t*</sup>)² = 4*e*<sup>2*t*</sup>, exactly the upper bound *D*(0) *e*<sup>2*Kt*</sup> = 4*e*<sup>2*t*</sup>, and they never meet. For *v* = −*x* the same starts give *D*(*t*) = 4*e*<sup>−2*t*</sup>, exactly the lower bound for *t* ≥ 0: the paths close in forever but never touch. ✓
+
+</details>
+
+</details>
+
+</details>
+
 **Try it**
 
 1. Solve *dy*/*dt* = −3*y* with *y*(0) = 2. After what time has *y* halved?
@@ -438,7 +616,7 @@ The middle step combines the two exponentials, *e*<sup>Γ*t*/2</sup> *e*<sup>Γ*
 
 *Used in:* [Chapter 5](tut:05) §5.1 (Rabi oscillations *P*₂ = sin²(Θ/2)), §5.3 (detuning), §5.4 (the three-level ladder and why the full flip needs Θ = √2 π); [Chapter 2](tut:02) §2.4 (the same √2 for the E1 ladder); [Chapter 9](tut:09) §9.3 (2×2 mixing of 3s and 3d) and §9.5 (diagonalizing the field-dressed Hamiltonian).
 
-**The idea.** When light drives a transition between two levels \|1⟩ and \|2⟩, each amplitude feeds the other. At exact resonance, and in the rotating-wave approximation of Chapter 5, with a constant **Rabi frequency** Ω (written Ω<sub>R</sub> in Chapter 5):
+**The idea.** When light drives a transition between two levels \|1⟩ and \|2⟩, each amplitude feeds the other. Two numbers describe the drive. The **Rabi frequency** Ω (written Ω<sub>R</sub> in Chapter 5) measures how strongly the light couples the two levels; it is proportional to the light's electric-field amplitude. The **detuning** Δ is the light's frequency minus the atom's transition frequency. At exact resonance (Δ = 0), for constant Ω, and in the **rotating-wave approximation** of [Chapter 5](tut:05) §5.1 (which keeps only the part of the light's push that turns along with the atom's own phase), the two amplitudes obey:
 
 > *ċ*₁ = −*i* (Ω/2) *c*₂, &nbsp;&nbsp; *ċ*₂ = −*i* (Ω/2) *c*₁ &nbsp;&nbsp; (a dot means *d*/*dt*)
 
@@ -454,17 +632,23 @@ This is the equation of a **harmonic oscillator** (a mass on a spring obeys *ẍ
 
 Population flows back and forth: the **Rabi oscillation**. With the **pulse area** Θ = Ω*t* this is Chapter 5's *P*₂ = sin²(Θ/2): Θ = π moves everything to \|2⟩, Θ = 2π brings it back.
 
+**Matrices in brief.** A **matrix** is a table of numbers, written here row by row: [[*p*, *q*], [*r*, *s*]] has first row (*p*, *q*) and second row (*r*, *s*). A matrix times a column gives a new column: multiply each row's entries by the column's entries one by one and add, so [[*p*, *q*], [*r*, *s*]] times (*x*, *y*) is (*px* + *qy*, *rx* + *sy*). The **identity matrix** *I* has 1s down the diagonal and 0s elsewhere, so *I v* = *v* for every column *v*.
+
 **Matrix form and eigenvalues.** Collect the amplitudes in a column *c* = (*c*₁, *c*₂). The two equations become *i ċ* = *H c* with the 2×2 matrix
 
 > *H* = [[0, Ω/2], [Ω/2, 0]]
 
-A number λ is an **eigenvalue** of a matrix *M* if *M v* = λ*v* for some nonzero column *v* (the **eigenvector**). They are found from det(*M* − λ*I*) = 0, where *I* is the identity matrix and the 2×2 determinant is det [[*p*, *q*], [*r*, *s*]] = *ps* − *qr*. For *H*: det [[−λ, Ω/2], [Ω/2, −λ]] = λ² − Ω²/4 = 0, so λ = ±Ω/2, with eigenvectors (1, 1)/√2 and (1, −1)/√2. The populations oscillate at the *difference* of the two eigenvalues, Ω/2 − (−Ω/2) = Ω, because cos²(Ω*t*/2) = (1 + cos Ω*t*)/2.
+(check the first row: *i ċ*₁ = (Ω/2) *c*₂, which is the first equation multiplied by *i*). A number λ is an **eigenvalue** of a matrix *M* if *M v* = λ*v* for some nonzero column *v*, the **eigenvector**: *M* only stretches *v* (or flips it, if λ is negative), without turning it to a new direction. Rewriting *M v* = λ*v* as (*M* − λ*I*) *v* = 0 shows how to find λ. A matrix can send a nonzero column to zero only if its **determinant** (det) is zero, so the eigenvalues are the roots of det(*M* − λ*I*) = 0. For a 2×2 matrix the determinant is det [[*p*, *q*], [*r*, *s*]] = *ps* − *qr*, which vanishes exactly when the two rows are proportional. For *H*: det [[−λ, Ω/2], [Ω/2, −λ]] = λ² − Ω²/4 = 0, so λ = ±Ω/2, with eigenvectors (1, 1)/√2 and (1, −1)/√2. The populations oscillate at the *difference* of the two eigenvalues, Ω/2 − (−Ω/2) = Ω, because cos²(Ω*t*/2) = (1 + cos Ω*t*)/2.
+
+For a 3×3 matrix, expand the determinant along the first row: each entry of that row times the 2×2 determinant left after crossing out the entry's row and column, with signs +, −, + (the letters are just the nine entries):
+
+> det [[*a*, *b*, *c*], [*d*, *e*, *f*], [*g*, *h*, *k*]] = *a*(*ek* − *fh*) − *b*(*dk* − *fg*) + *c*(*dh* − *eg*)
 
 **Worked example (3×3).** The three-level ladder of Chapter 5 §5.4 couples \|+1⟩ ↔ \|0⟩ ↔ \|−1⟩ with the pattern
 
 > *M* = [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
 
-Expanding the 3×3 determinant along the first row ([The eigenvector strategy and the 3×3 determinant rule](tut:08#box-t4-det) has the rule):
+Expanding det(*M* − λ*I*) along the first row with this rule:
 
 > det(*M* − λ*I*) = −λ[(−λ)(−λ) − 1·1] − 1·[1·(−λ) − 1·0] + 0 = −λ³ + λ + λ = −λ³ + 2λ
 
@@ -488,7 +672,7 @@ The pendula also show the eigenvector idea. If you start both swinging **togethe
 The **Bloch sphere** in the figure is a second picture: the atom's state is an arrow on a sphere, with the ground state at the north pole and the excited state at the south pole. A resonant pulse turns the arrow steadily around a horizontal axis; the total angle turned is the pulse area.
 
 <details>
-<summary>Level 2 · Key idea: the eigenvector strategy and the 3×3 determinant rule {#box-t4-det}</summary>
+<summary>Level 2 · Key idea: the eigenvector strategy, pulse area, and the three-level ladder {#box-t4-det}</summary>
 
 The general recipe for any coupled linear system *i ċ* = *H c* (*c* the column of amplitudes, *H* a constant matrix) is: **find the eigenvalues λ and eigenvectors *v* of *H*, split the starting state into eigenvectors, let each piece spin at its own rate *e*<sup>−*i*λ*t*</sup> ([T3](tut:08#T3)), and add back up.** For the resonant two-level matrix *H* = [[0, Ω/2], [Ω/2, 0]] the eigenvectors are *v*₊ = (1, 1)/√2 (λ = +Ω/2) and *v*₋ = (1, −1)/√2 (λ = −Ω/2). Starting in \|1⟩ = (1, 0) = (*v*₊ + *v*₋)/√2 gives
 
@@ -498,11 +682,7 @@ where the last step uses the cos and sin identities of [T1](tut:08#T1). For a pu
 
 > Θ(*t*) = ∫₀<sup>*t*</sup> Ω(*t*′) *dt*′
 
-For a 3×3 matrix, expand the determinant along the first row: each entry of that row times the 2×2 determinant left after crossing out its row and column, with signs +, −, +:
-
-> det [[*a*, *b*, *c*], [*d*, *e*, *f*], [*g*, *h*, *k*]] = *a*(*ek* − *fh*) − *b*(*dk* − *fg*) + *c*(*dh* − *eg*)
-
-(the letters here are just the nine entries). Applying this to *M* − λ*I* for the three-level ladder matrix *M* = [[0, 1, 0], [1, 0, 1], [0, 1, 0]] yields −λ³ + 2λ = 0, so λ = 0, ±√2. Splitting \|+1⟩ into those three eigenvectors shows the full ladder transfer needs Θ = √2 π, and adding a detuning Δ raises the oscillation rate to √(Ω² + Δ²).
+The same strategy handles the three-level ladder. Its matrix *M* = [[0, 1, 0], [1, 0, 1], [0, 1, 0]] has eigenvalues λ = 0, ±√2 (the 3×3 determinant of the main text). Splitting \|+1⟩ into those three eigenvectors and letting each spin at its own rate shows that the full ladder transfer needs Θ = √2 π rather than π. Finally, a nonzero detuning Δ adds ∓Δ/2 to the two diagonal entries of *H*; its eigenvalues become ±½√(Ω² + Δ²), so the populations oscillate faster, at √(Ω² + Δ²), but never transfer completely.
 
 Full algebra: [Oscillator check, three-level ladder, and detuning](tut:08#box-t4-ladder).
 
@@ -572,7 +752,7 @@ The populations oscillate faster, at √(Ω² + Δ²), and the largest populatio
 
 ## T5. Spherical & cylindrical coordinates, the chain rule, the radial Laplacian {#T5}
 
-*Used in:* [Chapter 1](tut:01) §1.1 (ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ), the effective potential), §1.4 (the vortex current along **φ̂**), §1.5 (the radial Laplacian for 1s); [Chapter 2](tut:02) §2.2 (*L̂*<sub>*z*</sub> = −*i* ∂/∂φ); [Chapter 4](tut:04) §4.1 (splitting the dipole integral into radial and angular parts); [Chapter 9](tut:09) (the cylindrical radius ρ<sub>cyl</sub> = *r* sin θ in the diamagnetic term).
+*Used in:* [Chapter 1](tut:01) §1.1 (ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ), the effective potential and the angular eigenvalue −*l*(*l* + 1) behind its centrifugal barrier), §1.4 (the vortex current along **φ̂**), §1.5 (the radial Laplacian for 1s); [Chapter 2](tut:02) §2.2 (*L̂*<sub>*z*</sub> = −*i* ∂/∂φ); [Chapter 4](tut:04) §4.1 (splitting the dipole integral into radial and angular parts); [Chapter 9](tut:09) (the cylindrical radius ρ<sub>cyl</sub> = *r* sin θ in the diamagnetic term, and the angle form of *Y*<sub>*l*</sub><sup>*m*</sup>).
 
 **The idea.** The proton pulls the same way in every direction, so the natural labels for a point are its **distance** from the nucleus and two **angles**, not *x*, *y*, *z*.
 
@@ -580,15 +760,15 @@ The populations oscillate faster, at √(Ω² + Δ²), and the largest populatio
 >
 > *r* = √(*x*² + *y*² + *z*²) ≥ 0, &nbsp;&nbsp; 0 ≤ θ ≤ π (polar angle, down from the +*z* axis), &nbsp;&nbsp; 0 ≤ φ < 2π (azimuthal angle, round the *z* axis)
 
-θ = 0 is the north pole (+*z*), θ = π/2 = 90° is the equatorial *xy*-plane, θ = π is the south pole. *(Notation alert: physics and chemistry use θ for the polar angle and φ for the azimuthal angle; many calculus books swap them.)*
+θ = 0 is the north pole (+*z*), θ = π/2 = 90° is the equatorial *xy*-plane, θ = π is the south pole. Going once round the *z* axis brings you back to the same point, so φ and φ + 2π label the same place: anything that depends on φ must repeat after a full turn. That is why an orbital's azimuthal factor *e*<sup>*im*φ</sup> needs a whole number *m*. *(Notation alert: physics and chemistry use θ for the polar angle and φ for the azimuthal angle; many calculus books swap them.)*
 
 **Volume element.** A tiny "box" in these coordinates has sides *dr* (outward), *r dθ* (along a line of longitude) and *r* sin θ *d*φ (along a circle of latitude, whose radius is *r* sin θ). Multiply the three:
 
 > *d*³*r* = *r*² sin θ *dr dθ d*φ
 
-Integrating the angles over the whole sphere gives ∫₀<sup>π</sup> sin θ *d*θ ∫₀<sup>2π</sup> *d*φ = 2 × 2π = 4π, so a thin shell of radius *r* has volume 4π*r*² *dr*. That *r*² is why the radial distribution is *P*(*r*) = *r*²\|*R*<sub>*nl*</sub>\|² ([T6](tut:08#T6)).
+The angular part sin θ *d*θ *d*φ is often abbreviated *d*Ω (the **solid-angle element**), so *d*³*r* = *r*² *dr d*Ω. Integrating the angles over the whole sphere gives ∫₀<sup>π</sup> sin θ *d*θ ∫₀<sup>2π</sup> *d*φ = 2 × 2π = 4π, so a thin shell of radius *r* has volume 4π*r*² *dr*. That *r*² is why the radial distribution is *P*(*r*) = *r*²\|*R*<sub>*nl*</sub>\|² ([T6](tut:08#T6)).
 
-**Cylindrical coordinates** (useful for things that circle the *z* axis): ρ<sub>cyl</sub> = √(*x*² + *y*²) = *r* sin θ (distance from the *z* axis), the same φ, and *z*. The unit vector pointing **around** the *z* axis (counterclockwise seen from +*z*) is **φ̂** = (−sin φ, cos φ, 0). The probability current of an *m* ≠ 0 orbital flows along **φ̂** in [Chapter 1](tut:01) §1.4.
+**Cylindrical coordinates** (useful for things that circle the *z* axis): ρ<sub>cyl</sub> = √(*x*² + *y*²) = *r* sin θ (distance from the *z* axis), the same φ, and *z*, so that *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. The unit vector pointing **around** the *z* axis (counterclockwise seen from +*z*) is **φ̂** = (−sin φ, cos φ, 0). The probability current of an *m* ≠ 0 orbital flows along **φ̂** in [Chapter 1](tut:01) §1.4.
 
 **Chain rule for a function of *r* only.** Since *r*² = *x*² + *y*² + *z*², differentiating with respect to *x* gives 2*r* ∂*r*/∂*x* = 2*x*, so ∂*r*/∂*x* = *x*/*r*. For any *f*(*r*):
 
@@ -598,11 +778,16 @@ Integrating the angles over the whole sphere gives ∫₀<sup>π</sup> sin θ *d
 
 > ∇²*f* = *d*²*f*/*dr*² + (2/*r*) *df*/*dr* = (1/*r*) *d*²(*r f*)/*dr*²
 
-**Worked example: checking the 1s orbital.** Take ψ = *e*<sup>−*r*</sup> (normalization does not matter here). Then *r*ψ = *r e*<sup>−*r*</sup>, *d*(*r e*<sup>−*r*</sup>)/*dr* = (1 − *r*)*e*<sup>−*r*</sup>, *d*²(*r e*<sup>−*r*</sup>)/*dr*² = (*r* − 2)*e*<sup>−*r*</sup>. Dividing by *r*: ∇²ψ = (1 − 2/*r*) *e*<sup>−*r*</sup>. Now apply the hydrogen Hamiltonian *Ĥ*₀ = −½∇² − 1/*r*:
+**Worked example: checking the 1s orbital.** Take ψ = *e*<sup>−*r*</sup> (normalization does not matter here). Then *r*ψ = *r e*<sup>−*r*</sup>, *d*(*r e*<sup>−*r*</sup>)/*dr* = (1 − *r*)*e*<sup>−*r*</sup>, *d*²(*r e*<sup>−*r*</sup>)/*dr*² = (*r* − 2)*e*<sup>−*r*</sup>. Dividing by *r*: ∇²ψ = (1 − 2/*r*) *e*<sup>−*r*</sup>. Now apply the hydrogen **Hamiltonian** *Ĥ*₀ = −½∇² − 1/*r*, the energy operator (kinetic energy −½∇² plus Coulomb potential energy −1/*r*; see [T7](tut:08#T7)):
 
 > *Ĥ*₀ψ = −½(1 − 2/*r*) *e*<sup>−*r*</sup> − (1/*r*) *e*<sup>−*r*</sup> = (−½ + 1/*r* − 1/*r*) *e*<sup>−*r*</sup> = −½ *e*<sup>−*r*</sup> &nbsp;&nbsp; (a.u.)
 
-So *e*<sup>−*r*</sup> is an eigenfunction with energy *E*₁ = −½ Ha = −13.6 eV. ✓ (The 1/*r* terms cancel exactly; this is the "quantum potential" balance of [Chapter 1](tut:01) §1.5.)
+*Ĥ*₀ gives back the same function times a number, so *e*<sup>−*r*</sup> is an **eigenfunction** with energy *E*₁ = −½ Ha = −13.6 eV, the hydrogen ground state. ✓ (The 1/*r* terms cancel exactly; this is the "quantum potential" balance of [Chapter 1](tut:01) §1.5.)
+
+**Orbital shapes and the angular eigenvalue.** The labels chemists give the p and d orbitals are more than names. The p shapes are *x*, *y*, *z*; the d shapes are *xy*, *xz*, *yz*, *x*² − *y*² and 3*z*² − *r*². Each is a polynomial whose terms all contain exactly *l* factors of *x*, *y* or *z*, divided by *r*<sup>*l*</sup> so that only the direction matters. Every spherical harmonic *Y*<sub>*l*</sub><sup>*m*</sup> is built this way from a polynomial with one special property: its Laplacian ([T2](tut:08#T2)) is zero everywhere, so it is perfectly balanced, never above or below the average of its neighbours. For example ∇²(*x*² − *y*²) = 2 − 2 = 0 and ∇²(3*z*² − *r*²) = 6 − 6 = 0. Three facts follow ([Orbital shapes as balanced polynomials](tut:08#box-t5-shapes)):
+- **Angular eigenvalue.** The angular part of ∇² multiplies *Y*<sub>*l*</sub><sup>*m*</sup> by −*l*(*l* + 1)/*r*². In the kinetic energy −½∇² this becomes the centrifugal barrier *l*(*l* + 1)/(2*r*²) of the effective potential: 1/*r*² for a p orbital, 3/*r*² for a d orbital.
+- **Parity.** Sending every point through the nucleus to the opposite side, **r** → −**r**, flips the sign of each of the *l* factors, so *Y*<sub>*l*</sub><sup>*m*</sup> is multiplied by (−1)<sup>*l*</sup>: s and d orbitals are even, p and f orbitals odd.
+- **Shape in angles.** *Y*<sub>*l*</sub><sup>*m*</sup> is sin<sup>\|*m*\|</sup>θ, times a polynomial in cos θ of degree *l* − \|*m*\| that contains every other power, times *e*<sup>*im*φ</sup>. For example *Y*<sub>2</sub><sup>0</sup> ∝ 3cos²θ − 1 and *Y*<sub>2</sub><sup>±1</sup> ∝ sin θ cos θ *e*<sup>±*i*φ</sup>. Each *l* has 2*l* + 1 of them: 3 p, 5 d and 7 f orbitals.
 
 ```figure
 {"kind": "spherical-coords", "caption": "Move the r, θ and φ sliders and watch x, y and z change. θ is measured down from the +z axis; φ is measured round the z axis from +x. Drag to rotate the view.", "r": 2, "theta": 60, "phi": 45}
@@ -622,7 +807,7 @@ For a purely radial function *f*(*r*), write *f*′ = *df*/*dr* and *f*″ = *d*
 
 > ∇²*f* = *f*″ + (2/*r*) *f*′ = (1/*r*) (*r f*)″
 
-Because multiplying *f* by *r* removes the awkward (2/*r*)*f*′ term, Chapter 1 writes the radial wave *R*(*r*) through the reduced radial wave *u*(*r*) = *r R*(*r*), and the radial Schrödinger equation then looks like a 1D problem. When the wavefunction also depends on angles, ψ = *R*(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) with a spherical harmonic *Y*<sub>*l*</sub><sup>*m*</sup> of angular-momentum number *l*, the angular derivatives add the **centrifugal barrier** *l*(*l* + 1)/(2*r*²) to the kinetic energy:
+Because multiplying *f* by *r* removes the awkward (2/*r*)*f*′ term, Chapter 1 writes the radial wave *R*(*r*) through the reduced radial wave *u*(*r*) = *r R*(*r*), and the radial Schrödinger equation then looks like a 1D problem. When the wavefunction also depends on angles, ψ = *R*(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ), with a **spherical harmonic** *Y*<sub>*l*</sub><sup>*m*</sup> (the angular shape of an orbital with angular-momentum number *l*), the angular part of ∇² acting on *Y*<sub>*l*</sub><sup>*m*</sup> simply multiplies it by −*l*(*l* + 1)/*r*²: spherical harmonics are eigenfunctions of the angular part of the Laplacian (the reason is in [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular)). In the kinetic energy −½∇² this shows up as the **centrifugal barrier** +*l*(*l* + 1)/(2*r*²):
 
 > −½ ∇²ψ = [ −½ (*R*″ + (2/*r*) *R*′) + *l*(*l* + 1)/(2*r*²) *R* ] *Y*<sub>*l*</sub><sup>*m*</sup> &nbsp;&nbsp; (a.u.)
 
@@ -633,7 +818,7 @@ Full algebra: [Cartesian chain rule, full Laplacian, and L̂z = −i ∂/∂φ](
 <details>
 <summary>Level 3 · Full derivation: Cartesian chain rule, full Laplacian, and L̂z = −i ∂/∂φ {#box-t5-full-lap}</summary>
 
-**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (product, quotient and multivariable chain rules).
+**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (product, quotient and multivariable chain rules) and, for Step 4, the quantum momentum operator **p̂** = −*i*∇ (atomic units; −*iħ*∇ in SI), quoted.
 
 **Step 1 — Radial Laplacian from the chain rule.** Let *f* depend only on *r*, with *f*′ = *df*/*dr* and *f*″ = *d*²*f*/*dr*².
 1. First derivative (chain rule, ∂*r*/∂*x* = *x*/*r*): ∂*f*/∂*x* = *f*′ · (*x*/*r*).
@@ -647,11 +832,11 @@ Full algebra: [Cartesian chain rule, full Laplacian, and L̂z = −i ∂/∂φ](
 
 **Step 2 — The compact form.** Differentiate *r f* twice with the product rule: (*r f*)′ = *f* + *r f*′, then (*r f*)″ = *f*′ + *f*′ + *r f*″ = 2*f*′ + *r f*″. Dividing by *r* gives *f*″ + (2/*r*) *f*′, so ∇²*f* = (1/*r*) (*r f*)″.
 
-**Step 3 — Full spherical Laplacian and centrifugal barrier.** For a function of all three coordinates the Laplacian in spherical coordinates is (quoted; the derivation is the same chain-rule bookkeeping as Step 1, only longer):
+**Step 3 — Full spherical Laplacian and centrifugal barrier.** For a function of all three coordinates the Laplacian in spherical coordinates is (quoted; the derivation is the same chain-rule bookkeeping as Step 1, only longer, and is written out in any mathematical-methods textbook, for example Boas, *Mathematical Methods in the Physical Sciences*, in the section on curvilinear coordinates):
 
 > ∇²*f* = (1/*r*²) ∂/∂*r* (*r*² ∂*f*/∂*r*) + [1/(*r*² sin θ)] ∂/∂θ (sin θ ∂*f*/∂θ) + [1/(*r*² sin² θ)] ∂²*f*/∂φ²
 
-The first term is (1/*r*²)(2*r f*′ + *r*² *f*″) = *f*″ + (2/*r*)*f*′, the radial Laplacian of Step 1. The two angular terms together equal −*L̂*²*f*/*r*², where *L̂*² is the squared angular-momentum operator, and spherical harmonics are its eigenfunctions, *L̂*² *Y*<sub>*l*</sub><sup>*m*</sup> = *l*(*l* + 1) *Y*<sub>*l*</sub><sup>*m*</sup> (atomic units). So for ψ = *R*(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>, multiplying by −½:
+The first term is (1/*r*²)(2*r f*′ + *r*² *f*″) = *f*″ + (2/*r*)*f*′, the radial Laplacian of Step 1. The two angular terms together equal −*L̂*²*f*/*r*², where *L̂*² is the squared angular-momentum operator, and spherical harmonics are its eigenfunctions, *L̂*² *Y*<sub>*l*</sub><sup>*m*</sup> = *l*(*l* + 1) *Y*<sub>*l*</sub><sup>*m*</sup> (atomic units; also quoted, from solving the angular equation, as in Griffiths, *Introduction to Quantum Mechanics*, §4.1). So for ψ = *R*(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>, multiplying by −½:
 
 > −½ ∇²ψ = [ −½ (*R*″ + (2/*r*) *R*′) + *l*(*l* + 1)/(2*r*²) *R* ] *Y*<sub>*l*</sub><sup>*m*</sup> &nbsp;&nbsp; (a.u.)
 
@@ -664,6 +849,73 @@ The extra *l*(*l* + 1)/(2*r*²) acts like an additional repulsive potential, the
 ```figure
 {"kind": "effective-potential", "caption": "V_eff = −1/r + l(l+1)/(2r²). Raise l and watch the centrifugal wall push the minimum outward, which is why p, d and f orbitals vanish at the nucleus.", "l": 1}
 ```
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: orbital shapes as balanced polynomials {#box-t5-shapes}</summary>
+
+Read the chemist's orbital labels as recipes. An s orbital has no factor (it is the same in every direction), a p orbital has one factor (*x*, *y* or *z*), a d orbital two (*xy*, *x*² − *y*², …). A factor such as *x* changes sign across a plane through the nucleus, which is why a shape built from *l* factors has *l* angular nodes (planes or cones). The polynomials behind real orbitals are balanced: at every point their value equals the average over a tiny sphere around it, the "zero curvature" picture of the Laplacian in [T2](tut:08#T2). Three things follow.
+- **Sideways bending costs energy.** Walk around the nucleus at a fixed distance: more factors mean more sign changes, so the wave bends more sharply sideways, and that bending is kinetic energy. The cost grows as *l*(*l* + 1), in the ratio 0 : 2 : 6 : 12 for s, p, d, f, and it shows up as the centrifugal wall that keeps p, d and f electrons away from the nucleus.
+- **Through the nucleus.** Jumping to the diametrically opposite point flips the sign of every factor once, so an even number of factors (s, d) leaves the orbital unchanged and an odd number (p, f) reverses it.
+- **Counting.** Two factors can be combined in six ways (*x*², *y*², *z*², *xy*, *xz*, *yz*), and balance removes one combination, leaving the familiar five d orbitals.
+
+<details>
+<summary>Level 2 · Key idea: harmonic polynomials, the angular eigenvalue, and parity {#box-t5-angular}</summary>
+
+A polynomial *h*(*x*, *y*, *z*) whose terms all have degree *l* and whose Laplacian vanishes, ∇²*h* = 0, is a **harmonic polynomial**. Dividing by *r*<sup>*l*</sup> leaves a function of direction only, *Y* = *h*/*r*<sup>*l*</sup>: these are the spherical harmonics, and Chapter 1's real orbitals are real combinations of them. In spherical coordinates ∇² is a radial part plus an angular part Λ divided by *r*² (Λ = −*L̂*², quoted in [Cartesian chain rule, full Laplacian, and L̂z = −i ∂/∂φ](tut:08#box-t5-full-lap)). On *r*<sup>*l*</sup> the radial part gives *l*(*l* + 1)*r*<sup>*l*−2</sup>; on *Y* it gives nothing; and the cross term of the product rule vanishes, because ∇(*r*<sup>*l*</sup>) points straight out while ∇*Y* points sideways. So
+
+> 0 = ∇²(*r*<sup>*l*</sup>*Y*) = *r*<sup>*l*−2</sup> [*l*(*l* + 1) + Λ] *Y* &nbsp;&nbsp; ⇒ &nbsp;&nbsp; Λ*Y* = −*l*(*l* + 1) *Y*
+
+For *l* = 1, *h* = *z* gives *Y* = *z*/*r* = cos θ, and the angular part of the T5 Laplacian confirms the eigenvalue −2 directly:
+
+> Λ cos θ = (1/sin θ) *d*(sin θ · (−sin θ))/*d*θ = (1/sin θ)(−2 sin θ cos θ) = −2 cos θ
+
+Under **r** → −**r** each of the *l* factors in every term of *h* changes sign while *r* does not, so
+
+> *Y*(−**r̂**) = (−1)<sup>*l*</sup> *Y*(**r̂**)
+
+Finally, write *h* in *x* ± *iy* = ρ<sub>cyl</sub> *e*<sup>±*i*φ</sup> and *z*, with ρ<sub>cyl</sub> = *r* sin θ and *z* = *r* cos θ. A term (*x* + *iy*)<sup>*p*</sup>(*x* − *iy*)<sup>*q*</sup>*z*<sup>*s*</sup> varies as *e*<sup>*i*(*p*−*q*)φ</sup>, so the harmonic with *L*<sub>*z*</sub> = *m* keeps only the terms with *p* − *q* = *m*, and using sin²θ = 1 − cos²θ,
+
+> *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · *P*(cos θ) · *e*<sup>*im*φ</sup>, &nbsp; *P* a polynomial of degree *l* − \|*m*\| with every other power
+
+The counting here shows the degree is at most *l* − \|*m*\|; orthogonality shows it is exactly that ([Orthogonality of the spherical harmonics, and the cos θ step](tut:08#box-t7-ylm)).
+
+Full algebra: [The angular eigenvalue, the angle form of the spherical harmonics, and parity](tut:08#box-t5-angular-proof).
+
+<details>
+<summary>Level 3 · Full derivation: the angular eigenvalue, the angle form of the spherical harmonics, and parity {#box-t5-angular-proof}</summary>
+
+**You need:** [T2 · Partial derivatives & ∇](tut:08#T2) (gradient, product rules, ∇ · ∇ = ∇²), the radial Laplacian, the chain rule ∇*f*(*r*) = (*df*/*dr*) **r̂** and the full spherical Laplacian of this section ([Cartesian chain rule, full Laplacian, and L̂z = −i ∂/∂φ](tut:08#box-t5-full-lap)), [T1 · Complex numbers & Euler's formula](tut:08#T1), and the definition used here: *r*<sup>*l*</sup>*Y*<sub>*l*</sub><sup>*m*</sup> is a harmonic polynomial of degree *l* (every term has *l* factors of *x*, *y*, *z*, and its Laplacian is zero) whose φ-dependence is *e*<sup>*im*φ</sup>. This is a standard definition of the spherical harmonics, equivalent to the Legendre-function formulas (quoted).
+
+**Step 1 — Laplacian of a product.** From T2, ∇(*fg*) = *f*∇*g* + *g*∇*f* and ∇ · (*f*∇*g*) = ∇*f* · ∇*g* + *f*∇²*g*. Take the divergence of the first and use the second twice:
+
+> ∇²(*fg*) = ∇ · (*f*∇*g*) + ∇ · (*g*∇*f*) = *f*∇²*g* + *g*∇²*f* + 2∇*f* · ∇*g*
+
+**Step 2 — Functions of direction only.** Let *Y* depend only on θ and φ. Moving outward along a ray does not change *Y*, so ∂*Y*/∂*r* = **r̂** · ∇*Y* = 0: ∇*Y* points sideways. Meanwhile ∇(*r*<sup>*l*</sup>) = *l r*<sup>*l*−1</sup> **r̂** points straight out, so ∇(*r*<sup>*l*</sup>) · ∇*Y* = 0. In the full spherical Laplacian the radial term of *Y* vanishes, leaving ∇²*Y* = Λ*Y*/*r*² with the angular part
+
+> Λ = (1/sin θ) ∂/∂θ (sin θ ∂/∂θ) + (1/sin²θ) ∂²/∂φ²
+
+**Step 3 — The power of *r*.** The radial Laplacian *f*″ + (2/*r*)*f*′ with *f* = *r*<sup>*l*</sup> gives ∇²(*r*<sup>*l*</sup>) = *l*(*l* − 1)*r*<sup>*l*−2</sup> + 2*l r*<sup>*l*−2</sup> = *l*(*l* + 1)*r*<sup>*l*−2</sup>.
+
+**Step 4 — The eigenvalue.** Put *f* = *r*<sup>*l*</sup> and *g* = *Y* in Step 1 and use Steps 2 and 3. Since *r*<sup>*l*</sup>*Y* is harmonic,
+
+> 0 = ∇²(*r*<sup>*l*</sup>*Y*) = *r*<sup>*l*</sup> · Λ*Y*/*r*² + *l*(*l* + 1)*r*<sup>*l*−2</sup> · *Y* + 0 = *r*<sup>*l*−2</sup> [Λ*Y* + *l*(*l* + 1)*Y*]
+
+Dividing by *r*<sup>*l*−2</sup> gives Λ*Y* = −*l*(*l* + 1)*Y*. So ∇²*Y* = −*l*(*l* + 1)*Y*/*r*² and *L̂*²*Y* = *l*(*l* + 1)*Y*. For ψ = *R*(*r*)*Y*, the angular part of −½∇²ψ is −½*R* Λ*Y*/*r*² = +*l*(*l* + 1)*R Y*/(2*r*²), the centrifugal barrier.
+
+**Step 5 — Parity.** Under **r** → −**r** each of the *l* factors in every term of *h* = *r*<sup>*l*</sup>*Y* changes sign, so *h*(−**r**) = (−1)<sup>*l*</sup>*h*(**r**), while *r* is unchanged. Hence *Y*(−**r̂**) = *h*(−**r**)/*r*<sup>*l*</sup> = (−1)<sup>*l*</sup>*Y*(**r̂**).
+
+**Step 6 — The form in angles.** Put *w* = *x* + *iy* = ρ<sub>cyl</sub>*e*<sup>*i*φ</sup> and *w̄* = *x* − *iy* = ρ<sub>cyl</sub>*e*<sup>−*i*φ</sup>, so *x* = (*w* + *w̄*)/2 and *y* = (*w* − *w̄*)/(2*i*). Then *h* is a sum of terms *w*<sup>*p*</sup>*w̄*<sup>*q*</sup>*z*<sup>*s*</sup> with *p* + *q* + *s* = *l*, and each term equals ρ<sub>cyl</sub><sup>*p*+*q*</sup>*z*<sup>*s*</sup>*e*<sup>*i*(*p*−*q*)φ</sup>.
+1. Group the terms by *k* = *p* − *q*: *h* = Σ<sub>*k*</sub> *c*<sub>*k*</sub>*e*<sup>*ik*φ</sup>, with each *c*<sub>*k*</sub> depending on ρ<sub>cyl</sub> and *z* only. Multiply by *e*<sup>−*ik*φ</sup> and integrate over a full turn, using ∫₀<sup>2π</sup> *e*<sup>*ij*φ</sup> *d*φ = [*e*<sup>*ij*φ</sup>/(*ij*)]₀<sup>2π</sup> = 0 for any whole number *j* ≠ 0. Done to the sum, this leaves 2π*c*<sub>*k*</sub>. Done to *h*, which is (a function of ρ<sub>cyl</sub> and *z*) × *e*<sup>*im*φ</sup>, it gives zero unless *k* = *m*. So *c*<sub>*k*</sub> = 0 for *k* ≠ *m*: only the terms with *p* − *q* = *m* are present.
+2. Take *m* ≥ 0 (for *m* < 0 swap the roles of *w* and *w̄*). Each surviving term is *w*<sup>*m*+*q*</sup>*w̄*<sup>*q*</sup>*z*<sup>*s*</sup> = ρ<sub>cyl</sub><sup>*m*</sup>(ρ<sub>cyl</sub>²)<sup>*q*</sup>*z*<sup>*s*</sup>*e*<sup>*im*φ</sup>, with *m* + 2*q* + *s* = *l*.
+3. With ρ<sub>cyl</sub> = *r* sin θ, *z* = *r* cos θ and sin²θ = 1 − cos²θ, that term is *r*<sup>*l*</sup> sin<sup>*m*</sup>θ (1 − cos²θ)<sup>*q*</sup> cos<sup>*s*</sup>θ *e*<sup>*im*φ</sup>. Dividing by *r*<sup>*l*</sup>, *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · *P*(cos θ) · *e*<sup>*im*φ</sup>, where *P*(*u*) is a sum of the polynomials (1 − *u*²)<sup>*q*</sup>*u*<sup>*s*</sup>. Their powers run from *u*<sup>*s*</sup> up to *u*<sup>*s*+2*q*</sup> = *u*<sup>*l*−\|*m*\|</sup> in steps of 2, so *P* has degree at most *l* − \|*m*\| and contains only every other power.
+
+**Check:** For *l* = 1, *h* = *z* gives *Y* ∝ cos θ, and Λ cos θ = (1/sin θ) *d*(−sin²θ)/*d*θ = −2 cos θ = −1(1 + 1) cos θ. For *l* = 2, *h* = 3*z*² − *r*² has ∇²*h* = 6 − 6 = 0 and *Y* ∝ 3cos²θ − 1, and Λ(3cos²θ − 1) = (1/sin θ) *d*(−6 sin²θ cos θ)/*d*θ = −12cos²θ + 6 sin²θ = −6(3cos²θ − 1) = −2(2 + 1)(3cos²θ − 1). Both are even or odd as Step 5 says: cos θ → −cos θ under θ → π − θ, while 3cos²θ − 1 is unchanged. Counting for *l* = 2: the six products *x*², *y*², *z*², *xy*, *xz*, *yz* with one condition (∇² of a degree-2 polynomial is twice the sum of the coefficients of *x*², *y*², *z*², which must vanish) leave 6 − 1 = 5 d orbitals. ✓
 
 </details>
 
@@ -688,7 +940,7 @@ The extra *l*(*l* + 1)/(2*r*²) acts like an additional repulsive potential, the
 
 ## T6. Radial integrals ∫rⁿe<sup>−ar</sup>dr and odd/even symmetry {#T6}
 
-*Used in:* [Chapter 1](tut:01) §1.1 (normalization, ⟨*r*⟩ = 1.5 *a*₀ for 1s, the *P*(*r*) peaks), §1.2 (the sp hybrid with ⟨*z*⟩ = ∓3 *a*₀); [Chapter 4](tut:04) §4.1 and §4.3 (radial dipole integrals and the parity rule Δ*l* = ±1); [Chapter 5](tut:05) §5.1 (why ⟨ψ<sub>*k*</sub>\|**r**\|ψ<sub>*k*</sub>⟩ = 0); [Chapter 9](tut:09) §9.2 (⟨*r*²⟩ = 3 *a*₀² for 1s) and §9.3 (why the B² term never mixes s with p).
+*Used in:* [Chapter 1](tut:01) §1.1 (normalization, ⟨*r*⟩ = 1.5 *a*₀ for 1s, the *P*(*r*) peaks), §1.2 (the sp hybrid with ⟨*z*⟩ = ∓3 *a*₀); [Chapter 3](tut:03) §3.1 (the virial theorem and the 1s electron's speed); [Chapter 4](tut:04) §4.1 and §4.3 (radial dipole integrals and the parity rule Δ*l* = ±1); [Chapter 5](tut:05) §5.1 (why ⟨ψ<sub>*k*</sub>\|**r**\|ψ<sub>*k*</sub>⟩ = 0); [Chapter 9](tut:09) §9.2 (⟨*r*²⟩ = 3 *a*₀² for 1s) and §9.3 (why the B² term never mixes s with p).
 
 **The idea, part 1: one integral does almost all the work.** Every hydrogen wavefunction is a polynomial times an exponential, so nearly every integral in the tutorial reduces to
 
@@ -706,13 +958,21 @@ so ψ₁ₛ = π<sup>−1/2</sup> *e*<sup>−*r*</sup>, as in Chapter 1. The rad
 
 > ⟨*r*⟩ = ∫₀<sup>∞</sup> *r* · 4*r*² *e*<sup>−2*r*</sup> *dr* = 4 · 3!/2⁴ = 24/16 = 1.5 *a*₀ &nbsp;&nbsp; (a.u.)
 
+**A bonus result: the virial theorem.** For every bound energy eigenstate of hydrogen, the average kinetic energy ⟨*K*⟩ and the average potential energy ⟨*V*⟩ are locked together:
+
+> ⟨*K*⟩ = −½ ⟨*V*⟩ = −*E* &nbsp;&nbsp; (a.u.)
+
+The same relation holds in SI units, since it relates energies to energies. So the total energy *E* = ⟨*K*⟩ + ⟨*V*⟩ is half the potential energy, and also minus the kinetic energy. The reason is a balance between squeezing and spreading the orbital; see [Why the kinetic energy is half the potential energy](tut:08#box-t6-virial-picture).
+
+**Worked example 2 (virial check for 1s).** With the *P*(*r*) above, ⟨*V*⟩ = −⟨1/*r*⟩ = −∫₀<sup>∞</sup> (1/*r*) · 4*r*² *e*<sup>−2*r*</sup> *dr* = −4 · 1!/2² = −1 Ha, which is 2*E*₁ ✓. Then ⟨*K*⟩ = *E*₁ − ⟨*V*⟩ = −½ + 1 = +½ Ha = 13.6 eV = −*E*₁. As a speed, ½⟨*v*²⟩ = ½ (with *m*<sub>e</sub> = 1) gives a root-mean-square speed of 1 a.u. ≈ 2.19 × 10⁶ m/s, about *c*/137, the speed of Bohr's first orbit in [Chapter 3](tut:03) §3.1.
+
 **The idea, part 2: odd and even functions.** A function is **even** if *f*(−*x*) = *f*(*x*) (mirror-symmetric, like *x*² or cos *x*) and **odd** if *f*(−*x*) = −*f*(*x*) (like *x*, *x*³ or sin *x*). Over a symmetric range:
 
 > ∫<sub>−*L*</sub><sup>*L*</sup> (odd) *dx* = 0, &nbsp;&nbsp; ∫<sub>−*L*</sub><sup>*L*</sup> (even) *dx* = 2 ∫₀<sup>*L*</sup> (even) *dx*
 
 Products follow sign rules: even × even = even, odd × odd = even, odd × even = odd. In 3D the same idea uses the **inversion** **r** → −**r**. A hydrogen orbital has **parity** (−1)<sup>*l*</sup>: s and d orbitals are even, p and f orbitals are odd.
 
-**Worked example 2 (⟨1s\|*z*\|1s⟩ = 0).** The average of *z* in the 1s state is ∫ *z* \|ψ₁ₛ\|² *d*³*r*. \|ψ₁ₛ\|² is even and *z* is odd, so the integrand is odd and the integral is **zero**: the cloud is as much above the nucleus as below. Directly: *z* = *r* cos θ and the angular integral contains ∫₀<sup>π</sup> cos θ sin θ *d*θ = [½ sin² θ]₀<sup>π</sup> = 0. The same argument shows that *any* single orbital of definite parity has zero average dipole, which Chapter 5 §5.1 uses.
+**Worked example 3 (⟨1s\|*z*\|1s⟩ = 0).** The average of *z* in the 1s state is ∫ *z* \|ψ₁ₛ\|² *d*³*r* (written ⟨1s\|*z*\|1s⟩ in the bra-ket shorthand of [T7](tut:08#T7)). \|ψ₁ₛ\|² is even and *z* is odd, so the integrand is odd and the integral is **zero**: the cloud is as much above the nucleus as below. Directly: *z* = *r* cos θ and the angular integral contains ∫₀<sup>π</sup> cos θ sin θ *d*θ = [½ sin² θ]₀<sup>π</sup> = 0. The same argument shows that *any* single orbital of definite parity has its average position ⟨**r**⟩ exactly at the nucleus, so it has no permanent electric dipole; Chapter 5 §5.1 uses this.
 
 ```figure
 {"kind": "radial-distribution", "caption": "P(r) = r²R² for 1s peaks at r = 1 a0 even though |ψ|² is largest at the nucleus: the r² shell factor wins near the centre. Switch states to see the peaks and nodes move.", "state": "1s"}
@@ -744,7 +1004,7 @@ Write *I*<sub>*n*</sub> = ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*
 
 > *I*<sub>*n*</sub> = (*n*/*a*) *I*<sub>*n*−1</sub>, &nbsp;&nbsp; *I*₀ = 1/*a* &nbsp;&nbsp; ⇒ &nbsp;&nbsp; *I*<sub>*n*</sub> = *n*! / *a*<sup>*n*+1</sup>
 
-In spherical coordinates a hydrogen dipole matrix element ⟨ψ₂\|*z*\|ψ₁⟩ splits into a radial integral (done at once with *I*<sub>*n*</sub>) times integrals over the angles θ and φ. For the 2s and 2p₀ orbitals of [Chapter 1](tut:01) §1.2, parity allows a nonzero result (2s even, *z* odd, 2p₀ odd: even overall), and the three pieces (normalization, angles, radial) multiply to
+A **dipole matrix element** ⟨ψ₂\|*z*\|ψ₁⟩ = ∫ ψ₂\* *z* ψ₁ *d*³*r* is the overlap integral that decides whether light polarized along *z* can drive the transition ψ₁ → ψ₂. In spherical coordinates it splits into a radial integral (done at once with *I*<sub>*n*</sub>) times integrals over the angles θ and φ. For the 2s and 2p₀ orbitals of [Chapter 1](tut:01) §1.2, parity allows a nonzero result (2s even, *z* odd, 2p₀ odd: even overall), and the three pieces (normalization, angles, radial) multiply to
 
 > ⟨2s\|*z*\|2p₀⟩ = [1/(32π)] · (4π/3) · (−72) = −3 *a*₀ &nbsp;&nbsp; (a.u.)
 
@@ -775,9 +1035,55 @@ Full algebra: [Integration by parts, 2s–2p₀ dipole integral, and parity of t
 
 For the sp hybrid (\|2s⟩ + \|2p₀⟩)/√2, expanding the average gives ⟨*z*⟩ = ½(⟨2s\|*z*\|2s⟩ + ⟨2p₀\|*z*\|2p₀⟩) + ⟨2s\|*z*\|2p₀⟩ (the cross terms are equal because everything is real). The first two vanish by parity (each \|ψ\|² is even and *z* is odd), so ⟨*z*⟩ = 0 + (−3) = −3 *a*₀.
 
-**Step 4 — Parity of the spherical harmonics.** Inversion **r** → −**r** keeps *r* and sends θ → π − θ, φ → φ + π. Then cos θ → −cos θ, sin θ → sin θ and *e*<sup>*im*φ</sup> → *e*<sup>*im*π</sup> *e*<sup>*im*φ</sup> = (−1)<sup>*m*</sup> *e*<sup>*im*φ</sup>. Working through the Legendre functions (quoted) gives *Y*<sub>*l*</sub><sup>*m*</sup> → (−1)<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>. Since *z*, and every component of **r**, is odd, the dipole integrand ψ₂\* **r** ψ₁ picks up (−1)<sup>*l*₁</sup>(−1)<sup>*l*₂</sup>(−1) = (−1)<sup>*l*₁ + *l*₂ + 1</sup>: it is odd, and its integral vanishes, unless *l*₁ and *l*₂ differ by an odd number. This is the starting point of [Chapter 4](tut:04) §4.3.
+**Step 4 — Parity of the spherical harmonics.** Inversion **r** → −**r** keeps *r* and sends θ → π − θ, φ → φ + π. Then cos θ → −cos θ, sin θ → sin θ and *e*<sup>*im*φ</sup> → *e*<sup>*im*π</sup> *e*<sup>*im*φ</sup> = (−1)<sup>*m*</sup> *e*<sup>*im*φ</sup>. In the angle form *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · *P*(cos θ) · *e*<sup>*im*φ</sup> of [The angular eigenvalue, the angle form of the spherical harmonics, and parity](tut:08#box-t5-angular-proof), *P* contains only powers of the same evenness as *l* − \|*m*\|, so *P*(−cos θ) = (−1)<sup>*l*−\|*m*\|</sup>*P*(cos θ). Altogether *Y*<sub>*l*</sub><sup>*m*</sup> → (−1)<sup>*l*−\|*m*\|</sup>(−1)<sup>*m*</sup> *Y*<sub>*l*</sub><sup>*m*</sup> = (−1)<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>, since *m* and \|*m*\| differ by an even number. Since *z*, and every component of **r**, is odd, the dipole integrand ψ₂\* **r** ψ₁ picks up (−1)<sup>*l*₁</sup>(−1)<sup>*l*₂</sup>(−1) = (−1)<sup>*l*₁ + *l*₂ + 1</sup>: it is odd, and its integral vanishes, unless *l*₁ and *l*₂ differ by an odd number. This is the starting point of [Chapter 4](tut:04) §4.3.
 
 **Check:** *I*₃ with *a* = 2 is 3!/2⁴ = 3/8, and the differentiation trick agrees: (−*d*/*da*)³(1/*a*) = 6/*a*⁴ = 6/16. For parity, *Y*₀⁰ is constant ((−1)⁰ = +1, even), *Y*₁⁰ ∝ cos θ → −cos θ ((−1)¹ = −1, odd), *Y*₁<sup>±1</sup> ∝ sin θ *e*<sup>±*i*φ</sup> → sin θ · (−1) · *e*<sup>±*i*φ</sup> (odd), and *Y*₂⁰ ∝ 3 cos² θ − 1 is unchanged ((−1)² = +1, even). ✓
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: why the kinetic energy is half the potential energy {#box-t6-virial-picture}</summary>
+
+Squeeze an orbital closer to the nucleus without changing its shape, and two things happen. The electron sits deeper in the Coulomb well, so its potential energy falls. But its wave has to bend more sharply, so its kinetic energy rises. The kinetic cost grows faster than the potential gain: squeezing to half the size quadruples the kinetic energy but only doubles the potential energy. A real orbital sits exactly at the size where a small squeeze or stretch no longer changes the total energy, and at that balance point the kinetic energy is half the size of the potential energy, with the opposite sign. So the 1s electron's binding energy of 13.6 eV equals its average kinetic energy, and its average potential energy is twice as deep, −27.2 eV.
+
+<details>
+<summary>Level 2 · Key idea: the virial theorem by stretching the orbital {#box-t6-virial}</summary>
+
+Make a stretched or squeezed copy of an eigenstate ψ with the same shape, ψ<sub>λ</sub>(**r**) = λ<sup>3/2</sup> ψ(λ**r**): λ > 1 squeezes the cloud toward the nucleus, λ < 1 spreads it out, and the factor λ<sup>3/2</sup> keeps it normalized. The kinetic energy involves two derivatives, each of which brings one factor of λ, while the Coulomb energy −1/*r* is one power of 1/distance. So the energy of the copy is
+
+> *E*(λ) = λ² ⟨*K*⟩ + λ ⟨*V*⟩ &nbsp;&nbsp; (a.u.)
+
+with ⟨*K*⟩ and ⟨*V*⟩ the averages in the original state. An energy eigenstate is a flat point of the energy: because *Ĥ*₀ is Hermitian (the property, shared by the operators of all measurable quantities, that makes their eigenvalues real; [T7](tut:08#T7)), any small change of the state changes ⟨*Ĥ*₀⟩ only to second order. So the slope of *E*(λ) is zero at λ = 1:
+
+> 2⟨*K*⟩ + ⟨*V*⟩ = 0 &nbsp;&nbsp; ⇒ &nbsp;&nbsp; ⟨*K*⟩ = −½ ⟨*V*⟩ = −*E*
+
+For hydrogen level *n* this gives ⟨*K*⟩ = 1/(2*n*²) Ha and ⟨*V*⟩ = −1/*n*² Ha, so ⟨1/*r*⟩ = 1/*n*². The same argument for a potential proportional to *r*<sup>*k*</sup> gives 2⟨*K*⟩ = *k*⟨*V*⟩; for a harmonic oscillator (*k* = 2), such as a vibrating bond, ⟨*K*⟩ = ⟨*V*⟩.
+
+Full algebra: [Scaling, the flat-energy property of eigenstates, and the 1s check](tut:08#box-t6-virial-proof).
+
+<details>
+<summary>Level 3 · Full derivation: scaling, the flat-energy property of eigenstates, and the 1s check {#box-t6-virial-proof}</summary>
+
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (the chain rule, and the 1s Laplacian of its worked example), the radial integrals of this section, and three facts stated here: overlaps are written ⟨*a*\|*b*⟩ = ∫ *a*\* *b d*³*r*; in a normalized state the averages are ⟨*K*⟩ = ∫ ψ\* (−½∇²ψ) *d*³*r* and ⟨*V*⟩ = −∫ (1/*r*) \|ψ\|² *d*³*r*; and the Hamiltonian is **Hermitian**, ⟨*a*\|*Ĥ*₀*b*⟩ = ⟨*Ĥ*₀*a*\|*b*⟩ for all states *a* and *b*, with real eigenvalues.
+
+**Step 1 — The stretched copy stays normalized.** ∫\|ψ<sub>λ</sub>\|² *d*³*r* = λ³ ∫ \|ψ(λ**r**)\|² *d*³*r*. Substitute **s** = λ**r**: each of the three coordinates is multiplied by λ, so *d*³*s* = λ³ *d*³*r*, and the integral becomes ∫ \|ψ(**s**)\|² *d*³*s* = 1.
+
+**Step 2 — The potential energy scales as λ.** ⟨*V*⟩<sub>λ</sub> = −∫ (1/*r*) λ³ \|ψ(λ**r**)\|² *d*³*r*. With the same substitution, 1/*r* = λ/*s*, so ⟨*V*⟩<sub>λ</sub> = −λ ∫ (1/*s*) \|ψ(**s**)\|² *d*³*s* = λ⟨*V*⟩.
+
+**Step 3 — The kinetic energy scales as λ².** By the chain rule, ∂[ψ(λ**r**)]/∂*x* = λ (∂ψ/∂*s*<sub>*x*</sub>) evaluated at **s** = λ**r**, and a second derivative brings a second λ, so ∇²[ψ(λ**r**)] = λ² (∇<sub>*s*</sub>²ψ)(λ**r**). Then ⟨*K*⟩<sub>λ</sub> = −½ ∫ λ<sup>3/2</sup> ψ\*(λ**r**) · λ<sup>3/2</sup> λ² (∇<sub>*s*</sub>²ψ)(λ**r**) *d*³*r*, and the substitution of Step 1 turns this into λ² [−½ ∫ ψ\*(**s**) ∇<sub>*s*</sub>²ψ(**s**) *d*³*s*] = λ²⟨*K*⟩. Adding Steps 2 and 3, the energy of the copy is *E*(λ) = λ²⟨*K*⟩ + λ⟨*V*⟩.
+
+**Step 4 — An eigenstate's energy is flat.** Let *Ĥ*₀ψ = *E*ψ with ψ normalized, and let φ = ψ + δ be any other normalized state. Split ⟨φ\|(*Ĥ*₀ − *E*)φ⟩ into four pieces:
+1. ⟨ψ\|(*Ĥ*₀ − *E*)ψ⟩ = 0 and ⟨δ\|(*Ĥ*₀ − *E*)ψ⟩ = 0, because (*Ĥ*₀ − *E*)ψ = 0.
+2. ⟨ψ\|(*Ĥ*₀ − *E*)δ⟩ = ⟨(*Ĥ*₀ − *E*)ψ\|δ⟩ = 0, because *Ĥ*₀ is Hermitian and *E* is real.
+3. Only ⟨δ\|(*Ĥ*₀ − *E*)δ⟩ survives. Since ⟨φ\|φ⟩ = 1, ⟨φ\|*Ĥ*₀φ⟩ = *E* + ⟨δ\|(*Ĥ*₀ − *E*)δ⟩: a change δ of the state changes the energy only by a term of second order in δ.
+
+**Step 5 — The slope at λ = 1 vanishes.** For λ close to 1, ψ<sub>λ</sub> − ψ is proportional to λ − 1 (first-order Taylor expansion in λ), so by Step 4, *E*(λ) − *E* is of order (λ − 1)². The slope of *E*(λ) at λ = 1 is therefore zero: 2⟨*K*⟩ + ⟨*V*⟩ = 0. So ⟨*V*⟩ = −2⟨*K*⟩, and *E* = ⟨*K*⟩ + ⟨*V*⟩ = −⟨*K*⟩, which is ⟨*K*⟩ = −½⟨*V*⟩ = −*E*. With *E*<sub>*n*</sub> = −1/(2*n*²): ⟨*K*⟩ = 1/(2*n*²), ⟨*V*⟩ = −1/*n*², ⟨1/*r*⟩ = 1/*n*².
+
+**Check:** For 1s, worked example 2 gives ⟨*K*⟩ = ½ and ⟨*V*⟩ = −1, so *E*(λ) = ½λ² − λ. Its slope λ − 1 vanishes at λ = 1, where *E*(1) = −½ Ha = *E*₁, the true ground-state energy. ✓ An independent check of ⟨*K*⟩: T5's worked example gives ∇²ψ₁ₛ = (1 − 2/*r*) ψ₁ₛ, so ⟨*K*⟩ = −½ ∫ (1 − 2/*r*) \|ψ₁ₛ\|² *d*³*r* = −½ (1 − 2⟨1/*r*⟩) = −½ (1 − 2) = ½ Ha. ✓
 
 </details>
 
@@ -789,12 +1095,14 @@ For the sp hybrid (\|2s⟩ + \|2p₀⟩)/√2, expanding the average gives ⟨*z
 
 1. Evaluate ∫₀<sup>∞</sup> *r*³ *e*<sup>−2*r*</sup> *dr*.
 2. Without calculating, which of these are zero? (a) ∫<sub>−1</sub><sup>1</sup> *x*³ cos *x dx*, (b) ∫<sub>−1</sub><sup>1</sup> *x* sin *x dx*, (c) ⟨2p₀\|*z*\|2p₀⟩.
+3. Use the virial theorem to find ⟨*K*⟩, ⟨*V*⟩ and ⟨1/*r*⟩ for any *n* = 2 state of hydrogen.
 
 <details>
 <summary>Answer</summary>
 
 1. *n* = 3, *a* = 2: 3!/2⁴ = 6/16 = 3/8.
 2. (a) zero: odd × even = odd. (b) not zero: odd × odd = even (and *x* sin *x* ≥ 0 on this range). (c) zero: \|ψ<sub>2p₀</sub>\|² is even (odd × odd) and *z* is odd.
+3. *E*₂ = −⅛ Ha, so ⟨*K*⟩ = −*E*₂ = ⅛ Ha (3.4 eV), ⟨*V*⟩ = 2*E*₂ = −¼ Ha, and ⟨1/*r*⟩ = −⟨*V*⟩ = ¼ *a*₀⁻¹, the same for 2s and every 2p.
 
 </details>
 
@@ -802,7 +1110,7 @@ For the sp hybrid (\|2s⟩ + \|2p₀⟩)/√2, expanding the average gives ⟨*z
 
 ## T7. Operators, eigenvalues and Dirac notation {#T7}
 
-*Used in:* every chapter. This section is the shared vocabulary list; [Chapter 7](tut:07#symbols) §7.5 has the full glossary of physics terms.
+*Used in:* every chapter, including [Chapter 4](tut:04) §4.3 (orthogonality of the *Y*<sub>*l*</sub><sup>*m*</sup>), [Chapter 7](tut:07) §7.2 (the triangle inequality) and [Chapter 9](tut:09) §9.2–9.3 (the cos θ step and first-order perturbation theory). This section is the shared vocabulary list; [Chapter 7](tut:07#symbols) §7.5 has the full glossary of physics terms.
 
 **The idea.** Quantum mechanics describes a state by a wavefunction and every measurable quantity by an **operator**, a rule that turns one function into another. The special functions that an operator only *stretches* are its **eigenfunctions**, and the stretch factors are the possible measured values.
 
@@ -810,15 +1118,16 @@ For the sp hybrid (\|2s⟩ + \|2p₀⟩)/√2, expanding the average gives ⟨*z
 
 - **Operator** *Ô*: a rule acting on functions. Examples: "differentiate with respect to *x*" (*d*/*dx*); "multiply by *x*"; momentum **p̂** = −*i*∇ (atomic units; −*iħ*∇ in SI); *L̂*<sub>*z*</sub> = −*i* ∂/∂φ ([T5](tut:08#T5)). Operators in quantum mechanics are **linear**: *Ô*(*a f* + *b g*) = *a Ôf* + *b Ôg*.
 - **Eigenvalue equation** *Ô f* = λ *f*: the operator acting on *f* gives back the *same* function times a number λ (the **eigenvalue**); *f* is an **eigenfunction** (or **eigenstate**). Examples: *d*/*dx e*<sup>*kx*</sup> = *k e*<sup>*kx*</sup> (eigenvalue *k*); *d*²/*dx*² sin *kx* = −*k*² sin *kx* (eigenvalue −*k*²); −*i* ∂/∂φ *e*<sup>*im*φ</sup> = *m e*<sup>*im*φ</sup> (eigenvalue *m*). Non-example: *d*/*dx* sin *kx* = *k* cos *kx* is not a multiple of sin *kx*.
-- **Hamiltonian** *Ĥ*: the total-energy operator (kinetic + potential). For hydrogen with no external fields, *Ĥ*₀ = −½∇² − 1/*r* (the subscript 0 means "no fields"). Its eigenvalue equation *Ĥ*₀ψ = *E*ψ is the **time-independent Schrödinger equation**; its eigenvalues are the energy levels *E*<sub>*n*</sub> = −1/(2*n*²) Ha.
+- **Hamiltonian** *Ĥ*: the total-energy operator (kinetic + potential). For hydrogen with no external fields, *Ĥ*₀ = −½∇² − 1/*r* (the subscript 0 means "no fields"). Its eigenvalue equation *Ĥ*₀ψ = *E*ψ is the **time-independent Schrödinger equation**; its bound-state eigenvalues are the energy levels *E*<sub>*n*</sub> = −1/(2*n*²) Ha = −13.6 eV/*n*² (above 0 lies the ionization continuum).
+- **Spherical harmonic** *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ): the angular shape of a hydrogen orbital, ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) ([T5](tut:08#T5)). It is an eigenfunction of two operators at once: of the squared angular momentum *L̂*² with eigenvalue *l*(*l* + 1), and of *L̂*<sub>*z*</sub> with eigenvalue *m* (atomic units). Equivalently, the angular part of ∇² multiplies it by −*l*(*l* + 1)/*r*². *l* = 0, 1, 2, 3 are the s, p, d, f shapes.
 - **Stationary state:** an energy eigenstate. Its time dependence is only the phase *e*<sup>−*iEt*</sup> ([T3](tut:08#T3)), so \|Ψ\|² does not change in time.
 - **Degenerate:** different eigenstates with the same eigenvalue. In hydrogen 2s, 2p₋₁, 2p₀, 2p₊₁ all have *E*₂ = −⅛ Ha. Any combination of degenerate eigenstates is again an eigenstate with that energy.
-- **Normalized:** ∫\|ψ\|² *d*³*r* = 1 (total probability 100%). **Orthogonal:** ∫ψ<sub>*j*</sub>\* ψ<sub>*k*</sub> *d*³*r* = 0. **Orthonormal:** both at once, ∫ψ<sub>*j*</sub>\* ψ<sub>*k*</sub> *d*³*r* = δ<sub>*jk*</sub>.
-- **Kronecker delta** δ<sub>*jk*</sub>: equals 1 if *j* = *k* and 0 otherwise. Example: ⟨*n*₂*l*₂*m*₂\|*n*₁*l*₁*m*₁⟩ = δ<sub>*n*₂*n*₁</sub> δ<sub>*l*₂*l*₁</sub> δ<sub>*m*₂*m*₁</sub>.
+- **Kronecker delta** δ<sub>*jk*</sub>: equals 1 if *j* = *k* and 0 otherwise (δ₂₂ = 1, δ₁₂ = 0). It is shorthand for "same label or not".
+- **Normalized:** ∫\|ψ\|² *d*³*r* = 1 (total probability 100%). **Orthogonal:** ∫ψ<sub>*j*</sub>\* ψ<sub>*k*</sub> *d*³*r* = 0. **Orthonormal:** both at once, ∫ψ<sub>*j*</sub>\* ψ<sub>*k*</sub> *d*³*r* = δ<sub>*jk*</sub>. Example: hydrogen's orbitals are orthonormal, so the overlap of ψ<sub>*n*₁*l*₁*m*₁</sub> with ψ<sub>*n*₂*l*₂*m*₂</sub> is δ<sub>*n*₂*n*₁</sub> δ<sub>*l*₂*l*₁</sub> δ<sub>*m*₂*m*₁</sub>: 1 if all three labels agree, 0 otherwise.
 - **Ket** \|ψ⟩: shorthand for the state ψ(**r**). Often labelled by quantum numbers: \|*n l m*⟩ or \|2p, +1⟩. **Bra** ⟨ψ\|: the complex conjugate ψ\*(**r**), waiting to be integrated.
 - **Bra-ket (inner product):** ⟨*a*\|*b*⟩ = ∫ *a*\*(**r**) *b*(**r**) *d*³*r*. It measures how much *b* "overlaps" with *a*. Swapping the two conjugates it: ⟨*a*\|*b*⟩\* = ⟨*b*\|*a*⟩.
 - **Matrix element:** ⟨*a*\|*Ô*\|*b*⟩ = ∫ *a*\*(**r**) [*Ô b*(**r**)] *d*³*r*: first let *Ô* act on *b*, then overlap with *a*. The **transition dipole** ⟨ψ₂\|**r**\|ψ₁⟩ of [Chapter 4](tut:04) is one.
-- **Expectation value:** ⟨*Ô*⟩ = ⟨ψ\|*Ô*\|ψ⟩, the average of many measurements on identically prepared atoms. Example: ⟨*r*⟩ = 1.5 *a*₀ for 1s ([T6](tut:08#T6)).
+- **Expectation value:** ⟨*Ô*⟩ = ⟨ψ\|*Ô*\|ψ⟩, the average of many measurements on identically prepared atoms. When *Ô* just multiplies by a function *f*(**r**), this is ⟨*f*⟩ = ∫ *f* \|ψ\|² *d*³*r*, the average of *f* weighted by the electron cloud. Example: ⟨*r*⟩ = 1.5 *a*₀ for 1s ([T6](tut:08#T6)).
 - **Superposition:** Ψ = Σ<sub>*k*</sub> *c*<sub>*k*</sub> ψ<sub>*k*</sub> with complex coefficients *c*<sub>*k*</sub> = ⟨ψ<sub>*k*</sub>\|Ψ⟩. If the ψ<sub>*k*</sub> are orthonormal, \|*c*<sub>*k*</sub>\|² is the probability of finding ψ<sub>*k*</sub>, and normalization reads Σ<sub>*k*</sub> \|*c*<sub>*k*</sub>\|² = 1.
 - **Symbol guide:** **bold** marks 3D vectors (**r**, **p**, **J**, **L**, **A**). Ψ(**r**, *t*) is the full time-dependent wavefunction and ψ(**r**) a purely spatial one. ρ<sub>prob</sub> = \|Ψ\|² is probability density; ρ<sub>cyl</sub> = √(*x*² + *y*²) is the distance from the *z* axis.
 
@@ -836,7 +1145,7 @@ Three more tools are used in [Chapter 1](tut:01) and [Chapter 6](tut:06).
 
 **Unitary basis change.** Switching from one orthonormal basis to another is done by a **unitary** matrix *U*: its columns are the new basis vectors written in the old basis, so they are orthonormal, which is the statement *U*<sup>†</sup>*U* = *I* (*U*<sup>†</sup>, "U-dagger", is the conjugate transpose: swap rows and columns, then conjugate every entry). A unitary change of basis keeps every length and every overlap ⟨*a*\|*b*⟩ unchanged. Example: the circular basis just used has *U* = (1/√2) [[1, 1], [*i*, −*i*]], whose columns are **ε**<sub>+</sub> and **ε**<sub>−</sub> written in (**x̂**, **ŷ**).
 
-**Commutator.** [*Â*, *B̂*] ≡ *ÂB̂* − *B̂Â* measures whether the order of two operators matters. "Multiply by *x*" and "multiply by *y*" commute, [*x*, *y*] = 0, but position and momentum do not: [*x*, *p̂*<sub>*x*</sub>] = *iħ*. The three angular-momentum components fail to commute in a cyclic pattern:
+**Commutator.** [*Â*, *B̂*] ≡ *ÂB̂* − *B̂Â* measures whether the order of two operators matters (*ÂB̂* means: apply *B̂* first, then *Â*). Two operators **commute** when their commutator is zero. "Multiply by *x*" and "multiply by *y*" commute, [*x*, *y*] = 0, but position and momentum do not: [*x*, *p̂*<sub>*x*</sub>] = *iħ*. The three angular-momentum components fail to commute in a cyclic pattern:
 
 > [*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *iħ L̂*<sub>*z*</sub> &nbsp;&nbsp; (SI), &nbsp;&nbsp; [*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *i L̂*<sub>*z*</sub> &nbsp;&nbsp; (a.u.)
 
@@ -847,6 +1156,20 @@ Likewise [*L̂*<sub>*y*</sub>, *L̂*<sub>*z*</sub>] = *iħ L̂*<sub>*x*</sub>, [
 > \|∫ *f*\* *g dt*\|² ≤ ∫\|*f*\|² *dt* · ∫\|*g*\|² *dt*, &nbsp;&nbsp; with equality only when *f* ∝ *g*
 
 In bra-ket language, \|⟨*f*\|*g*⟩\|² ≤ ⟨*f*\|*f*⟩⟨*g*\|*g*⟩: an overlap is never bigger than the product of the two lengths, the function version of \|cos θ\| ≤ 1 for the angle between two arrows. Example: *f* = 1 and *g* = *t* on 0 ≤ *t* ≤ 1 give (∫*t dt*)² = ¼, below ∫1 *dt* · ∫*t*² *dt* = 1 · ⅓. Chapter 6 uses the inequality to show that no photon shape is absorbed better than the one matched to the atom.
+
+**Triangle inequality.** Write ‖*f*‖ = √⟨*f*\|*f*⟩ for the "length" of a function. A one-line consequence of Cauchy–Schwarz is that the length of a sum is never more than the sum of the lengths, ‖*f* + *g*‖ ≤ ‖*f*‖ + ‖*g*‖, just as one side of a triangle is never longer than the other two together. This is also called the **Minkowski inequality**; Chapter 7 uses it to bound the column density of a superposition. See [The triangle inequality for functions](tut:08#box-t7-triangle).
+
+**Orthogonal orbital shapes.** Spherical harmonics with different *l*, or with different *m*, are orthogonal, and each is normalized (*d*Ω = sin θ *d*θ *d*φ is the angular part of the volume element, [T5](tut:08#T5)):
+
+> ∫ [*Y*<sub>*l*′</sub><sup>*m*′</sup>]\* *Y*<sub>*l*</sub><sup>*m*</sup> *d*Ω = δ<sub>*l*′*l*</sub> δ<sub>*m*′*m*</sub>
+
+No integral has to be done to see this. The operators of measurable quantities are **Hermitian**: an overlap ⟨*a*\|*Ô b*⟩ does not change if *Ô* acts on the first function instead, ⟨*Ô a*\|*b*⟩. Eigenfunctions of a Hermitian operator with different eigenvalues are always orthogonal, and *Y*<sub>*l*</sub><sup>*m*</sup> is an eigenfunction of two such operators: *L̂*², with eigenvalue *l*(*l* + 1), which differs for every *l*, and *L̂*<sub>*z*</sub>, with eigenvalue *m*. So 2s and 2p have zero overlap, and so do 3p and 3d, whatever their radial parts. A consequence used in Chapters 4 and 9: multiplying a shape by cos θ = *z*/*r*, the factor that a field along *z* brings in, turns an *l* shape into a mix of just the two neighbouring shapes, *l* + 1 and *l* − 1, with the same *m* (the **cos θ step**). See [Why different orbital shapes do not overlap](tut:08#box-t7-ylm-picture).
+
+**A small extra energy: first-order perturbation theory.** Add a weak extra term *V* to the Hamiltonian, such as the energy of the electron in a small applied field. To a first approximation each level moves by the average of *V* over its unperturbed orbital ψ⁽⁰⁾:
+
+> *E* ≈ *E*⁽⁰⁾ + ⟨ψ⁽⁰⁾\|*V*\|ψ⁽⁰⁾⟩ &nbsp;&nbsp; (a.u.)
+
+The orbital also changes a little, but that alters the energy only at the next order. The rule works while the shift is small compared with the gap to any level that *V* can mix in. When several orbitals share one energy (a degenerate level), first find the combinations of them that *V* does not mix; each shifts by its own average. In an electric field of strength ℰ along *z*, for example, hydrogen's *n* = 2 level picks the two sp hybrids (\|2s⟩ ± \|2p₀⟩)/√2: one moves down by 3ℰ and its mirror image up by 3ℰ (atomic units), while 2p₊₁ and 2p₋₁ stay put. Chapter 9 uses the same rule for the diamagnetic shift. See [Nudging an energy level](tut:08#box-t7-perturb-picture).
 
 <details>
 <summary>Level 1 · Picture: functions as arrows</summary>
@@ -920,6 +1243,7 @@ because *e*<sup>*i*2π*k*</sup> = cos 2π*k* + *i* sin 2π*k* = 1 for any intege
 - **An overlap never beats the lengths.** The shadow one arrow casts along another can never be longer than the arrow itself, and it is as long as the arrow only when the two point the same way. With functions as arrows, the overlap of two functions is likewise capped by the product of their sizes, and reaches the cap only when one function is a scaled copy of the other. That is the **Cauchy–Schwarz inequality**. It is why a photon is absorbed best when its shape copies the atom's own "listening" shape.
 - **Order matters.** Hold a book flat, give it a quarter-turn about a left–right axis and then a quarter-turn about a vertical axis. Start again and do the two turns in the opposite order: the book ends up facing a different way. Turns about different axes do not commute, and the **commutator** is the bookkeeping of that difference. Angular-momentum operators are what generate turns, so they inherit it.
 - **A rigid turn of the axes.** Swapping one set of perpendicular unit axes for another, like turning a coordinate grid, keeps every length and every angle. A **unitary** matrix is that rigid turn written as a table of numbers, now allowed to contain complex numbers.
+- **No shortcut through a triangle.** One side of a triangle is never longer than the other two together, and matches them only when the triangle is squashed flat, with both arrows pointing the same way. Functions as arrows obey the same **triangle inequality**: the size of a sum of two functions is at most the sum of their sizes.
 
 <details>
 <summary>Level 2 · Key idea: the Cauchy–Schwarz inequality, commutators, and unitary basis changes {#box-t7-cs-commutator}</summary>
@@ -984,6 +1308,140 @@ Adding: [*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *i*(*x p̂*<sub>*y*</sub> �
 
 </details>
 
+<details>
+<summary>Level 2 · Key idea: the triangle inequality for functions {#box-t7-triangle}</summary>
+
+Expand the squared length ‖*f* + *g*‖² = ⟨*f* + *g*\|*f* + *g*⟩. The two cross terms ⟨*f*\|*g*⟩ and ⟨*g*\|*f*⟩ = ⟨*f*\|*g*⟩\* are a number and its conjugate, so they add up to twice its real part, and a real part is never larger than the modulus ([T1](tut:08#T1)). Cauchy–Schwarz, \|⟨*f*\|*g*⟩\| ≤ ‖*f*‖ ‖*g*‖, finishes the job:
+
+> ‖*f* + *g*‖² = ‖*f*‖² + ‖*g*‖² + 2 Re⟨*f*\|*g*⟩ ≤ ‖*f*‖² + ‖*g*‖² + 2‖*f*‖ ‖*g*‖ = (‖*f*‖ + ‖*g*‖)²
+
+Taking square roots gives ‖*f* + *g*‖ ≤ ‖*f*‖ + ‖*g*‖, with equality only when one function is a positive multiple of the other. Example: *f* = 1 and *g* = *t* on 0 ≤ *t* ≤ 1 give ‖*f* + *g*‖ = √(∫(1 + *t*)² *dt*) = √(7/3) ≈ 1.528, below ‖*f*‖ + ‖*g*‖ = 1 + 1/√3 ≈ 1.577.
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: why different orbital shapes do not overlap {#box-t7-ylm-picture}</summary>
+
+The overlap of two angular shapes adds up, over every direction around the nucleus, the product of the two shapes. For s and p<sub>*z*</sub> the cancellation is easy to see: p<sub>*z*</sub> has a positive lobe above and an equal negative lobe below, s is the same everywhere, and the two halves cancel. But symmetry alone does not always explain it. A p<sub>*z*</sub> and an f orbital pointing along *z* are both positive on top and negative below, yet their overlap is also exactly zero. The general reason is the one that makes the pure tones of a guitar string independent: shapes with different amounts of angular momentum are perpendicular "directions" in the space of functions, in the functions-as-arrows picture of this section.
+
+The same reason makes the **cos θ step** tidy. Multiplying a shape by cos θ (positive towards the north pole, negative towards the south, like the push of a field along *z*) adds or removes one north–south wiggle. So an *l* shape becomes a mix of *l* + 1 and *l* − 1 shapes only, and *m* does not change, because cos θ looks the same from every side of the *z* axis. This is behind the "change *l* by one" rule for light absorption in Chapter 4 and the mixing of shapes by a strong magnetic field in Chapter 9.
+
+<details>
+<summary>Level 2 · Key idea: orthogonality of the spherical harmonics, and the cos θ step {#box-t7-ylm}</summary>
+
+*Y*<sub>*l*</sub><sup>*m*</sup> is an eigenfunction of *L̂*² with eigenvalue *l*(*l* + 1) and of *L̂*<sub>*z*</sub> = −*i* ∂/∂φ with eigenvalue *m* ([T5](tut:08#T5)). Both operators are Hermitian on functions on the sphere: integration by parts moves the derivatives from one function to the other, and the boundary terms vanish because sin θ = 0 at the poles and φ comes back to itself after a full turn. The eigenvalue argument of [Orthonormal expansions, azimuthal orthogonality, and Hermitian operators](tut:08#box-t7-hermitian), with *l*(*l* + 1) = 0, 2, 6, 12, … never repeating, then gives
+
+> ∫ [*Y*<sub>*l*′</sub><sup>*m*′</sup>]\* *Y*<sub>*l*</sub><sup>*m*</sup> *d*Ω = δ<sub>*l*′*l*</sub> δ<sub>*m*′*m*</sub>
+
+where the 1 for equal labels is a choice of the constant in front. For one *m*, T5's form *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · *P*<sub>*l*</sub>(cos θ) · *e*<sup>*im*φ</sup> turns this into orthogonality of the polynomials *P*<sub>\|*m*\|</sub>, *P*<sub>\|*m*\|+1</sub>, …, whose degrees are at most 0, 1, 2, …. Nonzero orthogonal polynomials like these must have degrees exactly 0, 1, 2, …, and together they build every polynomial in cos θ. Now multiply *Y*<sub>*l*</sub><sup>*m*</sup> by cos θ. Its polynomial gains one degree, so the result is a combination of the *Y*<sub>*l*′</sub><sup>*m*</sup> with *l*′ ≤ *l* + 1. Orthogonality removes every *l*′ < *l* − 1, and parity removes *l*′ = *l*, leaving the cos θ step:
+
+> cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = *a Y*<sub>*l*+1</sub><sup>*m*</sup> + *b Y*<sub>*l*−1</sub><sup>*m*</sup>
+>
+> *a* = √[((*l* + 1)² − *m*²)/((2*l* + 1)(2*l* + 3))], &nbsp;&nbsp; *b* = √[(*l*² − *m*²)/((2*l* − 1)(2*l* + 1))]
+
+The closed form of *a* is quoted; *b* is the same step taken from *l* − 1, because cos θ is real. With Chapter 1's Condon–Shortley phases both are positive, and *b* = 0 when \|*m*\| = *l*. For *l* = 1, *m* = 0:
+
+> cos θ *Y*<sub>1</sub><sup>0</sup> = (2/√15) *Y*<sub>2</sub><sup>0</sup> + (1/√3) *Y*<sub>0</sub><sup>0</sup>
+
+Full algebra: [Hermitian angular momentum, orthogonality, and the cos θ step](tut:08#box-t7-ylm-proof).
+
+<details>
+<summary>Level 3 · Full derivation: Hermitian angular momentum, orthogonality, and the cos θ step {#box-t7-ylm-proof}</summary>
+
+**You need:** Steps 3 and 5 of [Orthonormal expansions, azimuthal orthogonality, and Hermitian operators](tut:08#box-t7-hermitian) (coefficients *c*<sub>*j*</sub> = ⟨ψ<sub>*j*</sub>\|Ψ⟩; eigenfunctions of a Hermitian operator with different eigenvalues are orthogonal), [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*d*Ω = sin θ *d*θ *d*φ, *L̂*<sub>*z*</sub> = −*i* ∂/∂φ, *L̂*² = −Λ with Λ the angular part of *r*²∇², and the form and parity of [The angular eigenvalue, the angle form of the spherical harmonics, and parity](tut:08#box-t5-angular-proof)), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (odd integrands vanish), integration by parts, and one fact about polynomials: *k* + 1 nonzero, mutually orthogonal polynomials of degree at most *k* build every polynomial of degree at most *k* (orthogonal ones are independent, and a polynomial of degree at most *k* has only *k* + 1 coefficients).
+
+**Step 1 — *L̂*<sub>*z*</sub> is Hermitian.** Integrate by parts in φ:
+
+> ∫₀<sup>2π</sup> *f*\* (−*i* ∂*g*/∂φ) *d*φ = [−*i f*\* *g*]₀<sup>2π</sup> + ∫₀<sup>2π</sup> (−*i* ∂*f*/∂φ)\* *g d*φ
+
+The boundary term vanishes because *f* and *g* return to their starting values after a full turn, and (−*i* ∂*f*/∂φ)\* = +*i* ∂*f*\*/∂φ is exactly what integration by parts produces. Multiplying by sin θ and integrating over θ gives ⟨*f*\|*L̂*<sub>*z*</sub>*g*⟩ = ⟨*L̂*<sub>*z*</sub>*f*\|*g*⟩.
+
+**Step 2 — *L̂*² is Hermitian.** In ⟨*f*\|Λ*g*⟩ = ∫∫ *f*\* Λ*g* sin θ *d*θ *d*φ, with Λ = (1/sin θ) ∂/∂θ(sin θ ∂/∂θ) + (1/sin²θ) ∂²/∂φ²:
+1. θ-part: the sin θ of *d*Ω cancels the 1/sin θ, leaving ∫₀<sup>π</sup> *f*\* ∂/∂θ(sin θ ∂*g*/∂θ) *d*θ. Two integrations by parts turn it into ∫₀<sup>π</sup> ∂/∂θ(sin θ ∂*f*\*/∂θ) *g d*θ; each boundary term carries a factor sin θ, which is 0 at θ = 0 and π.
+2. φ-part: two integrations by parts turn ∫₀<sup>2π</sup> *f*\* ∂²*g*/∂φ² *d*φ into ∫₀<sup>2π</sup> (∂²*f*\*/∂φ²) *g d*φ, with boundary terms that cancel by periodicity.
+
+Λ has real coefficients, so this says ⟨*f*\|Λ*g*⟩ = ⟨Λ*f*\|*g*⟩, and *L̂*² = −Λ is Hermitian too.
+
+**Step 3 — Orthogonality.** By Step 5 of the box in You need, eigenfunctions of a Hermitian operator with different eigenvalues are orthogonal. *L̂*² has eigenvalue *l*(*l* + 1), which grows with *l* (0, 2, 6, 12, …), so *l*′ ≠ *l* gives ⟨*Y*<sub>*l*′</sub><sup>*m*′</sup>\|*Y*<sub>*l*</sub><sup>*m*</sup>⟩ = 0. *L̂*<sub>*z*</sub> does the same for *m*′ ≠ *m*. Choosing the constant in front of each *Y* so that ∫\|*Y*\|² *d*Ω = 1 completes ⟨*Y*<sub>*l*′</sub><sup>*m*′</sup>\|*Y*<sub>*l*</sub><sup>*m*</sup>⟩ = δ<sub>*l*′*l*</sub>δ<sub>*m*′*m*</sub>. For whole orbitals ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>*Y*<sub>*l*</sub><sup>*m*</sup>, *d*³*r* = *r*² *dr d*Ω splits the overlap into a radial integral times this angular one, so orbitals with different *l* or *m* are orthogonal whatever their radial parts.
+
+**Step 4 — Exact degree.** Fix *m* and put *u* = cos θ, so sin θ *d*θ = −*du* and sin<sup>2\|*m*\|</sup>θ = (1 − *u*²)<sup>\|*m*\|</sup>. With *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · *P*<sub>*l*</sub>(*u*) · *e*<sup>*im*φ</sup>, Step 3 reads
+
+> 2π ∫<sub>−1</sub><sup>1</sup> *P*<sub>*l*′</sub>(*u*)\* *P*<sub>*l*</sub>(*u*) (1 − *u*²)<sup>\|*m*\|</sup> *du* = δ<sub>*l*′*l*</sub>
+
+*P*<sub>\|*m*\|</sub>, …, *P*<sub>\|*m*\|+*k*</sub> are *k* + 1 nonzero, mutually orthogonal polynomials of degree at most *k*, so they build every polynomial of degree at most *k*. If *P*<sub>\|*m*\|+*k*</sub> had degree below *k*, it would be built from the *k* earlier ones alone, yet be orthogonal to each of them, and so orthogonal to itself: it would be zero. Hence *P*<sub>*l*</sub> has degree exactly *l* − \|*m*\|.
+
+**Step 5 — Only *l* ± 1 survive.** cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · [*u P*<sub>*l*</sub>(*u*)] · *e*<sup>*im*φ</sup>, and *u P*<sub>*l*</sub> has degree *l* + 1 − \|*m*\|. By Step 4 it is a combination of the *Y*<sub>*l*′</sub><sup>*m*</sup> with \|*m*\| ≤ *l*′ ≤ *l* + 1, whose coefficients are *c*<sub>*l*′</sub> = ⟨*Y*<sub>*l*′</sub><sup>*m*</sup>\|cos θ\|*Y*<sub>*l*</sub><sup>*m*</sup>⟩ (Step 3 of the box in You need).
+1. cos θ is real, so *c*<sub>*l*′</sub> = ⟨cos θ *Y*<sub>*l*′</sub><sup>*m*</sup>\|*Y*<sub>*l*</sub><sup>*m*</sup>⟩. By the same reasoning cos θ *Y*<sub>*l*′</sub><sup>*m*</sup> contains only harmonics up to *l*′ + 1, all orthogonal to *Y*<sub>*l*</sub><sup>*m*</sup> when *l*′ + 1 < *l*. So *c*<sub>*l*′</sub> = 0 for *l*′ < *l* − 1.
+2. For *l*′ = *l* the integrand [*Y*<sub>*l*</sub><sup>*m*</sup>]\* cos θ *Y*<sub>*l*</sub><sup>*m*</sup> picks up (−1)<sup>*l*</sup>(−1)(−1)<sup>*l*</sup> = −1 under **r** → −**r**: it is odd, and its integral over the sphere is zero.
+
+So cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = *a Y*<sub>*l*+1</sub><sup>*m*</sup> + *b Y*<sub>*l*−1</sub><sup>*m*</sup>, with *a* = ⟨*Y*<sub>*l*+1</sub><sup>*m*</sup>\|cos θ\|*Y*<sub>*l*</sub><sup>*m*</sup>⟩ and *b* = ⟨*Y*<sub>*l*−1</sub><sup>*m*</sup>\|cos θ\|*Y*<sub>*l*</sub><sup>*m*</sup>⟩.
+
+**Step 6 — The coefficients.** Conjugate symmetry with a real cos θ gives *b*(*l*, *m*) = ⟨*Y*<sub>*l*</sub><sup>*m*</sup>\|cos θ\|*Y*<sub>*l*−1</sub><sup>*m*</sup>⟩\* = *a*(*l* − 1, *m*)\*, so one formula serves both steps. Its closed form, *a* = √[((*l* + 1)² − *m*²)/((2*l* + 1)(2*l* + 3))], real and positive with the Condon–Shortley phases, is quoted (it follows from the recurrence relations of the associated Legendre functions; see Arfken, Weber and Harris, *Mathematical Methods for Physicists*). Then *b* = *a*(*l* − 1, *m*) = √[(*l*² − *m*²)/((2*l* − 1)(2*l* + 1))], which is 0 when \|*m*\| = *l*, as it must be, since no *Y*<sub>*l*−1</sub><sup>*m*</sup> exists then.
+
+**Check:** For *l* = 1, *m* = 0, take *Y*<sub>0</sub><sup>0</sup> = 1/√(4π), *Y*<sub>1</sub><sup>0</sup> = √(3/(4π)) cos θ and *Y*<sub>2</sub><sup>0</sup> = √(5/(16π)) (3cos²θ − 1), and write cos²θ = ⅓(3cos²θ − 1) + ⅓. Then cos θ *Y*<sub>1</sub><sup>0</sup> = ⅓√(12/5) *Y*<sub>2</sub><sup>0</sup> + ⅓√3 *Y*<sub>0</sub><sup>0</sup> = (2/√15) *Y*<sub>2</sub><sup>0</sup> + (1/√3) *Y*<sub>0</sub><sup>0</sup>, and the formulas give *a* = √(4/15) = 2/√15 and *b* = √(1/3). As a second test, the average of cos²θ in *Y*<sub>1</sub><sup>0</sup> is *a*² + *b*² = 4/15 + 5/15 = 3/5, and directly (3/(4π)) · 2π ∫<sub>−1</sub><sup>1</sup> *u*⁴ *du* = (3/2)(2/5) = 3/5. A numerical integration over the sphere for *l* = 2, *m* = 1 gives *a* = 0.478091 and *b* = 0.447214, matching √(8/35) and √(1/5). ✓
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: nudging an energy level {#box-t7-perturb-picture}</summary>
+
+Lay a slightly bumpy sheet under an electron cloud. To a first approximation the cloud's energy changes by the height of the bumps averaged over where the cloud is: much cloud over a bump raises the energy, much cloud over a dip lowers it. The cloud also reshapes itself a little, but an orbital already sits at a flat point of its energy (the balance point of [Why the kinetic energy is half the potential energy](tut:08#box-t6-virial-picture)), so that small reshaping changes the energy far less still. When several orbitals share one energy, as 2s and the three 2p orbitals do in hydrogen, even a tiny nudge can rearrange them completely, because nothing holds them in their original shapes. The nudge then picks its own combinations, the ones it does not mix. An electric field along *z* picks the two sp hybrids: the one whose cloud sits on the low-energy side drops, its mirror image rises by the same amount, and the ring-shaped 2p orbitals with *m* = ±1 are left alone. This is the linear **Stark effect**. The same averaging gives the Zeeman shift of Chapter 2 and the diamagnetic shift of Chapter 9.
+
+<details>
+<summary>Level 2 · Key idea: first-order perturbation theory {#box-t7-perturb}</summary>
+
+Split the Hamiltonian as *Ĥ* = *Ĥ*₀ + *V*, with the eigenstates ψ⁽⁰⁾ and energies *E*⁽⁰⁾ of *Ĥ*₀ known and *V* small. Write the new state as ψ⁽⁰⁾ plus a small correction and the energy as *E*⁽⁰⁾ + *E*⁽¹⁾. Take the overlap of the Schrödinger equation with ψ⁽⁰⁾: the correction to the state drops out, because *Ĥ*₀ is Hermitian and ψ⁽⁰⁾ is its eigenstate, and what is left is
+
+> *E*⁽¹⁾ = ⟨ψ⁽⁰⁾\|*V*\|ψ⁽⁰⁾⟩ &nbsp;&nbsp; (a.u.)
+
+the average of *V* over the unperturbed cloud. Example: Chapter 9's diamagnetic term *V* = (*B*²/8)ρ<sub>cyl</sub>² shifts 1s by (*B*²/8)⟨ρ<sub>cyl</sub>²⟩ = (*B*²/8) · 2 = *B*²/4 Ha. The result holds while *E*⁽¹⁾ is small compared with the energy gap to the states that *V* connects.
+
+If ψ⁽⁰⁾ must be chosen among *g* degenerate states φ₁, …, φ<sub>*g*</sub>, write ψ⁽⁰⁾ = Σ<sub>*k*</sub> *c*<sub>*k*</sub>φ<sub>*k*</sub>. Taking overlaps with each φ<sub>*j*</sub> instead gives a matrix eigenvalue problem ([T4](tut:08#T4)) for the *g* × *g* matrix *V*<sub>*jk*</sub> = ⟨φ<sub>*j*</sub>\|*V*\|φ<sub>*k*</sub>⟩:
+
+> Σ<sub>*k*</sub> *V*<sub>*jk*</sub> *c*<sub>*k*</sub> = *E*⁽¹⁾ *c*<sub>*j*</sub> &nbsp;&nbsp; (a.u.)
+
+Its eigenvectors are the combinations that *V* does not mix, and its eigenvalues are their shifts. Example: hydrogen *n* = 2 in a field ℰ along +*z*, where the electron's potential energy is *V* = ℰ*z* (its charge is −1). By parity and by the φ integral, the only nonzero elements are ⟨2s\|*V*\|2p₀⟩ = ⟨2p₀\|*V*\|2s⟩ = −3ℰ ([T6](tut:08#T6)), so in the basis (2s, 2p₀)
+
+> *V* = ℰ [[0, −3], [−3, 0]] &nbsp; ⇒ &nbsp; *E*⁽¹⁾ = −3ℰ for (\|2s⟩ + \|2p₀⟩)/√2 and +3ℰ for (\|2s⟩ − \|2p₀⟩)/√2 &nbsp;&nbsp; (a.u.)
+
+while 2p₊₁ and 2p₋₁ do not shift.
+
+Full algebra: [First-order shifts, degenerate levels, and the n = 2 Stark split](tut:08#box-t7-perturb-proof).
+
+<details>
+<summary>Level 3 · Full derivation: first-order shifts, degenerate levels, and the n = 2 Stark split {#box-t7-perturb-proof}</summary>
+
+**You need:** the vocabulary of this section and the Hermitian property of [Orthonormal expansions, azimuthal orthogonality, and Hermitian operators](tut:08#box-t7-hermitian) (its Step 4 gives the φ integral ∫₀<sup>2π</sup> *e*<sup>*i*(*m* − *m*′)φ</sup> *d*φ = 2πδ<sub>*mm*′</sub>), [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (eigenvalues and eigenvectors of a 2×2 matrix), and [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (parity, ⟨2s\|*z*\|2p₀⟩ = −3 and ⟨*r*²⟩ for 1s).
+
+**Step 1 — Bookkeeping.** Put a counting parameter ε in front of the small term, *Ĥ* = *Ĥ*₀ + ε*V*, and expand ψ = ψ⁽⁰⁾ + εψ⁽¹⁾ + … and *E* = *E*⁽⁰⁾ + ε*E*⁽¹⁾ + …. Insert both into *Ĥ*ψ = *E*ψ. The terms without ε give *Ĥ*₀ψ⁽⁰⁾ = *E*⁽⁰⁾ψ⁽⁰⁾, true by assumption. The terms with one power of ε give *Ĥ*₀ψ⁽¹⁾ + *V*ψ⁽⁰⁾ = *E*⁽⁰⁾ψ⁽¹⁾ + *E*⁽¹⁾ψ⁽⁰⁾, that is
+
+> (*Ĥ*₀ − *E*⁽⁰⁾) ψ⁽¹⁾ = (*E*⁽¹⁾ − *V*) ψ⁽⁰⁾ &nbsp;&nbsp; (a.u.)
+
+**Step 2 — Project onto ψ⁽⁰⁾.** Take the overlap of both sides with the normalized ψ⁽⁰⁾. On the left, Hermiticity moves *Ĥ*₀ − *E*⁽⁰⁾ onto ψ⁽⁰⁾ (*E*⁽⁰⁾ is real): ⟨ψ⁽⁰⁾\|(*Ĥ*₀ − *E*⁽⁰⁾)ψ⁽¹⁾⟩ = ⟨(*Ĥ*₀ − *E*⁽⁰⁾)ψ⁽⁰⁾\|ψ⁽¹⁾⟩ = 0. The right side is *E*⁽¹⁾⟨ψ⁽⁰⁾\|ψ⁽⁰⁾⟩ − ⟨ψ⁽⁰⁾\|*V*\|ψ⁽⁰⁾⟩ = *E*⁽¹⁾ − ⟨ψ⁽⁰⁾\|*V*\|ψ⁽⁰⁾⟩. So *E*⁽¹⁾ = ⟨ψ⁽⁰⁾\|*V*\|ψ⁽⁰⁾⟩, and setting ε = 1, *E* ≈ *E*⁽⁰⁾ + ⟨ψ⁽⁰⁾\|*V*\|ψ⁽⁰⁾⟩.
+
+**Step 3 — Degenerate levels.** If the orthonormal states φ₁, …, φ<sub>*g*</sub> all have energy *E*⁽⁰⁾, Step 1 holds for any ψ⁽⁰⁾ = Σ<sub>*k*</sub> *c*<sub>*k*</sub>φ<sub>*k*</sub>, and does not say which combination the perturbed state grows out of. Take the overlap of Step 1 with each φ<sub>*j*</sub>. The left side vanishes as in Step 2, since (*Ĥ*₀ − *E*⁽⁰⁾)φ<sub>*j*</sub> = 0. The right side gives *E*⁽¹⁾*c*<sub>*j*</sub> − Σ<sub>*k*</sub> ⟨φ<sub>*j*</sub>\|*V*\|φ<sub>*k*</sub>⟩*c*<sub>*k*</sub>. So Σ<sub>*k*</sub> *V*<sub>*jk*</sub>*c*<sub>*k*</sub> = *E*⁽¹⁾*c*<sub>*j*</sub>: the allowed (*c*<sub>*k*</sub>) are the eigenvectors of the matrix *V*<sub>*jk*</sub>, and the shifts are its eigenvalues. For *g* = 1 this is Step 2.
+
+**Step 4 — The *n* = 2 matrix for *V* = ℰ*z*.** Use the basis 2s, 2p₋₁, 2p₀, 2p₊₁, all with *E*₂ = −⅛ Ha.
+1. Diagonal elements vanish: each \|φ\|² is even and *z* is odd.
+2. Elements between different *m* vanish: *z* = *r* cos θ does not depend on φ, so the φ integral is ∫₀<sup>2π</sup> *e*<sup>*i*(*m* − *m*′)φ</sup> *d*φ = 0. This removes every element involving 2p₊₁ or 2p₋₁ (2s and 2p₀ both have *m* = 0).
+3. What remains is ⟨2s\|*V*\|2p₀⟩ = ⟨2p₀\|*V*\|2s⟩ = −3ℰ, from T6 (everything is real).
+
+So *V* has only the block ℰ [[0, −3], [−3, 0]] for (2s, 2p₀), and 2p₊₁ and 2p₋₁ have *E*⁽¹⁾ = 0.
+
+**Step 5 — Diagonalize the block.** det [[−λ, −3ℰ], [−3ℰ, −λ]] = λ² − 9ℰ² = 0 gives λ = ±3ℰ. For λ = −3ℰ the first row, −λ*c*₁ − 3ℰ*c*₂ = 3ℰ*c*₁ − 3ℰ*c*₂ = 0, gives *c*₁ = *c*₂: the hybrid (\|2s⟩ + \|2p₀⟩)/√2. For λ = +3ℰ it gives *c*₂ = −*c*₁: (\|2s⟩ − \|2p₀⟩)/√2. The field picks out the sp hybrids of Chapter 1.
+
+**Check:** The hybrid (\|2s⟩ + \|2p₀⟩)/√2 has ⟨*z*⟩ = −3 (T6), so its ⟨*V*⟩ = −3ℰ, its eigenvalue. The four shifts −3ℰ, +3ℰ, 0, 0 add up to 0, the sum of the diagonal elements of *V*. For 1s and Chapter 9's *V* = (*B*²/8)(*x*² + *y*²), Step 2 gives (*B*²/8) · ⅔⟨*r*²⟩ = (*B*²/8)(⅔ · 3) = *B*²/4, using ⟨*r*²⟩ = 4 · 4!/2⁵ = 3 from T6's integral. A 2×2 test: for *Ĥ*₀ = diag(0, 1) and *V* = ε[[0.3, 0.2], [0.2, −0.1]] at ε = 0.01, the exact lower eigenvalue is 0.0029960 against the first-order 0.003; the difference, −0.04ε², is second order. ✓
+
+</details>
+
+</details>
+
 </details>
 
 **Try it**
@@ -1003,21 +1461,39 @@ Adding: [*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *i*(*x p̂*<sub>*y*</sub> �
 
 ## T8. Fourier ideas: time–bandwidth and the Lorentzian {#T8}
 
-*Used in:* [Chapter 3](tut:03) §3.4 (pulse envelopes and bandwidth), [Chapter 5](tut:05) §5.3 (how detuning suppresses a transition), [Chapter 6](tut:06) §6.2 (natural Lorentzian line shape and linewidth).
+*Used in:* [Chapter 3](tut:03) §3.4 (pulse envelopes and bandwidth), [Chapter 4](tut:04) §4.2 (the sinc² window that turns a transition probability into a rate), [Chapter 5](tut:05) §5.3 (how detuning suppresses a transition), [Chapter 6](tut:06) §6.2 (natural Lorentzian line shape and linewidth).
 
 **The idea.** A pure frequency is a wave that goes on forever. Any pulse that starts and stops is really a **sum of many frequencies** close together; where they add in step the pulse is strong, and everywhere else they cancel. The **shorter** the pulse, the **wider** the range of frequencies needed to build it. You do not need the full Fourier theory for this tutorial, just two rules.
 
-**Rule 1: time–bandwidth.** A pulse lasting a time *T* contains a spread of angular frequencies Δω with
+**Rule 1: time–bandwidth.** Frequencies here are mostly **angular frequencies** ω = 2πν (radians per second, where ν is the ordinary frequency in Hz). A pulse lasting a time *T* contains a spread of angular frequencies Δω, called its **bandwidth**, with
 
 > Δω · *T* ~ 2π &nbsp;&nbsp; (equivalently Δν · *T* ~ 1, with ν = ω/2π)
 
-The "~" is honest: the exact number (1, ½, 2π, …) depends on how you define "width". Read it as an order-of-magnitude rule. A pulse of *N* optical cycles at carrier frequency ω₀ lasts *T* = *N* · 2π/ω₀, so
+The "~" is honest: the exact number (1, ½, 2π, …) depends on the pulse's shape and on how you define "width". Read it as an order-of-magnitude rule. A pulse of *N* optical cycles at carrier frequency ω₀ lasts *T* = *N* · 2π/ω₀, so
 
 > Δω/ω₀ ~ 2π/(ω₀ *T*) = 1/*N*
 
 A 10-cycle pulse has a bandwidth of about 10% of its carrier frequency; a 100-cycle pulse about 1%. Multiplying by *ħ* gives the energy–time relation Δ*E* · *T* ~ 2π*ħ*: a short pulse has a fuzzy photon energy.
 
-**Rule 2: exponential decay ↔ Lorentzian line.** An excited atom emits a wave whose amplitude dies as *e*<sup>−Γ*t*/2</sup> (so its intensity dies as *e*<sup>−Γ*t*</sup>, lifetime τ = 1/Γ). The spectrum of such a wave, at detuning δ = ω − ω₀ from its centre, is a **Lorentzian**:
+**An exact case: the Gaussian pulse.** The most common measure of width is the **full width at half maximum (FWHM)**: the width of a peak measured halfway up from zero. A **Gaussian** (bell-curve) pulse has a Gaussian spectrum. If its phase does not drift during the pulse, the FWHM of its intensity in time, Δ*t*, times the FWHM of its spectrum in ordinary frequency, Δν, is exactly
+
+> Δν · Δ*t* = 2 ln 2 / π ≈ 0.441
+
+Any phase drift (a "chirp") only widens the spectrum, so laser makers call a pulse that reaches this value "transform-limited". Example: a 10 fs Gaussian pulse is at least 0.441/(10 fs) ≈ 44 THz wide in frequency.
+
+**The app's pulse shape: a sin² envelope.** The Coherent EM wave mode switches its field on and off smoothly as sin²(π*t*/*T*), rising from zero at *t* = 0 to a peak at *T*/2 and falling back to zero at *t* = *T*, so *T* is the total duration. Measured as the FWHM of the power spectrum (the squared spectral amplitude, in ordinary frequency), its width is
+
+> Δν ≈ 1.44 / *T*
+
+An *N*-cycle sin² pulse (*T* = *N*/ν₀) therefore has Δν/ν₀ ≈ 1.44/*N*, about 14% for 10 cycles, in line with Rule 1. Comparing like with like: the intensity envelope sin⁴(π*t*/*T*) has FWHM Δ*t* ≈ 0.364 *T*, so Δν · Δ*t* ≈ 0.52, close to the Gaussian's 0.441.
+
+**A sudden on–off: the sinc² window.** Switch light of constant strength on for a time *t*, then off: a rectangular pulse. Its power spectrum, at a frequency offset Δ from the light's own frequency, is the **sinc² window** sin²(Δ*t*/2)/(Δ/2)² (sinc *x* is short for sin *x*/*x*). The same window, with Δ now the detuning between the light and an atomic transition, sets the probability that the pulse drives that transition ([Chapter 4](tut:04) §4.2). The window's central peak has height *t*² at Δ = 0 and its first zeros at Δ = ±2π/*t*: as *t* grows it gets taller and narrower, and its area grows only in proportion to *t*. The exact area is 2π*t*, because with *x* = Δ*t*/2
+
+> ∫<sub>−∞</sub><sup>∞</sup> sin²*x* / *x*² *dx* = π
+
+Because the area grows in step with *t*, light with a broad spectrum drives a transition at a constant rate, which is how Chapter 4 turns a transition probability into the Einstein rate. (Chapter 4 writes the window as sin²(Δ*t*/2)/Δ², a quarter of this one, with area π*t*/2.) See [The area under the sinc² window](tut:08#box-t8-sinc-picture).
+
+**Rule 2: exponential decay ↔ Lorentzian line.** An excited atom emits a wave whose amplitude dies as *e*<sup>−Γ*t*/2</sup> (so its intensity dies as *e*<sup>−Γ*t*</sup>, lifetime τ = 1/Γ). The spectrum of such a wave, at detuning δ = ω − ω₀ from its centre frequency ω₀, is a **Lorentzian**, a peak with a rounded top and long, slowly falling tails:
 
 > *L*(δ) = (Γ²/4) / (δ² + Γ²/4), &nbsp;&nbsp; *L*(0) = 1, &nbsp;&nbsp; full width at half maximum (FWHM) = Γ
 
@@ -1049,7 +1525,7 @@ Two tuning forks at angular frequencies ω₁ and ω₂ add up to a fast wave at
 
 Each swell of the envelope lasts 2π/Δω, so two frequencies Δω apart make lumps of duration about 2π/Δω. Adding many frequencies spread over Δω cancels all the lumps but one, leaving a single pulse of duration *T* ~ 2π/Δω. That is Rule 1.
 
-To measure how much of frequency ω sits inside a signal, multiply it by *e*<sup>+*i*ω*t*</sup> and integrate over time: the part that matches ω stops rotating and adds up, while everything else keeps rotating and averages away. For the decaying wave *f*(*t*) = *e*<sup>−*i*ω₀*t*</sup> *e*<sup>−Γ*t*/2</sup> (*t* ≥ 0, zero before), with centre frequency ω₀, decay rate Γ and detuning δ = ω − ω₀, the integral is the exponential integral of [T3](tut:08#T3) with a complex rate:
+To measure how much of frequency ω sits inside a signal, multiply it by *e*<sup>+*i*ω*t*</sup> and integrate over time: the part that matches ω stops rotating and adds up, while everything else keeps rotating and averages away. This recipe is the **Fourier transform**. Applied to a Gaussian pulse it returns another Gaussian whose width is inversely proportional to the pulse's, which gives the exact 0.441 of Rule 1. For the decaying wave *f*(*t*) = *e*<sup>−*i*ω₀*t*</sup> *e*<sup>−Γ*t*/2</sup> (*t* ≥ 0, zero before), with centre frequency ω₀, decay rate Γ and detuning δ = ω − ω₀, the integral is the exponential integral of [T3](tut:08#T3) with a complex rate:
 
 > *A*(δ) = ∫₀<sup>∞</sup> *e*<sup>−(Γ/2 − *i*δ)*t*</sup> *dt* = 1 / (Γ/2 − *i*δ)
 
@@ -1059,12 +1535,12 @@ The spectral intensity is the squared modulus \|*A*(δ)\|². Dividing by its pea
 
 Chapter 5's detuned Rabi peak Ω²/(Ω² + Δ²) of [T4](tut:08#T4) has the same shape in the detuning Δ, with FWHM 2Ω. Chapter 6's single-photon line is a Lorentzian of FWHM 2Γ, twice as wide, because the photon's and the atom's decay rates add.
 
-Full algebra: [Beat identity, Lorentzian integral, Fourier transform, and doubled single-photon linewidth](tut:08#box-t8-fourier).
+Full algebra: [Beat identity, Lorentzian integral, Fourier transform, Gaussian pulse, and doubled single-photon linewidth](tut:08#box-t8-fourier).
 
 <details>
-<summary>Level 3 · Full derivation: beat identity, Lorentzian integral, Fourier transform, and doubled single-photon linewidth {#box-t8-fourier}</summary>
+<summary>Level 3 · Full derivation: beat identity, Lorentzian integral, Fourier transform, Gaussian pulse, and doubled single-photon linewidth {#box-t8-fourier}</summary>
 
-**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1), [T3 · First-order linear ODEs](tut:08#T3) (the single-photon equation of its Step 5) and [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (the detuned Rabi peak).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1), [T3 · First-order linear ODEs](tut:08#T3) (the uniqueness trick of its Step 1 and the single-photon equation of its Step 5), [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (the detuned Rabi peak), integration by parts, and the Gaussian integral ∫ *e*<sup>−*x*²</sup> *dx* = √π over the whole line (quoted; the reason is sketched in Step 4).
 
 **Step 1 — The beat identity.** Write ω₁ = ω̄ − Δω/2 and ω₂ = ω̄ + Δω/2, and use the addition formulas cos(*A* ∓ *B*) = cos *A* cos *B* ± sin *A* sin *B* with *A* = ω̄*t* and *B* = Δω *t*/2. Adding the two lines, the sin *A* sin *B* terms cancel:
 
@@ -1079,16 +1555,79 @@ The envelope cos(Δω *t*/2) changes sign every 2π/Δω, and the loudness, whic
 4. Its peak (at δ = 0) is 4/Γ². Dividing by the peak gives *L*(δ) = (Γ²/4)/(δ² + Γ²/4).
 5. Half maximum: *L* = ½ when δ² + Γ²/4 = 2 · Γ²/4, i.e. δ² = Γ²/4, δ = ±Γ/2. The full width between these two points is Γ/2 − (−Γ/2) = Γ.
 
-**Step 3 — The general Fourier transform and the time–bandwidth bound.** The general rule is *F*(ω) = ∫ *f*(*t*) *e*<sup>*i*ω*t*</sup> *dt*, with the inverse *f*(*t*) = (1/2π) ∫ *F*(ω) *e*<sup>−*i*ω*t*</sup> *d*ω: any reasonable signal is a sum (integral) of pure frequencies with complex weights *F*(ω). With widths measured as standard deviations of \|*f*\|² and \|*F*\|², the precise statement (quoted) is Δω · Δ*t* ≥ ½ for every pulse, with equality only for a Gaussian; multiplied by *ħ* it is Heisenberg's energy–time inequality Δ*E* · Δ*t* ≥ *ħ*/2. Any other definition of width changes the constant, not the inverse relationship.
+**Step 3 — The general Fourier transform and the time–bandwidth bound.** The general rule is *F*(ω) = ∫ *f*(*t*) *e*<sup>*i*ω*t*</sup> *dt*, with the inverse *f*(*t*) = (1/2π) ∫ *F*(ω) *e*<sup>−*i*ω*t*</sup> *d*ω: any reasonable signal is a sum (integral) of pure frequencies with complex weights *F*(ω). With widths measured as standard deviations of \|*f*\|² and \|*F*\|², the precise statement (quoted) is Δω · Δ*t* ≥ ½ for every pulse, with equality only for a Gaussian whose phase does not drift during the pulse (an "unchirped" Gaussian); multiplied by *ħ* it is Heisenberg's energy–time inequality Δ*E* · Δ*t* ≥ *ħ*/2. Any other definition of width changes the constant, not the inverse relationship.
 
-**Step 4 — Why Chapter 6's single-photon line is twice as wide.** T3's Step 5 gives the excited amplitude of an atom hit by a photon ξ(*t*) as *c*<sub>*e*</sub>(*T*) = −√Γ ∫₀<sup>*T*</sup> *e*<sup>−Γ(*T*−*t*)/2</sup> ξ(*t*) *dt* (the recipe with *p* = Γ/2). Detune the matched photon by δ from the atom, ξ(*t*) = *N* √Γ *e*<sup>Γ(*t*−*T*)/2</sup> *e*<sup>−*i*δ*t*</sup>, and take a long photon (Γ*T* ≫ 1, so *N* → 1):
+**Step 4 — The Gaussian pulse and Δν · Δ*t* ≈ 0.441.** Take the envelope *f*(*t*) = *e*<sup>−*at*²</sup> with *a* > 0, and *F*(ω) = ∫ *e*<sup>−*at*²</sup> *e*<sup>*i*ω*t*</sup> *dt* over the whole time axis.
+1. At ω = 0, substituting *x* = √*a* *t* in the Gaussian integral gives *F*(0) = √(π/*a*). (Why √π: the square of ∫ *e*<sup>−*x*²</sup> *dx* is the integral of *e*<sup>−(*x*² + *y*²)</sup> over the whole plane; in plane polar coordinates (radius *u*, angle φ, area element *u du d*φ) that is 2π ∫₀<sup>∞</sup> *e*<sup>−*u*²</sup> *u du* = 2π · ½ = π.)
+2. Differentiate under the integral: *dF*/*d*ω = *i* ∫ *t e*<sup>−*at*²</sup> *e*<sup>*i*ω*t*</sup> *dt*. Write *t e*<sup>−*at*²</sup> = −(1/2*a*) *d*(*e*<sup>−*at*²</sup>)/*dt* and integrate by parts; the boundary terms vanish because *e*<sup>−*at*²</sup> → 0 at both ends, and *d*(*e*<sup>*i*ω*t*</sup>)/*dt* = *i*ω *e*<sup>*i*ω*t*</sup>. So *dF*/*d*ω = (*i*/2*a*)(*i*ω) *F* = −(ω/2*a*) *F*.
+3. As in T3's Step 1, form *g*(ω) = *F*(ω) *e*<sup>ω²/(4*a*)</sup>. The product rule gives *dg*/*d*ω = [*dF*/*d*ω + (ω/2*a*) *F*] *e*<sup>ω²/(4*a*)</sup> = 0, so *g* is constant, *g* = *F*(0), and *F*(ω) = √(π/*a*) *e*<sup>−ω²/(4*a*)</sup>: a Gaussian again.
+4. Widths. The intensity in time, *e*<sup>−2*at*²</sup>, is half its peak where 2*at*² = ln 2, so Δ*t* = 2√(ln 2/(2*a*)). The spectrum \|*F*\|² ∝ *e*<sup>−ω²/(2*a*)</sup> is half its peak where ω² = 2*a* ln 2, so Δω = 2√(2*a* ln 2). Their product is Δω · Δ*t* = 4√(ln 2 · ln 2) = 4 ln 2 ≈ 2.77 whatever *a* is: squeezing the pulse (larger *a*) widens the spectrum by exactly the same factor. Dividing by 2π, Δν · Δ*t* = 2 ln 2/π ≈ 0.441.
+
+**Step 5 — Why Chapter 6's single-photon line is twice as wide.** T3's Step 5 gives the excited amplitude of an atom hit by a photon ξ(*t*) as *c*<sub>*e*</sub>(*T*) = −√Γ ∫₀<sup>*T*</sup> *e*<sup>−Γ(*T*−*t*)/2</sup> ξ(*t*) *dt* (the recipe with *p* = Γ/2). Detune the matched photon by δ from the atom, ξ(*t*) = *N* √Γ *e*<sup>Γ(*t*−*T*)/2</sup> *e*<sup>−*i*δ*t*</sup>, and take a long photon (Γ*T* ≫ 1, so *N* → 1):
 1. The two exponentials multiply, so their rates add: *e*<sup>−Γ(*T*−*t*)/2</sup> *e*<sup>Γ(*t*−*T*)/2</sup> = *e*<sup>−Γ(*T*−*t*)</sup>. Hence *c*<sub>*e*</sub>(*T*) = −Γ ∫₀<sup>*T*</sup> *e*<sup>−Γ(*T*−*t*)</sup> *e*<sup>−*i*δ*t*</sup> *dt*.
 2. Substitute *s* = *T* − *t*: *c*<sub>*e*</sub>(*T*) = −Γ *e*<sup>−*i*δ*T*</sup> ∫₀<sup>*T*</sup> *e*<sup>−(Γ − *i*δ)*s*</sup> *ds* → −Γ *e*<sup>−*i*δ*T*</sup> / (Γ − *i*δ) for Γ*T* ≫ 1, by Step 2 with Γ/2 replaced by Γ.
 3. The absorption probability is \|*c*<sub>*e*</sub>\|² = Γ²/(Γ² + δ²) = 1/(1 + δ²/Γ²), a Lorentzian with half width Γ = Γ/2 + Γ/2 and FWHM 2Γ.
 
 In frequency language this is the combination (convolution) of the photon's and the atom's Lorentzians, each of half width Γ/2, whose widths add.
 
-**Check:** At δ = 0 Step 4 gives 1 and at δ = ±Γ it gives ½ (FWHM = 2Γ, twice the single-exponential width of Step 2); at δ = Γ/2 it gives 1/(1 + ¼) = 80%. Integrating the cascade equation numerically for Γ*T* = 50 reproduces 1, 0.80 and 0.50 at δ = 0, Γ/2 and Γ. The detuned Rabi peak of T4, Ω²/(Ω² + Δ²) = 1/(1 + Δ²/Ω²), equals ½ at Δ = ±Ω, so its FWHM is 2Ω. ✓
+**Check:** At δ = 0 Step 5 gives 1 and at δ = ±Γ it gives ½ (FWHM = 2Γ, twice the single-exponential width of Step 2); at δ = Γ/2 it gives 1/(1 + ¼) = 80%. Integrating the cascade equation numerically for Γ*T* = 50 reproduces 1, 0.80 and 0.50 at δ = 0, Γ/2 and Γ. The detuned Rabi peak of T4, Ω²/(Ω² + Δ²) = 1/(1 + Δ²/Ω²), equals ½ at Δ = ±Ω, so its FWHM is 2Ω. For the Gaussian of Step 4 with *a* = 1: Δ*t* = 2√(0.347) ≈ 1.177 and Δω = 2√(1.386) ≈ 2.355, whose product 2.772 is 4 ln 2. ✓
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary>Level 1 · Picture: the area under the sinc² window {#box-t8-sinc-picture}</summary>
+
+Push a child on a swing with a steady rhythm. If your rhythm matches the swing's, every push adds in step: the swing's amplitude grows steadily, and its energy grows as the square of the time you have been pushing. If your rhythm is slightly off, your pushes drift out of step, start taking energy back after a while, and the swing sloshes instead of growing. The longer you push, the smaller the mismatch that already spoils things, so the range of good-enough rhythms shrinks in inverse proportion to the time. Now push with a whole spread of rhythms at once, as broadband light does. The total effect is the peak's height, growing as time squared, times its width, shrinking as one over time: it grows in proportion to time. Growth in proportion to time is a constant rate, which is why an atom bathed in lamp light absorbs at a steady rate, the Einstein coefficient of Chapter 4. The exact number in front, π, is the area under one standard curve.
+
+<details>
+<summary>Level 2 · Key idea: the area under sin²x/x² is π {#box-t8-sinc}</summary>
+
+Switching a wave of constant amplitude on for 0 < *s* < *t* is the rectangular pulse *f*(*s*) = 1 there and 0 elsewhere. Its Fourier transform *F*(Δ) = ∫ *f*(*s*) *e*<sup>*i*Δ*s*</sup> *ds* (the recipe of this section, with Δ the frequency offset) is
+
+> *F*(Δ) = ∫₀<sup>*t*</sup> *e*<sup>*i*Δ*s*</sup> *ds* = (*e*<sup>*i*Δ*t*</sup> − 1)/(*i*Δ), &nbsp;&nbsp; \|*F*(Δ)\|² = sin²(Δ*t*/2)/(Δ/2)²
+
+because \|*e*<sup>*i*Δ*t*</sup> − 1\|² = 2 − 2 cos Δ*t* = 4 sin²(Δ*t*/2). **Parseval's theorem** (quoted) says that a signal's total weight is the same counted in time or in frequency, apart from the 2π of this convention:
+
+> ∫ \|*F*(Δ)\|² *d*Δ = 2π ∫ \|*f*(*s*)\|² *ds*
+
+The rectangle has ∫\|*f*\|² *ds* = *t*, so the window's area is 2π*t*. Substituting *x* = Δ*t*/2 (so *d*Δ = 2 *dx*/*t* and (Δ/2)² = *x*²/*t*²) turns that area into 2*t* ∫ sin²*x*/*x*² *dx*, so
+
+> ∫<sub>−∞</sub><sup>∞</sup> sin²*x* / *x*² *dx* = π
+
+The full proof avoids Parseval's theorem and uses only integration by parts and the exponential integral of T3. Full algebra: [The sinc² area from integration by parts and a damping factor](tut:08#box-t8-sinc-proof).
+
+<details>
+<summary>Level 3 · Full derivation: the sinc² area from integration by parts and a damping factor {#box-t8-sinc-proof}</summary>
+
+**You need:** integration by parts, [T1 · Complex numbers & Euler's formula](tut:08#T1) (Im *z*, and 1/(*a* − *i*) = (*a* + *i*)/(*a*² + 1)), the integral ∫₀<sup>∞</sup> *e*<sup>−*ks*</sup> *ds* = 1/*k* for a complex *k* with positive real part (Step 2 of [Beat identity, Lorentzian integral, Fourier transform, Gaussian pulse, and doubled single-photon linewidth](tut:08#box-t8-fourier)), differentiation under the integral sign (as in Step 2 of [Integration by parts, 2s–2p₀ dipole integral, and parity of the Y_l](tut:08#box-t6-gamma)), and the arctangent: *d*(arctan *a*)/*da* = 1/(1 + *a*²), arctan 0 = 0, and arctan *a* → π/2 as *a* → ∞.
+
+**Step 1 — Symmetry and the centre.** sin²*x*/*x*² is even and tends to 1 as *x* → 0 (sin *x* ≈ *x*), so the integral over the whole line is twice the integral from 0 to ∞. Far out the integrand is at most 1/*x*², so the integral converges.
+
+**Step 2 — Integration by parts.** Take *u* = sin²*x*, so *du* = 2 sin *x* cos *x dx* = sin 2*x dx*, and *dv* = *dx*/*x*², so *v* = −1/*x*:
+
+> ∫₀<sup>∞</sup> sin²*x*/*x*² *dx* = [−sin²*x*/*x*]₀<sup>∞</sup> + ∫₀<sup>∞</sup> sin 2*x*/*x dx* = 0 + ∫₀<sup>∞</sup> sin *s*/*s ds*
+
+The boundary term is 0 at both ends: sin²*x*/*x* ≈ *x* near 0 and is at most 1/*x* far out. The last form substitutes *s* = 2*x*, since sin 2*x*/*x dx* = [sin *s*/(*s*/2)] *ds*/2 = sin *s*/*s ds*.
+
+**Step 3 — Add a damping factor.** ∫₀<sup>∞</sup> sin *s*/*s ds* converges only because its positive and negative humps cancel, so tame it: for *a* ≥ 0 let *I*(*a*) = ∫₀<sup>∞</sup> *e*<sup>−*as*</sup> (sin *s*/*s*) *ds*. We want *I*(0). For *a* > 0, differentiating under the integral cancels the awkward 1/*s*: *I*′(*a*) = −∫₀<sup>∞</sup> *e*<sup>−*as*</sup> sin *s ds*.
+
+**Step 4 — The damped sine integral.** sin *s* = Im *e*<sup>*is*</sup>, so with *k* = *a* − *i* (real part *a* > 0):
+
+> ∫₀<sup>∞</sup> *e*<sup>−*as*</sup> sin *s ds* = Im ∫₀<sup>∞</sup> *e*<sup>−(*a* − *i*)*s*</sup> *ds* = Im 1/(*a* − *i*) = Im (*a* + *i*)/(*a*² + 1) = 1/(1 + *a*²)
+
+So *I*′(*a*) = −1/(1 + *a*²).
+
+**Step 5 — Fix the constant.** *I*(*a*) + arctan *a* has derivative −1/(1 + *a*²) + 1/(1 + *a*²) = 0, so it is a constant. As *a* → ∞, \|*I*(*a*)\| ≤ ∫₀<sup>∞</sup> *e*<sup>−*as*</sup> *ds* = 1/*a* → 0 (because \|sin *s*/*s*\| ≤ 1), while arctan *a* → π/2. So *I*(*a*) = π/2 − arctan *a* for every *a* > 0.
+
+**Step 6 — Remove the damping.** *I*(0) − *I*(*a*) = ∫₀<sup>∞</sup> *g*(*s*) sin *s ds* with *g*(*s*) = (1 − *e*<sup>−*as*</sup>)/*s*. This *g* is the integral of *e*<sup>−*bs*</sup> over 0 ≤ *b* ≤ *a*, so it starts at *g*(0) = *a* and falls steadily to 0. One integration by parts gives ∫₀<sup>∞</sup> *g* sin *s ds* = [−*g* cos *s*]₀<sup>∞</sup> + ∫₀<sup>∞</sup> *g*′ cos *s ds* = *a* + ∫₀<sup>∞</sup> *g*′ cos *s ds*, and the last integral is at most ∫₀<sup>∞</sup> \|*g*′\| *ds* = *g*(0) = *a* in size. So \|*I*(0) − *I*(*a*)\| ≤ 2*a*, which vanishes as *a* → 0, and *I*(0) = π/2 − arctan 0 = π/2.
+
+**Step 7 — Assemble.** By Steps 1 and 2, ∫<sub>−∞</sub><sup>∞</sup> sin²*x*/*x*² *dx* = 2 *I*(0) = π. For the window, *x* = Δ*t*/2 gives ∫ sin²(Δ*t*/2)/(Δ/2)² *d*Δ = 2*t* · π = 2π*t*, and Chapter 4's quarter-size window has area π*t*/2.
+
+**Check:** A trapezoid sum of sin²*x*/*x*² over −2000 < *x* < 2000 gives 3.1410927, short of π by 0.0005; the missing tails are about 2 ∫<sub>2000</sub><sup>∞</sup> ½ *dx*/*x*² = 1/2000 = 0.0005 (sin² averages to ½). Step 5 at *a* = 1 predicts *I*(1) = π/2 − π/4 = π/4 ≈ 0.785398, and a numerical integration of *e*<sup>−*s*</sup> sin *s*/*s* gives 0.7853982. ✓
 
 </details>
 
@@ -1100,12 +1639,14 @@ In frequency language this is the combination (convolution) of the photon's and 
 
 1. Roughly what relative bandwidth Δω/ω₀ does a 200-cycle pulse have?
 2. An excited level lives τ = 1 ns. What is its natural linewidth Δν (FWHM, in Hz)?
+3. An ultrafast-spectroscopy laser makes Gaussian pulses with Δ*t* = 25 fs (FWHM). What is the narrowest possible spectral width Δν, in Hz and in cm⁻¹?
 
 <details>
 <summary>Answer</summary>
 
-1. About 1/200 = 0.5% of the carrier frequency.
+1. About 1/200 = 0.5% of the carrier frequency. (For the app's sin² envelope the exact FWHM is 1.44/200 ≈ 0.7%.)
 2. Γ = 1/τ = 10⁹ s⁻¹, so Δν = Γ/(2π) ≈ 1.6 × 10⁸ Hz ≈ 160 MHz.
+3. Δν = 0.441/Δ*t* = 0.441/(25 × 10⁻¹⁵ s) ≈ 1.8 × 10¹³ Hz = 18 THz. Dividing by the speed of light, 3.0 × 10¹⁰ cm/s, gives about 590 cm⁻¹, comparable to the spacing of molecular vibrational levels.
 
 </details>
 
@@ -1113,7 +1654,7 @@ In frequency language this is the combination (convolution) of the photon's and 
 
 ## T9. The cross product and angular momentum {#T9}
 
-*Used in:* [Chapter 1](tut:01) §1.1 (\|**L**\| and *L*<sub>*z*</sub> = *m*), [Chapter 2](tut:02) §2.0–2.3 (Lorentz force *q***v** × **B**, magnetic moment **μ** = −**L**/2, Zeeman energies, Larmor precession), [Chapter 4](tut:04) §4.3–4.4 (parity of **L**, angular momentum carried by circular light); [Chapter 9](tut:09) §9.1 (**A**·**p** = (*B*/2)*L*<sub>*z*</sub>).
+*Used in:* [Chapter 1](tut:01) §1.1 (\|**L**\| and *L*<sub>*z*</sub> = *m*), [Chapter 2](tut:02) §2.0–2.3 (Lorentz force *q***v** × **B**, magnetic moment **μ** = −**L**/2, Zeeman energies, Larmor precession), [Chapter 3](tut:03) §3.1 (*L* = *m*<sub>e</sub>*vr* for a circular orbit), [Chapter 4](tut:04) §4.3–4.4 (parity of **L**, angular momentum carried by circular light); [Chapter 9](tut:09) §9.1 (**A**·**p** = (*B*/2)*L*<sub>*z*</sub>).
 
 **The idea.** The cross product takes two vectors and returns a third one **perpendicular to both**, whose length is the **area** of the parallelogram they span. Anything that turns or circulates (angular momentum, magnetic forces, torques) is naturally described by it.
 
@@ -1137,6 +1678,8 @@ For a circular orbit of radius *r* at speed *v*, **r** ⊥ **p**, so \|**L**\| =
 > **μ** = −(*e*/2*m*<sub>e</sub>) **L** &nbsp;&nbsp; (SI), &nbsp;&nbsp; **μ** = −**L**/2 &nbsp;&nbsp; (a.u.)
 
 The minus sign is the electron's negative charge. In a field **B** = *B*<sub>*z*</sub>**ẑ**, the energy *U* = −**μ** · **B** = +½ *B*<sub>*z*</sub> *L*<sub>*z*</sub> = *m B*<sub>*z*</sub>/2: the orbital Zeeman shift of [Chapter 2](tut:02) §2.2.
+
+**Torque and precession.** A force **F** applied at position **r** has the turning effect (**torque**) **τ** = **r** × **F**, and torque changes angular momentum, *d***L**/*dt* = **τ**, just as force changes momentum. A magnetic moment in a field feels the torque **μ** × **B**. Because **μ** is parallel (here antiparallel) to **L**, this torque is always perpendicular to **L**: it swings **L** around the field direction without changing its length. This is **Larmor precession**, at the Larmor frequency ω<sub>Larmor</sub> = *eB*/(2*m*<sub>e</sub>) (*B*/2 in atomic units; about 14 GHz per tesla as an ordinary frequency), derived in [Component proofs, Larmor precession, and parity of L](tut:08#box-t9-larmor).
 
 **Worked example.** **a** = (1, 2, 0), **b** = (3, 1, 0):
 
@@ -1177,7 +1720,7 @@ Full algebra: [Component proofs, Larmor precession, and parity of L](tut:08#box-
 <details>
 <summary>Level 3 · Full derivation: component proofs, Larmor precession, and parity of L {#box-t9-larmor}</summary>
 
-**You need:** [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (a coupled pair of equations solved by cosines and sines) and [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (inversion **r** → −**r**).
+**You need:** [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (a coupled pair of equations solved by cosines and sines), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (inversion **r** → −**r**), and two quoted laws from the main text: torque changes angular momentum, *d***L**/*dt* = **τ**, and a magnetic moment in a field **B** feels the torque **τ** = **μ** × **B**.
 
 **Step 1 — Perpendicular to both.** Dot **a** into **a** × **b**:
 

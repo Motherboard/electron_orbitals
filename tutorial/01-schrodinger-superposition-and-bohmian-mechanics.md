@@ -4,7 +4,7 @@ This simulation visualizes a single hydrogen atom—starting from stationary orb
 
 Bohmian mechanics is an *interpretation* of quantum mechanics: it reproduces the exact same position statistics \|Ψ\|² as standard quantum mechanics, though its particle trajectories cannot be directly observed and are not needed for any chemistry calculation. The wavefunctions, probability densities, and probability currents in this chapter are standard quantum mechanics; the electron dots and trails are the Bohmian addition, used as a visual aid for probability flow.
 
-The key steps—separating space from time ([derivation](tut:01#box-sep-vars)), interference in a superposition ([derivation](tut:01#box-expand-square-full)), the continuity equation for probability flow ([derivation](tut:01#box-j-from-tdse)), and the Bohmian guidance law with its key property, equivariance ([derivation](tut:01#box-guidance))—are worked out step by step in this chapter's zoom boxes, so you can see *why* the dots behave the way they do on the canvas. A few standard results (the full radial solution, hydrogen's energy levels, and the general node counts) are stated without full proof. *(In this model the electron has no spin, so each state is labeled by the three spatial quantum numbers *n*, *l*, *m*, where *m* is the *m*<sub>*l*</sub> of general chemistry. Adding the electron's spin (*s* = ½, spin projection *m*<sub>*s*</sub> = ±½) would leave these spatial wavefunctions unchanged as long as the tiny spin–orbit coupling, a magnetic interaction between spin and orbital motion, is ignored. §1.6 explains where spin and many-electron atoms fit in.)*
+Four key steps are worked out in full in this chapter's zoom boxes, so you can see *why* the dots behave the way they do on the canvas: separating space from time ([separating variables and solving df/dt = −iEf](tut:01#box-sep-vars)), interference in a superposition ([expanding \|a + b\|² term by term](tut:01#box-expand-square-full)), the continuity equation for probability flow ([J and the flow velocity ∇S/m<sub>e</sub> from the TDSE](tut:01#box-j-from-tdse)), and the Bohmian guidance law with its key property, equivariance ([the guidance law and equivariance, step by step](tut:01#box-guidance)). A few standard results (the full radial solution, hydrogen's energy levels, and the general node counts) are stated without full proof. (In this model the electron has no spin, so each state is labeled by the three spatial quantum numbers *n*, *l*, *m*, where *m* is the *m*<sub>*l*</sub> of general chemistry. Adding the electron's spin (*s* = ½, spin projection *m*<sub>*s*</sub> = ±½) would leave these spatial wavefunctions unchanged as long as the tiny spin–orbit coupling, a magnetic interaction between spin and orbital motion, is ignored. §1.6 explains where spin and many-electron atoms fit in.)
 
 > **In a Nutshell (what a first-year chemist should take away):**
 > - An orbital ψ is a **wave**, not a path. \|ψ\|² gives the **probability per unit volume** of finding the electron at a point.
@@ -133,9 +133,11 @@ We work in atomic units (*ħ* = 1), where the TDSE is *i* ∂Ψ/∂*t* = *Ĥ*₀
 
 > *f*(*t*) = *e*<sup>−*iEt*</sup> &nbsp;&nbsp; (a.u.)
 
-**Step 6 — check by differentiating.** By the chain rule, *d*(*e*<sup>−*iEt*</sup>)/*dt* = (−*iE*) *e*<sup>−*iEt*</sup> = −*iE f*. ✓ Any constant multiple *A e*<sup>−*iEt*</sup> also works; we absorb *A* into ψ, so *f*(0) = 1.
+**Step 6 — fix the constant factor.** Any constant multiple *A e*<sup>−*iEt*</sup> also solves Step 4, since both sides simply gain the factor *A*. We absorb *A* into ψ, so *f*(0) = 1.
 
-**SI units:** the TDSE has *iħ* in place of *i*, so step 4 becomes *df*/*dt* = −*i*(*E*/*ħ*) *f*, and the same guess gives *f*(*t*) = *e*<sup>−*iEt*/*ħ*</sup>.
+**Step 7 — SI units.** The TDSE has *iħ* in place of *i*, so Step 4 becomes *df*/*dt* = −*i*(*E*/*ħ*) *f*, and the same guess gives *f*(*t*) = *e*<sup>−*iEt*/*ħ*</sup>.
+
+**Check:** by the chain rule, *d*(*e*<sup>−*iEt*</sup>)/*dt* = (−*iE*) *e*<sup>−*iEt*</sup> = −*iE f*, which is Step 4. The clock keeps length 1, \|*f*\|² = *e*<sup>+*iEt*</sup> *e*<sup>−*iEt*</sup> = 1, so \|Ψ\|² = \|ψ\|² at every time. For 1s (*E* = −½ Ha) the clock turns once every 2π/0.5 ≈ 12.6 a.u. of time ≈ 0.30 fs while the density stays frozen. ✓
 
 </details>
 
@@ -148,7 +150,7 @@ Because the Coulomb potential −1/*r* depends only on the distance *r*, each or
 
 > ψ<sub>*nlm*</sub>(*r*, θ, φ) = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) &nbsp;∝&nbsp; *R*<sub>*nl*</sub>(*r*) *P*<sub>*l*</sub><sup>\|*m*\|</sup>(cos θ) *e*<sup>*im*φ</sup>
 
-Each factor is normalized separately—∫₀<sup>∞</sup> \|*R*<sub>*nl*</sub>(*r*)\|² *r*² *dr* = 1 and ∫₀<sup>π</sup> sin θ *d*θ ∫₀<sup>2π</sup> *d*φ \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = 1—so the full wavefunction obeys ∫ \|ψ\|² *d*³*r* = 1. *(Scope: [Azimuthal quantization and the 1s radial check](tut:01#box-short-proofs) derives the φ equation and the integer values of *m*, and checks the 1s solution directly. The general radial solution and E<sub>n</sub> = −1/(2n²) are quoted without proof; they are worked out in the hydrogen-atom chapter of any physical-chemistry or quantum-mechanics textbook, e.g. Griffiths, Introduction to Quantum Mechanics, §4.2.)* Three physical boundary conditions force the quantum numbers to take discrete integer values:
+Each factor is normalized separately—∫₀<sup>∞</sup> \|*R*<sub>*nl*</sub>(*r*)\|² *r*² *dr* = 1 and ∫₀<sup>π</sup> sin θ *d*θ ∫₀<sup>2π</sup> *d*φ \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = 1—so the full wavefunction obeys ∫ \|ψ\|² *d*³*r* = 1. (Scope: [Azimuthal quantization and the 1s radial check](tut:01#box-short-proofs) derives the φ equation and the integer values of *m*, and checks the 1s solution directly; the angular shapes *Y*<sub>*l*</sub><sup>*m*</sup> and their *l*(*l*+1) eigenvalue are derived in [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular). The general radial solution and *E*<sub>*n*</sub> = −1/(2*n*²) are quoted without proof; they are worked out in the hydrogen-atom chapter of any physical-chemistry or quantum-mechanics textbook, e.g. Griffiths, *Introduction to Quantum Mechanics*, §4.2.) Three physical boundary conditions force the quantum numbers to take discrete integer values:
 - **Radial decay & finiteness:** The radial wave turns out to be a polynomial in *r* times a decaying exponential. Requiring *R*<sub>*nl*</sub>(*r*) to stay finite at *r* = 0 and to die away as *r* → ∞ forces that polynomial to stop after a finite number of terms. That quantizes bound shells to all positive integers *n* = 1, 2, 3, … without upper limit, restricts angular momentum to 0 ≤ *l* ≤ *n* − 1, and fixes energies at *E*<sub>*n*</sub> = −1/(2*n*²) Ha = −13.6057/*n*² eV (a.u. / eV).
 - **Polar finiteness:** Requiring *P*<sub>*l*</sub><sup>\|*m*\|</sup>(cos θ) to stay finite at the north and south poles (θ = 0 and θ = π, where cos θ = ±1) forces *l* to be a non-negative integer (`0, 1, 2, …`) with \|*m*\| ≤ *l*.
 - **Azimuthal single-valuedness:** Requiring *e*<sup>*im*φ</sup> to return to the same value after a full 2π rotation around the *z*-axis (*e*<sup>*im*(φ+2π)</sup> = *e*<sup>*im*φ</sup>) forces *m* to be an integer, yielding *m* = −*l*, …, +*l*.
@@ -231,7 +233,7 @@ That sideways kinetic-energy cost acts like a steep repulsive **centrifugal wall
 <details>
 <summary>Level 2 · Key idea: the centrifugal barrier and radial behavior near the nucleus</summary>
 
-For a classical particle with radial speed *v*<sub>*r*</sub>, sideways speed *v*<sub>t</sub>, and angular momentum *L* = *m*<sub>e</sub>*r v*<sub>t</sub>, the sideways kinetic energy is ½*m*<sub>e</sub>*v*<sub>t</sub>² = *L*²/(2*m*<sub>e</sub>*r*²). Replacing *L*² by its quantum value *l*(*l*+1)*ħ*² turns the 3D radial problem (with *u*(*r*) = *r R*<sub>*nl*</sub>(*r*)) into a 1D Schrödinger equation with a repulsive centrifugal barrier:
+For a classical particle with radial speed *v*<sub>*r*</sub>, sideways speed *v*<sub>t</sub>, and angular momentum *L* = *m*<sub>e</sub>*r v*<sub>t</sub>, the sideways kinetic energy is ½*m*<sub>e</sub>*v*<sub>t</sub>² = *L*²/(2*m*<sub>e</sub>*r*²). Replacing *L*² by its quantum value *l*(*l*+1)*ħ*² (derived in [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular)) turns the 3D radial problem (with *u*(*r*) = *r R*<sub>*nl*</sub>(*r*)) into a 1D Schrödinger equation with a repulsive centrifugal barrier:
 
 > *L*² / (2*m*<sub>e</sub>*r*²) &nbsp;→&nbsp; *l*(*l*+1)*ħ*² / (2*m*<sub>e</sub>*r*²) = *l*(*l*+1) / (2*r*²) &nbsp;&nbsp; (SI → a.u.)
 
@@ -246,7 +248,7 @@ Full algebra: [The radial equation and why R ∝ r^l near the nucleus](tut:01#bo
 <details>
 <summary>Level 3 · Full derivation: the radial equation and why R ∝ r<sup>l</sup> near the nucleus {#box-radial-eq}</summary>
 
-**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (chain rule for *r* = √(*x*² + *y*² + *z*²)) and the angular part of the Laplacian from [Cartesian chain rule, full Laplacian, and L̂z = −i ∂/∂φ](tut:08#box-t5-full-lap): acting on a spherical harmonic, the two angular terms of ∇² give −*l*(*l*+1) *Y*<sub>*l*</sub><sup>*m*</sup>/*r*² (quoted there).
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (chain rule for *r* = √(*x*² + *y*² + *z*²)) and the angular part of the Laplacian: acting on a spherical harmonic, the two angular terms of ∇² give −*l*(*l*+1) *Y*<sub>*l*</sub><sup>*m*</sup>/*r*², derived in [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular).
 
 **Step 1 — the radial Laplacian identity.** For a function *f*(*r*) depending only on *r* = √(*x*² + *y*² + *z*²), the chain rule gives ∂*r*/∂*x* = *x*/*r*, so ∂*f*/∂*x* = *f*′(*r*) · *x*/*r*. Differentiating a second time with the product and quotient rules yields ∂²*f*/∂*x*² = *f*″(*x*/*r*)² + *f*′(1/*r* − *x*²/*r*³). Adding the matching *y* and *z* pieces and using *x*² + *y*² + *z*² = *r*² gives *f*″(*r*²/*r*²) + *f*′(3/*r* − *r*²/*r*³), that is
 
@@ -286,7 +288,7 @@ The quadratic *s*² − *s* − *l*(*l*+1) = 0 factors as (*s* − *l* − 1)(*s
 > **Important General Chemistry Distinction — \|ψ\|² vs. Radial Distribution Function *P*(*r*):**  
 > - **Probability density per unit volume** \|ψ(**r**)\|² peaks right at the nucleus (*r* = 0) for *s* orbitals and vanishes at *r* = 0 for *p*, *d*, and *f* orbitals. You see \|ψ\|² directly when **Density overlay** is set to `2D slice |ψ|²`; the default `Column projection` integrates \|ψ\|² along your line of sight (§1.3).  
 > - **Radial distribution function** *P*(*r*) = *r*² \|*R*<sub>*nl*</sub>(*r*)\|² is a probability density per unit radius (∫₀<sup>∞</sup> *P*(*r*) *dr* = 1). *P*(*r*) *dr* is the probability of finding the electron anywhere in a thin spherical shell between *r* and *r* + *dr*. For *s* orbitals it equals 4π*r*²\|ψ\|², because \|*Y*₀⁰\|² = 1/(4π) and the shell has area 4π*r*².  
-> - **Why the two curves peak in different places:** \|ψ\|² is largest at the nucleus, but a shell of radius *r* → 0 has almost no volume, so *P*(0) = 0 even for 1s. For 1s, *P*(*r*) peaks at *r* = 1 *a*₀ (the **most probable radius**). For 2s, *P*(*r*) has two peaks—a small inner peak at *r* = 3 − √5 ≈ 0.76 *a*₀ and a main outer peak at *r* = 3 + √5 ≈ 5.24 *a*₀—separated by the radial node at *r* = 2 *a*₀ (see [Most probable radii of 1s and 2s](tut:01#box-most-probable-radii)). Only ≈ 5.3% of 2s probability lies inside the node.  
+> - **Why the two curves peak in different places:** \|ψ\|² is largest at the nucleus, but a shell of radius *r* → 0 has almost no volume, so *P*(0) = 0 even for 1s. For 1s, *P*(*r*) peaks at *r* = 1 *a*₀ (the **most probable radius**). For 2s, *P*(*r*) has two peaks—a small inner peak at *r* = 3 − √5 ≈ 0.76 *a*₀ and a main outer peak at *r* = 3 + √5 ≈ 5.24 *a*₀—separated by the radial node at *r* = 2 *a*₀ (see [The most probable radii of 1s and 2s](tut:01#box-most-probable-radii)). Only ≈ 5.3% of 2s probability lies inside the node.  
 > - **What this means for the dots:** The dots are sampled from \|ψ\|² in 3D, so on screen 1s dots look densest at the center, just like the glow. If you histogrammed those dots by distance from the nucleus, however, the curve would follow *P*(*r*) and peak at 1 *a*₀. The average distance (written ⟨*r*⟩; angle brackets mean the average over many measurements) is ⟨*r*⟩ = ½[3*n*² − *l*(*l*+1)] *a*₀, so ⟨*r*⟩ = 1.5 *a*₀ for 1s: the long tail of *P*(*r*) pulls the average beyond the peak.  
 > - **Hydrogen degeneracy vs. heavier atoms:** In hydrogen (ignoring the tiny fine-structure and Lamb-shift corrections, below 10⁻⁴ eV), 2s and 2p share the exact same energy *E*₂ = −1/8 Ha ≈ −3.40 eV, making the *n* = 2 superpositions below stationary. Why 2s drops below 2p in multi-electron atoms is explained with shielding in [§1.6](tut:01#many-electron).
 
@@ -682,14 +684,15 @@ Full algebra: [Proof of Unsöld's theorem and operator structure](tut:01#box-uns
 <details>
 <summary>Level 3 · Full derivation: proof of Unsöld's theorem and operator structure {#box-unsold-proof}</summary>
 
-**You need:** [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (operators, eigenstates and orthonormal bases; the **commutator** [*A*, *B*] ≡ *AB* − *BA*; a **unitary** matrix, one that turns an orthonormal basis into another orthonormal basis and so preserves lengths and overlaps), and the squared angular momentum *L̂*² = *L̂*<sub>*x*</sub>² + *L̂*<sub>*y*</sub>² + *L̂*<sub>*z*</sub>², whose eigenvalue in a subshell is *l*(*l*+1)*ħ*² (§1.1 table).
+**You need:** [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (operators, eigenstates and orthonormal bases; the **commutator** [*A*, *B*] ≡ *AB* − *BA*; a **unitary** matrix, one that turns an orthonormal basis into another orthonormal basis and so preserves lengths and overlaps), and the squared angular momentum *L̂*² = *L̂*<sub>*x*</sub>² + *L̂*<sub>*y*</sub>² + *L̂*<sub>*z*</sub>², whose eigenvalue in a subshell is *l*(*l*+1)*ħ*² (§1.1 table; in atomic units *L̂*² is minus the angular part of ∇², so this is the angular eigenvalue derived in [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular)).
 
 **Step 1 — non-commuting angular-momentum operators.** In operator language, hydrogen's zero-field Hamiltonian *Ĥ*₀ commutes with *L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>, and *L̂*<sub>*z*</sub> individually (*Ĥ*₀*L̂*<sub>*x*</sub> = *L̂*<sub>*x*</sub>*Ĥ*₀; quoted: the Coulomb potential is unchanged by rotations, and the *L̂* components generate rotations), so any axis yields valid energy eigenstates. The components themselves obey [*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>] = *iħ* *L̂*<sub>*z*</sub> and its cyclic permutations (derived in [Cauchy–Schwarz by the discriminant, and the angular-momentum commutator](tut:08#box-t7-cs-proof)). Suppose a state ψ had definite values along two axes, *L̂*<sub>*x*</sub>ψ = *a*ψ and *L̂*<sub>*y*</sub>ψ = *b*ψ. Then *L̂*<sub>*x*</sub>*L̂*<sub>*y*</sub>ψ = *ab*ψ = *L̂*<sub>*y*</sub>*L̂*<sub>*x*</sub>ψ, so *iħ L̂*<sub>*z*</sub>ψ = [*L̂*<sub>*x*</sub>, *L̂*<sub>*y*</sub>]ψ = 0 and *L̂*<sub>*z*</sub>ψ = 0. The same argument with [*L̂*<sub>*y*</sub>, *L̂*<sub>*z*</sub>] = *iħ L̂*<sub>*x*</sub> gives *iħ a*ψ = 0, so *a* = 0, and likewise *b* = 0. All three components give zero on ψ, so *L̂*²ψ = (*L̂*<sub>*x*</sub>² + *L̂*<sub>*y*</sub>² + *L̂*<sub>*z*</sub>²)ψ = 0, i.e. *l*(*l*+1)*ħ*² = 0 and *l* = 0. So no state with *l* ≥ 1 can be a simultaneous eigenstate of two different axes. Picking one axis defines an orthonormal basis of 2*l* + 1 states that spans the entire (2*l* + 1)-dimensional subshell subspace.
 
-**Step 2 — three-line proof of Unsöld's theorem for every *l*.**
-1. Any 3D rotation transforms the 2*l* + 1 spherical harmonics *Y*<sub>*l*</sub><sup>*m*</sup> of a subshell linearly into one another via a unitary matrix (quoted: a rotated degree-*l* pattern is again a degree-*l* pattern, and rotations preserve overlaps). At each point, the 2*l* + 1 values *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) form a column of numbers, and a unitary matrix preserves the squared length ∑\|·\|² of any column it acts on. So the sum *S*(θ, φ) = ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ)\|² is invariant under every rotation (and identical in any orthonormal basis, such as real Cartesian vs. complex *m*<sub>*l*</sub> orbitals).
-2. A function on the unit sphere that is unchanged by all rotations must be a constant *C*, because a rotation can carry any point of the sphere onto any other.
-3. Integrating *S* over the unit sphere (solid angle 4π) gives 4π *C* = ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> ∫ \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² *d*Ω = 2*l* + 1 (each *Y*<sub>*l*</sub><sup>*m*</sup> is normalized to 1), hence:
+**Step 2 — Unsöld's sum is unchanged by rotations.** Any 3D rotation transforms the 2*l* + 1 spherical harmonics *Y*<sub>*l*</sub><sup>*m*</sup> of a subshell linearly into one another via a unitary matrix. Each *Y*<sub>*l*</sub><sup>*m*</sup> is a harmonic polynomial of degree *l* divided by *r*<sup>*l*</sup> ([Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular)); a rotation changes neither the degree of a polynomial nor its Laplacian, so a rotated harmonic is again a combination of the same 2*l* + 1 harmonics. A rotation also leaves integrals over the sphere unchanged, so the rotated set is still orthonormal, which is what makes the matrix unitary. At each point, the 2*l* + 1 values *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) form a column of numbers, and a unitary matrix preserves the squared length ∑\|·\|² of any column it acts on. So the sum *S*(θ, φ) = ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ)\|² is invariant under every rotation (and identical in any orthonormal basis, such as real Cartesian vs. complex *m*<sub>*l*</sub> orbitals).
+
+**Step 3 — so the sum is a constant.** A function on the unit sphere that is unchanged by all rotations must be a constant *C*, because a rotation can carry any point of the sphere onto any other.
+
+**Step 4 — fix the constant by integrating.** Integrating *S* over the unit sphere (solid angle 4π, with *d*Ω = sin θ *d*θ *d*φ) gives 4π *C* = ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> ∫ \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² *d*Ω = 2*l* + 1 (each *Y*<sub>*l*</sub><sup>*m*</sup> is normalized to 1), hence:
 
 > *S*(θ, φ) = ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ)\|² = (2*l* + 1) / (4π)
 
@@ -801,7 +804,7 @@ Think of probability as a **conserved fluid**: its density ρ<sub>prob</sub>(**r
 
 > ∇ · **J** = ∂*J*<sub>*x*</sub>/∂*x* + ∂*J*<sub>*y*</sub>/∂*y* + ∂*J*<sub>*z*</sub>/∂*z*
 
-which is the **net outflow per unit volume** from a tiny region around a point (positive: more leaves than enters; see [Flux through a tiny box](tut:01#box-flux-box)). Conservation of probability then takes the form of the **continuity equation** (first line below): the density at a point can only drop as fast as probability flows away from it. The second line, derived from the TDSE in [J and the flow velocity](tut:01#box-j-from-tdse), gives the current itself:
+which is the **net outflow per unit volume** from a tiny region around a point (positive: more leaves than enters; see [Flux through a tiny box](tut:01#box-flux-box)). Conservation of probability then takes the form of the **continuity equation** (first line below): the density at a point can only drop as fast as probability flows away from it. The second line, derived from the TDSE in [J and the flow velocity ∇S/m<sub>e</sub> from the TDSE](tut:01#box-j-from-tdse), gives the current itself:
 
 > ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0
 >
@@ -930,11 +933,21 @@ Full algebra: [∇φ = φ̂/ρ_cyl with Cartesian derivatives](tut:01#box-grad-p
 
 **You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = ρ<sub>cyl</sub> cos φ, *y* = ρ<sub>cyl</sub> sin φ) and [T2 · Partial derivatives & ∇](tut:08#T2) (partial derivatives at fixed other coordinates; ∇ = (∂/∂*x*, ∂/∂*y*, ∂/∂*z*)).
 
-The azimuthal angle satisfies tan φ = *y*/*x*, with ρ<sub>cyl</sub>² = *x*² + *y*². Differentiating tan φ = *y*/*x* with respect to *x* (holding *y* fixed) gives (1/cos²φ) ∂φ/∂*x* = −*y*/*x*², so ∂φ/∂*x* = −*y* cos²φ/*x*² = −*y*/ρ<sub>cyl</sub>² (using cos φ = *x*/ρ<sub>cyl</sub>). The same steps for *y* give ∂φ/∂*y* = *x*/ρ<sub>cyl</sub>², and φ does not depend on *z*. Therefore
+**Step 1 — the slope of φ along *x*.** The azimuthal angle satisfies tan φ = *y*/*x*, with ρ<sub>cyl</sub>² = *x*² + *y*². Differentiate both sides with respect to *x*, holding *y* fixed. Since *d*(tan φ)/*d*φ = 1/cos²φ, the chain rule gives (1/cos²φ) ∂φ/∂*x* = −*y*/*x*². Multiply by cos²φ = *x*²/ρ<sub>cyl</sub>² (because cos φ = *x*/ρ<sub>cyl</sub>):
+
+> ∂φ/∂*x* = −*y* cos²φ/*x*² = −*y*/ρ<sub>cyl</sub>²
+
+**Step 2 — the slopes along *y* and *z*.** Differentiating tan φ = *y*/*x* with respect to *y*, holding *x* fixed, gives (1/cos²φ) ∂φ/∂*y* = 1/*x*, so ∂φ/∂*y* = cos²φ/*x* = *x*/ρ<sub>cyl</sub>². Moving along *z* does not change the angle around the *z*-axis, so ∂φ/∂*z* = 0.
+
+**Step 3 — assemble the gradient.** Collect the three slopes into ∇φ and substitute *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ:
 
 > ∇φ = (−*y*, *x*, 0)/ρ<sub>cyl</sub>² = (1/ρ<sub>cyl</sub>)(−sin φ, cos φ, 0) = **φ̂**/ρ<sub>cyl</sub>
 
-using *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. With *S* = *mħ*φ, ∇*S* = *mħ* **φ̂**/ρ<sub>cyl</sub>, and **J** = \|Ψ\|² ∇*S*/*m*<sub>e</sub> gives the vortex formula above. Check that **φ̂** is a unit vector: sin²φ + cos²φ = 1 ✓; and that it is perpendicular to the radial direction (cos φ, sin φ, 0): −sin φ cos φ + cos φ sin φ = 0 ✓.
+**Step 4 — the vortex current.** With *S* = *mħ*φ, ∇*S* = *mħ* ∇φ = *mħ* **φ̂**/ρ<sub>cyl</sub>, and **J** = \|Ψ\|² ∇*S*/*m*<sub>e</sub> gives the §1.4 vortex formula:
+
+> **J** = \|Ψ\|² (*mħ* / (*m*<sub>e</sub> ρ<sub>cyl</sub>)) **φ̂** &nbsp;&nbsp; (SI)
+
+**Check:** **φ̂** is a unit vector (sin²φ + cos²φ = 1) and is perpendicular to the outward direction (cos φ, sin φ, 0), since −sin φ cos φ + cos φ sin φ = 0. Numerically, at (*x*, *y*) = (1, 1) Steps 1–2 give ∇φ = (−½, ½, 0), of length 1/√2 = 1/ρ<sub>cyl</sub>; and stepping *x* from 1 to 1.001 changes φ from 45° = 0.785398 rad to 0.784898 rad, a slope of −0.500 = −*y*/ρ<sub>cyl</sub>². ✓
 
 </details>
 
@@ -957,7 +970,7 @@ using *x* = ρ<sub>cyl</sub> cos φ and *y* = ρ<sub>cyl</sub> sin φ. With *S* 
 
 ### Tilted Vortices Along *x* and *y* {#rotated-vortices}
 
-Now that you see why \|2p, +1⟩ swirls around +*z*, recall from [§1.2](tut:01#axis-eigenstates) that zero-field space has no preferred axis: superposing `m_l = +1, 0, −1` using the recipes derived in [Building the x and y eigenstates](tut:01#box-xy-eigenstates) builds that **exact same steady vortex** around +*x* (in the *yz*-plane) or around +*y* (in the *xz*-plane):
+Now that you see why \|2p, +1⟩ swirls around +*z*, recall from [§1.2](tut:01#axis-eigenstates) that zero-field space has no preferred axis: superposing `m_l = +1, 0, −1` using the recipes derived in [Building the x and y eigenstates from m_l = −1, 0, +1](tut:01#box-xy-eigenstates) builds that **exact same steady vortex** around +*x* (in the *yz*-plane) or around +*y* (in the *xz*-plane):
 
 ```demo
 {
@@ -1027,14 +1040,14 @@ The probability current satisfies ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0
 
 > *d***X**/*dt* = **v**(**X**, *t*) = **J** / \|Ψ\|² = (*ħ*/*m*<sub>e</sub>) Im(∇Ψ / Ψ) = ∇*S* / *m*<sub>e</sub> &nbsp;&nbsp; (SI)
 
-**Meaning:** a dot at position **X** moves along the phase gradient, at the speed probability is flowing at that point; wherever Ψ is real (no phase gradient), the dots stand still. Because dots and probability move together, dots that start out spread like \|Ψ\|² stay spread like \|Ψ\|² forever. This property is called **equivariance** ([Dots that ride the flow](tut:01#box-guidance-picture)), and it is why Bohmian mechanics reproduces the Born rule at every moment. *(In atomic units where ħ = m<sub>e</sub> = e = 1, adding a magnetic field modifies **v** by +**A**—equivalent to +e**A**/m<sub>e</sub> in SI—derived in Chapter 2.)*
+**Meaning:** a dot at position **X** moves along the phase gradient, at the speed probability is flowing at that point; wherever Ψ is real (no phase gradient), the dots stand still. Because dots and probability move together, dots that start out spread like \|Ψ\|² stay spread like \|Ψ\|² forever. This property is called **equivariance** ([Dots that ride the flow stay spread like \|Ψ\|²](tut:01#box-guidance-picture)), and it is why Bohmian mechanics reproduces the Born rule at every moment. *(In atomic units where ħ = m<sub>e</sub> = e = 1, adding a magnetic field modifies **v** by +**A**—equivalent to +e**A**/m<sub>e</sub> in SI—derived in Chapter 2.)*
 
 <details>
 <summary>Level 1 · Picture: dots that ride the flow stay spread like \|Ψ\|² {#box-guidance-picture}</summary>
 
 Sprinkle fine dust on a river so that the dust is crowded exactly where the water is dense, then let every grain drift with the current right where it sits. Wherever the water piles up, the dust that rode in with it piles up by exactly the same amount, and wherever the water thins out, the dust thins out with it. Because each grain moves with the very water around it, the dust keeps tracking the water's density for as long as you watch.
 
-The Bohmian dots work the same way. Probability plays the water, the probability current sets the local drift, and each dot moves with the probability around it. If the dots start out spread like \|Ψ\|², they stay spread like \|Ψ\|² at every later moment. That is why the swarm of dots on screen always matches the density glow even though every dot follows its own definite path, and why Bohmian mechanics predicts exactly the same position statistics as standard quantum mechanics. And because the flow has just one direction at each point, two dots can never sit at the same place at the same moment, so their paths never merge.
+The Bohmian dots work the same way. Probability plays the water, the probability current sets the local drift, and each dot moves with the probability around it. If the dots start out spread like \|Ψ\|², they stay spread like \|Ψ\|² at every later moment. That is why the swarm of dots on screen always matches the density glow even though every dot follows its own definite path, and why Bohmian mechanics predicts exactly the same position statistics as standard quantum mechanics. And because the flow has just one direction at each point (everywhere except the nodes, which the dots practically never reach), two dots can never sit at the same place at the same moment, so their paths never merge.
 
 <details>
 <summary>Level 2 · Key idea: the guidance law and why the dots stay \|Ψ\|²-distributed {#box-guidance-key}</summary>
@@ -1045,24 +1058,24 @@ The guidance law gives each dot the local flow velocity of probability, current 
 
 Now follow a large swarm of dots that all move with **v**, and let *P*(**r**, *t*) be their density (the fraction of dots per unit volume). Dots are never created or destroyed, so the tiny-box balance of [Box balance and the continuity equation](tut:01#box-continuity-key) gives *P* its own continuity equation with current *P* **v**. The probability density obeys the same equation with the same **v**, because ρ<sub>prob</sub>**v** = **J**:
 
-> ∂*P*/∂*t* + ∇ · (*P* **v**) = 0, &nbsp;&nbsp; ∂ρ<sub>prob</sub>/∂*t* + ∇ · (ρ<sub>prob</sub> **v**) = 0
+> ∂*P*/∂*t* + ∇ · (*P* **v**) = 0, &nbsp;&nbsp; ∂ρ<sub>prob</sub>/∂*t* + ∇ · (ρ<sub>prob</sub> **v**) = 0 &nbsp;&nbsp; (SI)
 
-Combining the two shows that the ratio *f* = *P*/ρ<sub>prob</sub> never changes as you ride along with a dot (∂*f*/∂*t* + **v** · ∇*f* is the rate of change of *f* seen by a dot moving with velocity **v**: the change at a fixed point plus the change from moving to a new point):
+Combining the two shows that the ratio *f* = *P*/ρ<sub>prob</sub> never changes as you ride along with a dot (∂*f*/∂*t* + **v** · ∇*f* is the rate of change of *f* seen by a dot moving with velocity **v**, the **material derivative** of [T2](tut:08#T2): the change at a fixed point plus the change from moving to a new point):
 
-> ∂*f*/∂*t* + **v** · ∇*f* = 0
+> ∂*f*/∂*t* + **v** · ∇*f* = 0 &nbsp;&nbsp; (SI)
 
 So if the dots are sampled from \|Ψ(**r**, 0)\|², every dot starts with *f* = 1 and keeps *f* = 1: *P* = \|Ψ\|² at all later times. Full algebra: [The guidance law and equivariance, step by step](tut:01#box-guidance).
 
 <details>
 <summary>Level 3 · Full derivation: the guidance law and equivariance, step by step {#box-guidance}</summary>
 
-**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (dividing a complex number by a positive real number divides its real and imaginary parts separately), [T2 · Partial derivatives & ∇](tut:08#T2) (the divergence product rule ∇ · (*f* **A**) = ∇*f* · **A** + *f* ∇ · **A**, and the multivariable chain rule), the continuity equation and **J** = \|Ψ\|² ∇*S*/*m*<sub>e</sub> from [J and the flow velocity ∇S/m_e from the TDSE](tut:01#box-j-from-tdse), and the tiny-box balance of [Box balance and the continuity equation](tut:01#box-continuity-key).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (dividing a complex number by a positive real number divides its real and imaginary parts separately), [T2 · Partial derivatives & ∇](tut:08#T2) (the divergence product rule ∇ · (*f* **A**) = ∇*f* · **A** + *f* ∇ · **A**), the rate of change seen by a moving point, *df*/*dt* = ∂*f*/∂*t* + ∇*f* · *d***r**/*dt*, from [The chain rule along a moving point](tut:08#box-t2-material), the continuity equation and **J** = \|Ψ\|² ∇*S*/*m*<sub>e</sub> from [J and the flow velocity ∇S/m_e from the TDSE](tut:01#box-j-from-tdse), the tiny-box balance of [Box balance and the continuity equation](tut:01#box-continuity-key), and the fact that each dot has exactly one path wherever **v** is smooth, i.e. away from the nodes of Ψ, from [Why the paths of a smooth flow never cross](tut:08#box-t3-unique).
 
 **Step 1 — the three forms of the velocity.** Wherever Ψ ≠ 0, ρ<sub>prob</sub> = Ψ\*Ψ is real and positive, so it can be moved inside the Im: **J**/ρ<sub>prob</sub> = (*ħ*/*m*<sub>e</sub>) Im(Ψ\* ∇Ψ / Ψ\*Ψ) = (*ħ*/*m*<sub>e</sub>) Im(∇Ψ/Ψ), after cancelling Ψ\*. Using **J** = \|Ψ\|² ∇*S*/*m*<sub>e</sub> instead gives **v** = ∇*S*/*m*<sub>e</sub>.
 
 **Step 2 — a continuity equation for the dots.** Let a large number of dots move with *d***X**/*dt* = **v**(**X**, *t*), and let *P*(**r**, *t*) be the fraction of them per unit volume. In a short time *dt*, the dots that cross a small face of area *dA* perpendicular to *x* are those within a slab of thickness *v*<sub>*x*</sub> *dt* behind it, a fraction *P v*<sub>*x*</sub> *dA dt*. So the dots' current is *P* **v**. Dots are never created or destroyed, so the tiny-box balance (rate of change inside = minus net outflow) gives
 
-> ∂*P*/∂*t* + ∇ · (*P* **v**) = 0
+> ∂*P*/∂*t* + ∇ · (*P* **v**) = 0 &nbsp;&nbsp; (SI)
 
 **Step 3 — the same equation for \|Ψ\|².** By the definition of **v**, ρ<sub>prob</sub> **v** = **J**, so the continuity equation ∂ρ<sub>prob</sub>/∂*t* + ∇ · **J** = 0 reads ∂ρ<sub>prob</sub>/∂*t* + ∇ · (ρ<sub>prob</sub> **v**) = 0.
 
@@ -1072,17 +1085,17 @@ So if the dots are sampled from \|Ψ(**r**, 0)\|², every dot starts with *f* = 
 
 Adding them, Step 2 becomes
 
-> ρ<sub>prob</sub> (∂*f*/∂*t* + **v** · ∇*f*) + *f* [∂ρ<sub>prob</sub>/∂*t* + ∇ · (ρ<sub>prob</sub> **v**)] = 0
+> ρ<sub>prob</sub> (∂*f*/∂*t* + **v** · ∇*f*) + *f* [∂ρ<sub>prob</sub>/∂*t* + ∇ · (ρ<sub>prob</sub> **v**)] = 0 &nbsp;&nbsp; (SI)
 
 The square bracket is zero by Step 3. Dividing what is left by ρ<sub>prob</sub> > 0:
 
-> ∂*f*/∂*t* + **v** · ∇*f* = 0
+> ∂*f*/∂*t* + **v** · ∇*f* = 0 &nbsp;&nbsp; (SI)
 
-**Step 5 — ride with a dot.** Along one trajectory **X**(*t*), the multivariable chain rule (with time treated as a fourth variable, which changes at rate *dt*/*dt* = 1 and so contributes ∂*f*/∂*t*) gives
+**Step 5 — ride with a dot.** Along one trajectory **X**(*t*), the chain rule along a moving point gives
 
 > *d*/*dt* *f*(**X**(*t*), *t*) = ∂*f*/∂*t* + (*d***X**/*dt*) · ∇*f* = ∂*f*/∂*t* + **v** · ∇*f* = 0
 
-so every dot keeps the value of *f* it started with. If the initial positions are drawn from \|Ψ(**r**, 0)\|², then *f* = 1 everywhere at *t* = 0, hence *f* = 1 at every later time (every point with ρ<sub>prob</sub> > 0 at time *t* lies on the path of some dot that started where ρ<sub>prob</sub> > 0): *P*(**r**, *t*) = \|Ψ(**r**, *t*)\|². This is **equivariance**.
+so every dot keeps the value of *f* it started with. Each dot has one well-defined path because **v** is smooth wherever Ψ ≠ 0, and almost no path ever reaches a node, where that guarantee fails. If the initial positions are drawn from \|Ψ(**r**, 0)\|², then *f* = 1 everywhere at *t* = 0, hence *f* = 1 at every later time (every point with ρ<sub>prob</sub> > 0 at time *t* lies on the path of some dot that started where ρ<sub>prob</sub> > 0): *P*(**r**, *t*) = \|Ψ(**r**, *t*)\|². This is **equivariance**.
 
 **Check:** in 1s, **v** = 0 and ρ<sub>prob</sub> does not change in time, so Step 2 gives ∂*P*/∂*t* = 0: the dots stand still and stay distributed as \|Ψ₁ₛ\|², as on the canvas. And *P* = ρ<sub>prob</sub> itself solves Step 2 (that is exactly Step 3). ✓
 
@@ -1092,7 +1105,7 @@ so every dot keeps the value of *f* it started with. If the initial positions ar
 
 </details>
 
-### Why Doesn't the 1s Electron Fall Into the Proton?
+### Why Doesn't the 1s Electron Fall Into the Proton? {#no-collapse}
 Classically, a bound electron faces two collapses: −1/*r* pulls it toward *r* → 0, and an accelerating charge should radiate its energy away. Standard quantum mechanics prevents both. First, **1s** is the lowest-energy eigenstate (there is nothing lower to fall into), and the **Heisenberg uncertainty principle** (Δ*x* Δ*p*<sub>*x*</sub> ≥ *ħ*/2 in SI, where Δ*x* and Δ*p*<sub>*x*</sub> are the spreads, i.e. standard deviations, of position and momentum along *x*; likewise for *y* and *z*) charges a steep kinetic-energy penalty if the electron is squeezed into a small radius *r*. An order-of-magnitude estimate: confining the electron to a region of size ~*r* forces a momentum spread Δ*p* ~ *ħ*/*r*, hence a kinetic energy *K* ~ (Δ*p*)²/(2*m*<sub>e</sub>) ~ 1/(2*r*²) in atomic units. Minimizing *K* + *V* ≈ 1/(2*r*²) − 1/*r* (set the derivative −1/*r*³ + 1/*r*² to zero) gives *r* = 1 *a*₀ and *K* + *V* = −½ Ha, which happens to be exact. So the penalty balances the −1/*r* pull right around *r* ~ 1 *a*₀. Second, \|Ψ\|² of a stationary state does not oscillate in time, so it emits no radiation.
 
 > **Resolving the "Motionless 1s Electron" Paradox:**
@@ -1128,7 +1141,7 @@ Full algebra: [Hamilton–Jacobi equation and Q_quant for 1s and m ≠ 0](tut:01
 <details>
 <summary>Level 3 · Full derivation: Hamilton–Jacobi equation and Q<sub>quant</sub> for 1s and m ≠ 0 {#box-q-quant}</summary>
 
-**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1), [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule and chain rule), and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (radial Laplacian ∇²*f* = (1/*r*)*d*²(*rf*)/*dr*², derived in [The radial equation](tut:01#box-radial-eq)).
+**You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1), [T2 · Partial derivatives & ∇](tut:08#T2) (divergence product rule and chain rule), and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (radial Laplacian ∇²*f* = (1/*r*)*d*²(*rf*)/*dr*², derived in [The radial equation and why R ∝ r<sup>l</sup> near the nucleus](tut:01#box-radial-eq)).
 
 **Step 1 — Hamilton–Jacobi equation from the TDSE.** Substitute Ψ = \|Ψ\| *e*<sup>*iS*/*ħ*</sup> directly into *iħ* ∂Ψ/∂*t* = [−(*ħ*²/2*m*<sub>e</sub>)∇² + *V*]Ψ. Using the product rule, the chain rule ∇*e*<sup>*iS*/*ħ*</sup> = (*i*/*ħ*) *e*<sup>*iS*/*ħ*</sup> ∇*S*, and the divergence product rule of §1.4 twice:
 - *iħ* ∂Ψ/∂*t* = (*iħ* ∂\|Ψ\|/∂*t* − \|Ψ\| ∂*S*/∂*t*) *e*<sup>*iS*/*ħ*</sup>
@@ -1176,7 +1189,7 @@ where *m*²/(2ρ<sub>cyl</sub>²) = ½*v*<sub>φ</sub>² is the azimuthal flow's
 ### Key Features You See on Screen
 - **Angular speed in *m* ≠ 0 states:** In atomic units (*ħ* = *m*<sub>e</sub> = 1), tangential speed *v*<sub>φ</sub> = *m*/ρ<sub>cyl</sub> gives angular speed ω = *v*<sub>φ</sub>/ρ<sub>cyl</sub> = *m*/ρ<sub>cyl</sub>² (in SI: ω = *mħ*/(*m*<sub>e</sub> ρ<sub>cyl</sub>²)), keeping *L*<sub>*z*</sub> = ρ<sub>cyl</sub> *v*<sub>φ</sub> = *m* identical for every electron—so inner orange dots near the *z*-axis circulate much faster than outer blue ones (dots are colored by distance ρ<sub>cyl</sub> from the *z*-axis: orange near it, blue far out).
 - **Equivariance:** A real hydrogen atom has **one** electron. The sampled dots show an ensemble of independent possible initial positions drawn from \|Ψ(**r**, 0)\|². Because the dots and the probability density both move with the same velocity field **v**, the distribution the dots are drawn from matches \|Ψ(**r**, *t*)\|² exactly at every later time *t* ([The guidance law and why the dots stay \|Ψ\|²-distributed](tut:01#box-guidance-key)); with a finite number of dots, expect minor statistical scatter.
-- **Non-crossing trajectories:** Because **v**(**r**, *t*) has a single well-defined value everywhere Ψ ≠ 0, two Bohmian trajectories can never occupy the same 3D point at the same instant *t* (non-crossing in 4D spacetime (**r**, *t*)). In stationary states or degenerate superpositions where **v**(**r**) is time-independent, their 3D paths never cross at any time; in time-dependent non-degenerate superpositions (such as 1s + 2p, +1 below), **v**(**r**, *t*) changes with time, so two 3D trails *can* pass through the same location at *different* times *t*₁ ≠ *t*₂ (and 2D screen projections can cross as well).
+- **Non-crossing trajectories:** Because **v**(**r**, *t*) has a single well-defined value and changes smoothly everywhere Ψ ≠ 0, two Bohmian trajectories can never occupy the same 3D point at the same instant *t* (non-crossing in 4D spacetime (**r**, *t*); see [Why the paths of a smooth flow never cross](tut:08#box-t3-unique)). The guarantee fails only at the nodes of Ψ, where **v** is undefined, and almost no trajectory ever reaches a node. In stationary states or degenerate superpositions where **v**(**r**) is time-independent, their 3D paths never cross at any time; in time-dependent non-degenerate superpositions (such as 1s + 2p, +1 below), **v**(**r**, *t*) changes with time, so two 3D trails *can* pass through the same location at *different* times *t*₁ ≠ *t*₂ (and 2D screen projections can cross as well).
 
 Combining different energies *and* nonzero *m*—such as **1s + 2p, +1**—produces full 3D corkscrew trajectories:
 
@@ -1226,11 +1239,11 @@ Interference needs a single wave split between two options, like one electron in
 
 Two electrons need one joint wavefunction Ψ(1, 2), where "1" stands for electron 1's position and spin. Put them in two **spin-orbitals** χ₁ and χ₂, each a spatial orbital ψ(**r**) times a spin state (up or down), chosen orthonormal (⟨χ₁\|χ₂⟩ = 0: different spatial orbitals, or the same one with opposite spins). Electrons are identical **fermions** (particles with half-integer spin), so Ψ must flip sign when the two labels are swapped; the simplest such **antisymmetric** state is
 
-> Ψ(1, 2) = [χ₁(1)χ₂(2) − χ₂(1)χ₁(2)]/√2
+> Ψ(1, 2) = [χ₁(1)χ₂(2) − χ₂(1)χ₁(2)]/√2 &nbsp;&nbsp; (a.u.)
 
 which vanishes identically if χ₁ = χ₂: the Pauli exclusion principle. Squaring and integrating over electron 2 kills every cross term by orthogonality, ⟨χ₂\|χ₁⟩ = 0. The same happens for *N* electrons in the *N*-electron version of this state, a **Slater determinant**, so the total density is a plain sum of the occupied spatial orbitals' densities, with zero wave interference:
 
-> ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|ψ<sub>*k*</sub>(**r**)\|²
+> ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|ψ<sub>*k*</sub>(**r**)\|² &nbsp;&nbsp; (a.u.)
 
 Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof)), every half-filled or filled subshell sums to a perfect sphere. Full algebra: [Two-electron Slater determinant & Unsöld's theorem](tut:01#box-slater-det).
 
@@ -1251,7 +1264,7 @@ Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator struct
 
 **Step 3 — cross terms vanish by orthogonality.** Each normalized orbital integrates to 1, while the overlap integrals ∫χ₂\*(2)χ₁(2) *d*(2) = ⟨χ₂\|χ₁⟩ = 0 vanish identically. Summing over spin 1 (∑<sub>*s*₁</sub> \|σ<sub>*k*</sub>(*s*₁)\|² = 1) leaves ρ₁(**r**) = ½(\|ψ₁(**r**)\|² + \|ψ₂(**r**)\|²) for electron 1 (and the same for electron 2), so the **total** two-electron density is the plain sum ρ(**r**) = ρ₁(**r**) + ρ₂(**r**) = \|ψ₁(**r**)\|² + \|ψ₂(**r**)\|²—with zero interference!
 
-**Step 4 — generalize to *N* electrons and link to Unsöld's theorem.** An *N*-electron Slater determinant cancels every cross term by the exact same orthogonality, giving ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|ψ<sub>*k*</sub>(**r**)\|². In a half-filled or filled subshell, every one of the 2*l* + 1 orbitals ψ = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup> holds the same number of electrons (one or two) and they all share the radial factor *R*<sub>*nl*</sub>, so that subshell contributes (1 or 2) × \|*R*<sub>*nl*</sub>(*r*)\|² ∑<sub>*m*</sub> \|*Y*<sub>*l*</sub><sup>*m*</sup>\|². By **Unsöld's theorem** ([Proof of Unsöld's theorem](tut:01#box-unsold-proof)), ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = (2*l* + 1)/(4π), a constant, which proves that every half-filled or filled subshell (*p*³, *p*⁶, *d*⁵, *d*¹⁰, *f*⁷, *f*¹⁴, …) has an exactly spherical total electron cloud—independent of whether you use the real Cartesian or complex *m*<sub>*l*</sub> basis.
+**Step 4 — generalize to *N* electrons and link to Unsöld's theorem.** An *N*-electron Slater determinant cancels every cross term by the exact same orthogonality, giving ρ(**r**) = ∑<sub>*k*=1</sub><sup>*N*</sup> \|ψ<sub>*k*</sub>(**r**)\|². In a half-filled or filled subshell, every one of the 2*l* + 1 orbitals ψ = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup> holds the same number of electrons (one or two) and they all share the radial factor *R*<sub>*nl*</sub>, so that subshell contributes (1 or 2) × \|*R*<sub>*nl*</sub>(*r*)\|² ∑<sub>*m*</sub> \|*Y*<sub>*l*</sub><sup>*m*</sup>\|². By **Unsöld's theorem** ([Proof of Unsöld's theorem and operator structure](tut:01#box-unsold-proof)), ∑<sub>*m*=−*l*</sub><sup>+*l*</sup> \|*Y*<sub>*l*</sub><sup>*m*</sup>\|² = (2*l* + 1)/(4π), a constant, which proves that every half-filled or filled subshell (*p*³, *p*⁶, *d*⁵, *d*¹⁰, *f*⁷, *f*¹⁴, …) has an exactly spherical total electron cloud—independent of whether you use the real Cartesian or complex *m*<sub>*l*</sub> basis.
 
 **Check:** integrating ρ(**r**) over all space gives ∑<sub>*k*=1</sub><sup>*N*</sup> 1 = *N* electrons, matching the total electron count. ✓
 
@@ -1276,8 +1289,8 @@ Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator struct
 - **P1 [Core].** How many radial nodes, angular nodes, and total nodes does a **4d** orbital have?
 - **P2 [Core].** Using *E*<sub>*n*</sub> = −13.6057/*n*² eV and *hc* = 1239.84 eV·nm, find the energy and wavelength of the photon emitted when hydrogen drops from *n* = 3 to *n* = 2.
 - **P3 [Core].** What is the ionization energy of **He⁺** from its ground state, and how does the size of its 1s orbital compare with hydrogen's?
-- **P4 [Core, with a Stretch part].** Along the *z*-axis (the direction where 2p<sub>*z*</sub> and 3d<sub>*z*²</sub> are each largest), rank \|ψ\|² at *r* = 0.1 *a*₀ from largest to smallest for **1s**, **2p<sub>*z*</sub>**, and **3d<sub>*z*²</sub>**, using \|ψ\|² ∝ *r*<sup>2*l*</sup> near the nucleus. *(Stretch: the *r*<sup>2*l*</sup> rule alone would suggest a factor of 10⁻² per step in *l*. Is the real drop bigger or smaller? Why?)*
-- **P5 [Core, with a Stretch part].** Sketch *P*(*r*) for **2s** and mark the radial node and both peaks. *(Stretch: which peak is taller, and by roughly how much?)*
+- **P4 [Core].** Along the *z*-axis (the direction where 2p<sub>*z*</sub> and 3d<sub>*z*²</sub> are each largest), rank \|ψ\|² at *r* = 0.1 *a*₀ from largest to smallest for **1s**, **2p<sub>*z*</sub>**, and **3d<sub>*z*²</sub>**, using \|ψ\|² ∝ *r*<sup>2*l*</sup> near the nucleus. (**[Stretch]** part: the *r*<sup>2*l*</sup> rule alone would suggest a factor of 10⁻² per step in *l*. Using the normalized functions ψ<sub>1s</sub> = *e*<sup>−*r*</sup>/√π, ψ<sub>2p<sub>*z*</sub></sub> = *z e*<sup>−*r*/2</sup>/√(32π) and ψ<sub>3d<sub>*z*²</sub></sub> = (3*z*² − *r*²) *e*<sup>−*r*/3</sup>/(81√(6π)) in atomic units, is the real drop bigger or smaller? Why?)
+- **P5 [Core].** Sketch *P*(*r*) for **2s** and mark the radial node and both peaks. (**[Stretch]** part: which peak is taller, and by roughly how much?)
 - **P6 [Core].** Hydrogen drops from *n* = 4 to *n* = 2. Using *E*<sub>*n*</sub> = −13.6057/*n*² eV and *hc* = 1239.84 eV·nm, find the photon energy, wavelength, and spectral series name.
 - **P7 [Core].** Explain why a **1s + 2s** superposition does not couple to one-photon electric-dipole light, whereas **1s + 2p, 0** does.
 - **P8 [Core].** Look at the **3d<sub>*xz*</sub>** row of the §1.2 table (2 angular nodal planes). Now consider the single complex eigenstate **\|3d, +1⟩** instead: how many 2D angular nodal surfaces does it have, what are they, and why does its count differ from 3d<sub>*xz*</sub>?
@@ -1293,7 +1306,7 @@ Combined with Unsöld's theorem ([Proof of Unsöld's theorem and operator struct
 - **P1.** 4d has *n* = 4, *l* = 2: radial nodes *n* − *l* − 1 = 1, angular nodes *l* = 2, total *n* − 1 = 3.
 - **P2.** Δ*E* = 13.6057 × (1/4 − 1/9) = 1.89 eV; λ = 1239.84 eV·nm / 1.89 eV ≈ 656 nm (the red Balmer H<sub>α</sub> line; 656.11 nm clamped-nucleus, 656.47 nm real vacuum / 656.28 nm air).
 - **P3.** *E*₁ = −13.6 × 2² = −54.4 eV, so the ionization energy is 54.4 eV. Its 1s orbital is half the size of hydrogen's (⟨*r*⟩ = 1.5 *a*₀/2 = 0.75 *a*₀).
-- **P4.** **1s > 2p<sub>*z*</sub> > 3d<sub>*z*²</sub>.** Near the nucleus \|ψ\|² ∝ *r*<sup>2*l*</sup>: 1s (*l* = 0) stays finite, 2p (*l* = 1) is suppressed by *r*², and 3d (*l* = 2) by *r*⁴. *Stretch part:* the drop is much bigger than 10⁻² per step, because the *r*<sup>2*l*</sup> rule fixes only the *shape* near the nucleus and each orbital also carries its own small normalization prefactor (for 2p, \|*R*<sub>21</sub>\|² = *r*²*e*<sup>−*r*</sup>/24). With the exact hydrogen functions at *r* = 0.1 *a*₀ on the *z*-axis (a.u., i.e. per *a*₀³): \|ψ<sub>1s</sub>\|² ≈ 0.26, \|ψ<sub>2p<sub>*z*</sub></sub>\|² ≈ 9 × 10⁻⁵, and \|ψ<sub>3d<sub>*z*²</sub></sub>\|² ≈ 3 × 10⁻⁹, so 2p is about 3.5 × 10⁻⁴ of 1s and 3d about 10⁻⁸. *Why direction matters:* 2p<sub>*z*</sub> is exactly zero in the *xy*-plane, where 3d<sub>*z*²</sub> is nonzero, so comparing along each orbital's best direction gives a fair ordering.
+- **P4.** **1s > 2p<sub>*z*</sub> > 3d<sub>*z*²</sub>.** Near the nucleus \|ψ\|² ∝ *r*<sup>2*l*</sup>: 1s (*l* = 0) stays finite, 2p (*l* = 1) is suppressed by *r*², and 3d (*l* = 2) by *r*⁴. *Stretch part:* the drop is much bigger than 10⁻² per step, because the *r*<sup>2*l*</sup> rule fixes only the *shape* near the nucleus and each orbital also carries its own normalization prefactor, 1/π, 1/(32π) and 1/(81² · 6π) for the squared functions, which shrinks fast because larger orbitals spread their probability over far more volume. At *r* = 0.1 *a*₀ on the *z*-axis (where 3*z*² − *r*² = 2*r*²), in a.u., i.e. per *a*₀³: \|ψ<sub>1s</sub>\|² = *e*<sup>−0.2</sup>/π ≈ 0.26, \|ψ<sub>2p<sub>*z*</sub></sub>\|² = 0.01 *e*<sup>−0.1</sup>/(32π) ≈ 9 × 10⁻⁵, and \|ψ<sub>3d<sub>*z*²</sub></sub>\|² = (0.02)² *e*<sup>−0.2/3</sup>/(81² · 6π) ≈ 3 × 10⁻⁹, so 2p is about 3.5 × 10⁻⁴ of 1s and 3d about 10⁻⁸. *Why direction matters:* 2p<sub>*z*</sub> is exactly zero in the *xy*-plane, where 3d<sub>*z*²</sub> is nonzero, so comparing along each orbital's best direction gives a fair ordering.
 - **P5.** *P*(*r*) starts at 0 at *r* = 0, rises to a small inner peak at *r* ≈ 0.76 *a*₀, drops to 0 at the radial node *r* = 2 *a*₀, rises to a much taller outer peak at *r* ≈ 5.24 *a*₀, then decays exponentially. *Stretch part:* the outer peak is roughly 3.7 times taller than the inner one.
 - **P6.** Δ*E* = 13.6057 × (1/4 − 1/16) = 2.55 eV; λ = 1239.84 / 2.55 ≈ 486 nm (the blue-green **Balmer** H<sub>β</sub> line, ending on *n* = 2).
 - **P7.** Both 1s and 2s are spherically symmetric (*l* = 0), so 1s + 2s only breathes radially in and out with zero oscillating electric dipole (Δ*l* = 0 is forbidden for one-photon electric-dipole transitions; 1s → 2s can only be driven by two-photon absorption). In 1s + 2p, 0 (Δ*l* = +1), the opposite parities create an oscillating dipole sloshing along *z*, which couples directly to one-photon electric-dipole light.

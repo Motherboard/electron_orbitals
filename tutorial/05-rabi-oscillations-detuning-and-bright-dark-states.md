@@ -76,7 +76,7 @@ For the sin²(π*t*/*T*) envelope, sin² averages to ½ over the pulse, so the t
 
 Shorthand: ⟨2\|…\|1⟩ means ⟨ψ₂\|…\|ψ₁⟩ = ∫ ψ₂<sup>∗</sup> (…) ψ₁ *d*³*r*. The light adds the dipole energy **r**·**ℰ**(*t*) of Chapter 4 to the Hamiltonian, where **ℰ**(*t*) is the field vector.
 
-**Step 1 — Substitute the two-level Ψ into the Schrödinger equation** *i* ∂Ψ/∂*t* = [*Ĥ*₀ + **r**·**ℰ**(*t*)] Ψ:
+**Step 1 — Substitute the two-level Ψ into the Schrödinger equation.** Insert it into *i* ∂Ψ/∂*t* = [*Ĥ*₀ + **r**·**ℰ**(*t*)] Ψ:
 
 > *i* ∂/∂*t* [ *c*₁*e*<sup>−*iE*₁*t*</sup>ψ₁ + *c*₂*e*<sup>−*iE*₂*t*</sup>ψ₂ ] = [ *Ĥ*₀ + **r**·**ℰ**(*t*) ] [ *c*₁*e*<sup>−*iE*₁*t*</sup>ψ₁ + *c*₂*e*<sup>−*iE*₂*t*</sup>ψ₂ ] &nbsp;&nbsp; (a.u.)
 
@@ -92,7 +92,7 @@ Shorthand: ⟨2\|…\|1⟩ means ⟨ψ₂\|…\|ψ₁⟩ = ∫ ψ₂<sup>∗</su
 
 (multiply by *e*<sup>+*iE*₂*t*</sup> and use *E*₂ − *E*₁ = ω₀).
 
-**Step 5 — Project onto ψ₁** the same way (multiply by ψ₁<sup>∗</sup>, integrate, now ⟨1\|1⟩ = 1, ⟨1\|2⟩ = 0, ⟨1\|**r**\|1⟩ = **0**, and multiply by *e*<sup>+*iE*₁*t*</sup>):
+**Step 5 — Project onto ψ₁.** Proceed the same way (multiply by ψ₁<sup>∗</sup>, integrate, now ⟨1\|1⟩ = 1, ⟨1\|2⟩ = 0, ⟨1\|**r**\|1⟩ = **0**, and multiply by *e*<sup>+*iE*₁*t*</sup>):
 
 > *i* *ċ*₁ = *e*<sup>−*i*ω₀*t*</sup> ⟨1\| **r**·**ℰ**(*t*) \|2⟩ *c*₂ &nbsp;&nbsp; (a.u.)
 
@@ -102,7 +102,7 @@ Shorthand: ⟨2\|…\|1⟩ means ⟨ψ₂\|…\|ψ₁⟩ = ∫ ψ₂<sup>∗</su
 
 For real **ε** (linear polarization) this is just ℰ(*t*) **ε** cos(ω<sub>L</sub>*t*), by cos *x* = (*e*<sup>*ix*</sup> + *e*<sup>−*ix*</sup>)/2. The atom is far smaller than the wavelength, so the field is the same across it and comes out of the integral (the **dipole approximation**).
 
-**Step 7 — Insert into steps 4 and 5:**
+**Step 7 — Insert into steps 4 and 5.**
 
 > *i* *ċ*₂ = ½ ℰ(*t*) [ ⟨2\|**r**·**ε**\|1⟩ *e*<sup>+*i*(ω₀ − ω<sub>L</sub>)*t*</sup> + ⟨2\|**r**·**ε**<sup>∗</sup>\|1⟩ *e*<sup>+*i*(ω₀ + ω<sub>L</sub>)*t*</sup> ] *c*₁ &nbsp;&nbsp; (a.u.)
 
@@ -124,7 +124,7 @@ So both equations contain the same number, once plain and once conjugated.
 
 Both equations share the **same** Ω<sub>R</sub>, thanks to step 9.
 
-**Step 11 — On resonance (Δω = 0)** the exponentials become 1. Divide by *i* (1/*i* = −*i*):
+**Step 11 — On resonance.** At Δω = 0 the exponentials become 1. Divide by *i* (1/*i* = −*i*):
 
 > *ċ*₁ = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₂, &nbsp;&nbsp; *ċ*₂ = −(*i*/2) Ω<sub>R</sub>(*t*) *c*₁ &nbsp;&nbsp; (a.u.)
 
@@ -313,7 +313,7 @@ Start from step 10 of [From the Schrödinger equation to P₂ = sin²(Θ/2)](tut
 
 Now every coefficient is constant. At *t* = 0 the exponentials equal 1, so *b*₁(0) = 1 and *b*₂(0) = 0.
 
-**Step 2 — Differentiate the second equation and multiply by *i*:** *i*·*i* *b̈*₂ = ½ Ω<sub>R</sub> (*i* *ḃ*₁) − (Δω/2)(*i* *ḃ*₂). Insert both equations of step 1 on the right; the *b*₁ terms cancel:
+**Step 2 — Differentiate the second equation.** Differentiate it once and multiply by *i*: *i*·*i* *b̈*₂ = ½ Ω<sub>R</sub> (*i* *ḃ*₁) − (Δω/2)(*i* *ḃ*₂). Insert both equations of step 1 on the right; the *b*₁ terms cancel:
 
 > −*b̈*₂ = ½Ω<sub>R</sub>[(Δω/2)*b*₁ + ½Ω<sub>R</sub>*b*₂] − (Δω/2)[½Ω<sub>R</sub>*b*₁ − (Δω/2)*b*₂] = ¼(Ω<sub>R</sub>² + Δω²) *b*₂ &nbsp;&nbsp; (a.u.)
 
@@ -331,7 +331,7 @@ So *b̈*₂ = −(Ω̃/2)² *b*₂ with Ω̃ = √(Ω<sub>R</sub>² + Δω²): a
 
 </details>
 
-> **Real-Atom Caution — Red vs. Blue Detuning:** Because hydrogen has **more than two levels**, blue-detuning `1s → 2p` (10.204 eV) on a short 10-cycle pulse (`bw` = 10% = 1.02 eV) to `+1.5 bw` puts the laser at **11.73 eV**—close enough to `1s → 3p` (12.09 eV) that the simulator's multi-level time-dependent Schrödinger equation (TDSE) leaks population into `3p,+1`! Detuning to the **red side** keeps higher shells far away: on the safe 54-cycle π-pulse below (`bw` = 1.9% = 0.19 eV), `-1.5 bw` (**9.92 eV**) cleanly isolates the 2-level off-resonant flop back to `1s` (~99%).
+> **Real-Atom Caution — Red vs. Blue Detuning:** Because hydrogen has **more than two levels**, blue-detuning `1s → 2p` (10.204 eV) on a short 10-cycle pulse (`bw` = 10% = 1.02 eV) to `+1.5 bw` puts the laser at **11.73 eV**—close enough to `1s → 3p` (12.09 eV) that the simulator's multi-level time-dependent Schrödinger equation (TDSE) leaks population into `3p,+1`, the more so the higher the Power! Detuning to the **red side** keeps higher shells far away: on the safe 54-cycle π-pulse below (`bw` = 1.9% = 0.19 eV), `-1.5 bw` (**9.92 eV**) cleanly isolates the 2-level off-resonant flop back to `1s` (~99%).
 
 ```demo
 {
@@ -402,31 +402,31 @@ At β = π (Θ = √2 π), *P*<sub>−1</sub> = 1 and the flip is 100% complete.
 
 **You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β), [T3 · First-order linear ODEs](tut:08#T3) (*i ḟ* = λ*f* gives *f* = *e*<sup>−*i*λ*t*</sup>), [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (expanding 3×3 determinants, solving det(*M* − λ*I*) = 0, and splitting a start state into eigenvectors that each spin at their own rate), [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (eigenvalues and stationary-state phases), the chain rule, and the rotating-frame ladder equation of [Why the 3-level ladder rotates at β = Θ/√2](tut:05#box-spin1-key): *i ċ* = *g*(*t*) *M c* for the amplitudes *c* = (*c*<sub>+1</sub>, *c*<sub>0</sub>, *c*<sub>−1</sub>), with single-rung coupling *g* and pulse area Θ = ∫ 2*g* *dt*.
 
-Eigenvalues λ solve det(*M* − λ*I*) = 0, where *I* is the 3×3 identity matrix:
+**Step 1 — Set up the eigenvalue equation.** Eigenvalues λ solve det(*M* − λ*I*) = 0, where *I* is the 3×3 identity matrix:
 
 > *M* − λ*I* = [ [−λ, 1, 0], [1, −λ, 1], [0, 1, −λ] ]
 
-**Step 1 — Expand along the first row** (each entry times its 2×2 minor, with signs +, −, +):
+**Step 2 — Expand along the first row.** Multiply each entry by its 2×2 minor, with signs +, −, +:
 
 > det(*M* − λ*I*) = (−λ) · det[ [−λ, 1], [1, −λ] ] − 1 · det[ [1, 1], [0, −λ] ] + 0 · (…)
 
-**Step 2 — The 2×2 determinants** (det[[*a*, *b*], [*c*, *d*]] = *ad* − *bc*): det[[−λ, 1], [1, −λ]] = λ² − 1 and det[[1, 1], [0, −λ]] = −λ − 0 = −λ.
+**Step 3 — The 2×2 determinants.** Using det[[*a*, *b*], [*c*, *d*]] = *ad* − *bc*: det[[−λ, 1], [1, −λ]] = λ² − 1 and det[[1, 1], [0, −λ]] = −λ − 0 = −λ.
 
-**Step 3 — Combine:** det(*M* − λ*I*) = (−λ)(λ² − 1) − (−λ) = −λ³ + λ + λ = −λ³ + 2λ = −λ(λ² − 2).
+**Step 4 — Combine.** det(*M* − λ*I*) = (−λ)(λ² − 1) − (−λ) = −λ³ + λ + λ = −λ³ + 2λ = −λ(λ² − 2).
 
-**Step 4 — Roots:** λ = 0 or λ² = 2, so λ = 0, +√2, −√2. Spot check: *M* (1, √2, 1) = (√2, 2, √2) = √2 · (1, √2, 1).
+**Step 5 — Roots.** λ = 0 or λ² = 2, so λ = 0, +√2, −√2. Spot check: *M* (1, √2, 1) = (√2, 2, √2) = √2 · (1, √2, 1).
 
-**Step 5 — Meaning.** Since ½ *L*<sub>*x*</sub> = *M*/(2√2), the eigenvalues of *L*<sub>*x*</sub> = *M*/√2 are 0 and ±1: the three possible values of *m* along *x*, just as they must be for *l* = 1.
+**Step 6 — Meaning.** Since ½ *L*<sub>*x*</sub> = *M*/(2√2), the eigenvalues of *L*<sub>*x*</sub> = *M*/√2 are 0 and ±1: the three possible values of *m* along *x*, just as they must be for *l* = 1.
 
-**Step 6 — Eigenvectors and the start state.** Multiplying *M* onto each column verifies the normalized eigenvectors, written as (amplitude in \|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩):
+**Step 7 — Eigenvectors and the start state.** Multiplying *M* onto each column verifies the normalized eigenvectors, written as (amplitude in \|2p,+1⟩, \|2p,0⟩, \|2p,−1⟩):
 
 > *v*<sub>+</sub> = ½(1, √2, 1) for λ = √2, &nbsp;&nbsp; *v*<sub>0</sub> = (1/√2)(1, 0, −1) for λ = 0, &nbsp;&nbsp; *v*<sub>−</sub> = ½(1, −√2, 1) for λ = −√2
 
 The start state \|2p,+1⟩ = (1, 0, 0) equals ½*v*<sub>+</sub> + (1/√2)*v*<sub>0</sub> + ½*v*<sub>−</sub>: the first components add to ¼ + ½ + ¼ = 1, the second to (√2/4) + 0 − (√2/4) = 0, the third to ¼ − ½ + ¼ = 0.
 
-**Step 7 — Each eigenvector only picks up a phase.** Try *c*(*t*) = *v f*(*t*) with *M v* = λ*v* in *i ċ* = *g M c*: the left side is *i ḟ v*, the right side *g f M v* = λ *g f v*, so *i ḟ* = λ *g*(*t*) *f*. Measure time with *s*(*t*) = ∫₀<sup>*t*</sup> *g dt*′ instead (the chain rule gives *df*/*ds* = *ḟ*/*g*): then *i df*/*ds* = λ*f*, whose solution with *f*(0) = 1 is *f* = *e*<sup>−*i*λ*s*</sup> (T3), just like *e*<sup>−*iEt*</sup> for a stationary state. Define β = √2 *s*; since Θ = ∫ 2*g* *dt* = 2*s*, this is β = Θ/√2. So *v*<sub>±</sub> (λ = ±√2) gets *e*<sup>∓*i*β</sup> and *v*<sub>0</sub> (λ = 0) gets 1. Because the equation is linear, the sum of the three evolving pieces solves it too, and at *t* = 0 that sum is the start state of step 6.
+**Step 8 — Each eigenvector only picks up a phase.** Try *c*(*t*) = *v f*(*t*) with *M v* = λ*v* in *i ċ* = *g M c*: the left side is *i ḟ v*, the right side *g f M v* = λ *g f v*, so *i ḟ* = λ *g*(*t*) *f*. Measure time with *s*(*t*) = ∫₀<sup>*t*</sup> *g dt*′ instead (the chain rule gives *df*/*ds* = *ḟ*/*g*): then *i df*/*ds* = λ*f*, whose solution with *f*(0) = 1 is *f* = *e*<sup>−*i*λ*s*</sup> (T3), just like *e*<sup>−*iEt*</sup> for a stationary state. Define β = √2 *s*; since Θ = ∫ 2*g* *dt* = 2*s*, this is β = Θ/√2. So *v*<sub>±</sub> (λ = ±√2) gets *e*<sup>∓*i*β</sup> and *v*<sub>0</sub> (λ = 0) gets 1. Because the equation is linear, the sum of the three evolving pieces solves it too, and at *t* = 0 that sum is the start state of step 7.
 
-**Step 8 — Add back up.** Adding the three pieces component by component, with *e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β:
+**Step 9 — Add back up.** Adding the three pieces component by component, with *e*<sup>*i*β</sup> + *e*<sup>−*i*β</sup> = 2 cos β and *e*<sup>−*i*β</sup> − *e*<sup>*i*β</sup> = −2*i* sin β:
 
 > amplitude in \|2p,+1⟩ = ¼ *e*<sup>−*i*β</sup> + ½ + ¼ *e*<sup>*i*β</sup> = ½(1 + cos β) = cos²(β/2)
 
@@ -436,7 +436,7 @@ The start state \|2p,+1⟩ = (1, 0, 0) equals ½*v*<sub>+</sub> + (1/√2)*v*<su
 
 (using 1 ± cos β = 2 cos²(β/2) or 2 sin²(β/2)).
 
-**Step 9 — Populations.** Squaring the three amplitudes gives the spin-1 rotation populations quoted in Chapter 2 (§2.4):
+**Step 10 — Populations.** Squaring the three amplitudes gives the spin-1 rotation populations quoted in Chapter 2 (§2.4):
 
 > *P*<sub>+1</sub> = cos⁴(β/2), &nbsp;&nbsp; *P*<sub>0</sub> = ½ sin²β, &nbsp;&nbsp; *P*<sub>−1</sub> = sin⁴(β/2)
 
@@ -472,10 +472,10 @@ The start state \|2p,+1⟩ = (1, 0, 0) equals ½*v*<sub>+</sub> + (1/√2)*v*<su
 
 ---
 
-### Quick Self-Check
-1. Check directly from *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2) that \|*c*₁\|² + \|*c*₂\|² = 1 holds at *every* time *t* (probability conservation).
-2. In the **2π *m*-flip**, what happens if you accidentally drive **\|2p, +1⟩** with **z-polarized** light at the `2p ↔ 1s` frequency instead of **x-polarized** light? Why does *m* = +1 stay completely untouched? (Hint: check the Δ*m* = 0 selection rule!)
-3. Why did `+1.5 bw` blue detuning on `1s → 2p` fail to stay two-level while `-1.5 bw` red detuning worked cleanly?
+### Quick Self-Check (Try in the Controls)
+1. **[Core]** Check directly from *c*₁ = cos(Θ/2), *c*₂ = −*i* sin(Θ/2) that \|*c*₁\|² + \|*c*₂\|² = 1 holds at *every* time *t* (probability conservation).
+2. **[Core]** In the **2π *m*-flip**, what happens if you accidentally drive **\|2p, +1⟩** with **z-polarized** light at the `2p ↔ 1s` frequency instead of **x-polarized** light? Why does *m* = +1 stay completely untouched? (Hint: check the Δ*m* = 0 selection rule!)
+3. **[Core]** Why did `+1.5 bw` blue detuning on `1s → 2p` fail to stay two-level while `-1.5 bw` red detuning worked cleanly?
 
 ### Pen-and-Paper Practice
 - **P1.** A resonant pulse gives Θ = π/3. What fraction of the population ends up in the upper level?
@@ -487,7 +487,7 @@ The start state \|2p,+1⟩ = (1, 0, 0) equals ½*v*<sub>+</sub> + (1/√2)*v*<su
 
 - **1.** \|*c*₁\|² + \|*c*₂\|² = cos²(Θ/2) + \|−*i*\|² sin²(Θ/2) = cos²(Θ/2) + sin²(Θ/2) = 1 at every Θ(*t*), so probability is conserved throughout the pulse.
 - **2.** *z*-polarized light only drives Δ*m* = 0. From \|2p, +1⟩ that would need a 1s state with *m* = +1, which does not exist, so the coupling is exactly zero and the atom is untouched.
-- **3.** A 10-cycle pulse has a bandwidth of about 1 eV. Blue-detuning to 11.73 eV puts the laser only 0.36 eV below the 1s → 3p line (12.09 eV), well inside that bandwidth, so the TDSE leaks about 23% into \|3p, +1⟩. Red-detuning (the demo's 54-cycle pulse at `−1.5 bw`, 9.92 eV) moves *away* from every other hydrogen line, so the atom behaves as a clean two-level system and returns ~99% to \|1s⟩.
+- **3.** A 10-cycle pulse has a bandwidth of about 1 eV. Blue-detuning to 11.73 eV puts the laser only 0.36 eV below the 1s → 3p line (12.09 eV), well inside that bandwidth, so the TDSE also drives 1s → 3p and leaks population into \|3p, +1⟩: a sizeable fraction at high Power, and still around 1% at Power = 1 (a three-level estimate), more than the off-resonant 2p level itself receives. Red-detuning (the demo's 54-cycle pulse at `−1.5 bw`, 9.92 eV, Power = 1) moves *away* from every other hydrogen line, so the atom behaves as a clean two-level system and returns ~99% to \|1s⟩.
 - **P1.** *P*₂ = sin²(π/6) = (½)² = **25%**.
 - **P2.** The peak is Ω<sub>R</sub>²/(Ω<sub>R</sub>² + Δω²) = 1/2 = **50%**, reached when ½√2 Ω<sub>R</sub>*t* = π/2.
 - **P3.** \|2p, +1⟩ = (\|bright⟩ + \|dark⟩)/√2. A π-pulse sends the whole bright half down to \|1s, 0⟩ and leaves the dark half alone, so **50%** ends in \|1s, 0⟩ and 50% stays in \|dark⟩ = (\|2p, +1⟩ + \|2p, −1⟩)/√2, which splits as **25%** in \|2p, +1⟩ and **25%** in \|2p, −1⟩.

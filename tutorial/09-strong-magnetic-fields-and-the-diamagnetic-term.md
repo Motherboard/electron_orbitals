@@ -79,7 +79,7 @@ Why "diamagnetic"? The two terms match the two kinds of magnetism of general che
 
 ## 9.2 How Big Is It? Why the App Caps the Field at 20 T
 
-How far does the bowl raise a level? While the field is too weak to change the cloud's shape, the answer is simply the bowl's height averaged over the cloud, (*B*²/8)⟨ρ<sub>cyl</sub>²⟩. This shortcut, "average the small extra energy over the unchanged cloud", is **first-order perturbation theory**. It works as long as the shift is small compared with the energy gap to any state the extra term can mix in (§9.3 shows what happens when there is no gap). Two features make the diamagnetic shift special:
+How far does the bowl raise a level? While the field is too weak to change the cloud's shape, the answer is simply the bowl's height averaged over the cloud, (*B*²/8)⟨ρ<sub>cyl</sub>²⟩. This shortcut, "average the small extra energy over the unchanged cloud", is **first-order perturbation theory** ([First-order perturbation theory](tut:08#box-t7-perturb) in the Math Toolkit). It works as long as the shift is small compared with the energy gap to any state the extra term can mix in (§9.3 shows what happens when there is no gap). Two features make the diamagnetic shift special:
 
 - It grows as ***B*²**, so it is negligible in weak fields and explodes in strong ones.
 - ⟨ρ<sub>cyl</sub>²⟩ grows as ***n*⁴**, because the radius of a hydrogen orbit grows as about *n*² *a*₀: ⟨ρ<sub>cyl</sub>²⟩ = 2 *a*₀² for 1s, 24 for 2p<sub>±1</sub>, 28 for 2s, up to about 4800 for *n* = 7.
@@ -94,7 +94,7 @@ The bowl's height grows with the square of the distance from the axis, so an orb
 
 Because ρ<sub>cyl</sub>² = *r*² sin²θ and a hydrogen orbital is a radial function of *r* times an angular function of θ and φ, the average splits into a radial average and an angular average:
 
-> ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩
+> ⟨ρ<sub>cyl</sub>²⟩ = ⟨*r*²⟩ × ⟨sin²θ⟩ &nbsp;&nbsp; (a.u.)
 
 The radial factor depends on the shell *n* and the orbital shape *l* through the standard hydrogen formula, which grows as about (5/2)*n*⁴ for small *l*:
 
@@ -109,11 +109,11 @@ just 4.9 × 10⁻⁸ eV at 20 T. Full algebra: [Computing ⟨ρ_cyl²⟩ for 1s 
 <details>
 <summary>Level 3 · Full derivation: computing ⟨ρ<sub>cyl</sub>²⟩ for 1s and higher shells {#box-ch9-rho2}</summary>
 
-**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*d*³*r* = *r*² *dr* *d*Ω, and a thin shell of radius *r* has volume 4π*r*²*dr*), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (∫₀<sup>∞</sup> *r*<sup>*k*</sup>*e*<sup>−*ar*</sup>*dr* = *k*!/*a*<sup>*k*+1</sup>), and [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (expectation value ⟨*f*⟩ = ∫ *f*\|ψ\|²*d*³*r*, the cloud-weighted average of *f*).
+**You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*d*³*r* = *r*² *dr* *d*Ω, and a thin shell of radius *r* has volume 4π*r*²*dr*), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (∫₀<sup>∞</sup> *r*<sup>*k*</sup>*e*<sup>−*ar*</sup>*dr* = *k*!/*a*<sup>*k*+1</sup>), [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (expectation value ⟨*f*⟩ = ∫ *f*\|ψ\|²*d*³*r*, the cloud-weighted average of *f*, and orthonormal expansions), [First-order perturbation theory](tut:08#box-t7-perturb) (a small extra energy shifts a level by its average over the unperturbed state), and [Orthogonality of the spherical harmonics, and the cos θ step](tut:08#box-t7-ylm) (cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = *a Y*<sub>*l*+1</sub><sup>*m*</sup> + *b Y*<sub>*l*−1</sub><sup>*m*</sup> with *a*² = [(*l* + 1)² − *m*²]/[(2*l* + 1)(2*l* + 3)] and *b*² = (*l*² − *m*²)/[(2*l* − 1)(2*l* + 1)], the closed form of *a* quoted there).
 
 **Step 1 — separate radial and angular parts.** Write ψ = *R*(*r*) *Y*(θ, φ) with ∫ *R*² *r*² *dr* = 1 and ∫ \|*Y*\|² *d*Ω = 1, where *d*Ω = sin θ *d*θ *d*φ. Then
 
-> ⟨ρ<sub>cyl</sub>²⟩ = ∫ *r*² sin²θ \|*R*\|² \|*Y*\|² *r*² *dr* *d*Ω = [∫ *r*² \|*R*\|² *r*² *dr*] × [∫ sin²θ \|*Y*\|² *d*Ω] = ⟨*r*²⟩ × ⟨sin²θ⟩
+> ⟨ρ<sub>cyl</sub>²⟩ = ∫ *r*² sin²θ \|*R*\|² \|*Y*\|² *r*² *dr* *d*Ω = [∫ *r*² \|*R*\|² *r*² *dr*] × [∫ sin²θ \|*Y*\|² *d*Ω] = ⟨*r*²⟩ × ⟨sin²θ⟩ &nbsp;&nbsp; (a.u.)
 
 (the same factoring is done for 2p<sub>±1</sub> and 2s in [Evaluating ⟨ρ_cyl²⟩ for 2p, ±1 and 2s](tut:02#box-ch2-rho2)).
 
@@ -123,7 +123,7 @@ just 4.9 × 10⁻⁸ eV at 20 T. Full algebra: [Computing ⟨ρ_cyl²⟩ for 1s 
 
 **Step 3 — 1s angular factor and shift.** A spherical cloud has no preferred direction, so ⟨*x*²⟩ = ⟨*y*²⟩ = ⟨*z*²⟩ = ⟨*r*²⟩/3. Since sin²θ = (*x*² + *y*²)/*r*² and 1s is spherical, ⟨sin²θ⟩ = ⟨*x*² + *y*²⟩/⟨*r*²⟩ = 2/3. Multiplying gives ⟨ρ<sub>cyl</sub>²⟩ = 3 × 2/3 = 2 *a*₀², and the first-order shift (*B*²/8)⟨ρ<sub>cyl</sub>²⟩ = (*B*²/8) × 2 = *B*²/4.
 
-**Step 4 — any shell.** The standard hydrogen result ⟨*r*²⟩ = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] is quoted (it follows from Kramers' recursion relation for radial averages; see Bethe & Salpeter, *Quantum Mechanics of One- and Two-Electron Atoms*); the Check below confirms it for 1s, 2s and 2p. For fixed small *l* the leading term is (*n*²/2) × 5*n*² = (5/2)*n*⁴. For the angular factor, quote the standard step of cos θ between neighbouring *l* (same *m*): \|⟨*l* + 1, *m*\|cos θ\|*l*, *m*⟩\|² = [(*l* + 1)² − *m*²]/[(2*l* + 1)(2*l* + 3)], and cos θ connects *l* only to *l* ± 1. Expanding cos θ \|*l*, *m*⟩ in the orthonormal \|*l*′, *m*⟩ ([T7](tut:08#T7)), ⟨cos²θ⟩ is the sum of the squared up and down steps (the down step is the up step from *l* − 1): [(*l* + 1)² − *m*²]/[(2*l* + 1)(2*l* + 3)] + (*l*² − *m*²)/[(2*l* − 1)(2*l* + 1)]. Over the common denominator (2*l* − 1)(2*l* + 1)(2*l* + 3) the numerator is (2*l*³ + 3*l*² − 1) + (2*l*³ + 3*l*²) − 2*m*²(2*l* + 1) = (2*l* + 1)(2*l*² + 2*l* − 1 − 2*m*²), so ⟨cos²θ⟩ = (2*l*² + 2*l* − 2*m*² − 1)/[(2*l* − 1)(2*l* + 3)] and ⟨sin²θ⟩ = 1 − ⟨cos²θ⟩ (for *l* = 0 only the up step exists, 1/3, so ⟨sin²θ⟩ = 2/3 as in Step 3; the formula gives the same, (−1)/(−3) = 1/3). ⟨sin²θ⟩ is smallest, 2/5 = 0.4, at *l* = 1, *m* = 0; for \|*m*\| = *l* it is (2*l* + 2)/(2*l* + 3), the largest at each *l*, reaching 14/15 ≈ 0.93 at *l* = 6. For *n* = 7 the largest product is at *l* = 2, *m* = ±2: ⟨*r*²⟩ = (49/2)(246 − 18) = 5586 and ⟨sin²θ⟩ = 6/7, giving 5586 × 6/7 = 4788 *a*₀².
+**Step 4 — any shell.** The standard hydrogen result ⟨*r*²⟩ = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] is quoted (it follows from Kramers' recursion relation for radial averages; see Bethe & Salpeter, *Quantum Mechanics of One- and Two-Electron Atoms*); the Check below confirms it for 1s, 2s and 2p. For fixed small *l* the leading term is (*n*²/2) × 5*n*² = (5/2)*n*⁴. For the angular factor, use the cos θ step from You need: cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = *a Y*<sub>*l*+1</sub><sup>*m*</sup> + *b Y*<sub>*l*−1</sub><sup>*m*</sup>. Since the *Y*'s are orthonormal, ⟨cos²θ⟩ = ∫ \|cos θ *Y*<sub>*l*</sub><sup>*m*</sup>\|² *d*Ω is the sum of the squared up and down steps, *a*² + *b*² = [(*l* + 1)² − *m*²]/[(2*l* + 1)(2*l* + 3)] + (*l*² − *m*²)/[(2*l* − 1)(2*l* + 1)]. Over the common denominator (2*l* − 1)(2*l* + 1)(2*l* + 3) the numerator is (2*l*³ + 3*l*² − 1) + (2*l*³ + 3*l*²) − 2*m*²(2*l* + 1) = (2*l* + 1)(2*l*² + 2*l* − 1 − 2*m*²), so ⟨cos²θ⟩ = (2*l*² + 2*l* − 2*m*² − 1)/[(2*l* − 1)(2*l* + 3)] and ⟨sin²θ⟩ = 1 − ⟨cos²θ⟩ (for *l* = 0 only the up step exists, 1/3, so ⟨sin²θ⟩ = 2/3 as in Step 3; the formula gives the same, (−1)/(−3) = 1/3). ⟨sin²θ⟩ is smallest, 2/5 = 0.4, at *l* = 1, *m* = 0; for \|*m*\| = *l* it is (2*l* + 2)/(2*l* + 3), the largest at each *l*, reaching 14/15 ≈ 0.93 at *l* = 6. For *n* = 7 the largest product is at *l* = 2, *m* = ±2: ⟨*r*²⟩ = (49/2)(246 − 18) = 5586 and ⟨sin²θ⟩ = 6/7, giving 5586 × 6/7 = 4788 *a*₀².
 
 **Step 5 — size at 20 T.** One atomic unit of field is 2.3505 × 10⁵ T, so 20 T is *B* = 20/235 050 = 8.51 × 10⁻⁵ a.u. The 1s shift is *B*²/4 = 1.81 × 10⁻⁹ Ha; with 1 Ha = 27.211 eV this is 4.9 × 10⁻⁸ eV.
 
@@ -268,7 +268,7 @@ The compact 1s state barely notices the field. The larger *n* = 2 states shrink 
 
 ### Mixing *s* with *d*
 
-The bowl (*B*²/8)ρ<sub>cyl</sub>² is not spherical: ρ<sub>cyl</sub>² = *r*² sin²θ contains a *d*-shaped ("*l* = 2") angular part, so it connects orbitals whose *l* differs by 2. It never changes *m* or the **parity** (whether the orbital is even or odd under **r** → −**r**: *s* and *d* are even, *p* and *f* odd). Inside a shell, where such orbitals have exactly the same energy, even a weak field mixes them strongly. At 0.02 a.u. (4.7 kT) the dressed 3d<sub>0</sub> is 83% 3d and 16% 3s, and its lobes lose their field-free proportions. In this spin-free model almost the same mix appears at any field, however weak; §9.2 explains why real hydrogen resists it below about 50 T.
+The bowl (*B*²/8)ρ<sub>cyl</sub>² is not spherical: ρ<sub>cyl</sub>² = *r*² sin²θ contains a *d*-shaped ("*l* = 2") angular part, so it connects orbitals whose *l* differs by 2. It never changes *m* or the **parity** (whether the orbital is even or odd under **r** → −**r**: *s* and *d* are even, *p* and *f* odd), because ρ<sub>cyl</sub>² is the same around the whole axis and at **r** and −**r**. Inside a shell, where such orbitals have exactly the same energy, even a weak field mixes them strongly. At 0.02 a.u. (4.7 kT) the dressed 3d<sub>0</sub> is 83% 3d and 16% 3s, and its lobes lose their field-free proportions. In this spin-free model almost the same mix appears at any field, however weak; §9.2 explains why real hydrogen resists it below about 50 T.
 
 <details>
 <summary>Level 1 · Picture: a sphere plus a d-shaped squeeze</summary>
@@ -278,11 +278,11 @@ Picture the diamagnetic bowl as a blend of two shapes: a **perfectly round** par
 <details>
 <summary>Level 2 · Key idea: selection rules and s–d mixing</summary>
 
-The bowl's angular factor splits into a round part and a *d*-shaped part, where *P*₂(*u*) = (3*u*² − 1)/2 is the *l* = 2 angular shape of 3d<sub>0</sub>:
+Because sin²θ = ⅔ − ⅔ *P*₂(cos θ), where *P*₂(*u*) = (3*u*² − 1)/2 is the *l* = 2 angular shape of 3d<sub>0</sub>, the bowl splits into a round part and a *d*-shaped part:
 
-> sin²θ = ⅔ − ⅔ *P*₂(cos θ)
+> (*B*²/8) *r*² sin²θ = (*B*²/12) *r*² − (*B*²/12) *r*² *P*₂(cos θ) &nbsp;&nbsp; (a.u.)
 
-The round part only lifts states (bigger ones more) and never changes *l*; the *P*₂ part is what couples different *l*. Because *r*² sin²θ is independent of the azimuthal angle φ, unchanged under **r** → −**r**, and quadratic in cos θ, its matrix element ⟨*a*\|*r*² sin²θ\|*b*⟩ (the overlap of state *a* with *r*² sin²θ times state *b*) vanishes unless *m* is the same, the parity is the same, and *l* changes by 0 or ±2. That allows 3s ↔ 3d<sub>0</sub> and forbids 3s ↔ 3p. For the pair 3s, 3d<sub>0</sub>, the Hamiltonian restricted to the two states is the 2×2 matrix [[*E*<sub>*s*</sub>, *V*], [*V*, *E*<sub>*d*</sub>]]. Its diagonal entries *E*<sub>*s*</sub> = *E*₃ + Δ*E*<sub>*s*</sub> and *E*<sub>*d*</sub> = *E*₃ + Δ*E*<sub>*d*</sub> are the shared field-free energy *E*₃ plus each state's own bowl shift, and *V* is the coupling. The shifts and *V* are all proportional to *B*². The eigenstates are mixtures cos ϑ \|3s⟩ + sin ϑ \|3d<sub>0</sub>⟩ with mixing angle ϑ set by
+The round part only lifts states, by (*B*²/12)⟨*r*²⟩ (bigger ones more), and never changes *l*; the *P*₂ part is what couples different *l*. Because *r*² sin²θ is independent of the azimuthal angle φ, unchanged under **r** → −**r**, and quadratic in cos θ, its matrix element ⟨*a*\|*r*² sin²θ\|*b*⟩ (the overlap of state *a* with *r*² sin²θ times state *b*) vanishes unless *m* is the same, the parity is the same, and *l* changes by 0 or ±2. That allows 3s ↔ 3d<sub>0</sub> and forbids 3s ↔ 3p. For the pair 3s, 3d<sub>0</sub>, the Hamiltonian restricted to the two states is the 2×2 matrix [[*E*<sub>*s*</sub>, *V*], [*V*, *E*<sub>*d*</sub>]]. Its diagonal entries *E*<sub>*s*</sub> = *E*₃ + Δ*E*<sub>*s*</sub> and *E*<sub>*d*</sub> = *E*₃ + Δ*E*<sub>*d*</sub> are the shared field-free energy *E*₃ plus each state's own bowl shift, and *V* is the coupling. The shifts and *V* are all proportional to *B*². The eigenstates are mixtures cos ϑ \|3s⟩ + sin ϑ \|3d<sub>0</sub>⟩ with mixing angle ϑ set by
 
 > tan 2ϑ = 2*V* / (*E*<sub>*s*</sub> − *E*<sub>*d*</sub>) = 2*V* / (Δ*E*<sub>*s*</sub> − Δ*E*<sub>*d*</sub>) &nbsp;&nbsp; (a.u.)
 
@@ -291,28 +291,24 @@ Because 3s and 3d start degenerate, *E*₃ cancels and *B*² divides out of nume
 <details>
 <summary>Level 3 · Full derivation: which pairs the B² term connects and how much they mix {#box-sd-mixing}</summary>
 
-**You need:** [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (eigenvectors of a 2×2 matrix: *M v* = λ*v*), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (odd integrands vanish under **r** → −**r**), [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (matrix elements ⟨*a*\|*Ô*\|*b*⟩ = ∫ *a*\* (*Ô b*) *d*³*r*, and orthogonality of states with different *l*), the double-angle formulas sin 2ϑ = 2 sin ϑ cos ϑ and cos 2ϑ = cos²ϑ − sin²ϑ, the 3s and 3d<sub>0</sub> values ⟨ρ<sub>cyl</sub>²⟩ = 138 and 60 *a*₀² from [Crossover fields for n = 2, 3 and 4](tut:09#box-crossover), and two quoted textbook facts. (i) The normalized *n* = 3 radial functions are *R*<sub>30</sub> = [2/(3√3)](1 − 2*r*/3 + 2*r*²/27) *e*<sup>−*r*/3</sup> and *R*<sub>32</sub> = [4/(81√30)] *r*² *e*<sup>−*r*/3</sup>. (ii) With *u* = cos θ, *Y*<sub>*l*</sub><sup>*m*</sup> is *e*<sup>*im*φ</sup> sin<sup>\|*m*\|</sup>θ times a polynomial in *u* of degree *l* − \|*m*\|, and the *Y*<sub>*l*</sub><sup>*m*</sup> with that *m* and *l* = \|*m*\|, \|*m*\| + 1, … can build any such polynomial (Chapter 1's associated Legendre functions).
+**You need:** [T4 · Coupled 2×2 ODEs & 3×3 eigenvalues](tut:08#T4) (eigenvectors of a 2×2 matrix: *M v* = λ*v*), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (odd integrands vanish under **r** → −**r**), [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (matrix elements ⟨*a*\|*Ô*\|*b*⟩ = ∫ *a*\* (*Ô b*) *d*³*r*), [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular) (an orbital with angular number *l* has parity (−1)<sup>*l*</sup>), [Orthogonality of the spherical harmonics, and the cos θ step](tut:08#box-t7-ylm) (*Y*'s with different *l* are orthogonal, and cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = *a Y*<sub>*l*+1</sub><sup>*m*</sup> + *b Y*<sub>*l*−1</sub><sup>*m*</sup>), [First-order perturbation theory](tut:08#box-t7-perturb) (within a degenerate level, the shifts and the unmixed combinations come from the matrix of the perturbation), the double-angle formulas sin 2ϑ = 2 sin ϑ cos ϑ and cos 2ϑ = cos²ϑ − sin²ϑ, the 3s and 3d<sub>0</sub> values ⟨ρ<sub>cyl</sub>²⟩ = 138 and 60 *a*₀² from [Crossover fields for n = 2, 3 and 4](tut:09#box-crossover), and the normalized *n* = 3 radial functions, quoted from standard tables: *R*<sub>30</sub> = [2/(3√3)](1 − 2*r*/3 + 2*r*²/27) *e*<sup>−*r*/3</sup> and *R*<sub>32</sub> = [4/(81√30)] *r*² *e*<sup>−*r*/3</sup>.
 
 **Step 1 — split sin²θ.** With *u* = cos θ, sin²θ = 1 − *u*². Check the split: ⅔ − ⅔ *P*₂(*u*) = ⅔ − ⅔ × (3*u*² − 1)/2 = ⅔ − *u*² + ⅓ = 1 − *u*² = sin²θ. The constant ⅔ is round (*l* = 0); *P*₂ has the angular shape of *l* = 2.
 
 **Step 2 — which pairs couple.** The term couples two states \|*a*⟩ and \|*b*⟩ only if the matrix element ⟨*a*\|*r*² sin²θ\|*b*⟩ ≠ 0:
 - *m* must be equal: sin²θ does not depend on φ, so the φ integral of *e*<sup>−*im*<sub>*a*</sub>φ</sup> *e*<sup>*im*<sub>*b*</sub>φ</sup> is zero unless *m*<sub>*a*</sub> = *m*<sub>*b*</sub>.
 - Parity must be equal: *r*² sin²θ is unchanged by **r** → −**r** (even), so the integrand is odd, and the integral zero, whenever one state is even and the other odd. That rules out 3s ↔ 3p.
-- \|Δ*l*\| ≤ 2: by fact (ii), sin²θ *Y*<sub>*b*</sub> = (1 − *u*²)*Y*<sub>*b*</sub> keeps the factor *e*<sup>*im*φ</sup> sin<sup>\|*m*\|</sup>θ and raises the polynomial's degree by at most 2, so it is a combination of *Y*'s with *l* ≤ *l*<sub>*b*</sub> + 2 only. Those are orthogonal to *Y*<sub>*a*</sub> whenever *l*<sub>*a*</sub> > *l*<sub>*b*</sub> + 2, so the matrix element vanishes; it is symmetric in *a* and *b* (the integrand is the same product either way), so it also vanishes when *l*<sub>*b*</sub> > *l*<sub>*a*</sub> + 2. With the parity rule, *l* can change only by 0 or ±2.
+- \|Δ*l*\| ≤ 2: write sin²θ *Y*<sub>*b*</sub> = *Y*<sub>*b*</sub> − cos θ (cos θ *Y*<sub>*b*</sub>). By the cos θ step, the first multiplication by cos θ gives a mix of *l*<sub>*b*</sub> ± 1, and the second turns each of those into a mix of *l*<sub>*b*</sub> + 2, *l*<sub>*b*</sub> and *l*<sub>*b*</sub> − 2. So sin²θ *Y*<sub>*b*</sub> contains only *l*<sub>*b*</sub> and *l*<sub>*b*</sub> ± 2, and by orthogonality its overlap with *Y*<sub>*a*</sub> vanishes unless *l*<sub>*a*</sub> is one of these. This agrees with the parity rule: *l* changes only by 0 or ±2.
 
-**Step 3 — example: *s* with *d*.** With *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>2</sub><sup>0</sup> = √(5/(16π)) (3*u*² − 1), and *d*Ω = *du* *d*φ (the φ integral gives 2π):
+**Step 3 — example: *s* with *d*.** With *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>2</sub><sup>0</sup> = √(5/(16π)) (3*u*² − 1), and *d*Ω = *du* *d*φ (the φ integral gives 2π), the angular matrix element is ⟨*Y*<sub>0</sub><sup>0</sup>\|sin²θ\|*Y*<sub>2</sub><sup>0</sup>⟩ = 2π × (1/√(4π)) × √(5/(16π)) × ∫<sub>−1</sub><sup>1</sup> (1 − *u*²)(3*u*² − 1) *du*. The prefactor is 2π√5/(2√π × 4√π) = 2π√5/(8π) = √5/4. The integrand multiplies out to (1 − *u*²)(3*u*² − 1) = −1 + 4*u*² − 3*u*⁴, so the integral is 2(−1 + 4/3 − 3/5) = 2 × (−15 + 20 − 9)/15 = −8/15. The product is (√5/4) × (−8/15) = −2√5/15 ≈ −0.30. It is not zero, so the field connects 3s and 3d<sub>0</sub>.
 
-> ⟨*Y*<sub>0</sub><sup>0</sup>\|sin²θ\|*Y*<sub>2</sub><sup>0</sup>⟩ = 2π × (1/√(4π)) × √(5/(16π)) × ∫<sub>−1</sub><sup>1</sup> (1 − *u*²)(3*u*² − 1) *du*
-
-The prefactor is 2π√5/(2√π × 4√π) = 2π√5/(8π) = √5/4. The integrand multiplies out to (1 − *u*²)(3*u*² − 1) = −1 + 4*u*² − 3*u*⁴, so the integral is 2(−1 + 4/3 − 3/5) = 2 × (−15 + 20 − 9)/15 = −8/15. The product is (√5/4) × (−8/15) = −2√5/15 ≈ −0.30. It is not zero, so the field connects 3s and 3d<sub>0</sub>.
-
-**Step 4 — the radial factor and the coupling *V*.** The full matrix element factors into radial and angular parts just as the averages do. With fact (i), the radial part is ⟨3s\|*r*²\|3d⟩ = ∫₀<sup>∞</sup> *R*<sub>30</sub> *r*² *R*<sub>32</sub> *r*² *dr*. The constants multiply to [2/(3√3)] × 4/(81√30) = 8/(243√90) = 8/(729√10), and the integrand is *r*⁶(1 − 2*r*/3 + 2*r*²/27) *e*<sup>−2*r*/3</sup>. T6 with *a* = 2/3 gives ∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−2*r*/3</sup> *dr* = *k*! (3/2)<sup>*k*+1</sup>, so the three terms are 6! (3/2)⁷ = 98415/8, −(2/3) × 7! (3/2)⁸ = −688905/8 and (2/27) × 8! (3/2)⁹ = 918540/8, which sum to 328050/8. Hence
+**Step 4 — the radial factor and the coupling *V*.** The full matrix element factors into radial and angular parts just as the averages do. With the quoted *R*<sub>30</sub> and *R*<sub>32</sub>, the radial part is ⟨3s\|*r*²\|3d⟩ = ∫₀<sup>∞</sup> *R*<sub>30</sub> *r*² *R*<sub>32</sub> *r*² *dr*. The constants multiply to [2/(3√3)] × 4/(81√30) = 8/(243√90) = 8/(729√10), and the integrand is *r*⁶(1 − 2*r*/3 + 2*r*²/27) *e*<sup>−2*r*/3</sup>. T6 with *a* = 2/3 gives ∫₀<sup>∞</sup> *r*<sup>*k*</sup> *e*<sup>−2*r*/3</sup> *dr* = *k*! (3/2)<sup>*k*+1</sup>, so the three terms are 6! (3/2)⁷ = 98415/8, −(2/3) × 7! (3/2)⁸ = −688905/8 and (2/27) × 8! (3/2)⁹ = 918540/8, which sum to 328050/8. Hence
 
 > ⟨3s\|*r*²\|3d⟩ = [8/(729√10)] × 328050/8 = 450/√10 = 45√10 ≈ 142.3 *a*₀² &nbsp;&nbsp; (a.u.)
 
 and, with the angular factor of Step 3, *V* = (*B*²/8) × 45√10 × (−2√5/15) = −(*B*²/8) × 6√50 = −(*B*²/8) × 30√2 ≈ −(*B*²/8) × 42.4.
 
-**Step 5 — the 2×2 problem.** Restricted to the two states, the Hamiltonian is the matrix [[*E*<sub>*s*</sub>, *V*], [*V*, *E*<sub>*d*</sub>]], where *E*<sub>*s*</sub> = *E*₃ + Δ*E*<sub>*s*</sub> and *E*<sub>*d*</sub> = *E*₃ + Δ*E*<sub>*d*</sub> (each state's field-free energy *E*₃ plus its own diamagnetic bowl shift Δ*E* ∝ *B*²), and *V* ∝ *B*² is the coupling. Try a normalized eigenvector (cos ϑ, sin ϑ) with eigenvalue λ:
+**Step 5 — the 2×2 problem.** As in degenerate first-order perturbation theory (You need), restricted to the two states the Hamiltonian is the matrix [[*E*<sub>*s*</sub>, *V*], [*V*, *E*<sub>*d*</sub>]], where *E*<sub>*s*</sub> = *E*₃ + Δ*E*<sub>*s*</sub> and *E*<sub>*d*</sub> = *E*₃ + Δ*E*<sub>*d*</sub> (each state's field-free energy *E*₃ plus its own diamagnetic bowl shift Δ*E* ∝ *B*²), and *V* ∝ *B*² is the coupling. Try a normalized eigenvector (cos ϑ, sin ϑ) with eigenvalue λ:
 
 > *E*<sub>*s*</sub> cos ϑ + *V* sin ϑ = λ cos ϑ, &nbsp;&nbsp; *V* cos ϑ + *E*<sub>*d*</sub> sin ϑ = λ sin ϑ &nbsp;&nbsp; (a.u.)
 
@@ -461,11 +457,19 @@ The atomic unit of field, 2.35 × 10⁵ T, is where the magnetic length equals t
 
 ---
 
-### Quick Self-Check
-1. Why does 1s barely shift at 23.5 kT while 2s shifts by more than ten times as much?
-2. The B² term connects 3s with 3d but never 3s with 3p. Which property of ρ<sub>cyl</sub>² = *r*² sin²θ decides this?
-3. Why can the app's default ±20 T range leave out the B² term, while the Toy range cannot?
-4. At 0.1 a.u. the dressed 3s is a cigar but the dressed 2s is only squeezed. Which comparison decides when the field takes over?
+### Quick Self-Check (Try in the Controls)
+*(**Core** = answerable from the main text and **Picture** boxes; **Stretch** = uses a **Key idea** or **Full derivation** box.)*
+
+1. **[Core]** Load 1s and then 2s at 0.1 a.u. with **B² term** ticked and read the diamagnetic shift in the info line. Why does 1s barely shift at 23.5 kT while 2s shifts by more than ten times as much?
+2. **[Core]** The B² term connects 3s with 3d but never 3s with 3p. Which property of ρ<sub>cyl</sub>² = *r*² sin²θ decides this?
+3. **[Core]** Why can the app's default ±20 T range leave out the B² term, while the Toy range cannot?
+4. **[Core]** Compare the dressed 2s demo with the Landau-regime 3s demo: at 0.1 a.u. the dressed 3s is a cigar but the dressed 2s is only squeezed. Which comparison decides when the field takes over?
+
+### Pen-and-Paper Practice
+- **P1 [Core].** At 20 T, find the 1s diamagnetic shift in eV from Δ*E* = *B*²/4 a.u., using 1 a.u. of field = 2.3505 × 10⁵ T and 1 Ha = 27.211 eV. Compare it with the linear Zeeman shift μ<sub>B</sub>*B* of a 2p<sub>+1</sub> level at the same field (μ<sub>B</sub> = 5.788 × 10⁻⁵ eV/T).
+- **P2 [Stretch].** Using ⟨*r*²⟩ = (*n*²/2)[5*n*² + 1 − 3*l*(*l* + 1)] and ⟨sin²θ⟩ = 2/5 for a *p* orbital with *m* = 0, find ⟨ρ<sub>cyl</sub>²⟩ for 2p<sub>0</sub> and its first-order diamagnetic shift at 0.1 a.u. in meV. How does it compare with 2p<sub>±1</sub>?
+- **P3 [Core].** A magnetar's field is about 10¹⁰ T. Express it in atomic units and in multiples of the ground state's onset field (about 1 a.u.). How large is the magnetic length there, in Bohr radii?
+- **P4 [Stretch].** The *n* = 3 shell has a ⟨ρ<sub>cyl</sub>²⟩ spread of 84 *a*₀² and a fine-structure gap of α²/108 a.u. (α = 1/137.036). Find the field, in tesla, above which the B² term outgrows fine structure.
 
 <details>
 <summary>Answers</summary>
@@ -474,5 +478,9 @@ The atomic unit of field, 2.35 × 10⁵ T, is where the magnetic length equals t
 - **2.** Parity. sin²θ is unchanged when **r** → −**r**, so it only connects states of equal parity: *l* and *l* ± 2 ([T6](tut:08#T6)). 3p has the opposite parity to 3s.
 - **3.** The term scales as *B*². At 20 T it shifts every shell *n* ≤ 7 by less than half the bandwidth of the longest (400-cycle) pulse on the lines into that shell from lower shells, so no such pulse can tell the difference. At 23.5 kT it is (23 500/20)² ≈ 1.4 million times larger and exceeds that bandwidth for every shell from *n* = 2 upward.
 - **4.** The bowl's height across the orbit, about *B*²*n*⁴/8, against the binding energy 1/(2*n*²). The field wins above *B* ~ 2/*n*³: about 0.07 a.u. for *n* = 3, already passed at 0.1 a.u., but 0.25 a.u. for *n* = 2.
+- **P1.** *B* = 20/235 050 = 8.51 × 10⁻⁵ a.u., so *B*²/4 = 1.81 × 10⁻⁹ Ha = 4.9 × 10⁻⁸ eV. The linear shift is 5.788 × 10⁻⁵ × 20 = 1.16 × 10⁻³ eV, about 24 000 times larger: at lab fields the B² term is utterly negligible next to the linear one.
+- **P2.** ⟨*r*²⟩ = (4/2)(21 − 6) = 30 *a*₀², so ⟨ρ<sub>cyl</sub>²⟩ = 30 × 2/5 = 12 *a*₀². The shift is (0.1²/8) × 12 = 0.015 Ha = 408 meV, half the first-order value for 2p<sub>±1</sub> (⟨ρ<sub>cyl</sub>²⟩ = 24 *a*₀², 816 meV): the dumbbell along the axis sits low in the bowl, the doughnut around it sits high.
+- **P3.** 10¹⁰/2.3505 × 10⁵ ≈ 4 × 10⁴ a.u., tens of thousands of times the ground state's onset, so even 1s is deep in the Landau regime. The magnetic length is 1/√(4.3 × 10⁴) ≈ 0.005 *a*₀ (about 0.3 pm), two hundred times smaller than the field-free atom.
+- **P4.** α²/108 = 5.325 × 10⁻⁵/108 = 4.93 × 10⁻⁷ Ha. Setting (*B*²/8) × 84 equal to it gives *B*² = 8 × 4.93 × 10⁻⁷/84 = 4.7 × 10⁻⁸, so *B* = 2.17 × 10⁻⁴ a.u. ≈ 51 T, the table's ~50 T.
 
 </details>

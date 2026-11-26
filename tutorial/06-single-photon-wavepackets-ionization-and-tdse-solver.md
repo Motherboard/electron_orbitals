@@ -9,7 +9,8 @@ Three key physics and numerical ideas behind `electron_orbitals.html` deserve cl
 > - A real atom absorbs a single photon perfectly only if the photon's shape is the **time-reverse of spontaneous emission**: a pulse that rises exponentially and then stops.
 > - Real photons from atoms last millions to hundreds of millions of optical cycles. The app squeezes them into 24 cycles so you can watch, while still printing the true lifetime.
 > - A strong enough laser field can pull the electron right out of the atom (**field ionization**). The threshold field drops steeply for larger orbitals, as 1/*n*⁴ (a classical estimate).
-> - §6.3 (entanglement, mixed states) and §6.5 (how the solvers work) are **advanced/optional**: read them if you are curious about quantum optics or numerical methods.
+>
+> **First read:** §6.1, §6.2, the main text of §6.4 and the demos. §6.3 (entanglement, mixed states) and §6.5 (how the solvers work) are advanced and optional: read them if you are curious about quantum optics or numerical methods.
 
 ---
 
@@ -137,7 +138,7 @@ Equality holds only when ξ has the same shape as *f* (and one constant phase), 
 
 ---
 
-## 6.2 Time Compression (10⁶–10⁹ Cycles vs. 24 Simulated Cycles) & Lorentzian Lineshape
+## 6.2 Time Compression (10⁶–10⁹ Cycles vs. 24 Simulated Cycles) & Lorentzian Lineshape {#time-compression}
 
 Because electromagnetic coupling is weak (α ≈ 1/137), an excited atom rings for a very long time before it has emitted its photon, so real atomic photons last millions of optical cycles or more. The number of optical cycles in one lifetime is *N* = ω₀/(2πΓ<sub>tot</sub>) (transition frequency over 2π times the upper level's total decay rate). For **Lyman-α (1s → 2p)**, τ = 1.595 ns spans *N* ≈ **3.94 × 10⁶ cycles**. At the same H<sub>α</sub> energy, a photon driving **2p → 3s** lasts τ(3s) = 158.3 ns (**~7.23 × 10⁷ cycles**), while one driving **2s → 3p** lasts only τ(3p) = 5.27 ns (**~2.41 × 10⁶ cycles**), because 3p empties mostly into 1s. Across all the optical lines the app offers (shells *n* = 1 to 7), *N* runs from about 1.6 × 10⁶ (e.g. `6s → 7p`) to about 6 × 10⁸ (`2p → 7s`, whose 7s upper level lives about 0.8 μs).
 
@@ -262,7 +263,7 @@ Because \|*e*<sup>−*i*ω<sub>L</sub>*t*</sup>\| = 1, \|*c*<sub>*e*</sub>\|² =
 
 ---
 
-## 6.3 Branch Projection, Atom–Photon Entanglement & Mixed States (Advanced)
+## 6.3 Branch Projection, Atom–Photon Entanglement & Mixed States (Advanced) {#entanglement}
 
 This section explains what the **Branch match** readout and the "conditioned" animation mean. It needs four words from quantum optics:
 - A **Fock state** has a definite number of photons: \|1⟩ is exactly one photon, \|0⟩ is no photon at all (the **vacuum**). A single photon is a Fock state, and it has no definite wave phase.
@@ -369,7 +370,7 @@ Look closely at those two terms: the joint superposition contains **two compleme
 
 ---
 
-## 6.4 Deriving Over-the-Barrier Ionization (ℰ<sub>OBI</sub> = 1 / 16*n*⁴)
+## 6.4 Deriving Over-the-Barrier Ionization (ℰ<sub>OBI</sub> = 1/(16*n*⁴)) {#obi}
 
 In **Coherent EM wave** mode, why does cranking **Power** up—or squeezing a pulse into too few optical cycles—literally tear the electron out of the atom? Because squeezing a π-pulse into a short time *T* demands a strong peak field ℰ₀. A strong field tilts the electron's energy landscape, so on one side the nucleus's pull leaves only a finite barrier, and above a threshold field the top of that barrier drops below the orbital's energy: the electron can simply roll out.
 
@@ -453,7 +454,7 @@ This classical 1D estimate omits the Stark shift of the level, tunnelling, and t
 
 Notice the steep 1/*n*⁴ scaling! For *n* = 1, ℰ<sub>OBI</sub> = 1/16 ≈ 0.0625 a.u.; for *n* = 3, ℰ<sub>OBI</sub> = 1/1296 ≈ 7.72 × 10⁻⁴ a.u.—over 80 times lower!
 - In **Single photon** mode, a true weak-field photon takes 10⁶–10⁹ cycles and never reaches ℰ<sub>OBI</sub>; compressing into 24 visual cycles would exceed ℰ<sub>OBI</sub> if fed to a strong-field solver, so **Single photon** mode instead uses the **single-photon cascade + shell-local multipole continuity solver** (§6.5). An absorbed bound–bound photon has less energy than the ionization energy of the level it starts from, and there is no second photon to carry the electron further, so the model keeps *every* transition *n* = 1..7 bound, with no spurious ionization from the time compression.
-- In **Coherent EM wave** mode (full continuous radial-grid TDSE), `Power = 1` at the reference Duration *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** (estimated continuum loss below ~0.6%; see Chapter 5; at *B*<sub>*z*</sub> ≠ 0 each Δ*m* = *q* component counts with its Zeeman-shifted photon energy ω − *qB*<sub>*z*</sub>/2), and the **`1π`** button keeps Power ≤ 1, stretching the Duration when needed. Cranking **Power** above 1 pushes *E*₀ past that safe field and drives real **photoionization** into **`continuum / higher n`**, with an inline loss estimate. Notice in the **Strong-field ionization** demo below (`1s → 2p` at 10.204 eV, `Duration = 54`, `Power = 16`): *E*₀ reaches ~10× *E*<sub>OBI</sub>(2), and once amplitude reaches *n* = 2 (binding energy 3.401 eV), each further 10.204 eV photon exceeds its ionization threshold (just like the **photoelectric effect**!)—two photons from 1s cross the 13.6 eV threshold through the real 2p resonance (**resonance-enhanced multiphoton ionization, REMPI**).
+- In **Coherent EM wave** mode (the full radial-grid TDSE, which includes the continuum), `Power = 1` at the reference Duration *T*<sub>ref</sub> is the **shortest ionization-safe π-pulse** (estimated continuum loss below ~0.6%; see Chapter 5; at *B*<sub>*z*</sub> ≠ 0 each Δ*m* = *q* component counts with its Zeeman-shifted photon energy ω − *qB*<sub>*z*</sub>/2), and the **`1π`** button keeps Power ≤ 1, stretching the Duration when needed. Cranking **Power** above 1 pushes *E*₀ past that safe field and drives real **photoionization** into **`continuum / higher n`**, with an inline loss estimate. Notice in the **Strong-field ionization** demo below (`1s → 2p` at 10.204 eV, `Duration = 54`, `Power = 16`): *E*₀ reaches ~10× *E*<sub>OBI</sub>(2), and once amplitude reaches *n* = 2 (binding energy 3.401 eV), each further 10.204 eV photon exceeds its ionization threshold (just like the **photoelectric effect**!)—two photons from 1s cross the 13.6 eV threshold through the real 2p resonance (**resonance-enhanced multiphoton ionization, REMPI**).
 
 ```demo
 {
@@ -499,7 +500,7 @@ Notice the steep 1/*n*⁴ scaling! For *n* = 1, ℰ<sub>OBI</sub> = 1/16 ≈ 0.0
 
 ---
 
-## 6.5 Under the Hood: Two Solvers (Optional, for the Curious)
+## 6.5 Under the Hood: Two Solvers (Optional, for the Curious) {#solvers}
 
 `electron_orbitals.html` solves the time-dependent Schrödinger equation (TDSE) in two different ways, one for each mode:
 - A **basis expansion** writes the electron's state as a sum of a few known hydrogen orbitals (the superposition of §1.2) and follows only their complex weights over time. It is fast and exact as long as the electron stays in those few orbitals, which is the case for one weak photon.
@@ -519,18 +520,30 @@ This mode is a grid solver. During strong laser/RF pulses, `electron_orbitals.ht
 
 ---
 
-### Quick Self-Check
-1. Using ℰ<sub>OBI</sub>(*n*) = 1/(16*n*⁴), compute ℰ<sub>OBI</sub> for *n* = 1, 2, 3, and 4 in atomic units (1 a.u. = 5.142 × 10¹¹ V/m). Why is the excited *n* = 4 shell stripped ~256× more easily than the ground state *n* = 1?
-2. Why does a detuning of `det = 1.0` in **Single photon** mode leave absorption odds near 80% (1/(1 + 1²/4)), even though `det` is measured in units of the photon's half-width Γ/2? And why can `2s → 3p` never exceed ~12% absorption, even with a perfectly shaped resonant photon?
-3. After **Stop pulse** or pulse completion, why do bound trajectories seamlessly continue without teleporting, whereas trajectories past 1.25 *R*<sub>box</sub> get resampled?
-4. When linear `x`-polarized light hits a Zeeman-resolved `1s → 2p, Δm = −1` transition in **Single photon** mode, why do **\|2p, −1⟩** and **\|1s, 0⟩** fail to interfere if you ignore the outgoing photon—and how do coincidence measurements in the (\|0⟩ ± \|1⟩)/√2 basis restore that interference?
+### Quick Self-Check (Try in the Controls)
+*(**Core** = answerable from the main text and **Picture** boxes; **Stretch** = uses a **Key idea** or **Full derivation** box.)*
+
+1. **[Core]** Load **Single-photon time-reversed wavepacket (1s → 2p,+1)** and watch the **E(t)** gizmo and the 2p weight. In which part of the pulse does most of the absorption happen, and why does the photon stop abruptly instead of fading out?
+2. **[Core]** Load **Red-detuned single photon (Detuning = −1.5 Γ/2)**. The animation still ends 100% in \|2p, +1⟩, but the note reports about 65%. Which number is the probability that the photon is absorbed, and what does the animation show instead?
+3. **[Core]** After **Stop pulse** or pulse completion in **Coherent EM wave** mode, why do bound trajectories seamlessly continue without teleporting, whereas trajectories past 1.25 *R*<sub>box</sub> get resampled?
+4. **[Core]** When linear `x`-polarized light hits a Zeeman-resolved `1s → 2p, Δm = −1` transition in **Single photon** mode, why do **\|2p, −1⟩** and **\|1s, 0⟩** fail to interfere if you ignore the outgoing photon—and how do coincidence measurements in the (\|0⟩ ± \|1⟩)/√2 basis restore that interference?
+
+### Pen-and-Paper Practice
+- **P1 [Core].** Using ℰ<sub>OBI</sub>(*n*) = 1/(16*n*⁴), compute ℰ<sub>OBI</sub> for *n* = 1, 2, 3, and 4 in atomic units and in V/m (1 a.u. = 5.142 × 10¹¹ V/m). Why is the excited *n* = 4 shell stripped ~256× more easily than the ground state *n* = 1?
+- **P2 [Core].** Why does a detuning of `det = 1.0` in **Single photon** mode leave absorption odds near 80% (1/(1 + 1²/4)), even though `det` is measured in units of the photon's half-width Γ/2? And why can `2s → 3p` never exceed ~12% absorption, even with a perfectly shaped resonant photon?
+- **P3 [Stretch].** Insert the time-reversed photon ξ(*t*) = *C e*<sup>+Γ(*t*−*T*)/2</sup> into (★) of [Integrating factor and the branching-ratio bound](tut:06#box-cascade-key) for a two-level atom and show that *P*<sub>abs</sub> = 1 − *e*<sup>−Γ*T*</sup>. Evaluate it for Γ*T* = 3 and Γ*T* = 5. Why can no other photon shape of the same duration do better?
+- **P4 [Stretch].** A static field ℰ₀ = 0.0025 a.u. points along −*z*. Where along the +*z* axis is the barrier top, how high is it (in Ha and eV), and which shells *n* lie above it classically? What is the field in V/m?
 
 <details>
 <summary>Answers</summary>
 
-- **1.** ℰ<sub>OBI</sub> = 1/16, 1/256, 1/1296, 1/4096 a.u. for *n* = 1–4, i.e. about 3.2 × 10¹⁰, 2.0 × 10⁹, 4.0 × 10⁸, and 1.3 × 10⁸ V/m. The ratio between *n* = 1 and *n* = 4 is 4⁴ = **256**: a larger orbital is both less tightly bound (*E*<sub>*n*</sub> ∝ 1/*n*²) and reaches farther out, where a given field lowers the barrier more.
-- **2.** The note reports the true single-photon odds from the cascade model (§§6.1–6.3). A photon in the matched, time-reversed mode has the same Lorentzian half-width Γ/2 as the atom, and the two combine in amplitude, so absorption falls off as Γ²/(Γ² + Δω²) = 1/(1 + `det`²/4) = **80%** at `det = 1` (the app's truncated photon gives 81.4%). That curve is twice as wide as the atom's natural line, which a weak steady laser would trace out as 1/(1 + det²): only 50% at `det = 1`. For `2s → 3p`, the ideal photon is the time-reverse of 3p's decay back into 2s, but 3p decays mostly into 1s. By the Cauchy–Schwarz inequality its absorption can never exceed the branching ratio Γ<sub>3p→2s</sub>/Γ<sub>tot</sub> ≈ 0.22/1.90 ≈ **12%** (rates in 10⁸ s⁻¹; the note shows 11.8%).
+- **1.** In the last quarter or so. The envelope rises exponentially, so most of the photon arrives near the end, when the upper level has little time left to leak back out (the leaky-bucket picture). The pulse stops abruptly because it is spontaneous emission run backwards: emission starts with a sharp front, so its time-reverse ends with a sharp cutoff, exactly when the level is fullest. Any light arriving after that would find the atom already excited and could only be scattered.
+- **2.** The note's ~65% is the real absorption probability: the detuned line 1/(1 + `det`²/4) ≈ 64%, or 65.1% for the app's finite photon. The animation is post-selected: it shows what the electron does in the runs where the photon *was* absorbed, so it always ends in the target. In the other ~35% of runs the photon passes or is re-emitted and the atom stays in 1s.
 - **3.** Bound amplitudes above \|*c*\| > 0.14 become the new analytic superposition, and the dots keep their positions, so nothing jumps. A dot beyond 1.25 *R*<sub>box</sub> has followed probability that left the atom (ionization) and is no longer described by any bound orbital, so it is redrawn from the remaining bound density.
 - **4.** The full state is (1/√2)(\|0⟩\|2p, −1⟩ + \|1<sub>σ⁺</sub>⟩\|1s, 0⟩). The two atomic states are tagged by orthogonal photon states, so ignoring the photon (tracing it out) multiplies every interference term by ⟨0\|1<sub>σ⁺</sub>⟩ = 0: the atom alone is a 50/50 mixture with no beats. Measuring the photon in the (\|0⟩ ± \|1⟩)/√2 basis and keeping only the "+" (or only the "−") outcomes erases the which-path tag, and the beats reappear within that subset.
+- **P1.** ℰ<sub>OBI</sub> = 1/16, 1/256, 1/1296, 1/4096 a.u. for *n* = 1–4, i.e. about 3.2 × 10¹⁰, 2.0 × 10⁹, 4.0 × 10⁸, and 1.3 × 10⁸ V/m. The ratio between *n* = 1 and *n* = 4 is 4⁴ = **256**: a larger orbital is both less tightly bound (13.6 eV for 1s, only 0.85 eV for *n* = 4) and reaches farther out, where a given field lowers the barrier more.
+- **P2.** The note reports the true single-photon odds from the cascade model (§§6.1–6.3). A photon in the matched, time-reversed mode has the same Lorentzian half-width Γ/2 as the atom, and the two widths add, so absorption falls off as Γ²/(Γ² + Δω²) = 1/(1 + `det`²/4) = **80%** at `det = 1` (the app's truncated photon gives 81.4%). That curve is twice as wide as the atom's natural line, which a weak steady laser would trace out as 1/(1 + `det`²): only 50% at `det = 1`. For `2s → 3p`, the photon can fill 3p only through the channel back to 2s, while 3p drains through both of its channels, mostly into 1s. So its absorption can never exceed the branching ratio Γ<sub>3p→2s</sub>/Γ<sub>tot</sub> ≈ 0.22/1.90 ≈ **12%** (rates in 10⁸ s⁻¹; the note shows 11.8%).
+- **P3.** With Γ<sub>*b*</sub> = Γ<sub>tot</sub> = Γ, (★) reads *c*<sub>*e*</sub>(*T*) = −√Γ *C* ∫₀<sup>*T*</sup> *e*<sup>−Γ(*T*−*t*)/2</sup> *e*<sup>+Γ(*t*−*T*)/2</sup> *dt* = −√Γ *C* ∫₀<sup>*T*</sup> *e*<sup>−Γ(*T*−*t*)</sup> *dt* = −√Γ *C* (1 − *e*<sup>−Γ*T*</sup>)/Γ. Squaring and inserting *C*² = Γ/(1 − *e*<sup>−Γ*T*</sup>) gives *P*<sub>abs</sub> = 1 − *e*<sup>−Γ*T*</sup>: **95.0%** for Γ*T* = 3 and **99.3%** for Γ*T* = 5. By the Cauchy–Schwarz inequality every photon of duration *T* obeys *P*<sub>abs</sub> ≤ 1 − *e*<sup>−Γ*T*</sup>, with equality only when ξ has the same shape as the listening weight *e*<sup>−Γ(*T*−*t*)/2</sup>, i.e. for the time-reversed photon.
+- **P4.** The barrier top is at *z*<sub>top</sub> = 1/√ℰ₀ = 1/0.05 = **20 *a*₀**, with height *U*<sub>max</sub> = −2√ℰ₀ = **−0.1 Ha ≈ −2.7 eV**. Shell energies *E*<sub>*n*</sub> = −1/(2*n*²) are −0.5 Ha (*n* = 1) and −0.125 Ha (*n* = 2), both below the top, so those shells stay bound classically; *E*₃ = −0.056 Ha and every higher shell lie above it and can spill over. The same follows from the thresholds: ℰ<sub>OBI</sub>(2) = 0.0039 > 0.0025 > ℰ<sub>OBI</sub>(3) = 0.00077 a.u. In SI the field is 0.0025 × 5.142 × 10¹¹ ≈ **1.3 × 10⁹ V/m**.
 
 </details>

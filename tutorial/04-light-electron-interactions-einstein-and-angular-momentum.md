@@ -12,7 +12,7 @@ Everything spectroscopy measures, from UV-Vis bands and fluorescence lifetimes t
 
 ---
 
-## 4.1 The Light–Electron Interaction & Transition Dipole Integral
+## 4.1 The Light–Electron Interaction & Transition Dipole Integral {#transition-dipole}
 
 In an oscillating electric field **ℰ**(*t*), an electron of charge *q* = −*e* gains potential energy *U* = −*q***r** · **ℰ**(*t*) = +*e* **r** · **ℰ**(*t*) relative to the nucleus (**r** is the electron's position measured from the nucleus; Chapter 3 §3.1 showed that the field is uniform across the atom). Adding this energy to Chapter 1's time-dependent Schrödinger equation gives, in atomic units (*e* = *ħ* = *m*<sub>e</sub> = 1):
 
@@ -77,38 +77,38 @@ Full algebra: [Splitting the integral and evaluating the 1s–2p radial part](tu
 
 **You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (volume element *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (the standard integral ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* = *n*!/*a*<sup>*n*+1</sup>), and single-variable integration by parts, ∫ *u* *dv* = [*uv*] − ∫ *v* *du* (used in Step 7 to re-derive that integral).
 
-**Step 1 · Write the position vector as length × direction:** **r** = *r* **r̂**.
+**Step 1 — Position as length × direction.** Write the position vector as **r** = *r* **r̂**.
 
-**Step 2 · Use spherical coordinates for the volume element:** a tiny box with sides *dr*, *r* *d*θ and *r* sin θ *d*φ has volume *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ.
+**Step 2 — Spherical volume element.** A tiny box with sides *dr*, *r* *d*θ and *r* sin θ *d*φ has volume *d*³*r* = *r*² sin θ *dr* *d*θ *d*φ.
 
-**Step 3 · Substitute** ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) (the radial functions *R* are real):
+**Step 3 — Substitute the orbitals.** Insert ψ<sub>*nlm*</sub> = *R*<sub>*nl*</sub>(*r*) *Y*<sub>*l*</sub><sup>*m*</sup>(θ, φ) (the radial functions *R* are real):
 
 > **d**<sub>21</sub> = ∫∫∫ *R*<sub>*n*₂*l*₂</sub> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> · *r* **r̂** · *R*<sub>*n*₁*l*₁</sub> *Y*<sub>*l*₁</sub><sup>*m*₁</sup> · *r*² sin θ *dr* *d*θ *d*φ &nbsp;&nbsp; (a.u.)
 
-**Step 4 · Collect the powers of *r*:** one *r* comes from the operator **r** = *r* **r̂**, and *r*² comes from the volume element, giving *r* × *r*² = *r*³.
+**Step 4 — Collect the powers of *r*.** One *r* comes from the operator **r** = *r* **r̂**, and *r*² comes from the volume element, giving *r* × *r*² = *r*³.
 
-**Step 5 · Split the integral:** the integrand is (a function of *r* only) × (a function of θ, φ only), so the triple integral is a product of two separate integrals:
+**Step 5 — Split the integral.** The integrand is (a function of *r* only) × (a function of θ, φ only), so the triple integral is a product of two separate integrals:
 
 > **d**<sub>21</sub> = [ ∫₀<sup>∞</sup> *r*³ *R*<sub>*n*₂*l*₂</sub> *R*<sub>*n*₁*l*₁</sub> *dr* ] × [ ∫₀<sup>π</sup>∫₀<sup>2π</sup> [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> **r̂** *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ ] &nbsp;&nbsp; (a.u.)
 
-**Step 6 · Worked example, 1s ↔ 2p.** In atomic units (*r* in *a*₀), *R*<sub>10</sub> = 2*e*<sup>−*r*</sup> and *R*<sub>21</sub> = *r e*<sup>−*r*/2</sup>/(2√6). The radial integral is
+**Step 6 — Worked example, 1s ↔ 2p.** In atomic units (*r* in *a*₀), *R*<sub>10</sub> = 2*e*<sup>−*r*</sup> and *R*<sub>21</sub> = *r e*<sup>−*r*/2</sup>/(2√6). The radial integral is
 
 > ∫₀<sup>∞</sup> *r*³ · 2*e*<sup>−*r*</sup> · *r e*<sup>−*r*/2</sup>/(2√6) *dr* = (1/√6) ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−3*r*/2</sup> *dr* &nbsp;&nbsp; (a.u.)
 
 (the 2 cancels the 2 in 2√6; *r*³ · *r* = *r*⁴; and *e*<sup>−*r*</sup>*e*<sup>−*r*/2</sup> = *e*<sup>−3*r*/2</sup> because exponents add).
 
-**Step 7 · Where *n*!/*a*<sup>*n*+1</sup> comes from.** Call *I*<sub>*n*</sub> = ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* (with *a* > 0).
+**Step 7 — Where *n*!/*a*<sup>*n*+1</sup> comes from.** Call *I*<sub>*n*</sub> = ∫₀<sup>∞</sup> *r*<sup>*n*</sup> *e*<sup>−*ar*</sup> *dr* (with *a* > 0).
 - *n* = 0: *I*₀ = [−*e*<sup>−*ar*</sup>/*a*]₀<sup>∞</sup> = 0 − (−1/*a*) = 1/*a*.
 - Integration by parts with *u* = *r*<sup>*n*</sup>, *dv* = *e*<sup>−*ar*</sup>*dr* (so *du* = *n r*<sup>*n*−1</sup>*dr* and *v* = −*e*<sup>−*ar*</sup>/*a*): *I*<sub>*n*</sub> = [−*r*<sup>*n*</sup>*e*<sup>−*ar*</sup>/*a*]₀<sup>∞</sup> + (*n*/*a*) *I*<sub>*n*−1</sub>. The bracket is 0 at both ends (at *r* = 0 because of *r*<sup>*n*</sup>, at ∞ because the exponential wins), so *I*<sub>*n*</sub> = (*n*/*a*) *I*<sub>*n*−1</sub>.
 - Repeating: *I*<sub>*n*</sub> = (*n*/*a*)((*n* − 1)/*a*) ⋯ (1/*a*)(1/*a*) = *n*!/*a*<sup>*n*+1</sup>.
 
-**Step 8 · Use *I*<sub>*n*</sub> = *n*!/*a*<sup>*n*+1</sup>** with *n* = 4 and *a* = 3/2:
+**Step 8 — Evaluate the 1s–2p integral.** Use *I*<sub>*n*</sub> = *n*!/*a*<sup>*n*+1</sup> with *n* = 4 and *a* = 3/2:
 
 > ∫₀<sup>∞</sup> *r*⁴ *e*<sup>−3*r*/2</sup> *dr* = 4!/(3/2)⁵ = 24 × 32/243 = 768/243 = 256/81 ≈ 3.1605
 
 so the radial integral is 256/(81√6) ≈ 3.1605/2.4495 ≈ **1.2903 *a*₀**. The same recipe with *R*<sub>31</sub> and *R*<sub>41</sub> gives 0.5167 *a*₀ for 1s ↔ 3p and 0.3046 *a*₀ for 1s ↔ 4p.
 
-**Step 9 · Where the integral is collected.** The integrand is proportional to *r*⁴*e*<sup>−3*r*/2</sup>. Its slope (4*r*³ − (3/2)*r*⁴)*e*<sup>−3*r*/2</sup> vanishes at *r* = 4/(3/2) = 8/3 ≈ 2.7 *a*₀, so that is where the integrand peaks; about 70% of the total comes from 1 *a*₀ ≤ *r* ≤ 4 *a*₀, where the 1s cloud thins out and the 2p cloud builds up.
+**Step 9 — Where the integral is collected.** The integrand is proportional to *r*⁴*e*<sup>−3*r*/2</sup>. Its slope (4*r*³ − (3/2)*r*⁴)*e*<sup>−3*r*/2</sup> vanishes at *r* = 4/(3/2) = 8/3 ≈ 2.7 *a*₀, so that is where the integrand peaks; about 70% of the total comes from 1 *a*₀ ≤ *r* ≤ 4 *a*₀, where the 1s cloud thins out and the 2p cloud builds up.
 
 **Check:** normalized *R* has units *a*₀<sup>−3/2</sup>, so *r*³*R*²*dr* has units of length (*a*₀), and 1.29 *a*₀ sits right at the atomic scale between 1s and 2p. Summing *r*³ *R*<sub>10</sub> *R*<sub>21</sub> numerically on a fine grid out to *r* = 200 *a*₀ gives 1.29027 *a*₀, matching 256/(81√6) = 1.29027 *a*₀. ✓
 
@@ -134,7 +134,7 @@ Unlike molecular vibrational IR spectroscopy (where a harmonic potential restric
 
 ---
 
-## 4.2 Einstein Coefficients (*A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub>)
+## 4.2 Einstein Coefficients (*A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub>) {#einstein-coefficients}
 
 In 1917, before Schrödinger's equation even existed, Albert Einstein analyzed a two-level atom bathed in thermal blackbody radiation at temperature *T*<sub>th</sub>. The symbols:
 - *E*₂ > *E*₁ are the two energies, and ω₀ = (*E*₂ − *E*₁)/*ħ* is the **Bohr frequency**, the angular frequency of a photon that exactly bridges the gap.
@@ -183,37 +183,37 @@ Full algebra: [From detailed balance and Planck's law to Einstein's relations](t
 
 **You need:** Boltzmann populations *N*₂/*N*₁ = (*g*₂/*g*₁)*e*<sup>−*ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>)</sup>, Planck's blackbody law (quoted in Step 4), and the small-*x* expansion *e*<sup>*x*</sup> ≈ 1 + *x* for \|*x*\| ≪ 1.
 
-**Step 1 · Balance the rates** (up = down):
+**Step 1 — Balance the rates.** In equilibrium the upward rate equals the downward rate:
 
 > *N*₁ *B*<sub>12</sub> ρ(ω₀) = *N*₂ [ *A*<sub>21</sub> + *B*<sub>21</sub> ρ(ω₀) ] &nbsp;&nbsp; (SI)
 
-**Step 2 · Solve for ρ.** Move the stimulated term to the left: ρ (*N*₁*B*<sub>12</sub> − *N*₂*B*<sub>21</sub>) = *N*₂*A*<sub>21</sub>. Divide both sides by *N*₂ and by the bracket:
+**Step 2 — Solve for ρ.** Move the stimulated term to the left: ρ (*N*₁*B*<sub>12</sub> − *N*₂*B*<sub>21</sub>) = *N*₂*A*<sub>21</sub>. Divide both sides by *N*₂ and by the bracket:
 
 > ρ(ω₀) = *A*<sub>21</sub> / [ (*N*₁/*N*₂) *B*<sub>12</sub> − *B*<sub>21</sub> ] &nbsp;&nbsp; (SI)
 
-**Step 3 · Insert Boltzmann statistics** (general chemistry): *N*₂/*N*₁ = (*g*₂/*g*₁) *e*<sup>−*ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>)</sup>, so *N*₁/*N*₂ = (*g*₁/*g*₂) *e*<sup>*x*</sup> with the shorthand *x* = *ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>):
+**Step 3 — Insert Boltzmann statistics.** From general chemistry, *N*₂/*N*₁ = (*g*₂/*g*₁) *e*<sup>−*ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>)</sup>, so *N*₁/*N*₂ = (*g*₁/*g*₂) *e*<sup>*x*</sup> with the shorthand *x* = *ħ*ω₀/(*k*<sub>B</sub>*T*<sub>th</sub>):
 
 > ρ(ω₀) = *A*<sub>21</sub> / [ (*g*₁*B*<sub>12</sub> / *g*₂) *e*<sup>*x*</sup> − *B*<sub>21</sub> ] &nbsp;&nbsp; (SI)
 
-**Step 4 · Planck's law** (quoted result, not derived here; Planck found it in 1900 by assuming light energy comes in packets *ħ*ω):
+**Step 4 — Planck's law.** This is a quoted result, not derived here; Planck found it in 1900 by assuming light energy comes in packets *ħ*ω:
 
 > ρ(ω) = (*ħ*ω³ / π²*c*³) / (*e*<sup>*x*</sup> − 1), &nbsp;&nbsp; *x* = *ħ*ω/(*k*<sub>B</sub>*T*<sub>th</sub>) &nbsp;&nbsp; (SI)
 
-**Step 5 · Match at very high temperature (*T*<sub>th</sub> → ∞).** Then *x* → 0 and *e*<sup>*x*</sup> → 1. In Planck's law the denominator *e*<sup>*x*</sup> − 1 ≈ *x* → 0, so ρ ≈ (*ħ*ω³/π²*c*³)(*k*<sub>B</sub>*T*<sub>th</sub>/*ħ*ω) = ω²*k*<sub>B</sub>*T*<sub>th</sub>/(π²*c*³), the classical **Rayleigh–Jeans law**, which grows without bound as *T*<sub>th</sub> grows (a very hot cavity is flooded with light). In step 3 the denominator tends to (*g*₁*B*<sub>12</sub>/*g*₂) − *B*<sub>21</sub>, a fixed number, because *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub> are properties of the atom and do not depend on temperature. The only way the step-3 expression can also blow up is if that fixed number is zero:
+**Step 5 — Match at very high temperature (*T*<sub>th</sub> → ∞).** Then *x* → 0 and *e*<sup>*x*</sup> → 1. In Planck's law the denominator *e*<sup>*x*</sup> − 1 ≈ *x* → 0, so ρ ≈ (*ħ*ω³/π²*c*³)(*k*<sub>B</sub>*T*<sub>th</sub>/*ħ*ω) = ω²*k*<sub>B</sub>*T*<sub>th</sub>/(π²*c*³), the classical **Rayleigh–Jeans law**, which grows without bound as *T*<sub>th</sub> grows (a very hot cavity is flooded with light). In Step 3 the denominator tends to (*g*₁*B*<sub>12</sub>/*g*₂) − *B*<sub>21</sub>, a fixed number, because *A*<sub>21</sub>, *B*<sub>12</sub>, *B*<sub>21</sub> are properties of the atom and do not depend on temperature. The only way the Step 3 expression can also blow up is if that fixed number is zero:
 
 > *g*₁*B*<sub>12</sub>/*g*₂ − *B*<sub>21</sub> = 0 &nbsp; ⇒ &nbsp; *g*₁ *B*<sub>12</sub> = *g*₂ *B*<sub>21</sub> &nbsp;&nbsp; (SI)
 
 Physically: at huge light intensity the stimulated terms dominate, and they must balance by themselves.
 
-**Step 6 · Put this back into step 3.** Replace *g*₁*B*<sub>12</sub>/*g*₂ by *B*<sub>21</sub> and factor it out:
+**Step 6 — Put this back into Step 3.** Replace *g*₁*B*<sub>12</sub>/*g*₂ by *B*<sub>21</sub> and factor it out:
 
 > ρ(ω₀) = *A*<sub>21</sub> / [ *B*<sub>21</sub> *e*<sup>*x*</sup> − *B*<sub>21</sub> ] = (*A*<sub>21</sub>/*B*<sub>21</sub>) / (*e*<sup>*x*</sup> − 1) &nbsp;&nbsp; (SI)
 
-**Step 7 · Compare with Planck's law at any temperature.** Both have the same denominator *e*<sup>*x*</sup> − 1, so the numerators must be equal:
+**Step 7 — Compare with Planck's law at any temperature.** Both have the same denominator *e*<sup>*x*</sup> − 1, so the numerators must be equal:
 
 > *A*<sub>21</sub> / *B*<sub>21</sub> = *ħ*ω₀³ / (π²*c*³) &nbsp;&nbsp; (SI)
 
-**Step 8 · The same law per ordinary frequency.** The energy in a small band is the same whichever variable you use, ρ<sub>ν</sub> *d*ν = ρ<sub>ω</sub> *d*ω. Since *d*ω = 2π *d*ν, ρ<sub>ν</sub> = 2πρ<sub>ω</sub>. The absorption rate must also be the same, *B*<sup>(ν)</sup>ρ<sub>ν</sub> = *B*ρ<sub>ω</sub>, so *B*<sup>(ν)</sup> = *B*/(2π) and
+**Step 8 — The same law per ordinary frequency.** The energy in a small band is the same whichever variable you use, ρ<sub>ν</sub> *d*ν = ρ<sub>ω</sub> *d*ω. Since *d*ω = 2π *d*ν, ρ<sub>ν</sub> = 2πρ<sub>ω</sub>. The absorption rate must also be the same, *B*<sup>(ν)</sup>ρ<sub>ν</sub> = *B*ρ<sub>ω</sub>, so *B*<sup>(ν)</sup> = *B*/(2π) and
 
 > *A*<sub>21</sub>/*B*<sub>21</sub><sup>(ν)</sup> = 2π · *ħ*ω₀³/(π²*c*³) = 2π · (*h*/2π)(2πν)³/(π²*c*³) = 8π*h*ν³/*c*³ &nbsp;&nbsp; (SI)
 
@@ -271,45 +271,45 @@ This is the Weisskopf–Wigner rate for one final sublevel; each final sublevel 
 <details>
 <summary>Level 3 · Full derivation: B₁₂ from the Schrödinger equation and A₂₁ from Einstein's relation {#box-a21-from-b12}</summary>
 
-**You need:** [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (expanding Ψ in orthonormal eigenstates; matrix elements *V*<sub>*jk*</sub> = ⟨ψ<sub>*j*</sub>\|*V*\|ψ<sub>*k*</sub>⟩), [T1 · Complex numbers & Euler's formula](tut:08#T1) (cos α = (*e*<sup>*i*α</sup> + *e*<sup>−*i*α</sup>)/2, \|*e*<sup>*i*α</sup>\| = 1), [T3 · First-order linear ODEs](tut:08#T3) (integrating *dc*/*dt* = *f*(*t*)), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (an orbital of definite parity has ⟨ψ\|**r**\|ψ⟩ = 0), the intensity *I* = ½*c*ε₀ℰ₀² of a light wave from [Evaluating ∫ sin² = T/2 and I = ½cε₀ℰ₀²](tut:03#box-area-intensity) (its cycle-averaged energy density is *u* = *I*/*c* = ½ε₀ℰ₀²), Einstein's relations from [From detailed balance and Planck's law to Einstein's relations](tut:04#box-einstein-relations), and one standard integral, quoted: ∫ sin²*x*/*x*² *dx* = π over the whole line (a fine numerical sum gives 3.1416). A dot over a symbol means *d*/*dt*.
+**You need:** [T7 · Operators, eigenvalues & Dirac notation](tut:08#T7) (expanding Ψ in orthonormal eigenstates; matrix elements *V*<sub>*jk*</sub> = ⟨ψ<sub>*j*</sub>\|*V*\|ψ<sub>*k*</sub>⟩), [T1 · Complex numbers & Euler's formula](tut:08#T1) (cos α = (*e*<sup>*i*α</sup> + *e*<sup>−*i*α</sup>)/2, \|*e*<sup>*i*α</sup>\| = 1), [T3 · First-order linear ODEs](tut:08#T3) (integrating *dc*/*dt* = *f*(*t*)), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (an orbital of definite parity has ⟨ψ\|**r**\|ψ⟩ = 0), the intensity *I* = ½*c*ε₀ℰ₀² of a light wave from [Evaluating ∫ sin² = T/2 and I = ½cε₀ℰ₀²](tut:03#box-area-intensity) (its cycle-averaged energy density is *u* = *I*/*c* = ½ε₀ℰ₀²), Einstein's relations from [From detailed balance and Planck's law to Einstein's relations](tut:04#box-einstein-relations), and the area ∫ sin²*x*/*x*² *dx* = π over the whole line ([T8 · Fourier, time–bandwidth & Lorentzian](tut:08#T8), derived in [The area under sin²x/x² is π](tut:08#box-t8-sinc)). A dot over a symbol means *d*/*dt*.
 
-**Step 1 · Expand in the two states.** Write Ψ = *c*₁(*t*) *e*<sup>−*iE*₁*t*/*ħ*</sup> ψ₁ + *c*₂(*t*) *e*<sup>−*iE*₂*t*/*ħ*</sup> ψ₂ (with *Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>) and put it into *iħ* ∂Ψ/∂*t* = [*Ĥ*₀ + *V*(*t*)]Ψ with *V*(*t*) = *e* **r** · **ℰ**(*t*). By the product rule, *iħ* times the derivative of each phase factor gives *E*<sub>*k*</sub>*c*<sub>*k*</sub>*e*<sup>−*iE*<sub>*k*</sub>*t*/*ħ*</sup>ψ<sub>*k*</sub>, which cancels *Ĥ*₀ acting on that term. What remains is
+**Step 1 — Expand in the two states.** Write Ψ = *c*₁(*t*) *e*<sup>−*iE*₁*t*/*ħ*</sup> ψ₁ + *c*₂(*t*) *e*<sup>−*iE*₂*t*/*ħ*</sup> ψ₂ (with *Ĥ*₀ψ<sub>*k*</sub> = *E*<sub>*k*</sub>ψ<sub>*k*</sub>) and put it into *iħ* ∂Ψ/∂*t* = [*Ĥ*₀ + *V*(*t*)]Ψ with *V*(*t*) = *e* **r** · **ℰ**(*t*). By the product rule, *iħ* times the derivative of each phase factor gives *E*<sub>*k*</sub>*c*<sub>*k*</sub>*e*<sup>−*iE*<sub>*k*</sub>*t*/*ħ*</sup>ψ<sub>*k*</sub>, which cancels *Ĥ*₀ acting on that term. What remains is
 
 > *iħ* [ *ċ*₁ *e*<sup>−*iE*₁*t*/*ħ*</sup> ψ₁ + *ċ*₂ *e*<sup>−*iE*₂*t*/*ħ*</sup> ψ₂ ] = *V*(*t*) [ *c*₁ *e*<sup>−*iE*₁*t*/*ħ*</sup> ψ₁ + *c*₂ *e*<sup>−*iE*₂*t*/*ħ*</sup> ψ₂ ] &nbsp;&nbsp; (SI)
 
-**Step 2 · Pick out the ψ₂ part.** Multiply by ψ₂<sup>∗</sup> and integrate over all space. Orthonormality (⟨ψ₂\|ψ₁⟩ = 0, ⟨ψ₂\|ψ₂⟩ = 1) removes ψ₁ on the left: *iħ* *ċ*₂ *e*<sup>−*iE*₂*t*/*ħ*</sup> = *c*₁ *V*<sub>21</sub> *e*<sup>−*iE*₁*t*/*ħ*</sup> + *c*₂ *V*<sub>22</sub> *e*<sup>−*iE*₂*t*/*ħ*</sup>. The diagonal term vanishes, *V*<sub>22</sub> = *e* **ℰ** · ⟨ψ₂\|**r**\|ψ₂⟩ = 0, because ψ₂ has definite parity. Multiplying by *e*<sup>*iE*₂*t*/*ħ*</sup>/(*iħ*) and using ω₀ = (*E*₂ − *E*₁)/*ħ*:
+**Step 2 — Pick out the ψ₂ part.** Multiply by ψ₂<sup>∗</sup> and integrate over all space. Orthonormality (⟨ψ₂\|ψ₁⟩ = 0, ⟨ψ₂\|ψ₂⟩ = 1) removes ψ₁ on the left: *iħ* *ċ*₂ *e*<sup>−*iE*₂*t*/*ħ*</sup> = *c*₁ *V*<sub>21</sub> *e*<sup>−*iE*₁*t*/*ħ*</sup> + *c*₂ *V*<sub>22</sub> *e*<sup>−*iE*₂*t*/*ħ*</sup>. The diagonal term vanishes, *V*<sub>22</sub> = *e* **ℰ** · ⟨ψ₂\|**r**\|ψ₂⟩ = 0, because ψ₂ has definite parity. Multiplying by *e*<sup>*iE*₂*t*/*ħ*</sup>/(*iħ*) and using ω₀ = (*E*₂ − *E*₁)/*ħ*:
 
 > *ċ*₂ = −(*i*/*ħ*) *V*<sub>21</sub>(*t*) *e*<sup>*i*ω₀*t*</sup> *c*₁ &nbsp;&nbsp; (SI)
 
-**Step 3 · Weak light.** Start in ψ₁: *c*₁(0) = 1, *c*₂(0) = 0. While *c*₂ stays tiny, *c*₁ ≈ 1 (first-order perturbation theory). For **ℰ**(*t*) = ℰ₀ **ε̂** cos ω*t* the matrix element is *V*<sub>21</sub> = *e*ℰ₀ (**ε̂** · **d**<sub>21</sub>) cos ω*t* with **d**<sub>21</sub> = ⟨ψ₂\|**r**\|ψ₁⟩. Writing cos ω*t* = (*e*<sup>*i*ω*t*</sup> + *e*<sup>−*i*ω*t*</sup>)/2:
+**Step 3 — Weak light.** Start in ψ₁: *c*₁(0) = 1, *c*₂(0) = 0. While *c*₂ stays tiny, *c*₁ ≈ 1 (first-order perturbation theory). For **ℰ**(*t*) = ℰ₀ **ε̂** cos ω*t* the matrix element is *V*<sub>21</sub> = *e*ℰ₀ (**ε̂** · **d**<sub>21</sub>) cos ω*t* with **d**<sub>21</sub> = ⟨ψ₂\|**r**\|ψ₁⟩. Writing cos ω*t* = (*e*<sup>*i*ω*t*</sup> + *e*<sup>−*i*ω*t*</sup>)/2:
 
 > *ċ*₂ = −[*i e* ℰ₀ (**ε̂** · **d**<sub>21</sub>)/(2*ħ*)] [ *e*<sup>*i*(ω₀ + ω)*t*</sup> + *e*<sup>*i*(ω₀ − ω)*t*</sup> ] &nbsp;&nbsp; (SI)
 
-**Step 4 · Keep the slow term.** The first exponential turns at ω₀ + ω ≈ 2ω₀; its positive and negative half-cycles cancel, so its time integral never exceeds about 1/ω₀. The second turns at the small detuning Δ = ω₀ − ω and keeps building up. Dropping the first (the **rotating-wave approximation**) and integrating from 0 to *t*:
+**Step 4 — Keep the slow term.** The first exponential turns at ω₀ + ω ≈ 2ω₀; its positive and negative half-cycles cancel, so its time integral never exceeds about 1/ω₀. The second turns at the small detuning Δ = ω₀ − ω and keeps building up. Dropping the first (the **rotating-wave approximation**) and integrating from 0 to *t*:
 
 > *c*₂(*t*) = −[*i e* ℰ₀ (**ε̂** · **d**<sub>21</sub>)/(2*ħ*)] ∫₀<sup>*t*</sup> *e*<sup>*i*Δ*t*′</sup> *dt*′ = −[*i e* ℰ₀ (**ε̂** · **d**<sub>21</sub>)/(2*ħ*)] (*e*<sup>*i*Δ*t*</sup> − 1)/(*i*Δ) &nbsp;&nbsp; (SI)
 
-**Step 5 · Square it.** The factors *i* have modulus 1, and by Euler's formula \|*e*<sup>*i*Δ*t*</sup> − 1\|² = (cos Δ*t* − 1)² + sin²Δ*t* = 2 − 2 cos Δ*t* = 4 sin²(Δ*t*/2) (using cos Δ*t* = 1 − 2 sin²(Δ*t*/2)). So
+**Step 5 — Square it.** The factors *i* have modulus 1, and by Euler's formula \|*e*<sup>*i*Δ*t*</sup> − 1\|² = (cos Δ*t* − 1)² + sin²Δ*t* = 2 − 2 cos Δ*t* = 4 sin²(Δ*t*/2) (using cos Δ*t* = 1 − 2 sin²(Δ*t*/2)). So
 
 > *P*₂(*t*) = \|*c*₂\|² = [*e*²ℰ₀²\|**ε̂** · **d**<sub>21</sub>\|²/(4*ħ*²)] · 4 sin²(Δ*t*/2)/Δ² = (*e*²ℰ₀²\|**ε̂** · **d**<sub>21</sub>\|²/*ħ*²) sin²(Δ*t*/2)/Δ² &nbsp;&nbsp; (SI)
 
 At exact resonance sin(Δ*t*/2) ≈ Δ*t*/2, so *P*₂ ≈ (*e*ℰ₀\|**ε̂** · **d**<sub>21</sub>\|*t*/(2*ħ*))², growing as *t*².
 
-**Step 6 · Broadband light.** One wave has cycle-averaged energy density *u* = ½ε₀ℰ₀², so ℰ₀² = 2*u*/ε₀. Lamp or thermal light is a continuum of such waves with random phases. The slice between ω and ω + *d*ω has *u* = ρ(ω) *d*ω, and because the phases are random the cross terms between slices average to zero and the slices' probabilities add:
+**Step 6 — Broadband light.** One wave has cycle-averaged energy density *u* = ½ε₀ℰ₀², so ℰ₀² = 2*u*/ε₀. Lamp or thermal light is a continuum of such waves with random phases. The slice between ω and ω + *d*ω has *u* = ρ(ω) *d*ω, and because the phases are random the cross terms between slices average to zero and the slices' probabilities add:
 
 > *P*₂(*t*) = (2*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ∫ ρ(ω) [sin²(Δ*t*/2)/Δ²] *d*ω &nbsp;&nbsp; (SI)
 
-**Step 7 · The narrowing window.** As a function of ω, sin²(Δ*t*/2)/Δ² has a peak of height *t*²/4 at Δ = 0 and first zeros at Δ = ±2π/*t*. Once *t* is long enough that ρ(ω) is nearly constant across this window (the light's spectrum is much wider than 2π/*t*), take ρ(ω₀) outside and extend the limits to ±∞. Since ω = ω₀ − Δ, integrating over all ω is the same as integrating over all Δ. Substitute *x* = Δ*t*/2, so Δ² = 4*x*²/*t*² and *d*Δ = (2/*t*) *dx*:
+**Step 7 — The narrowing window.** As a function of ω, sin²(Δ*t*/2)/Δ² has a peak of height *t*²/4 at Δ = 0 and first zeros at Δ = ±2π/*t*. Once *t* is long enough that ρ(ω) is nearly constant across this window (the light's spectrum is much wider than 2π/*t*), take ρ(ω₀) outside and extend the limits to ±∞. Since ω = ω₀ − Δ, integrating over all ω is the same as integrating over all Δ. Substitute *x* = Δ*t*/2, so Δ² = 4*x*²/*t*² and *d*Δ = (2/*t*) *dx*:
 
 > ∫ sin²(Δ*t*/2)/Δ² *d*Δ = ∫ [sin²*x* · *t*²/(4*x*²)] (2/*t*) *dx* = (*t*/2) ∫ sin²*x*/*x*² *dx* = π*t*/2
 
-**Step 8 · A constant rate.** Put this into Step 6: *P*₂(*t*) = (2*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ρ(ω₀) (π*t*/2) = (π*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ρ(ω₀) *t*. The probability grows in proportion to time, so the probability per second *W*<sub>12</sub> = *P*₂/*t* = (π*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ρ(ω₀) is constant.
+**Step 8 — A constant rate.** Put this into Step 6: *P*₂(*t*) = (2*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ρ(ω₀) (π*t*/2) = (π*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ρ(ω₀) *t*. The probability grows in proportion to time, so the probability per second *W*<sub>12</sub> = *P*₂/*t* = (π*e*²\|**ε̂** · **d**<sub>21</sub>\|²/(ε₀*ħ*²)) ρ(ω₀) is constant.
 
-**Step 9 · Light from all directions.** Write \|**ε̂** · **d**<sub>21</sub>\|² = Σ<sub>*i*,*j*</sub> ε<sub>*i*</sub> ε<sub>*j*</sub> *d*<sub>*i*</sub> *d*<sub>*j*</sub><sup>∗</sup> with *i*, *j* ∈ {*x*, *y*, *z*}. For isotropic, unpolarized light **ε̂** points in a random direction. Since ε<sub>*x*</sub>² + ε<sub>*y*</sub>² + ε<sub>*z*</sub>² = 1 and no axis is special, each square averages to 1/3; each cross term such as ε<sub>*x*</sub>ε<sub>*y*</sub> averages to zero, because ε<sub>*x*</sub> → −ε<sub>*x*</sub> is just as likely. So \|**ε̂** · **d**<sub>21</sub>\|² averages to (\|*d*<sub>*x*</sub>\|² + \|*d*<sub>*y*</sub>\|² + \|*d*<sub>*z*</sub>\|²)/3 = \|**d**<sub>21</sub>\|²/3, and
+**Step 9 — Light from all directions.** Write \|**ε̂** · **d**<sub>21</sub>\|² = Σ<sub>*i*,*j*</sub> ε<sub>*i*</sub> ε<sub>*j*</sub> *d*<sub>*i*</sub> *d*<sub>*j*</sub><sup>∗</sup> with *i*, *j* ∈ {*x*, *y*, *z*}. For isotropic, unpolarized light **ε̂** points in a random direction. Since ε<sub>*x*</sub>² + ε<sub>*y*</sub>² + ε<sub>*z*</sub>² = 1 and no axis is special, each square averages to 1/3; each cross term such as ε<sub>*x*</sub>ε<sub>*y*</sub> averages to zero, because ε<sub>*x*</sub> → −ε<sub>*x*</sub> is just as likely. So \|**ε̂** · **d**<sub>21</sub>\|² averages to (\|*d*<sub>*x*</sub>\|² + \|*d*<sub>*y*</sub>\|² + \|*d*<sub>*z*</sub>\|²)/3 = \|**d**<sub>21</sub>\|²/3, and
 
 > *B*<sub>12</sub> = *W*<sub>12</sub>/ρ(ω₀) = π *e*² \|**d**<sub>21</sub>\|² / (3 ε₀ *ħ*²) &nbsp;&nbsp; (SI)
 
-**Step 10 · Einstein's relations.** For one upper and one lower sublevel, *g*₁ = *g*₂ = 1, so *B*<sub>21</sub> = *B*<sub>12</sub> and
+**Step 10 — Einstein's relations.** For one upper and one lower sublevel, *g*₁ = *g*₂ = 1, so *B*<sub>21</sub> = *B*<sub>12</sub> and
 
 > *A*<sub>21</sub> = [*ħ*ω₀³/(π²*c*³)] · π*e*²\|**d**<sub>21</sub>\|²/(3ε₀*ħ*²) = ω₀³ *e*² \|**d**<sub>21</sub>\|² / (3π ε₀ *ħ* *c*³) &nbsp;&nbsp; (SI)
 
@@ -390,40 +390,41 @@ So a nonzero dipole needs *l*₁ + *l*₂ odd. The angular-momentum triangle rul
 <summary>Level 3 · Full derivation: parity of the spherical harmonics and the **r** → −**r** relabelling {#box-parity-rule}</summary>
 
 **You need:** [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = *r* sin θ cos φ, *y* = *r* sin θ sin φ, *z* = *r* cos θ), [T6 · Radial integrals & odd/even symmetry](tut:08#T6) (odd and even functions; an odd function integrates to zero over a symmetric range), [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*π</sup> = −1), and two facts about spherical harmonics:
-- **Polynomial form.** *r*<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup> is a polynomial in *x*, *y*, *z* in which every term has exactly *l* factors (for example *r Y*<sub>1</sub><sup>0</sup> ∝ *z*, *r Y*<sub>1</sub><sup>±1</sup> ∝ ∓(*x* ± *iy*), *r*² *Y*<sub>2</sub><sup>0</sup> ∝ 3*z*² − *r*² = 2*z*² − *x*² − *y*²). These are the polynomials behind Chapter 1's real orbitals *x*, *y*, *z*, *xy*, *x*² − *y*² ([Building real 2p and 3d orbitals with Euler's formula](tut:01#box-real-orbitals)). Conversely (quoted), any polynomial in *x*, *y*, *z* of degree at most *N*, evaluated on the unit sphere, is a sum of spherical harmonics with *l* ≤ *N*. Example: on the unit sphere *z*² = ⅓ + ⅓(3*z*² − 1), an *l* = 0 piece plus an *l* = 2 piece.
-- **Orthonormality** ([T7 · Operators, eigenvalues & Dirac notation](tut:08#T7)): ∫ [*Y*<sub>*l*′</sub><sup>*m*′</sup>]<sup>∗</sup> *Y*<sub>*l*</sub><sup>*m*</sup> sin θ *d*θ *d*φ = δ<sub>*l*′,*l*</sub> δ<sub>*m*′,*m*</sub>.
+- **Polynomial form** ([Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular)): *r*<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup> is a polynomial in *x*, *y*, *z* in which every term has exactly *l* factors (for example *r Y*<sub>1</sub><sup>0</sup> ∝ *z*, *r Y*<sub>1</sub><sup>±1</sup> ∝ ∓(*x* ± *iy*), *r*² *Y*<sub>2</sub><sup>0</sup> ∝ 3*z*² − *r*² = 2*z*² − *x*² − *y*²). These are the polynomials behind Chapter 1's real orbitals *x*, *y*, *z*, *xy*, *x*² − *y*² ([Building real 2p and 3d orbitals with Euler's formula](tut:01#box-real-orbitals)). In angles the same box shows *Y*<sub>*l*</sub><sup>*m*</sup> = sin<sup>\|*m*\|</sup>θ · *P*<sub>*l*</sub>(cos θ) · *e*<sup>*im*φ</sup> with *P*<sub>*l*</sub> a polynomial.
+- **Orthonormality and the cos θ step** ([Orthogonality of the spherical harmonics, and the cos θ step](tut:08#box-t7-ylm)): ∫ [*Y*<sub>*l*′</sub><sup>*m*′</sup>]<sup>∗</sup> *Y*<sub>*l*</sub><sup>*m*</sup> sin θ *d*θ *d*φ = δ<sub>*l*′,*l*</sub> δ<sub>*m*′,*m*</sub>. For a fixed *m*, *P*<sub>*l*</sub> has degree exactly *l* − \|*m*\|, so the *P*<sub>*l*</sub> with *l* = \|*m*\|, \|*m*\| + 1, … build every polynomial in cos θ; and cos θ *Y*<sub>*l*</sub><sup>*m*</sup> = *a Y*<sub>*l*+1</sub><sup>*m*</sup> + *b Y*<sub>*l*−1</sub><sup>*m*</sup> (with *b* = 0 when *l* = \|*m*\|).
 
-**Step 1 · Inversion in spherical coordinates.** Sending **r** → −**r** keeps the distance *r* the same and points the opposite way: θ → π − θ and φ → φ + π. Check with the coordinate formulas: sin(π − θ) = sin θ, cos(π − θ) = −cos θ, cos(φ + π) = −cos φ and sin(φ + π) = −sin φ, so *x* → −*x*, *y* → −*y*, *z* → −*z*.
+**Step 1 — Inversion in spherical coordinates.** Sending **r** → −**r** keeps the distance *r* the same and points the opposite way: θ → π − θ and φ → φ + π. Check with the coordinate formulas: sin(π − θ) = sin θ, cos(π − θ) = −cos θ, cos(φ + π) = −cos φ and sin(φ + π) = −sin φ, so *x* → −*x*, *y* → −*y*, *z* → −*z*.
 
-**Step 2 · Parity of the spherical harmonics.** Flip *x*, *y*, *z* → −*x*, −*y*, −*z* in the polynomial *r*<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>: each of its terms contains exactly *l* factors, so each picks up (−1)<sup>*l*</sup>, while *r*<sup>*l*</sup> does not change. Hence *Y*<sub>*l*</sub><sup>*m*</sup>(−**r̂**) = (−1)<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>(**r̂**). Checks in angle form: *Y*<sub>0</sub><sup>0</sup> is a constant (even, *l* = 0). *Y*<sub>1</sub><sup>0</sup> ∝ cos θ and cos(π − θ) = −cos θ (odd, *l* = 1). *Y*<sub>1</sub><sup>±1</sup> ∝ sin θ *e*<sup>±*i*φ</sup>: sin(π − θ) = sin θ but *e*<sup>±*i*(φ+π)</sup> = *e*<sup>±*i*π</sup>*e*<sup>±*i*φ</sup> = −*e*<sup>±*i*φ</sup> (odd). *Y*<sub>2</sub><sup>0</sup> ∝ 3cos²θ − 1 (even, *l* = 2).
+**Step 2 — Parity of the spherical harmonics.** Flip *x*, *y*, *z* → −*x*, −*y*, −*z* in the polynomial *r*<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>: each of its terms contains exactly *l* factors, so each picks up (−1)<sup>*l*</sup>, while *r*<sup>*l*</sup> does not change. Hence *Y*<sub>*l*</sub><sup>*m*</sup>(−**r̂**) = (−1)<sup>*l*</sup> *Y*<sub>*l*</sub><sup>*m*</sup>(**r̂**), the parity result of [Harmonic polynomials, the angular eigenvalue, and parity](tut:08#box-t5-angular). Checks in angle form: *Y*<sub>0</sub><sup>0</sup> is a constant (even, *l* = 0). *Y*<sub>1</sub><sup>0</sup> ∝ cos θ and cos(π − θ) = −cos θ (odd, *l* = 1). *Y*<sub>1</sub><sup>±1</sup> ∝ sin θ *e*<sup>±*i*φ</sup>: sin(π − θ) = sin θ but *e*<sup>±*i*(φ+π)</sup> = *e*<sup>±*i*π</sup>*e*<sup>±*i*φ</sup> = −*e*<sup>±*i*φ</sup> (odd). *Y*<sub>2</sub><sup>0</sup> ∝ 3cos²θ − 1 (even, *l* = 2).
 
-**Step 3 · Parity of the whole orbital.** *R*<sub>*nl*</sub>(*r*) depends only on the distance, which does not change, so ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). Complex conjugation does not change this, because (−1)<sup>*l*</sup> is real.
+**Step 3 — Parity of the whole orbital.** *R*<sub>*nl*</sub>(*r*) depends only on the distance, which does not change, so ψ<sub>*nlm*</sub>(−**r**) = (−1)<sup>*l*</sup> ψ<sub>*nlm*</sub>(**r**). Complex conjugation does not change this, because (−1)<sup>*l*</sup> is real.
 
-**Step 4 · Parity of the integrand** *f*(**r**) = ψ₂<sup>∗</sup>(**r**) **r** ψ₁(**r**):
+**Step 4 — Parity of the integrand.** For *f*(**r**) = ψ₂<sup>∗</sup>(**r**) **r** ψ₁(**r**), Steps 2–3 and the odd **r** give:
 
 > *f*(−**r**) = (−1)<sup>*l*₂</sup> · (−1) · (−1)<sup>*l*₁</sup> *f*(**r**) = (−1)<sup>*l*₁ + *l*₂ + 1</sup> *f*(**r**)
 
-**Step 5 · Warm-up in one dimension.** If *g*(−*x*) = −*g*(*x*), substitute *x* = −*u* (so *dx* = −*du*, and the limits −*a*, *a* become *a*, −*a*):
+**Step 5 — Warm-up in one dimension.** If *g*(−*x*) = −*g*(*x*), substitute *x* = −*u* (so *dx* = −*du*, and the limits −*a*, *a* become *a*, −*a*):
 
 > ∫<sub>−*a*</sub><sup>*a*</sup> *g*(*x*) *dx* = ∫<sub>*a*</sub><sup>−*a*</sup> *g*(−*u*)(−*du*) = ∫<sub>−*a*</sub><sup>*a*</sup> *g*(−*u*) *du* = −∫<sub>−*a*</sub><sup>*a*</sup> *g*(*u*) *du*
 
 so the integral equals minus itself and is zero.
 
-**Step 6 · The same relabelling trick in 3D.** Let *I* = ∫ *f*(**r**) *d*³*r* over all space. Rename the integration variable: **r** = −**r**′. As **r** runs over all of space, so does **r**′, and a tiny box flipped through the origin has the same volume, so *d*³*r* = *d*³*r*′ (in 3D the volume element never changes sign, so this is even simpler than Step 5). Therefore *I* = ∫ *f*(−**r**′) *d*³*r*′. If *l*₁ and *l*₂ have the **same** parity, *l*₁ + *l*₂ + 1 is odd and *f*(−**r**′) = −*f*(**r**′), so
+**Step 6 — The same relabelling trick in 3D.** Let *I* = ∫ *f*(**r**) *d*³*r* over all space. Rename the integration variable: **r** = −**r**′. As **r** runs over all of space, so does **r**′, and a tiny box flipped through the origin has the same volume, so *d*³*r* = *d*³*r*′ (in 3D the volume element never changes sign, so this is even simpler than Step 5). Therefore *I* = ∫ *f*(−**r**′) *d*³*r*′. If *l*₁ and *l*₂ have the **same** parity, *l*₁ + *l*₂ + 1 is odd and *f*(−**r**′) = −*f*(**r**′), so
 
 > *I* = −∫ *f*(**r**′) *d*³*r*′ = −*I* &nbsp; ⇒ &nbsp; 2*I* = 0 &nbsp; ⇒ &nbsp; *I* = 0
 
 (The name of the integration variable does not matter, so ∫ *f*(**r**′) *d*³*r*′ is the same number *I*.)
 
-**Step 7 · So a nonzero dipole needs *l*₁ + *l*₂ odd:** Δ*l* = ±1, ±3, ….
+**Step 7 — The parity condition.** So a nonzero dipole needs *l*₁ + *l*₂ odd: Δ*l* = ±1, ±3, ….
 
-**Step 8 · Triangle rule.** Take the *z*-component of the angular integral, *J* = ∫ [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> cos θ *Y*<sub>*l*₁</sub><sup>*m*₁</sup> sin θ *d*θ *d*φ (the *x*- and *y*-components work the same way, since *x*/*r* and *y*/*r* are also first-degree polynomials divided by *r*).
-- **Upper limit.** On the unit sphere (*r* = 1), cos θ *Y*<sub>*l*₁</sub><sup>*m*₁</sup> = *z* · *r*<sup>*l*₁</sup>*Y*<sub>*l*₁</sub><sup>*m*₁</sup>, a polynomial of degree *l*₁ + 1. By the quoted fact it is a sum of spherical harmonics with *l* ≤ *l*₁ + 1, and by orthonormality each of them gives zero against *Y*<sub>*l*₂</sub><sup>*m*₂</sup> when *l*₂ > *l*₁ + 1. So *J* = 0 whenever *l*₂ > *l*₁ + 1.
-- **Lower limit.** cos θ is real, so taking the complex conjugate of *J* simply swaps the roles of the two harmonics: *J*<sup>∗</sup> = ∫ [*Y*<sub>*l*₁</sub><sup>*m*₁</sup>]<sup>∗</sup> cos θ *Y*<sub>*l*₂</sub><sup>*m*₂</sup> sin θ *d*θ *d*φ. By the upper-limit argument with 1 and 2 exchanged, this vanishes whenever *l*₁ > *l*₂ + 1.
+**Step 8 — Triangle rule.** The components of **r̂** are *z*/*r* = cos θ and the two combinations (*x* ± *iy*)/*r* = sin θ *e*<sup>±*i*φ</sup> (*x* and *y* are their sum and difference), so it is enough to treat these three. On the unit sphere *d*Ω = sin θ *d*θ *d*φ.
+- **The *z*-component.** By the cos θ step, cos θ *Y*<sub>*l*₁</sub><sup>*m*₁</sup> = *a Y*<sub>*l*₁+1</sub><sup>*m*₁</sup> + *b Y*<sub>*l*₁−1</sub><sup>*m*₁</sup>. Orthonormality then gives ∫ [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> cos θ *Y*<sub>*l*₁</sub><sup>*m*₁</sup> *d*Ω = (*a* δ<sub>*l*₂,*l*₁+1</sub> + *b* δ<sub>*l*₂,*l*₁−1</sub>) δ<sub>*m*₂,*m*₁</sub>: zero unless *l*₂ = *l*₁ ± 1.
+- **Upper limit for *x* ± *iy*.** Take the + sign. Multiplying, sin θ *e*<sup>*i*φ</sup> *Y*<sub>*l*₁</sub><sup>*m*₁</sup> = sin<sup>\|*m*₁\|+1</sup>θ · *P*<sub>*l*₁</sub>(cos θ) · *e*<sup>*i*(*m*₁+1)φ</sup>. If *m*₁ ≥ 0, then \|*m*₁ + 1\| = \|*m*₁\| + 1 and the polynomial *P*<sub>*l*₁</sub> has degree *l*₁ − *m*₁ = (*l*₁ + 1) − \|*m*₁ + 1\|. If *m*₁ < 0, then \|*m*₁ + 1\| = \|*m*₁\| − 1, and writing sin<sup>\|*m*₁\|+1</sup>θ = sin<sup>\|*m*₁+1\|</sup>θ (1 − cos²θ) gives the polynomial (1 − cos²θ) *P*<sub>*l*₁</sub>(cos θ) of degree *l*₁ − \|*m*₁\| + 2 = (*l*₁ + 1) − \|*m*₁ + 1\|. Either way the product is sin<sup>\|*m*₁+1\|</sup>θ × (a polynomial in cos θ of degree (*l*₁ + 1) − \|*m*₁ + 1\|) × *e*<sup>*i*(*m*₁+1)φ</sup>, so it is a combination of the *Y*<sub>*l*′</sub><sup>*m*₁+1</sup> with *l*′ ≤ *l*₁ + 1. By orthonormality, its integral against [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> is zero whenever *l*₂ > *l*₁ + 1. The − sign works the same way with *e*<sup>−*i*φ</sup> and *m*₁ − 1.
+- **Lower limit for *x* ± *iy*.** Taking the complex conjugate of *J*<sub>±</sub> = ∫ [*Y*<sub>*l*₂</sub><sup>*m*₂</sup>]<sup>∗</sup> sin θ *e*<sup>±*i*φ</sup> *Y*<sub>*l*₁</sub><sup>*m*₁</sup> *d*Ω swaps the two harmonics and the sign: *J*<sub>±</sub><sup>∗</sup> = ∫ [*Y*<sub>*l*₁</sub><sup>*m*₁</sup>]<sup>∗</sup> sin θ *e*<sup>∓*i*φ</sup> *Y*<sub>*l*₂</sub><sup>*m*₂</sup> *d*Ω. By the upper-limit argument with 1 and 2 exchanged, this vanishes whenever *l*₁ > *l*₂ + 1.
 
-Together, *J* can be nonzero only if \|*l*₂ − *l*₁\| ≤ 1, i.e. *l*₂ between \|*l*₁ − 1\| and *l*₁ + 1. **Intuition:** multiplying an *l*₁ shape by an *l* = 1 shape can only produce shapes with *l* from \|*l*₁ − 1\| to *l*₁ + 1, just as adding a vector of length 1 to a vector of length *l*₁ gives a length in that range. This allows Δ*l* = −1, 0, +1; parity (Step 7) removes 0, leaving Δ*l* = ±1.
+Together, every component of the angular integral can be nonzero only if \|*l*₂ − *l*₁\| ≤ 1, i.e. *l*₂ between \|*l*₁ − 1\| and *l*₁ + 1. **Intuition:** multiplying an *l*₁ shape by an *l* = 1 shape can only produce shapes with *l* from \|*l*₁ − 1\| to *l*₁ + 1, just as adding a vector of length 1 to a vector of length *l*₁ gives a length in that range. This allows Δ*l* = −1, 0, +1; parity (Step 7) removes 0, leaving Δ*l* = ±1.
 
-**Check:** with *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>1</sub><sup>0</sup> = √(3/(4π)) cos θ, the *z*-component of the 1s → 2p angular integral is (√3/(4π)) ∫₀<sup>π</sup> cos²θ sin θ *d*θ ∫₀<sup>2π</sup> *d*φ = (√3/(4π)) · (2/3) · 2π = 1/√3 ≈ 0.577, nonzero (*l*: 0 → 1, odd sum). Times the radial integral 256/(81√6) *a*₀ of §4.1 this gives ⟨2p₀\|*z*\|1s⟩ = 256/(81√18) *a*₀ = 128√2/243 *a*₀ ≈ 0.745 *a*₀. For 1s → 2s it is (1/(4π)) ∫₀<sup>π</sup> cos θ sin θ *d*θ · 2π = 0, and for 1s → 3d (0 → 2) the integrand cos θ (3cos²θ − 1) is odd under θ → π − θ, so it vanishes too. ✓
+**Check:** with *Y*<sub>0</sub><sup>0</sup> = 1/√(4π) and *Y*<sub>1</sub><sup>0</sup> = √(3/(4π)) cos θ, the *z*-component of the 1s → 2p angular integral is (√3/(4π)) ∫₀<sup>π</sup> cos²θ sin θ *d*θ ∫₀<sup>2π</sup> *d*φ = (√3/(4π)) · (2/3) · 2π = 1/√3 ≈ 0.577, nonzero (*l*: 0 → 1, odd sum), and equal to the cos θ step coefficient *a* = √(1/3) for *l* = 0, *m* = 0. Times the radial integral 256/(81√6) *a*₀ of §4.1 this gives ⟨2p₀\|*z*\|1s⟩ = 256/(81√18) *a*₀ = 128√2/243 *a*₀ ≈ 0.745 *a*₀. For 1s → 2s it is (1/(4π)) ∫₀<sup>π</sup> cos θ sin θ *d*θ · 2π = 0, and for 1s → 3d (0 → 2) the integrand cos θ (3cos²θ − 1) is odd under θ → π − θ, so it vanishes too. ✓
 
 </details>
 
@@ -479,31 +480,31 @@ That is Δ*m* = 0 for π, +1 for σ⁺ and −1 for σ⁻ absorption. In stimula
 
 **You need:** [T1 · Complex numbers & Euler's formula](tut:08#T1) (*e*<sup>*i*α</sup> = cos α + *i* sin α, *e*<sup>*i*α</sup>*e*<sup>*i*β</sup> = *e*<sup>*i*(α+β)</sup>, and the conjugate (*e*<sup>*i*α</sup>)<sup>∗</sup> = *e*<sup>−*i*α</sup>) and [T5 · Spherical & cylindrical coordinates](tut:08#T5) (*x* = *r* sin θ cos φ, *y* = *r* sin θ sin φ, *z* = *r* cos θ).
 
-**Step 1 · φ-dependence of the orbitals.** Every spherical harmonic is (a function of θ) × *e*<sup>*im*φ</sup>, so ψ₁ ∝ *e*<sup>*im*₁φ</sup>. Conjugating flips the sign of every *i*, so ψ₂<sup>∗</sup> ∝ *e*<sup>−*im*₂φ</sup>.
+**Step 1 — φ-dependence of the orbitals.** Every spherical harmonic is (a function of θ) × *e*<sup>*im*φ</sup>, so ψ₁ ∝ *e*<sup>*im*₁φ</sup>. Conjugating flips the sign of every *i*, so ψ₂<sup>∗</sup> ∝ *e*<sup>−*im*₂φ</sup>.
 
-**Step 2 · φ-dependence of the light's factor.** For absorption the coupling is **r** · **ε**:
+**Step 2 — φ-dependence of the light's factor.** For absorption the coupling is **r** · **ε**:
 - π light, **ε** = **ẑ**: **r** · **ẑ** = *z* = *r* cos θ, with no φ at all (*e*<sup>*i*·0·φ</sup>, so *m*<sub>γ</sub> = 0).
 - σ⁺ light, **ε**<sub>+</sub> = (x̂ + *i*ŷ)/√2: **r** · **ε**<sub>+</sub> = (*x* + *iy*)/√2 = *r* sin θ (cos φ + *i* sin φ)/√2 = *r* sin θ *e*<sup>+*i*φ</sup>/√2 (*m*<sub>γ</sub> = +1).
 - σ⁻ light, **ε**<sub>−</sub> = (x̂ − *i*ŷ)/√2: **r** · **ε**<sub>−</sub> = (*x* − *iy*)/√2 = *r* sin θ (cos φ − *i* sin φ)/√2 = *r* sin θ *e*<sup>−*i*φ</sup>/√2 (*m*<sub>γ</sub> = −1).
 
-**Step 3 · Collect the φ-factors.** The *r*- and θ-parts form separate integrals (as in the radial–angular split of §4.1), and the three φ-factors multiply by adding exponents:
+**Step 3 — Collect the φ-factors.** The *r*- and θ-parts form separate integrals (as in the radial–angular split of §4.1), and the three φ-factors multiply by adding exponents:
 
 > *e*<sup>−*im*₂φ</sup> · *e*<sup>*im*<sub>γ</sub>φ</sup> · *e*<sup>*im*₁φ</sup> = *e*<sup>*i*(*m*₁ + *m*<sub>γ</sub> − *m*₂)φ</sup> = *e*<sup>*ik*φ</sup>, &nbsp;&nbsp; *k* = *m*₁ + *m*<sub>γ</sub> − *m*₂ (an integer)
 
-**Step 4 · The full-turn integral.** If *k* = 0 the integrand is 1 and ∫₀<sup>2π</sup> 1 *d*φ = 2π. If *k* ≠ 0, use the antiderivative *e*<sup>*ik*φ</sup>/(*ik*):
+**Step 4 — The full-turn integral.** If *k* = 0 the integrand is 1 and ∫₀<sup>2π</sup> 1 *d*φ = 2π. If *k* ≠ 0, use the antiderivative *e*<sup>*ik*φ</sup>/(*ik*):
 
 > ∫₀<sup>2π</sup> *e*<sup>*ik*φ</sup> *d*φ = [*e*<sup>*ik*φ</sup>/(*ik*)]₀<sup>2π</sup> = (*e*<sup>*i*2π*k*</sup> − 1)/(*ik*) = (1 − 1)/(*ik*) = 0
 
 because Euler's formula gives *e*<sup>*i*2π*k*</sup> = cos 2π*k* + *i* sin 2π*k* = 1 for every integer *k*. Together: ∫₀<sup>2π</sup> *e*<sup>*ik*φ</sup> *d*φ = 2π δ<sub>*k*,0</sub>.
 
-**Step 5 · Read off the rule for each polarization.** The integral survives only if *k* = 0, i.e. *m*₂ = *m*₁ + *m*<sub>γ</sub>:
+**Step 5 — Read off the rule for each polarization.** The integral survives only if *k* = 0, i.e. *m*₂ = *m*₁ + *m*<sub>γ</sub>:
 - **π (*z*) polarization:** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁</sub> ⇒ Δ*m* = 0.
 - **σ⁺ circular:** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂ + 1)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁ + 1</sub> ⇒ Δ*m* = +1.
 - **σ⁻ circular:** ∫₀<sup>2π</sup> *e*<sup>*i*(*m*₁ − *m*₂ − 1)φ</sup> *d*φ = 2π δ<sub>*m*₂, *m*₁ − 1</sub> ⇒ Δ*m* = −1.
 
-**Step 6 · Linear *x* light.** Using cos φ = (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>)/2, *x* = *r* sin θ cos φ = *r* sin θ (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>)/2 contains both *m*<sub>γ</sub> = +1 and *m*<sub>γ</sub> = −1 with equal weight, so *x*-polarized light drives Δ*m* = +1 and Δ*m* = −1 equally (and likewise for *y*).
+**Step 6 — Linear *x* light.** Using cos φ = (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>)/2, *x* = *r* sin θ cos φ = *r* sin θ (*e*<sup>*i*φ</sup> + *e*<sup>−*i*φ</sup>)/2 contains both *m*<sub>γ</sub> = +1 and *m*<sub>γ</sub> = −1 with equal weight, so *x*-polarized light drives Δ*m* = +1 and Δ*m* = −1 equally (and likewise for *y*).
 
-**Step 7 · Stimulated emission.** Here the coupling is **r** · **ε**<sup>∗</sup>. Conjugating **ε**<sub>±</sub> flips the sign of *i*, so **r** · **ε**<sub>±</sub><sup>∗</sup> = (*x* ∓ *iy*)/√2 = *r* sin θ *e*<sup>∓*i*φ</sup>/√2 has turn number −*m*<sub>γ</sub>, and Steps 3–5 give Δ*m* = −*m*<sub>γ</sub>: σ⁺ light stimulates Δ*m* = −1 and σ⁻ light Δ*m* = +1, while π light (**ẑ** is real) still gives Δ*m* = 0.
+**Step 7 — Stimulated emission.** Here the coupling is **r** · **ε**<sup>∗</sup>. Conjugating **ε**<sub>±</sub> flips the sign of *i*, so **r** · **ε**<sub>±</sub><sup>∗</sup> = (*x* ∓ *iy*)/√2 = *r* sin θ *e*<sup>∓*i*φ</sup>/√2 has turn number −*m*<sub>γ</sub>, and Steps 3–5 give Δ*m* = −*m*<sub>γ</sub>: σ⁺ light stimulates Δ*m* = −1 and σ⁻ light Δ*m* = +1, while π light (**ẑ** is real) still gives Δ*m* = 0.
 
 **Check:** from 1s (*m*₁ = 0) to \|2p, +1⟩ (*m*₂ = +1): σ⁺ gives *k* = 0 + 1 − 1 = 0, so the integral is 2π ≈ 6.283 and the transition is allowed; σ⁻ gives *k* = 0 − 1 − 1 = −2, and ∫₀<sup>2π</sup> *e*<sup>−2*i*φ</sup> *d*φ = ∫₀<sup>2π</sup> cos 2φ *d*φ − *i* ∫₀<sup>2π</sup> sin 2φ *d*φ = [sin 2φ/2]₀<sup>2π</sup> + *i* [cos 2φ/2]₀<sup>2π</sup> = 0 + 0 = 0, so it is forbidden. ✓
 
@@ -670,17 +671,21 @@ Watch the transferred angular momentum spin up, and spin down, the probability f
 }
 ```
 
+In hydrogen, levels with the same *n* but different *l* share one energy (§4.1). A coherent wave tuned to a line therefore drives every allowed channel at that energy together: σ⁻ light at H<sub>α</sub> takes \|2p, +1⟩ to both \|3d, 0⟩ and \|3s, 0⟩, since both have *m* = 0 and differ from *l* = 1 by one. The **Single photon** demos above instead animate only the selected channel and give its odds in the note.
+
 ---
 
-### Quick Self-Check
-1. Using parity (**r** → −**r**) and Δ*l* = ±1, explain why both **1s → 2s** and **2s → 3d** are E1-forbidden even though energy conservation alone would allow them.
-2. Why can **σ⁻** light drive **\|2p, +1⟩ → \|3d, 0⟩** (and **\|3s, 0⟩**) upward in absorption, yet cannot trigger stimulated emission **\|2p, +1⟩ → \|1s, 0⟩** downward?
-3. Switch to **Coherent EM wave** mode at *B* = 0 (`2p → 3d` at H<sub>α</sub>, `30 cyc`, `Power = 1`): why does driving **2p,+1 + σ⁻** populate **both** *3d,0* and *3s,0* (unlike the **Single photon** demo "Allowed upward σ⁻: 2p,+1 → 3d,0" above, whose animation shows only the selected *3d,0* channel, ending at 100%)? How would turning on *B*<sub>*z*</sub> change their degeneracy?
+### Quick Self-Check (Try in the Controls)
+*(**Core** = answerable from the main text and **Picture** boxes; **Stretch** = uses a **Key idea** or **Full derivation** box.)*
+
+1. **[Core]** Using parity (**r** → −**r**) and Δ*l* = ±1, explain why both **1s → 2s** and **2s → 3d** are E1-forbidden even though energy conservation alone would allow them.
+2. **[Core]** Why can **σ⁻** light drive **\|2p, +1⟩ → \|3d, 0⟩** (and **\|3s, 0⟩**) upward in absorption, yet cannot trigger stimulated emission **\|2p, +1⟩ → \|1s, 0⟩** downward?
+3. **[Core]** Switch to **Coherent EM wave** mode at *B* = 0 (`2p → 3d` at H<sub>α</sub>, `30 cyc`, `Power = 1`): why does driving **2p,+1 + σ⁻** populate **both** *3d,0* and *3s,0* (unlike the **Single photon** demo "Allowed upward σ⁻: 2p,+1 → 3d,0" above, whose animation shows only the selected *3d,0* channel, ending at 100%)? How would turning on *B*<sub>*z*</sub> change their degeneracy?
 
 ### Pen-and-Paper Practice
-- **P1.** Use the Rydberg formula to predict the wavelength of the Balmer H<sub>β</sub> line (*n* = 4 → 2).
-- **P2.** Which of these hydrogen transitions are E1-allowed: 2p → 1s, 3d → 1s, 3d → 2p, 4f → 3d, 3s → 2s?
-- **P3.** A dye solution (ε = 5.0 × 10⁴ L mol⁻¹ cm⁻¹ at its absorption peak) is 1.0 × 10⁻⁵ M in a 1.00 cm cuvette. What is the absorbance, and what fraction of the light gets through?
+- **P1 [Core].** Use the Rydberg formula to predict the wavelength of the Balmer H<sub>β</sub> line (*n* = 4 → 2).
+- **P2 [Core].** Which of these hydrogen transitions are E1-allowed: 2p → 1s, 3d → 1s, 3d → 2p, 4f → 3d, 3s → 2s?
+- **P3 [Core].** A dye solution (ε = 5.0 × 10⁴ L mol⁻¹ cm⁻¹ at its absorption peak) is 1.0 × 10⁻⁵ M in a 1.00 cm cuvette. What is the absorbance, and what fraction of the light gets through?
 
 <details>
 <summary>Answers</summary>
